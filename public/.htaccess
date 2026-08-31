@@ -1,0 +1,12 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /sous-traitance/
+
+  # Laisser passer les fichiers et dossiers existants (assets, logo, etc.)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Toute autre URL → index.html (routes React Router)
+  RewriteRule ^ index.html [L]
+</IfModule>
