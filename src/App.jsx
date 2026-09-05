@@ -37,7 +37,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
         <UserProvider>
-          <BrowserRouter basename="/sous-traitance">
+          <BrowserRouter basename={import.meta.env.VITE_APP_BASENAME ?? "/sous-traitance"}>
             <Routes>
               {/* Public */}
               <Route path="/login" element={<LoginPage />} />
