@@ -1,314 +1,316 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import {
-  ArrowLeft, ChevronRight, Building2, Hash, FileText, Download,
-  CheckCircle2, AlertTriangle, ShieldCheck, Landmark, Clock,
-} from "lucide-react";
-import { useFactures } from "../context/FacturesContext";
-import { useContrats } from "../context/ContratsContext";
-import { useDecomptes } from "../context/DecomptesContext";
-import { useUser } from "../context/UserContext";
+import { ArrowLeft, ChevronRight, CheckCircle2, Loader2, FileDown } from "lucide-react";
+import { useFacture, useFactureStatut } from "../hooks/useFactures";
 import { useToast } from "../context/ToastContext";
-import { chantiers } from "../data/chantiers";
-import { sousTraitants } from "../data/sous_traitants";
-import { getMontantActualise } from "../utils/contratMetrics";
-import { formatDate } from "../utils/formatters";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
+import MoneyDisplay from "../components/MoneyDisplay";
+import { SkeletonCard } from "../components/Skeleton";
 
-function fmt(n) { return new Intl.NumberFormat("fr-FR").format(Math.round(n || 0)); }
-
-const TYPE_LABELS = {
-  avance: "Facture d'avance de démarrage",
-  cse: "Facture CSE",
-  sous_traitant: "Facture sous-traitant",
-};
-const TYPE_COLORS = {
-  avance: "bg-purple-50 text-purple-700 border-purple-200",
-  cse: "bg-[#E8F5EE] text-[#065A2C] border-[#b5ddc8]",
-  sous_traitant: "bg-blue-50 text-blue-700 border-blue-200",
+const TYPES = {
+  fac_ava: { label: "Avance",       cls: "bg-violet-50 text-violet-700 border border-violet-200" },
+  fac_stt: { label: "Facture STT",  cls: "bg-blue-50 text-blue-700 border border-blue-200" },
+  fac_cse: { label: "Facture CSE",  cls: "bg-teal-50 text-teal-700 border border-teal-200" },
 };
 
-const CSE_ENTITY = "la Compagnie Sahélienne d'Entreprises";
+function TypeBadge({ type }) {
+  const t = TYPES[type] ?? { label: type, cls: "bg-gray-100 text-gray-600" };
+  return (
+    <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${t.cls}`}>
+      {t.label}
+    </span>
+  );
+}
 
-const CHECKLIST_DACC = [
-  "Montants conformes au décompte validé",
-  "Taux de TVA correct",
-  "NINEA du sous-traitant présent et valide",
-  "Coordonnées bancaires renseignées",
-];
+function InfoItem({ label, children }) {
+  return (
+    <div>
+      <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</p>
+      <div className="text-sm font-medium text-gray-800">{children ?? "—"}</div>
+    </div>
+  );
+}
+
+function FinRow({ label, amount, accent, bold, muted }) {
+  return (
+    <div className={`flex justify-between items-center py-2 ${bold ? "border-t border-gray-200 mt-1 pt-3" : ""}`}>
+      <span className={`text-sm ${muted ? "text-gray-400" : "text-gray-600"}`}>{label}</span>
+      <MoneyDisplay
+        amount={amount ?? 0}
+        variant="small"
+        className={bold ? "text-gray-900 font-bold text-base" : accent ? "text-[#087F3E] font-semibold" : ""}
+      />
+    </div>
+  );
+}
 
 export default function FactureDetailPage() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { factures, updateFacture } = useFactures();
-  const { contrats } = useContrats();
-  const { decomptes } = useDecomptes();
-  const { currentUser } = useUser();
+  const { id }     = useParams();
+  const navigate   = useNavigate();
   const { addToast } = useToast();
 
-  const [checklistStates, setChecklistStates] = useState({});
+  const [showPayDialog,   setShowPayDialog]   = useState(false);
+  const [refPaiement,     setRefPaiement]     = useState("");
+  const [showAnnulDialog, setShowAnnulDialog] = useState(false);
+  const [motifAnnul,      setMotifAnnul]      = useState("");
 
-  const facture = factures.find(f => f.id === id);
-  const contrat = facture ? contrats.find(c => c.id === facture.contratId) : null;
-  const decompte = facture?.decompteId ? decomptes.find(d => d.id === facture.decompteId) : null;
-  const chantier = contrat ? chantiers.find(c => c.id === contrat.chantierId) : null;
-  const stt = contrat ? sousTraitants.find(s => s.id === contrat.sousTraitantId) : null;
-  const factureLiee = facture?.factureLieeId ? factures.find(f => f.id === facture.factureLieeId) : null;
+  const { data: facture, isLoading, isError } = useFacture(id);
+  const statutMut = useFactureStatut();
 
-  if (!facture || !contrat) {
+  // ── Loading / Error ───────────────────────────────────────────────
+  if (isLoading) {
+    return <div className="space-y-4">{[1, 2, 3].map(i => <SkeletonCard key={i} />)}</div>;
+  }
+  if (isError || !facture) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-gray-400">
         <p className="text-lg font-semibold">Facture introuvable</p>
-        <button onClick={() => navigate("/factures")} className="mt-4 text-sm text-[#087F3E] hover:underline">Retour à la liste</button>
+        <button onClick={() => navigate("/factures")} className="mt-4 text-sm text-[#087F3E] hover:underline">
+          Retour à la liste
+        </button>
       </div>
     );
   }
 
-  const isDACC = currentUser?.roleId === "DACC";
-  const isDFC = currentUser?.roleId === "DFC";
+  const f = facture;
+  const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
 
-  const lignesPayer = facture.lignes.filter(l => l.signe === "+");
-  const lignesDeduire = facture.lignes.filter(l => l.signe === "-");
-
-  function handleControleDACC() {
-    const today = new Date().toISOString().slice(0, 10);
-    updateFacture(facture.id, { statut: "Contrôlée DACC", dateControleDACC: today });
-    if (factureLiee) updateFacture(factureLiee.id, { statut: "Contrôlée DACC", dateControleDACC: today });
-    addToast("Conformité contrôlée — factures passées au statut Contrôlée DACC.", "success");
+  // ── Actions ───────────────────────────────────────────────────────
+  async function handlePayer() {
+    if (!refPaiement.trim()) return;
+    try {
+      await statutMut.mutateAsync({ id: parseInt(f.id, 10), statut: "payee" });
+      addToast("Facture marquée comme payée.", "success");
+      setShowPayDialog(false);
+      setRefPaiement("");
+    } catch (err) {
+      addToast(err.response?.data?.message ?? "Erreur lors du paiement.", "error");
+    }
   }
 
-  function handleValidationDFC() {
-    const today = new Date().toISOString().slice(0, 10);
-    updateFacture(facture.id, { statut: "Validée DFC", dateValidationDFC: today });
-    if (factureLiee) updateFacture(factureLiee.id, { statut: "Validée DFC", dateValidationDFC: today });
-    addToast("Facture validée financièrement — le paiement peut être déclenché depuis le décompte.", "success");
+  async function handleAnnuler() {
+    try {
+      await statutMut.mutateAsync({ id: parseInt(f.id, 10), statut: "annulee" });
+      addToast("Facture annulée.", "success");
+      setShowAnnulDialog(false);
+      setMotifAnnul("");
+    } catch (err) {
+      addToast(err.response?.data?.message ?? "Erreur lors de l'annulation.", "error");
+    }
   }
-
-  const checklistOk = CHECKLIST_DACC.every((_, i) => checklistStates[i]);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
+      {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500">
         <button onClick={() => navigate("/factures")} className="hover:text-[#087F3E] flex items-center gap-1 transition-colors">
           <ArrowLeft size={14} /> Factures
         </button>
         <ChevronRight size={14} />
-        <span className="text-gray-900 font-medium">{facture.code}</span>
+        <span className="text-gray-900 font-medium">{f.code}</span>
       </div>
 
+      {/* Header */}
       <PageHeader
-        title={facture.code}
-        subtitle={facture.type === "sous_traitant" ? `Émise par ${stt?.raisonSociale || "le sous-traitant"}` : `Émise par ${CSE_ENTITY}`}
+        title={f.code}
+        subtitle={f.numero_facture_externe ? `Réf. externe : ${f.numero_facture_externe}` : undefined}
         action={
           <div className="flex items-center gap-2">
-            <span className={`text-xs px-2.5 py-1 rounded-full border font-medium ${TYPE_COLORS[facture.type]}`}>{TYPE_LABELS[facture.type]}</span>
-            <StatusBadge statut={facture.statut} />
+            <TypeBadge type={f.type} />
+            <StatusBadge statut={f.statut} />
+            <button
+              onClick={() => {
+                const token = localStorage.getItem("stt_token");
+                window.open(`${import.meta.env.VITE_API_BASE}/api/pdf/facture/${id}?token=${token}`, "_blank");
+              }}
+              className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50"
+            >
+              <FileDown size={14} /> PDF
+            </button>
           </div>
         }
       />
 
-      {/* Bloc identification */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 grid grid-cols-4 gap-5">
-        <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-1.5"><Hash size={11} />Sous-traitant</p>
-          <p className="text-sm font-medium text-gray-800 mt-1">{stt?.raisonSociale || "—"}</p>
-          <p className="text-xs text-gray-500 mt-0.5">NINEA {stt?.ninea || "—"}</p>
-          <p className="text-xs text-gray-500">{stt?.coordonneesBancaires?.banque} · {stt?.coordonneesBancaires?.iban}</p>
+      {/* Info band */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5 grid grid-cols-2 sm:grid-cols-4 gap-5">
+        <InfoItem label="Objet">{f.objet || "—"}</InfoItem>
+        <InfoItem label="Date facture">{fmtDate(f.date_facture)}</InfoItem>
+        <InfoItem label="Date échéance">{fmtDate(f.date_echeance)}</InfoItem>
+        <InfoItem label="N° facture externe">{f.numero_facture_externe || "—"}</InfoItem>
+      </div>
+
+      {/* Main grid: financial + relations */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Financial card */}
+        <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-6">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Récapitulatif financier</h3>
+          <div className="space-y-0.5">
+            <FinRow label="Montant HT"              amount={f.montant_ht}  accent />
+            <FinRow label={`TVA (${f.taux_tva ?? 0}%)`} amount={f.montant_tva} muted />
+            <FinRow label="Montant TTC"             amount={f.montant_ttc} bold />
+          </div>
+
+          {/* Payment info if paid */}
+          {f.statut === "payee" && (
+            <div className="mt-5 bg-[#E8F5EE] border border-[#b5ddc8] rounded-lg p-4 flex items-start gap-3">
+              <CheckCircle2 size={16} className="text-[#087F3E] mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-[#065A2C]">
+                <p>Payée le <strong>{fmtDate(f.date_paiement)}</strong></p>
+                {f.reference_paiement && (
+                  <p className="text-xs mt-0.5 font-mono text-[#087F3E]">Réf. {f.reference_paiement}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Annulation info */}
+          {f.statut === "annulee" && (
+            <div className="mt-5 bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-800 font-medium">Facture annulée</p>
+              {f.motif_annulation && (
+                <p className="text-xs text-red-700 mt-1">{f.motif_annulation}</p>
+              )}
+            </div>
+          )}
+
+          {/* Observations */}
+          {f.observations && (
+            <div className="mt-5 border-t border-gray-100 pt-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Observations</p>
+              <p className="text-sm text-gray-700 leading-relaxed">{f.observations}</p>
+            </div>
+          )}
         </div>
-        <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-1.5"><Building2 size={11} />Chantier</p>
-          <p className="text-sm font-medium text-gray-800 mt-1">{chantier?.nom || "—"}</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-1.5"><FileText size={11} />Contrat</p>
-          <Link to={`/contrats/${contrat.id}`} className="text-sm font-medium text-[#087F3E] hover:underline mt-1 inline-block">{contrat.code}</Link>
-          <p className="text-xs text-gray-500 mt-0.5">Marché actualisé : {fmt(getMontantActualise(contrat))} FCFA</p>
-        </div>
-        <div>
-          <p className="text-xs text-gray-400 uppercase tracking-wide flex items-center gap-1.5"><FileText size={11} />Décompte concerné</p>
-          {decompte ? (
-            <>
-              <Link to={`/decomptes/${decompte.id}`} className="text-sm font-medium text-[#087F3E] hover:underline mt-1 inline-block">{decompte.code}</Link>
-              <p className="text-xs text-gray-500 mt-0.5">{formatDate(decompte.dateDebut)} → {formatDate(decompte.dateFin)}</p>
-            </>
-          ) : (
-            <p className="text-sm text-gray-400 mt-1">— (facture d'avance)</p>
+
+        {/* Relations card */}
+        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Références</h3>
+
+          {f.contrat && (
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Contrat</p>
+              <Link to={`/contrats/${f.contrat_id}`} className="text-sm font-semibold text-[#087F3E] hover:underline font-mono">
+                {f.contrat.code}
+              </Link>
+              {f.contrat.objet && (
+                <p className="text-xs text-gray-500 mt-0.5 leading-snug">{f.contrat.objet}</p>
+              )}
+            </div>
+          )}
+
+          {f.decompte && (
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Décompte</p>
+              <Link to={`/decomptes/${f.decompte_id}`} className="text-sm font-semibold text-[#087F3E] hover:underline font-mono">
+                {f.decompte.code}
+              </Link>
+            </div>
+          )}
+
+          {f.chantier && (
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Chantier</p>
+              <Link to={`/chantiers/${f.chantier_id}`} className="text-sm font-semibold text-[#087F3E] hover:underline font-mono">
+                {f.chantier.code}
+              </Link>
+              <p className="text-xs text-gray-500 mt-0.5">{f.chantier.designation}</p>
+            </div>
+          )}
+
+          {f.soustraitant && (
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Sous-traitant</p>
+              <Link to={`/sous-traitants/${f.soustraitant_id}`} className="text-sm font-semibold text-[#087F3E] hover:underline">
+                {f.soustraitant.raison_sociale}
+              </Link>
+            </div>
           )}
         </div>
       </div>
 
-      {/* Tableau des lignes */}
-      <div className="border border-gray-200 rounded-xl overflow-hidden">
-        <div className="bg-[#E8F5EE] px-4 py-2.5 border-b border-gray-200">
-          <h3 className="text-sm font-semibold text-[#065A2C]">À payer</h3>
-        </div>
-        <table className="w-full text-sm">
-          <tbody className="divide-y divide-gray-100">
-            {lignesPayer.map(l => (
-              <tr key={l.code}>
-                <td className="px-4 py-2 w-12 font-mono text-xs text-gray-500">{l.code}</td>
-                <td className="px-4 py-2 text-gray-800">{l.libelle}</td>
-                <td className="px-4 py-2 text-right font-medium text-gray-900 w-40">{fmt(l.montant)} FCFA</td>
-              </tr>
-            ))}
-            {lignesPayer.length === 0 && (
-              <tr><td colSpan={3} className="px-4 py-3 text-xs text-gray-400 italic">Aucune ligne</td></tr>
-            )}
-          </tbody>
-        </table>
+      {/* Workflow actions — only for "emise" */}
+      {f.statut === "emise" && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</p>
 
-        {lignesDeduire.length > 0 && (
-          <>
-            <div className="bg-red-50 px-4 py-2.5 border-y border-gray-200">
-              <h3 className="text-sm font-semibold text-red-700">À déduire</h3>
+          {/* Pay dialog */}
+          {!showPayDialog && !showAnnulDialog && (
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setShowPayDialog(true)}
+                className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Marquer payée
+              </button>
+              <button
+                onClick={() => setShowAnnulDialog(true)}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Annuler
+              </button>
             </div>
-            <table className="w-full text-sm">
-              <tbody className="divide-y divide-gray-100">
-                {lignesDeduire.map(l => (
-                  <tr key={l.code}>
-                    <td className="px-4 py-2 w-12 font-mono text-xs text-gray-500">{l.code}</td>
-                    <td className="px-4 py-2 text-gray-800">{l.libelle}</td>
-                    <td className="px-4 py-2 text-right font-medium text-red-600 w-40">-{fmt(l.montant)} FCFA</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
+          )}
 
-        {/* Pied de tableau */}
-        <div className="bg-gray-900 px-5 py-4 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-300">Net à régler HTVA</span>
-            <span className="text-sm font-semibold text-white">{fmt(facture.montantHT)} FCFA</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-300">TVA ({facture.tauxTVA}%)</span>
-            <span className="text-sm font-semibold text-white">{fmt(facture.montantTVA)} FCFA</span>
-          </div>
-          <div className="flex items-center justify-between pt-1.5 border-t border-gray-700">
-            <span className="text-base font-bold text-white">Net à régler TTC</span>
-            <span className="text-xl font-bold text-white tabular-nums">{fmt(facture.montantTTC)} FCFA</span>
-          </div>
-        </div>
-      </div>
+          {showPayDialog && (
+            <div className="flex flex-wrap gap-2 items-end">
+              <div className="flex-1 min-w-[240px]">
+                <label className="text-xs font-medium text-gray-600 block mb-1">Référence de paiement</label>
+                <input
+                  autoFocus
+                  placeholder="Ex : VIR-2025-0042"
+                  value={refPaiement}
+                  onChange={e => setRefPaiement(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                />
+              </div>
+              <button
+                onClick={handlePayer}
+                disabled={!refPaiement.trim() || statutMut.isPending}
+                className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors inline-flex items-center gap-2"
+              >
+                {statutMut.isPending && <Loader2 size={14} className="animate-spin" />}
+                Confirmer
+              </button>
+              <button
+                onClick={() => { setShowPayDialog(false); setRefPaiement(""); }}
+                className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm"
+              >
+                Annuler
+              </button>
+            </div>
+          )}
 
-      {/* Bloc rapprochement */}
-      {factureLiee && (
-        <div className={`border-2 rounded-xl p-5 ${facture.statut === "Écart détecté" ? "bg-red-50 border-red-300" : "bg-[#E8F5EE] border-[#087F3E]/30"}`}>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-            {facture.statut === "Écart détecté" ? <AlertTriangle size={16} className="text-red-500" /> : <CheckCircle2 size={16} className="text-[#087F3E]" />}
-            Rapprochement des factures
-          </h3>
-          <div className="grid grid-cols-3 gap-4 mb-3">
-            <div className="text-center">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">{facture.type === "cse" ? "Facture CSE" : "Facture sous-traitant"}</p>
-              <p className="text-base font-bold text-gray-900 mt-1">{fmt(facture.montantTTC)} FCFA</p>
+          {showAnnulDialog && (
+            <div className="flex flex-wrap gap-2 items-end">
+              <div className="flex-1 min-w-[240px]">
+                <label className="text-xs font-medium text-gray-600 block mb-1">Motif d'annulation (optionnel)</label>
+                <input
+                  autoFocus
+                  placeholder="Motif…"
+                  value={motifAnnul}
+                  onChange={e => setMotifAnnul(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none"
+                />
+              </div>
+              <button
+                onClick={handleAnnuler}
+                disabled={statutMut.isPending}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors inline-flex items-center gap-2"
+              >
+                {statutMut.isPending && <Loader2 size={14} className="animate-spin" />}
+                Confirmer l'annulation
+              </button>
+              <button
+                onClick={() => { setShowAnnulDialog(false); setMotifAnnul(""); }}
+                className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm"
+              >
+                Retour
+              </button>
             </div>
-            <div className="text-center">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">{factureLiee.type === "cse" ? "Facture CSE" : "Facture sous-traitant"}</p>
-              <p className="text-base font-bold text-gray-900 mt-1">{fmt(factureLiee.montantTTC)} FCFA</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-gray-500 uppercase tracking-wide">Écart</p>
-              <p className={`text-base font-bold mt-1 ${(facture.ecartRapprochement || 0) > 0 ? "text-red-600" : "text-[#087F3E]"}`}>
-                {fmt(facture.ecartRapprochement || 0)} FCFA
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${(facture.ecartRapprochement || 0) > 0 ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"}`}>
-              {(facture.ecartRapprochement || 0) > 0 ? "⚠ Écart détecté" : "✓ Conforme"}
-            </span>
-            <Link to={`/factures/${factureLiee.id}`} className="text-xs text-[#087F3E] font-semibold underline hover:text-[#065A2C]">
-              → Voir la facture liée {factureLiee.code}
-            </Link>
-          </div>
-          {facture.motifRejet && (
-            <p className="text-sm text-red-700 mt-3 leading-relaxed">{facture.motifRejet}</p>
           )}
         </div>
       )}
-
-      {/* Barre d'actions */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-        {facture.statut === "Rapprochée" && (
-          isDACC ? (
-            <div className="space-y-3">
-              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Points de contrôle</h4>
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${checklistOk ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
-                    {Object.values(checklistStates).filter(Boolean).length}/{CHECKLIST_DACC.length} vérifiés
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {CHECKLIST_DACC.map((label, i) => (
-                    <label key={i} className="flex items-start gap-3 cursor-pointer">
-                      <input type="checkbox" checked={checklistStates[i] || false}
-                        onChange={() => setChecklistStates(prev => ({ ...prev, [i]: !prev[i] }))}
-                        className="mt-0.5 accent-[#087F3E] flex-shrink-0" />
-                      <span className={`text-xs flex-1 ${checklistStates[i] ? "text-gray-400 line-through" : "text-gray-700"}`}>{label}</span>
-                      {i === 2 && <span className="text-[10px] text-gray-500 font-mono whitespace-nowrap">NINEA {stt?.ninea || "—"}</span>}
-                      {i === 3 && <span className="text-[10px] text-gray-500 font-mono whitespace-nowrap">{stt?.coordonneesBancaires?.iban || "—"}</span>}
-                    </label>
-                  ))}
-                </div>
-              </div>
-              <button onClick={handleControleDACC} className="flex items-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-                <ShieldCheck size={15} /> Contrôler la conformité
-              </button>
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400">Seul le DACC peut contrôler la conformité de cette facture.</p>
-          )
-        )}
-
-        {facture.statut === "Contrôlée DACC" && (
-          isDFC ? (
-            <button onClick={handleValidationDFC} className="flex items-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
-              <Landmark size={15} /> Valider financièrement
-            </button>
-          ) : (
-            <p className="text-sm text-gray-400">Seule la DFC peut valider financièrement cette facture (contrôlée par le DACC le {formatDate(facture.dateControleDACC)}).</p>
-          )
-        )}
-
-        {facture.statut === "Validée DFC" && (
-          <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-xl p-4">
-            <Clock size={16} className="text-indigo-500 flex-shrink-0" />
-            <p className="text-sm text-indigo-800">
-              Facture validée financièrement le <strong>{formatDate(facture.dateValidationDFC)}</strong> — le paiement se déclenche
-              {decompte ? <> depuis la <Link to={`/decomptes/${decompte.id}`} className="underline font-semibold">fiche décompte {decompte.code}</Link></> : " depuis le décompte associé"}.
-            </p>
-          </div>
-        )}
-
-        {facture.statut === "Payée" && (
-          <div className="flex items-center gap-3 bg-[#E8F5EE] border border-[#b5ddc8] rounded-xl p-4">
-            <CheckCircle2 size={16} className="text-[#087F3E] flex-shrink-0" />
-            <p className="text-sm text-[#065A2C]">
-              Facture payée le <strong>{formatDate(facture.datePaiement)}</strong> — référence <strong className="font-mono">{facture.referenceReglement}</strong>.
-            </p>
-          </div>
-        )}
-
-        {facture.statut === "Écart détecté" && (
-          <div className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
-            <AlertTriangle size={16} className="text-red-500 flex-shrink-0" />
-            <p className="text-sm text-red-800">
-              Écart de rapprochement constaté — {decompte ? <>le décompte <Link to={`/decomptes/${decompte.id}`} className="underline font-semibold">{decompte.code}</Link> a été repassé en Rejeté.</> : "traitement requis."}
-            </p>
-          </div>
-        )}
-
-        <div className="pt-2 border-t border-gray-100">
-          <button onClick={() => addToast("PDF téléchargé.", "success")} className="flex items-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm transition-colors">
-            <Download size={14} /> Télécharger en PDF
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

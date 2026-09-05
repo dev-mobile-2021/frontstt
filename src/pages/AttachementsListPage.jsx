@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, Paperclip, Search, Filter } from "lucide-react";
-import { useAttachements } from "../context/AttachementsContext";
-import { useUser } from "../context/UserContext";
+import { Plus, Paperclip, Search } from "lucide-react";
+import { useAttachements } from "../hooks/useAttachements";
 
 const num = (v) => new Intl.NumberFormat("fr-FR").format(Math.round(v || 0));
 
@@ -21,16 +20,13 @@ const STATUT_ORDER = ["Soumis au DACC", "Soumis au DT", "En rapprochement", "En 
 export default function AttachementsListPage() {
   const navigate = useNavigate();
   const { attachements } = useAttachements();
-  const { currentUser } = useUser();
   const [search, setSearch] = useState("");
   const [filtrStatut, setFiltrStatut] = useState("Tous");
-
-  const role = currentUser?.roleId;
 
   const filtered = attachements
     .filter(a => {
       const q = search.toLowerCase();
-      const matchText = !q || a.code.toLowerCase().includes(q) || a.contratId.toLowerCase().includes(q) || a.periodeDebut.includes(q);
+      const matchText = !q || a.code.toLowerCase().includes(q) || (a.contratId ?? "").toLowerCase().includes(q) || (a.periodeDebut ?? "").includes(q);
       const matchStatut = filtrStatut === "Tous" || a.statut === filtrStatut;
       return matchText && matchStatut;
     })
@@ -38,14 +34,11 @@ export default function AttachementsListPage() {
       const sa = STATUT_ORDER.indexOf(a.statut);
       const sb = STATUT_ORDER.indexOf(b.statut);
       if (sa !== sb) return sa - sb;
-      return b.periodeDebut.localeCompare(a.periodeDebut);
+      return (b.periodeDebut ?? "").localeCompare(a.periodeDebut ?? "");
     });
 
   const pendingCount = attachements.filter(a => {
-    if (role === "CT")   return a.statut === "Ouvert" || a.statut === "En cours";
-    if (role === "DT")   return a.statut === "Soumis au DT" || a.statut === "En rapprochement";
-    if (role === "DACC") return a.statut === "Soumis au DACC";
-    return false;
+    return a.statut === "Ouvert" || a.statut === "En cours" || a.statut === "Soumis au DT" || a.statut === "En rapprochement" || a.statut === "Soumis au DACC";
   }).length;
 
   return (
@@ -56,11 +49,9 @@ export default function AttachementsListPage() {
           <h1 className="text-2xl font-bold text-gray-900">Dossiers d'attachement</h1>
           <p className="text-sm text-gray-500 mt-0.5">Constat terrain · Rapprochement STT · Visa DACC</p>
         </div>
-        {(role === "CT" || role === "DT") && (
-          <Link to="/contrats" className="flex items-center gap-2 bg-[#087F3E] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#065A2C] transition-colors">
-            <Plus size={15} /> Initier depuis un contrat
-          </Link>
-        )}
+        <Link to="/contrats" className="flex items-center gap-2 bg-[#087F3E] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#065A2C] transition-colors">
+          <Plus size={15} /> Initier depuis un contrat
+        </Link>
       </div>
 
       {/* Pending banner */}
@@ -90,9 +81,9 @@ export default function AttachementsListPage() {
           <p>Aucun dossier trouvé</p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-gray-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
+        <div className="rounded-2xl border border-gray-200 overflow-x-auto">
+          <table className="w-full min-w-[800px] text-sm">
+            <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="text-left px-5 py-3 font-semibold text-gray-600">Code</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Contrat</th>
@@ -103,9 +94,9 @@ export default function AttachementsListPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map(a => {
-                const isPending = (role === "CT" && (a.statut === "Ouvert" || a.statut === "En cours")) || (role === "DT" && (a.statut === "Soumis au DT" || a.statut === "En rapprochement")) || (role === "DACC" && a.statut === "Soumis au DACC");
+                const isPending = ["Ouvert", "En cours", "Soumis au DT", "En rapprochement", "Soumis au DACC"].includes(a.statut);
                 return (
-                  <tr key={a.id} onClick={() => navigate(`/attachements/${a.id}`)} className={`cursor-pointer hover:bg-gray-50 transition-colors ${isPending ? "bg-amber-50/40" : ""}`}>
+                  <tr key={a.id} onClick={() => navigate(`/attachements/${a.id}`)} className={`cursor-pointer hover:bg-gray-50 even:bg-gray-50/40 group transition-colors ${isPending ? "bg-amber-50/40" : ""}`}>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2">
                         {isPending && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 flex-shrink-0" />}

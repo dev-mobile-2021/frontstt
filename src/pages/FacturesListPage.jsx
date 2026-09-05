@@ -1,131 +1,398 @@
-import { useMemo, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, RotateCcw, AlertTriangle, FileStack } from "lucide-react";
-import { useFactures } from "../context/FacturesContext";
-import { contrats } from "../data/contrats";
-import { sousTraitants } from "../data/sous_traitants";
+import { Search, RotateCcw, ChevronLeft, ChevronRight, FileStack, FileSpreadsheet, Plus, X, Loader2 } from "lucide-react";
+
+const API_BASE = import.meta.env.VITE_API_BASE + "/api";
+import { useFacturesPaginated, useSaveFacture } from "../hooks/useFactures";
+import { useDecomptesPaginated } from "../hooks/useDecomptes";
+import { useContratsPaginated } from "../hooks/useContrats";
+import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
+import { useChantiersPaginated } from "../hooks/useChantiers";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
-import { formatDate } from "../utils/formatters";
-
-const contratMap = Object.fromEntries(contrats.map(c => [c.id, c]));
-const sttMap = Object.fromEntries(sousTraitants.map(s => [s.id, s]));
+import { SkeletonTable } from "../components/Skeleton";
+import { useToast } from "../context/ToastContext";
 
 const TYPES = [
-  { value: "avance", label: "Avance de démarrage" },
-  { value: "cse", label: "CSE" },
-  { value: "sous_traitant", label: "Sous-traitant" },
+  { value: "fac_ava", label: "Avance" },
+  { value: "fac_stt", label: "Facture STT" },
+  { value: "fac_cse", label: "Facture CSE" },
 ];
-const STATUTS = ["Émise", "Importée", "Rapprochée", "Écart détecté", "Contrôlée DACC", "Validée DFC", "Payée", "Rejetée"];
+
+const STATUTS = [
+  { value: "emise",   label: "Émise" },
+  { value: "payee",   label: "Payée" },
+  { value: "annulee", label: "Annulée" },
+];
+
+const TYPE_BADGE = {
+  fac_ava: "bg-violet-50 text-violet-700 border border-violet-200",
+  fac_stt: "bg-blue-50 text-blue-700 border border-blue-200",
+  fac_cse: "bg-teal-50 text-teal-700 border border-teal-200",
+};
+
+function TypeBadge({ type }) {
+  const t = TYPES.find(t => t.value === type);
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${TYPE_BADGE[type] ?? "bg-gray-100 text-gray-600"}`}>
+      {t?.label ?? type}
+    </span>
+  );
+}
+
+const FORM_INIT = { type: "fac_stt", objet: "", date_facture: new Date().toISOString().slice(0, 10), date_echeance: "", numero_facture_externe: "", montant_ht: "", taux_tva: "18", observations: "", decompte_id: "", contrat_id: "", soustraitant_id: "", chantier_id: "" };
 
 export default function FacturesListPage() {
-  const { factures } = useFactures();
   const navigate = useNavigate();
-  const [search, setSearch] = useState("");
-  const [type, setType] = useState("");
-  const [statut, setStatut] = useState("");
-  const [sttFilter, setSttFilter] = useState("");
-  const [onlyEcarts, setOnlyEcarts] = useState(false);
+  const { addToast } = useToast();
+  const [search,    setSearch]    = useState("");
+  const [type,      setType]      = useState("");
+  const [statut,    setStatut]    = useState("");
+  const [page,      setPage]      = useState(1);
+  const [debounced, setDebounced] = useState("");
+  const [showForm,  setShowForm]  = useState(false);
+  const [form,      setForm]      = useState(FORM_INIT);
 
-  const rows = useMemo(() => factures.map(f => {
-    const contrat = contratMap[f.contratId];
-    const stt = sttMap[contrat?.sousTraitantId];
-    return { facture: f, contrat, stt };
-  }), [factures]);
+  useEffect(() => {
+    const t = setTimeout(() => { setDebounced(search.trim()); setPage(1); }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return rows.filter(({ facture, contrat, stt }) => {
-      if (onlyEcarts && facture.statut !== "Écart détecté") return false;
-      if (q && ![facture.code, contrat?.code, stt?.raisonSociale].some(v => v?.toLowerCase().includes(q))) return false;
-      if (type && facture.type !== type) return false;
-      if (statut && facture.statut !== statut) return false;
-      if (sttFilter && contrat?.sousTraitantId !== sttFilter) return false;
-      return true;
-    });
-  }, [rows, search, type, statut, sttFilter, onlyEcarts]);
+  const filters = {
+    code:   debounced || undefined,
+    type:   type      || undefined,
+    statut: statut    || undefined,
+    page,
+    count: 15,
+  };
 
-  const ecartsCount = factures.filter(f => f.statut === "Écart détecté").length;
-  const hasFilter = search || type || statut || sttFilter || onlyEcarts;
+  const { data, isLoading, isError } = useFacturesPaginated(filters);
+  const saveMut    = useSaveFacture();
+  const rows       = data?.data ?? [];
+  const meta       = data?.metadata ?? {};
+  const totalPages = meta.last_page ?? 1;
+  const hasFilter  = search || type || statut;
+
+  // Data for creation form selects
+  const { data: decomptesData } = useDecomptesPaginated({ count: 200, statut: "paye" });
+  const { data: contratsData }  = useContratsPaginated({ count: 200, statut: "actif" });
+  const { data: sttsData }      = useSousTraitantsPaginated({ count: 200 });
+  const { data: chantiersData } = useChantiersPaginated({ count: 200 });
+  const decompteOptions  = (decomptesData?.data ?? []).filter(d => ["valide_dg", "paye"].includes(d.statut));
+  const contratOptions   = contratsData?.data ?? [];
+  const sttOptions       = sttsData?.data ?? [];
+  const chantierOptions  = chantiersData?.data ?? [];
+
+  function reset() { setSearch(""); setType(""); setStatut(""); setPage(1); }
+
+  function exportExcel() {
+    const params = new URLSearchParams();
+    if (type)   params.set("type",   type);
+    if (statut) params.set("statut", statut);
+    window.open(`${API_BASE}/excel/factures?${params.toString()}`, "_blank");
+  }
+
+  async function handleCreate() {
+    if (!form.objet.trim() || !form.date_facture || !form.montant_ht) {
+      addToast("Objet, date et montant HT sont requis.", "error");
+      return;
+    }
+    if (form.type === "fac_stt" && !form.decompte_id) {
+      addToast("Sélectionnez un décompte pour une Facture STT.", "error"); return;
+    }
+    if (form.type === "fac_ava" && (!form.contrat_id || !form.soustraitant_id)) {
+      addToast("Contrat et sous-traitant sont requis pour une Avance.", "error"); return;
+    }
+    if (form.type === "fac_cse" && !form.chantier_id) {
+      addToast("Sélectionnez un chantier pour une Facture CSE.", "error"); return;
+    }
+    try {
+      const payload = {
+        type:                   form.type,
+        objet:                  form.objet.trim(),
+        date_facture:           form.date_facture,
+        date_echeance:          form.date_echeance || null,
+        numero_facture_externe: form.numero_facture_externe.trim() || null,
+        montant_ht:             parseFloat(form.montant_ht),
+        taux_tva:               parseFloat(form.taux_tva || "18"),
+        observations:           form.observations || null,
+      };
+      if (form.type === "fac_stt") payload.decompte_id      = parseInt(form.decompte_id, 10);
+      if (form.type === "fac_ava") { payload.contrat_id = parseInt(form.contrat_id, 10); payload.soustraitant_id = parseInt(form.soustraitant_id, 10); }
+      if (form.type === "fac_cse") payload.chantier_id      = parseInt(form.chantier_id, 10);
+      const res = await saveMut.mutateAsync(payload);
+      addToast("Facture créée.", "success");
+      setShowForm(false);
+      setForm(FORM_INIT);
+      if (res?.data?.id) navigate(`/factures/${res.data.id}`);
+    } catch (err) {
+      addToast(err.response?.data?.error ?? err.response?.data?.errors?.[0] ?? "Erreur.", "error");
+    }
+  }
+
+  const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Factures" subtitle="Avance de démarrage, factures CSE et sous-traitant, rapprochement" />
+      <PageHeader
+        title="Factures"
+        subtitle={isLoading ? "Chargement…" : `${meta.total ?? 0} facture${(meta.total ?? 0) !== 1 ? "s" : ""}`}
+        action={!showForm && (
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 bg-[#087F3E] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#065A2C] transition-colors"
+          >
+            <Plus size={15} /> Nouvelle facture
+          </button>
+        )}
+      />
 
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
+      {showForm && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-800">Nouvelle facture</h3>
+            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">Type *</label>
+              <select value={form.type} onChange={e => setForm(f => ({ ...FORM_INIT, type: e.target.value, date_facture: f.date_facture }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
+                <option value="fac_stt">Facture STT</option>
+                <option value="fac_cse">Facture CSE</option>
+                <option value="fac_ava">Avance</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">Date facture *</label>
+              <input type="date" value={form.date_facture} onChange={e => setForm(f => ({ ...f, date_facture: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+            </div>
+
+            {/* fac_stt → décompte */}
+            {form.type === "fac_stt" && (
+              <div className="col-span-2 space-y-1">
+                <label className="text-xs font-medium text-gray-500">Décompte lié *</label>
+                <select value={form.decompte_id} onChange={e => setForm(f => ({ ...f, decompte_id: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
+                  <option value="">— Sélectionner un décompte (payé / validé DG) —</option>
+                  {decompteOptions.map(d => (
+                    <option key={d.id} value={d.id}>{d.code} — {d.contrat?.soustraitant?.raison_sociale ?? "?"}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* fac_ava → contrat + sous-traitant */}
+            {form.type === "fac_ava" && (<>
+              <div className="col-span-2 space-y-1">
+                <label className="text-xs font-medium text-gray-500">Contrat *</label>
+                <select value={form.contrat_id} onChange={e => setForm(f => ({ ...f, contrat_id: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
+                  <option value="">— Sélectionner un contrat —</option>
+                  {contratOptions.map(c => (
+                    <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale ?? "?"}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="col-span-2 space-y-1">
+                <label className="text-xs font-medium text-gray-500">Sous-traitant bénéficiaire *</label>
+                <select value={form.soustraitant_id} onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
+                  <option value="">— Sélectionner un sous-traitant —</option>
+                  {sttOptions.map(s => (
+                    <option key={s.id} value={s.id}>{s.raison_sociale}</option>
+                  ))}
+                </select>
+              </div>
+            </>)}
+
+            {/* fac_cse → chantier */}
+            {form.type === "fac_cse" && (
+              <div className="col-span-2 space-y-1">
+                <label className="text-xs font-medium text-gray-500">Chantier *</label>
+                <select value={form.chantier_id} onChange={e => setForm(f => ({ ...f, chantier_id: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
+                  <option value="">— Sélectionner un chantier —</option>
+                  {chantierOptions.map(c => (
+                    <option key={c.id} value={c.id}>{c.designation}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="col-span-2 space-y-1">
+              <label className="text-xs font-medium text-gray-500">Objet *</label>
+              <input type="text" value={form.objet} onChange={e => setForm(f => ({ ...f, objet: e.target.value }))}
+                placeholder="Ex. Facture travaux période juillet 2026"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">Montant HT (FCFA) *</label>
+              <input type="number" min={0} value={form.montant_ht} onChange={e => setForm(f => ({ ...f, montant_ht: e.target.value }))}
+                placeholder="0"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">Taux TVA (%)</label>
+              <input type="number" min={0} max={100} value={form.taux_tva} onChange={e => setForm(f => ({ ...f, taux_tva: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">Date d'échéance</label>
+              <input type="date" value={form.date_echeance} onChange={e => setForm(f => ({ ...f, date_echeance: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-500">N° facture externe</label>
+              <input type="text" value={form.numero_facture_externe} onChange={e => setForm(f => ({ ...f, numero_facture_externe: e.target.value }))}
+                placeholder="Ex. F-2026-042"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={() => setShowForm(false)} className="px-3 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Annuler</button>
+            <button onClick={handleCreate} disabled={saveMut.isPending}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-[#087F3E] text-white rounded-lg hover:bg-[#065A2C] disabled:opacity-50">
+              {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : null}
+              Créer la facture
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[200px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              placeholder="Code, contrat, sous-traitant…"
+              placeholder="Rechercher par code facture…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
             />
           </div>
-          <select value={type} onChange={e => setType(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+          <select
+            value={type}
+            onChange={e => { setType(e.target.value); setPage(1); }}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30"
+          >
             <option value="">Tous les types</option>
             {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
-          <select value={statut} onChange={e => setStatut(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
-            <option value="">Tous les statuts</option>
-            {STATUTS.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select value={sttFilter} onChange={e => setSttFilter(e.target.value)}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
-            <option value="">Tous les sous-traitants</option>
-            {sousTraitants.map(s => <option key={s.id} value={s.id}>{s.raisonSociale}</option>)}
-          </select>
-          <button
-            onClick={() => setOnlyEcarts(v => !v)}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${onlyEcarts ? "bg-red-600 text-white border-red-600" : "border-red-200 text-red-600 hover:bg-red-50"}`}
+          <select
+            value={statut}
+            onChange={e => { setStatut(e.target.value); setPage(1); }}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30"
           >
-            <AlertTriangle size={14} />
-            Écarts à traiter{ecartsCount > 0 ? ` (${ecartsCount})` : ""}
-          </button>
+            <option value="">Tous les statuts</option>
+            {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
           {hasFilter && (
-            <button onClick={() => { setSearch(""); setType(""); setStatut(""); setSttFilter(""); setOnlyEcarts(false); }}
-              className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
+            <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
               <RotateCcw size={13} /> Réinitialiser
             </button>
           )}
+          <button
+            onClick={exportExcel}
+            className="ml-auto flex items-center gap-1.5 text-sm text-[#087F3E] border border-[#087F3E] px-3 py-2 rounded-lg hover:bg-[#E8F5EE] transition-colors"
+          >
+            <FileSpreadsheet size={14} /> Excel
+          </button>
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              {["Code", "Type", "Contrat", "Sous-traitant", "Montant TTC", "Statut", "Date"].map(h => (
-                <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${h === "Montant TTC" ? "text-right" : "text-left"}`}>{h}</th>
+      {isLoading ? (
+        <SkeletonTable rows={8} cols={8} />
+      ) : isError ? (
+        <div className="text-center py-16 text-red-500 text-sm bg-white rounded-xl border border-gray-200">
+          Impossible de charger les factures.
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+          <table className="w-full min-w-[800px]">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-gray-50 border-b border-gray-200">
+                {["Code", "Type", "Objet", "Sous-traitant / Chantier", "Montant HT", "TTC", "Date", "Statut"].map(h => (
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-16 text-center">
+                    <FileStack size={28} className="mx-auto mb-2 text-gray-300" />
+                    <p className="text-sm text-gray-400">Aucune facture ne correspond aux filtres.</p>
+                  </td>
+                </tr>
+              ) : rows.map(f => (
+                <tr
+                  key={f.id}
+                  onClick={() => navigate(`/factures/${f.id}`)}
+                  className="hover:bg-gray-50 even:bg-gray-50/40 group cursor-pointer transition-colors"
+                >
+                  <td className="px-4 py-3.5">
+                    <span className="font-mono text-sm font-semibold text-gray-900">{f.code}</span>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <TypeBadge type={f.type} />
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <p className="text-sm text-gray-700 truncate max-w-[160px]">{f.objet || "—"}</p>
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <p className="text-sm text-gray-700 truncate max-w-[140px]">
+                      {f.soustraitant?.raison_sociale || f.chantier?.designation || "—"}
+                    </p>
+                    {f.soustraitant && f.chantier && (
+                      <p className="text-xs text-gray-400 truncate max-w-[140px]">{f.chantier.designation}</p>
+                    )}
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <MoneyDisplay amount={f.montant_ht ?? 0} variant="small" />
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <MoneyDisplay amount={f.montant_ttc ?? 0} variant="small" className="font-semibold text-gray-800" />
+                  </td>
+                  <td className="px-4 py-3.5 text-sm text-gray-500 whitespace-nowrap">
+                    {fmtDate(f.date_facture)}
+                  </td>
+                  <td className="px-4 py-3.5">
+                    <StatusBadge statut={f.statut} />
+                  </td>
+                </tr>
               ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="py-16 text-center text-sm text-gray-400">
-                  <FileStack className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                  Aucune facture ne correspond aux filtres.
-                </td>
-              </tr>
-            ) : filtered.map(({ facture, contrat, stt }) => (
-              <tr key={facture.id} onClick={() => navigate(`/factures/${facture.id}`)} className={`hover:bg-gray-50 cursor-pointer transition-colors ${facture.statut === "Écart détecté" ? "bg-red-50/40" : ""}`}>
-                <td className="px-4 py-3 font-mono font-semibold text-gray-900">{facture.code}</td>
-                <td className="px-4 py-3 text-gray-600 capitalize">{TYPES.find(t => t.value === facture.type)?.label || facture.type}</td>
-                <td className="px-4 py-3 text-gray-700">{contrat?.code || "—"}</td>
-                <td className="px-4 py-3 text-gray-700">{stt?.raisonSociale || "—"}</td>
-                <td className="px-4 py-3 text-right"><MoneyDisplay amount={facture.montantTTC} variant="small" /></td>
-                <td className="px-4 py-3"><StatusBadge statut={facture.statut} /></td>
-                <td className="px-4 py-3 text-gray-500">{formatDate(facture.dateEmission)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </tbody>
+          </table>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
+              <p className="text-xs text-gray-500">
+                Page {meta.current_page} / {meta.last_page} — {meta.total} résultat{meta.total !== 1 ? "s" : ""}
+              </p>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                  className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30">
+                  <ChevronLeft size={16} />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                  <button key={n} onClick={() => setPage(n)}
+                    className={`w-7 h-7 text-xs rounded transition-colors ${n === page ? "bg-[#087F3E] text-white font-semibold" : "hover:bg-gray-200 text-gray-600"}`}>
+                    {n}
+                  </button>
+                ))}
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                  className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30">
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

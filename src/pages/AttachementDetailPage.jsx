@@ -5,7 +5,7 @@ import {
   X, Eye, AlertCircle, CheckCircle, Clock, Info, MessageCircle,
   RotateCcw, ChevronDown, ChevronUp, Edit3,
 } from "lucide-react";
-import { useAttachements } from "../context/AttachementsContext";
+import { useAttachements } from "../hooks/useAttachements";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 
@@ -15,7 +15,8 @@ const fmtDate = (s) => s ? new Date(s).toLocaleDateString("fr-FR", { day:"2-digi
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtPeriode = (d) => {
   if (!d) return "—";
-  return new Date(d + "T00:00").toLocaleDateString("fr-FR", { month:"long", year:"numeric" });
+  const dateOnly = String(d).slice(0, 10);
+  return new Date(dateOnly + "T00:00").toLocaleDateString("fr-FR", { month:"long", year:"numeric" });
 };
 const STATUT_COLORS = {
   "Validé":          "bg-green-100 text-green-700 border-green-200",
@@ -806,11 +807,11 @@ export default function AttachementDetailPage() {
     );
   }
 
-  const role = currentUser?.roleId;
-  const isCTEditable = role === "CT" && (att.statut === "Ouvert" || att.statut === "En cours");
-  const isDTView = role === "DT";
-  const isDTEditable = isDTView && (att.statut === "Soumis au DT" || att.statut === "En rapprochement");
-  const isDACCView = role === "DACC" && (att.statut === "Soumis au DACC" || att.statut === "Validé");
+  // Déterminer la vue selon le statut (indépendant du rôle pour la démo)
+  const isCTEditable = att.statut === "Ouvert" || att.statut === "En cours";
+  const isDTView     = att.statut === "Soumis au DT" || att.statut === "En rapprochement";
+  const isDTEditable = isDTView;
+  const isDACCView   = att.statut === "Soumis au DACC" || att.statut === "Validé";
   const statutColor = STATUT_COLORS[att.statut] || "bg-gray-100 text-gray-600 border-gray-200";
 
   return (
@@ -850,7 +851,7 @@ export default function AttachementDetailPage() {
           </div>
         </div>
       )}
-      {att.statut === "Soumis au DT" && role === "CT" && (
+      {att.statut === "Soumis au DT" && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4 flex items-start gap-3">
           <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
           <div>
@@ -859,7 +860,7 @@ export default function AttachementDetailPage() {
           </div>
         </div>
       )}
-      {att.statut === "Rejeté" && role === "DT" && (() => {
+      {att.statut === "Rejeté" && (() => {
         const motif = [...(att.discussion ?? [])].reverse().find(m => m.roleId === "DACC" && m.type === "action");
         return (
           <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 flex items-start gap-3">

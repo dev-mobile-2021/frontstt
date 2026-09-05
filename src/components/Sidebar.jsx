@@ -3,7 +3,6 @@ import {
   LayoutDashboard, FileText, Calculator, Users, Building2, BarChart3, Settings,
   ChevronLeft, ChevronRight, ReceiptText, FileStack, Package, Paperclip,
 } from "lucide-react";
-import { useAttachements } from "../context/AttachementsContext";
 import { useUser } from "../context/UserContext";
 
 const NAV_ITEMS = [
@@ -58,9 +57,8 @@ function NavItem({ to, icon: Icon, label, collapsed, pendingCount }) {
 }
 
 export default function Sidebar({ collapsed, onToggle }) {
-  const { getPendingCount } = useAttachements();
   const { currentUser } = useUser();
-  const attachPending = getPendingCount(currentUser?.roleId);
+  const attachPending = 0;
   return (
     <aside
       className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300 overflow-hidden`}

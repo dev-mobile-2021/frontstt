@@ -1,6 +1,34 @@
 import { Check } from "lucide-react";
 
 const CONFIGS = {
+  // ── API values (snake_case / lowercase) ──
+  "actif":        { cls: "bg-blue-50 text-blue-700",    label: "Actif",      icon: null },
+  "suspendu":     { cls: "bg-amber-50 text-amber-700",  label: "Suspendu",   icon: null },
+  "termine":      { cls: "bg-gray-100 text-gray-700",   label: "Terminé",    icon: null },
+  "cloture":      { cls: "bg-gray-100 text-gray-700",   label: "Clôturé",    icon: Check },
+  "annule":       { cls: "bg-red-50 text-red-700",      label: "Annulé",     icon: null },
+  "brouillon":    { cls: "bg-gray-100 text-gray-700",   label: "Brouillon",  icon: null },
+  "en_cours":     { cls: "bg-blue-50 text-blue-700",    label: "En cours",   icon: null },
+  "valide":       { cls: "bg-[#E8F5EE] text-[#065A2C]",label: "Validé",     icon: Check },
+  "rejete":       { cls: "bg-red-50 text-red-700",      label: "Rejeté",     icon: null },
+  "soumis":       { cls: "bg-yellow-50 text-yellow-800",label: "Soumis",     icon: null },
+  "valide_ct":    { cls: "bg-amber-50 text-amber-700",  label: "Validé CT",  icon: null },
+  "valide_cp":    { cls: "bg-amber-50 text-amber-700",  label: "Validé CP",  icon: null },
+  "valide_daf":   { cls: "bg-violet-50 text-violet-700",label: "Validé DAF", icon: null },
+  "valide_dg":    { cls: "bg-[#E8F5EE] text-[#065A2C]",label: "Validé DG",  icon: Check },
+  "paye":         { cls: "bg-[#E8F5EE] text-[#065A2C]",label: "Payé",       icon: Check },
+  "resilie":      { cls: "bg-red-50 text-red-700",      label: "Résilié",    icon: null },
+  "emise":        { cls: "bg-gray-100 text-gray-700",   label: "Émise",      icon: null },
+  "payee":        { cls: "bg-[#E8F5EE] text-[#065A2C]",label: "Payée",      icon: Check },
+  "annulee":      { cls: "bg-red-50 text-red-700",      label: "Annulée",    icon: null },
+  "solde":        { cls: "bg-gray-100 text-gray-700",   label: "Soldé",      icon: null },
+  "blackliste":   { cls: "bg-red-100 text-red-800",    label: "Blacklisté", icon: null },
+  "genere":       { cls: "bg-gray-100 text-gray-700",  label: "Généré",     icon: null },
+  "envoye":       { cls: "bg-amber-50 text-amber-700", label: "Envoyé",     icon: null },
+  "accepte":      { cls: "bg-[#E8F5EE] text-[#065A2C]", label: "Accepté",  icon: Check },
+  "conteste":     { cls: "bg-red-50 text-red-700",     label: "Contesté",   icon: null },
+
+  // ── Legacy display labels (kept for backward-compat) ──
   "Brouillon":            { cls: "bg-gray-100 text-gray-700", icon: null },
   "En validation":        { cls: "bg-yellow-50 text-yellow-800", icon: null },
   "Approuvé":             { cls: "bg-[#E8F5EE] text-[#065A2C]", icon: Check },
@@ -45,7 +73,7 @@ export default function StatusBadge({ statut }) {
   return (
     <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium ${config.cls}`}>
       {Icon && <Icon className="w-3 h-3" />}
-      {statut}
+      {config.label ?? statut}
     </span>
   );
 }

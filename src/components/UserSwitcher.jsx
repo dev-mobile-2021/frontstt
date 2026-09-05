@@ -1,15 +1,11 @@
 import { useState, useRef, useEffect } from "react";
-import { ChevronDown, User } from "lucide-react";
+import { ChevronDown, LogOut, User } from "lucide-react";
 import { useUser } from "../context/UserContext";
-
-const NIVEAU_LABELS = {
-  terrain: "Terrain",
-  administratif: "Administratif",
-  paiement: "Paiement",
-};
+import { useNavigate } from "react-router-dom";
 
 export default function UserSwitcher() {
-  const { currentUser, setCurrentUser, utilisateurs, roles } = useUser();
+  const { currentUser, logout } = useUser();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -21,13 +17,16 @@ export default function UserSwitcher() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  const getRoleLibelle = (roleId) => roles.find(r => r.id === roleId)?.libelle ?? roleId;
+  const initiales = currentUser?.login
+    ? currentUser.login.slice(0, 2).toUpperCase()
+    : "?";
 
-  const groupedByNiveau = ["terrain", "administratif", "paiement"].map(niveau => ({
-    niveau,
-    label: NIVEAU_LABELS[niveau],
-    users: utilisateurs.filter(u => roles.find(r => r.id === u.roleId)?.niveau === niveau),
-  })).filter(g => g.users.length > 0);
+  const role = currentUser?.role?.designation ?? currentUser?.role?.libelle ?? "—";
+
+  function handleLogout() {
+    logout();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <div className="relative" ref={ref}>
@@ -36,57 +35,40 @@ export default function UserSwitcher() {
         className="flex items-center gap-2 rounded-lg px-3 py-1.5 bg-white border border-gray-200 hover:border-[#087F3E] hover:bg-[#F0FAF4] transition-colors text-sm"
       >
         <span className="w-7 h-7 rounded-full bg-[#087F3E] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
-          {currentUser?.initiales}
+          {initiales}
         </span>
         <div className="text-left hidden sm:block">
-          <div className="text-gray-900 font-medium leading-tight text-xs">{currentUser?.nom}</div>
-          <div className="text-[#087F3E] text-[10px] font-semibold">{currentUser?.roleId}</div>
+          <div className="text-gray-900 font-medium leading-tight text-xs">
+            {currentUser?.nom ?? currentUser?.login ?? "Utilisateur"}
+          </div>
+          <div className="text-[#087F3E] text-[10px] font-semibold">{role}</div>
         </div>
         <ChevronDown size={14} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-          <div className="px-3 py-2 border-b border-gray-100 text-[10px] font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-            <User size={11} />
-            Changer de profil
-          </div>
-          {groupedByNiveau.map(({ niveau, label, users }) => (
-            <div key={niveau}>
-              <div className="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-gray-50">
-                {label}
+        <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <div className="flex items-center gap-2.5">
+              <span className="w-8 h-8 rounded-full bg-[#087F3E] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+                {initiales}
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">
+                  {currentUser?.nom ?? currentUser?.login}
+                </p>
+                <p className="text-xs text-gray-400">{currentUser?.email}</p>
+                <p className="text-[10px] text-[#087F3E] font-semibold mt-0.5">{role}</p>
               </div>
-              {users.map(u => {
-                const isActive = u.id === currentUser?.id;
-                return (
-                  <button
-                    key={u.id}
-                    onClick={() => { setCurrentUser(u.id); setOpen(false); }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-colors ${
-                      isActive
-                        ? "bg-[#F0FAF4] text-[#087F3E]"
-                        : "hover:bg-gray-50 text-gray-700"
-                    }`}
-                  >
-                    <span className={`w-7 h-7 rounded-full text-xs font-bold flex items-center justify-center flex-shrink-0 ${
-                      isActive ? "bg-[#087F3E] text-white" : "bg-gray-100 text-gray-600"
-                    }`}>
-                      {u.initiales}
-                    </span>
-                    <div>
-                      <div className="text-xs font-medium leading-tight">{u.nom}</div>
-                      <div className={`text-[10px] ${isActive ? "text-[#065A2C]" : "text-gray-400"}`}>
-                        {getRoleLibelle(u.roleId)}
-                      </div>
-                    </div>
-                    {isActive && (
-                      <span className="ml-auto text-[#087F3E] text-xs">✓</span>
-                    )}
-                  </button>
-                );
-              })}
             </div>
-          ))}
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 transition-colors"
+          >
+            <LogOut size={14} />
+            Se déconnecter
+          </button>
         </div>
       )}
     </div>
