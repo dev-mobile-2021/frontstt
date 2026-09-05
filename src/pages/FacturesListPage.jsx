@@ -138,126 +138,132 @@ export default function FacturesListPage() {
       <PageHeader
         title="Factures"
         subtitle={isLoading ? "Chargement…" : `${meta.total ?? 0} facture${(meta.total ?? 0) !== 1 ? "s" : ""}`}
-        action={!showForm && (
+        action={
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => { setForm(FORM_INIT); setShowForm(true); }}
             className="flex items-center gap-2 bg-[#087F3E] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#065A2C] transition-colors"
           >
             <Plus size={15} /> Nouvelle facture
           </button>
-        )}
+        }
       />
 
+      {/* ── Modal création ── */}
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-800">Nouvelle facture</h3>
-            <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600"><X size={16} /></button>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500">Type *</label>
-              <select value={form.type} onChange={e => setForm(f => ({ ...FORM_INIT, type: e.target.value, date_facture: f.date_facture }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
-                <option value="fac_stt">Facture STT</option>
-                <option value="fac_cse">Facture CSE</option>
-                <option value="fac_ava">Avance</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500">Date facture *</label>
-              <input type="date" value={form.date_facture} onChange={e => setForm(f => ({ ...f, date_facture: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
+              <h2 className="text-base font-bold text-gray-900">Nouvelle facture</h2>
+              <button onClick={() => setShowForm(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+                <X size={18} />
+              </button>
             </div>
 
-            {/* fac_stt → décompte */}
-            {form.type === "fac_stt" && (
-              <div className="col-span-2 space-y-1">
-                <label className="text-xs font-medium text-gray-500">Décompte lié *</label>
-                <select value={form.decompte_id} onChange={e => setForm(f => ({ ...f, decompte_id: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
-                  <option value="">— Sélectionner un décompte (payé / validé DG) —</option>
-                  {decompteOptions.map(d => (
-                    <option key={d.id} value={d.id}>{d.code} — {d.contrat?.soustraitant?.raison_sociale ?? "?"}</option>
-                  ))}
-                </select>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600">Type *</label>
+                  <select value={form.type} onChange={e => setForm(f => ({ ...FORM_INIT, type: e.target.value, date_facture: f.date_facture }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
+                    <option value="fac_stt">Facture STT</option>
+                    <option value="fac_cse">Facture CSE</option>
+                    <option value="fac_ava">Avance</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600">Date facture *</label>
+                  <input type="date" value={form.date_facture} onChange={e => setForm(f => ({ ...f, date_facture: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+                </div>
               </div>
-            )}
 
-            {/* fac_ava → contrat + sous-traitant */}
-            {form.type === "fac_ava" && (<>
-              <div className="col-span-2 space-y-1">
-                <label className="text-xs font-medium text-gray-500">Contrat *</label>
-                <select value={form.contrat_id} onChange={e => setForm(f => ({ ...f, contrat_id: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
-                  <option value="">— Sélectionner un contrat —</option>
-                  {contratOptions.map(c => (
-                    <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale ?? "?"}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="col-span-2 space-y-1">
-                <label className="text-xs font-medium text-gray-500">Sous-traitant bénéficiaire *</label>
-                <select value={form.soustraitant_id} onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
-                  <option value="">— Sélectionner un sous-traitant —</option>
-                  {sttOptions.map(s => (
-                    <option key={s.id} value={s.id}>{s.raison_sociale}</option>
-                  ))}
-                </select>
-              </div>
-            </>)}
+              {form.type === "fac_stt" && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600">Décompte lié *</label>
+                  <select value={form.decompte_id} onChange={e => setForm(f => ({ ...f, decompte_id: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
+                    <option value="">— Sélectionner un décompte —</option>
+                    {decompteOptions.map(d => (
+                      <option key={d.id} value={d.id}>{d.code} — {d.contrat?.soustraitant?.raison_sociale ?? "?"}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
-            {/* fac_cse → chantier */}
-            {form.type === "fac_cse" && (
-              <div className="col-span-2 space-y-1">
-                <label className="text-xs font-medium text-gray-500">Chantier *</label>
-                <select value={form.chantier_id} onChange={e => setForm(f => ({ ...f, chantier_id: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
-                  <option value="">— Sélectionner un chantier —</option>
-                  {chantierOptions.map(c => (
-                    <option key={c.id} value={c.id}>{c.designation}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+              {form.type === "fac_ava" && (<>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600">Contrat *</label>
+                  <select value={form.contrat_id} onChange={e => setForm(f => ({ ...f, contrat_id: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
+                    <option value="">— Sélectionner un contrat —</option>
+                    {contratOptions.map(c => (
+                      <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale ?? "?"}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600">Sous-traitant bénéficiaire *</label>
+                  <select value={form.soustraitant_id} onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
+                    <option value="">— Sélectionner un sous-traitant —</option>
+                    {sttOptions.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
+                  </select>
+                </div>
+              </>)}
 
-            <div className="col-span-2 space-y-1">
-              <label className="text-xs font-medium text-gray-500">Objet *</label>
-              <input type="text" value={form.objet} onChange={e => setForm(f => ({ ...f, objet: e.target.value }))}
-                placeholder="Ex. Facture travaux période juillet 2026"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+              {form.type === "fac_cse" && (
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600">Chantier *</label>
+                  <select value={form.chantier_id} onChange={e => setForm(f => ({ ...f, chantier_id: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
+                    <option value="">— Sélectionner un chantier —</option>
+                    {chantierOptions.map(c => <option key={c.id} value={c.id}>{c.designation}</option>)}
+                  </select>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600">Objet *</label>
+                <input type="text" value={form.objet} onChange={e => setForm(f => ({ ...f, objet: e.target.value }))}
+                  placeholder="Ex. Facture travaux période juillet 2026"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600">Montant HT (FCFA) *</label>
+                  <input type="number" min={0} value={form.montant_ht} onChange={e => setForm(f => ({ ...f, montant_ht: e.target.value }))}
+                    placeholder="0" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600">Taux TVA (%)</label>
+                  <input type="number" min={0} max={100} value={form.taux_tva} onChange={e => setForm(f => ({ ...f, taux_tva: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600">Date d'échéance</label>
+                  <input type="date" value={form.date_echeance} onChange={e => setForm(f => ({ ...f, date_echeance: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-600">N° facture externe</label>
+                  <input type="text" value={form.numero_facture_externe} onChange={e => setForm(f => ({ ...f, numero_facture_externe: e.target.value }))}
+                    placeholder="Ex. F-2026-042" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setShowForm(false)}
+                  className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                  Annuler
+                </button>
+                <button onClick={handleCreate} disabled={saveMut.isPending}
+                  className="flex-1 py-2.5 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60 flex items-center justify-center gap-2 transition-colors">
+                  {saveMut.isPending && <Loader2 size={13} className="animate-spin" />}
+                  Créer la facture
+                </button>
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500">Montant HT (FCFA) *</label>
-              <input type="number" min={0} value={form.montant_ht} onChange={e => setForm(f => ({ ...f, montant_ht: e.target.value }))}
-                placeholder="0"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500">Taux TVA (%)</label>
-              <input type="number" min={0} max={100} value={form.taux_tva} onChange={e => setForm(f => ({ ...f, taux_tva: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500">Date d'échéance</label>
-              <input type="date" value={form.date_echeance} onChange={e => setForm(f => ({ ...f, date_echeance: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500">N° facture externe</label>
-              <input type="text" value={form.numero_facture_externe} onChange={e => setForm(f => ({ ...f, numero_facture_externe: e.target.value }))}
-                placeholder="Ex. F-2026-042"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setShowForm(false)} className="px-3 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Annuler</button>
-            <button onClick={handleCreate} disabled={saveMut.isPending}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-[#087F3E] text-white rounded-lg hover:bg-[#065A2C] disabled:opacity-50">
-              {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : null}
-              Créer la facture
-            </button>
           </div>
         </div>
       )}
