@@ -592,8 +592,8 @@ export default function ContratFormPage() {
         objet:           contrat.objet           ?? "",
         type_contrat:    contrat.type_contrat     ?? "",
         montant_initial: contrat.montant_initial  ?? "",
-        date_debut:      contrat.date_debut       ?? "",
-        date_fin_prevue: contrat.date_fin_prevue  ?? "",
+        date_debut:      contrat.date_debut      ? contrat.date_debut.substring(0, 10)      : "",
+        date_fin_prevue: contrat.date_fin_prevue ? contrat.date_fin_prevue.substring(0, 10) : "",
         chantier_id:     contrat.chantier_id      ?? "",
         soustraitant_id: contrat.soustraitant_id  ?? "",
       });
