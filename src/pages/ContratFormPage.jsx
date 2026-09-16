@@ -305,84 +305,88 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
         </table>
       )}
 
-      {/* New avenant form */}
-      {showForm ? (
-        <div className="border border-[#087F3E]/30 bg-[#E8F5EE]/40 rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-semibold text-[#087F3E]">Nouvel avenant</p>
-            <button onClick={() => { setShowForm(false); setForm(AVENANT_INIT); }} className="text-gray-400 hover:text-gray-600">
-              <X size={15} />
-            </button>
+      {/* Button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowForm(true)}
+          className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors"
+        >
+          <Plus size={13} /> Nouvel avenant
+        </button>
+      </div>
+
+      {/* Modal overlay */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setShowForm(false); setForm(AVENANT_INIT); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-semibold text-gray-900">Nouvel avenant</h3>
+              <button onClick={() => { setShowForm(false); setForm(AVENANT_INIT); }} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 space-y-1.5">
+                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Objet *</label>
+                <input
+                  type="text"
+                  value={form.objet}
+                  onChange={e => setForm(f => ({ ...f, objet: e.target.value }))}
+                  placeholder="Objet de l'avenant…"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                  required
+                  autoFocus
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Montant (FCFA) *</label>
+                <input
+                  type="number"
+                  value={form.montant}
+                  onChange={e => setForm(f => ({ ...f, montant: e.target.value }))}
+                  placeholder="Ex: 5000000 ou -2000000"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                  required
+                />
+                <p className="text-xs text-gray-400">Négatif pour une diminution de montant.</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Date de signature</label>
+                <input
+                  type="date"
+                  value={form.date_signature}
+                  onChange={e => setForm(f => ({ ...f, date_signature: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                />
+              </div>
+              <div className="col-span-2 space-y-1.5">
+                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Observations</label>
+                <textarea
+                  value={form.observations}
+                  onChange={e => setForm(f => ({ ...f, observations: e.target.value }))}
+                  rows={2}
+                  placeholder="Observations éventuelles…"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none resize-none"
+                />
+              </div>
+              <div className="col-span-2 flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setShowForm(false); setForm(AVENANT_INIT); }}
+                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  disabled={saveMut.isPending}
+                  className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60"
+                >
+                  {saveMut.isPending ? <><Loader2 size={14} className="animate-spin" /> Création…</> : <><Plus size={14} /> Créer l'avenant</>}
+                </button>
+              </div>
+            </form>
           </div>
-          <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
-            <div className="col-span-2 space-y-1.5">
-              <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Objet *</label>
-              <input
-                type="text"
-                value={form.objet}
-                onChange={e => setForm(f => ({ ...f, objet: e.target.value }))}
-                placeholder="Objet de l'avenant…"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
-                required
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Montant (FCFA) *</label>
-              <input
-                type="number"
-                value={form.montant}
-                onChange={e => setForm(f => ({ ...f, montant: e.target.value }))}
-                placeholder="Ex: 5000000 ou -2000000"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
-                required
-              />
-              <p className="text-xs text-gray-400">Négatif pour une diminution de montant.</p>
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Date de signature</label>
-              <input
-                type="date"
-                value={form.date_signature}
-                onChange={e => setForm(f => ({ ...f, date_signature: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
-              />
-            </div>
-            <div className="col-span-2 space-y-1.5">
-              <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Observations</label>
-              <textarea
-                value={form.observations}
-                onChange={e => setForm(f => ({ ...f, observations: e.target.value }))}
-                rows={2}
-                placeholder="Observations éventuelles…"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none resize-none"
-              />
-            </div>
-            <div className="col-span-2 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => { setShowForm(false); setForm(AVENANT_INIT); }}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                disabled={saveMut.isPending}
-                className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60"
-              >
-                {saveMut.isPending ? <><Loader2 size={14} className="animate-spin" /> Création…</> : <><Plus size={14} /> Créer l'avenant</>}
-              </button>
-            </div>
-          </form>
-        </div>
-      ) : (
-        <div className="flex justify-end">
-          <button
-            onClick={() => setShowForm(true)}
-            className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors"
-          >
-            <Plus size={13} /> Nouvel avenant
-          </button>
         </div>
       )}
     </div>
