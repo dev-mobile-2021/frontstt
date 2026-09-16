@@ -119,10 +119,13 @@ function CircuitStepper({ etat, circuit, onStatut, lignes }) {
   const etapesSorted = [...circuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
 
   // Determine order of statuses from circuit
-  const statutOrder = ["brouillon", ...etapesSorted.map(e => e.statut_avant), "valide"];
+  // If no circuit configured, fall back to brouillon → soumis → valide
+  const rawOrder = etapesSorted.length > 0
+    ? ["brouillon", ...etapesSorted.map(e => e.statut_avant), "valide"]
+    : ["brouillon", "soumis", "valide"];
   // deduplicate while preserving order
   const seen = new Set();
-  const orderedStatuts = statutOrder.filter(s => { if (seen.has(s)) return false; seen.add(s); return true; });
+  const orderedStatuts = rawOrder.filter(s => { if (seen.has(s)) return false; seen.add(s); return true; });
   if (!orderedStatuts.includes("valide")) orderedStatuts.push("valide");
 
   const currentIdx = orderedStatuts.indexOf(statut);
@@ -146,8 +149,10 @@ function CircuitStepper({ etat, circuit, onStatut, lignes }) {
     };
   });
 
-  // Current etape (the transition FROM current statut)
-  const currentEtape = etapesSorted.find(e => e.statut_avant === statut);
+  // Current etape (the transition FROM current statut) — null if no circuit configured
+  const currentEtape = etapesSorted.find(e => e.statut_avant === statut) ?? null;
+  // Next statut when validating (fallback: soumis→valide)
+  const nextStatut = currentEtape?.statut_apres ?? "valide";
 
   async function handleSoumettre() {
     if (lignes.length === 0) {
@@ -157,7 +162,7 @@ function CircuitStepper({ etat, circuit, onStatut, lignes }) {
   }
 
   async function handleValider() {
-    await onStatut({ id: etat.id, statut: currentEtape?.statut_apres ?? "valide" });
+    await onStatut({ id: etat.id, statut: nextStatut });
   }
 
   async function handleRejeter() {
