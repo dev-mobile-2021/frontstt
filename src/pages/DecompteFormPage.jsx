@@ -1,58 +1,185 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
-import { ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle, CheckCircle2, XCircle, FileDown } from "lucide-react";
+import { ArrowLeft, ChevronRight, Save, Loader2, CheckCircle2, XCircle, FileDown, Circle, Clock } from "lucide-react";
+
 import { useDecompte, useSaveDecompte, useValiderDecompte, useRejeterDecompte, usePayerDecompte, useDecompteCircuit } from "../hooks/useDecomptes";
 import { useSaveReleve } from "../hooks/useReleves";
 import { useParametresPaginated } from "../hooks/useParametres";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { useToast } from "../context/ToastContext";
+import { useUser } from "../context/UserContext";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonCard } from "../components/Skeleton";
 
-// ─── Circuit stepper dynamique ───────────────────────────────────
-function CircuitStepper({ statut, circuit }) {
-  if (statut === "rejete") {
-    return (
-      <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
-        <XCircle size={16} /> Rejeté
-      </div>
-    );
-  }
+const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
 
-  // Construire les étapes d'affichage depuis le circuit DB
+// ─── Circuit stepper enrichi ──────────────────────────────────────
+function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre }) {
+  const [showRejet, setShowRejet] = useState(false);
+  const [motifRejet, setMotifRejet] = useState("");
+  const { currentUser } = useUser();
+
+  const statut      = decompte?.statut ?? "brouillon";
+  const validations = decompte?.validations ?? [];
+
+  const etapesSorted = [...circuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+  const lastStep     = etapesSorted[etapesSorted.length - 1];
+
+  // Build ordered steps list
   const steps = [
-    { statut: "brouillon", label: "Brouillon" },
-    ...(circuit.length > 0
-      ? [{ statut: circuit[0].statut_avant, label: "Soumis" }]
-      : [{ statut: "soumis", label: "Soumis" }]),
-    ...circuit.map(e => ({ statut: e.statut_apres, label: e.profil_code.toUpperCase() })),
-    { statut: "paye", label: "Payé" },
+    { statut: "brouillon", label: "Création",  profil: null },
+    ...(etapesSorted.length > 0
+      ? [{ statut: etapesSorted[0].statut_avant, label: "Soumis", profil: null }]
+      : [{ statut: "soumis", label: "Soumis", profil: null }]),
+    ...etapesSorted.map(e => ({
+      statut: e.statut_apres,
+      label:  e.profil_code.toUpperCase(),
+      profil: e.profil_code,
+      etape:  e,
+    })),
+    { statut: "paye", label: "Payé", profil: null },
   ];
 
-  const currentIdx = steps.findIndex(s => s.statut === statut);
+  const currentIdx     = steps.findIndex(s => s.statut === statut);
+  const isAfterLast    = !!(lastStep && statut === lastStep.statut_apres);
+  const currentEtape   = etapesSorted.find(e => e.statut_avant === statut);
+  const isTerminal     = statut === "paye" || statut === "rejete";
+
+  const userRole    = currentUser?.role?.designation?.toLowerCase() ?? "";
+  const isAdmin     = userRole === "admin";
+  const canValidate = isAdmin || !currentEtape || userRole === currentEtape.profil_code?.toLowerCase();
+
+  const findVal = (profil) => validations.find(v => v.profil_code === profil && v.action === "valide");
+  const soumisVal = validations.find(v => v.action === "soumis");
+
   return (
-    <div className="flex items-center gap-1 flex-wrap">
-      {steps.map((step, i) => {
-        const done    = i < currentIdx;
-        const current = i === currentIdx;
-        return (
-          <div key={step.statut} className="flex items-center gap-1">
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-              done    ? "bg-[#087F3E] text-white" :
-              current ? "bg-[#087F3E]/10 text-[#087F3E] border border-[#087F3E]" :
-                        "bg-gray-100 text-gray-400"
-            }`}>
-              {done && <CheckCircle2 size={11} />}
-              {step.label}
+    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Circuit de validation</p>
+
+      {statut === "rejete" ? (
+        <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
+          <XCircle size={16} /> Rejeté
+          {decompte?.motif_rejet && (
+            <span className="ml-2 text-xs font-normal text-red-700 bg-red-50 border border-red-200 rounded px-2 py-0.5">
+              {decompte.motif_rejet}
+            </span>
+          )}
+        </div>
+      ) : (
+        <div className="flex items-start gap-0">
+          {steps.map((step, idx) => {
+            const done    = idx < currentIdx;
+            const current = idx === currentIdx;
+            const val     = step.profil ? findVal(step.profil)
+                          : step.statut === "soumis" ? soumisVal
+                          : null;
+            return (
+              <div key={step.statut} className="flex-1 flex flex-col items-center">
+                <div className="flex items-center w-full">
+                  <div className={`flex-1 h-0.5 ${idx === 0 ? "opacity-0" : done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-colors
+                    ${done    ? "bg-[#087F3E] border-[#087F3E] text-white"
+                    : current ? "bg-white border-[#087F3E] text-[#087F3E]"
+                    :           "bg-white border-gray-200 text-gray-300"}`}>
+                    {done    ? <CheckCircle2 size={16} />
+                    : current ? <Clock size={14} />
+                    :           <Circle size={14} />}
+                  </div>
+                  <div className={`flex-1 h-0.5 ${idx === steps.length - 1 ? "opacity-0" : done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
+                </div>
+                <div className="mt-2 text-center px-1 w-full">
+                  <p className={`text-xs font-semibold ${done ? "text-[#087F3E]" : current ? "text-gray-900" : "text-gray-400"}`}>
+                    {step.label}
+                  </p>
+                  {val ? (
+                    <>
+                      <p className="text-[10px] text-[#087F3E] mt-0.5">{fmtDate(val.validated_at)}</p>
+                      {val.user && (
+                        <p className="text-[10px] text-gray-500 truncate">{val.user.prenom} {val.user.nom}</p>
+                      )}
+                    </>
+                  ) : current && step.profil ? (
+                    <p className="text-[10px] text-amber-500 mt-0.5">En attente</p>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Action zone */}
+      {!isTerminal && (
+        <div className="border-t border-gray-100 pt-4 space-y-3">
+          {statut === "brouillon" && (
+            <button onClick={onSoumettre}
+              className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors">
+              Soumettre au circuit
+            </button>
+          )}
+
+          {statut !== "brouillon" && !isAfterLast && (
+            <>
+              <p className="text-xs text-gray-500">
+                En attente de validation par{" "}
+                <strong className="text-gray-700">
+                  {currentEtape?.profil_code?.toUpperCase() ?? "un validateur"}
+                </strong>
+              </p>
+              {!canValidate && (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Vous n'avez pas le profil requis pour valider cette étape.
+                </p>
+              )}
+              {canValidate && !showRejet && (
+                <div className="flex gap-3">
+                  <button onClick={onValider}
+                    className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors">
+                    Valider — {currentEtape?.profil_code?.toUpperCase() ?? ""}
+                  </button>
+                  <button onClick={() => setShowRejet(true)}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors">
+                    Rejeter
+                  </button>
+                </div>
+              )}
+              {canValidate && showRejet && (
+                <div className="flex gap-2 flex-wrap">
+                  <input autoFocus placeholder="Motif du rejet (obligatoire)…" value={motifRejet}
+                    onChange={e => setMotifRejet(e.target.value)}
+                    className="flex-1 min-w-[240px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none" />
+                  <button onClick={() => { onRejeter(motifRejet); setShowRejet(false); setMotifRejet(""); }}
+                    disabled={!motifRejet.trim()}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+                    Confirmer le rejet
+                  </button>
+                  <button onClick={() => { setShowRejet(false); setMotifRejet(""); }}
+                    className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm border border-gray-200 rounded-lg">
+                    Annuler
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {isAfterLast && (
+            <div className="flex items-center gap-3">
+              <button onClick={onPayer}
+                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
+                Marquer comme payé
+              </button>
             </div>
-            {i < steps.length - 1 && (
-              <div className={`w-4 h-px ${i < currentIdx ? "bg-[#087F3E]" : "bg-gray-200"}`} />
-            )}
-          </div>
-        );
-      })}
+          )}
+        </div>
+      )}
+
+      {statut === "paye" && (
+        <div className="border-t border-gray-100 pt-4">
+          <p className="text-sm text-[#087F3E] font-medium">✓ Décompte payé</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -105,9 +232,6 @@ export default function DecompteFormPage() {
   const [params]   = useSearchParams();
   const isNew      = !id || id === "nouveau";
   const { addToast } = useToast();
-
-  const [showRejet, setShowRejet] = useState(false);
-  const [motifRejet, setMotifRejet] = useState("");
 
   const [form, setForm] = useState({
     etat_cession_id:         params.get("etat_cession_id") ?? "",
@@ -241,13 +365,19 @@ export default function DecompteFormPage() {
     }
   }
 
-  async function handleRejeter() {
-    if (!motifRejet.trim()) return;
+  async function handleRejeter(motif) {
     try {
-      await rejeterMut.mutateAsync({ id: parseInt(id, 10), motif: motifRejet });
+      await rejeterMut.mutateAsync({ id: parseInt(id, 10), motif });
       addToast("Décompte rejeté.", "success");
-      setShowRejet(false);
-      setMotifRejet("");
+    } catch (err) {
+      addToast(err.response?.data?.errors?.[0] ?? "Erreur.", "error");
+    }
+  }
+
+  async function handlePayer() {
+    try {
+      await payerMut.mutateAsync(parseInt(id, 10));
+      addToast("Décompte marqué comme payé.", "success");
     } catch (err) {
       addToast(err.response?.data?.errors?.[0] ?? "Erreur.", "error");
     }
@@ -268,20 +398,8 @@ export default function DecompteFormPage() {
     );
   }
 
-  // Étape courante du circuit → profil à afficher dans le bouton Valider
-  const lastCircuitStep  = circuit[circuit.length - 1];
-  const currentStep      = circuit.find(e => e.statut_avant === decompte?.statut);
-  const currentProfil    = currentStep?.profil_code?.toUpperCase() ?? "";
-  const isAfterLastStep  = !!(lastCircuitStep && decompte?.statut === lastCircuitStep.statut_apres);
-
-  const canEdit      = isNew || decompte?.statut === "brouillon";
-  const canSoumettre = !isNew && decompte?.statut === "brouillon";
-  const canValider   = !isNew && !["brouillon", "paye", "rejete"].includes(decompte?.statut) && !isAfterLastStep;
-  const canPayer     = !isNew && isAfterLastStep;
-  const canRejeter   = !isNew && !["brouillon", "paye", "rejete"].includes(decompte?.statut);
-
-  const d = decompte; // shortcut
-  const fmtDate = v => v ? new Date(v).toLocaleDateString("fr-FR") : "—";
+  const canEdit = isNew || decompte?.statut === "brouillon";
+  const d = decompte;
 
   // Contrôle date d'échéance : alerte si dans le passé
   const echeancePastWarning = form.date_echeance && form.date_echeance < new Date().toISOString().slice(0, 10);
@@ -317,56 +435,23 @@ export default function DecompteFormPage() {
         )}
       />
 
-      {/* Circuit stepper (view) */}
+      {/* Circuit stepper intégré */}
       {!isNew && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Circuit de validation</p>
-          <CircuitStepper statut={d.statut} circuit={circuit} />
-          {d.motif_rejet && (
-            <p className="mt-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              <strong>Motif de rejet :</strong> {d.motif_rejet}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Workflow actions (view) */}
-      {!isNew && (canSoumettre || canValider || canPayer || canRejeter || decompte?.statut === "paye") && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</p>
-          <div className="flex flex-wrap gap-3 items-end">
-            {canSoumettre && (
-              <button onClick={handleValider} disabled={validerMut.isPending}
-                className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-                Soumettre au circuit
-              </button>
-            )}
-            {canValider && (
-              <button onClick={handleValider} disabled={validerMut.isPending}
-                className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-                {validerMut.isPending ? <Loader2 size={14} className="animate-spin inline mr-1" /> : null}
-                Valider{currentProfil ? ` — ${currentProfil}` : ""}
-              </button>
-            )}
-            {canPayer && (
-              <button onClick={async () => {
-                try {
-                  await payerMut.mutateAsync(parseInt(id, 10));
-                  addToast("Décompte marqué comme payé.", "success");
-                } catch (err) {
-                  addToast(err.response?.data?.errors?.[0] ?? "Erreur.", "error");
-                }
-              }} disabled={payerMut.isPending}
-                className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-                {payerMut.isPending ? <Loader2 size={14} className="animate-spin inline mr-1" /> : null}
-                Marquer comme payé
-              </button>
-            )}
-            {!isNew && decompte?.statut === "paye" && (
+        <>
+          <CircuitStepper
+            decompte={d}
+            circuit={circuit}
+            onValider={handleValider}
+            onRejeter={handleRejeter}
+            onPayer={handlePayer}
+            onSoumettre={handleValider}
+          />
+          {d.statut === "paye" && (
+            <div className="flex">
               <button onClick={async () => {
                 try {
                   const res = await releveMut.mutateAsync({
-                    contrat_id: parseInt(decompte.contrat_id, 10),
+                    contrat_id:  parseInt(d.contrat_id, 10),
                     decompte_id: parseInt(id, 10),
                   });
                   addToast("Relevé de compte généré.", "success");
@@ -379,55 +464,9 @@ export default function DecompteFormPage() {
                 {releveMut.isPending ? <Loader2 size={14} className="animate-spin inline mr-1" /> : null}
                 Générer un relevé
               </button>
-            )}
-            {canRejeter && !showRejet && (
-              <button onClick={() => setShowRejet(true)}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors">
-                Rejeter
-              </button>
-            )}
-            {showRejet && (
-              <div className="flex gap-2 flex-1 min-w-[280px]">
-                <input autoFocus placeholder="Motif du rejet…" value={motifRejet}
-                  onChange={e => setMotifRejet(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none" />
-                <button onClick={handleRejeter} disabled={!motifRejet.trim() || rejeterMut.isPending}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
-                  Confirmer
-                </button>
-                <button onClick={() => { setShowRejet(false); setMotifRejet(""); }}
-                  className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm">
-                  Annuler
-                </button>
-              </div>
-            )}
-          </div>
-          {/* Historique de validation — dynamique depuis circuit */}
-          {!isNew && circuit.length > 0 && (
-            <div className="grid gap-3 pt-2 border-t border-gray-100 mt-2"
-              style={{ gridTemplateColumns: `repeat(${circuit.length}, 1fr)` }}>
-              {circuit.map(e => {
-                const v = d.validations?.find(v => v.profil_code === e.profil_code && v.action === 'valide');
-                return (
-                  <div key={e.profil_code} className={`text-xs rounded-lg px-3 py-2 ${v ? "bg-[#E8F5EE] text-[#065A2C]" : "bg-gray-50 text-gray-400"}`}>
-                    <p className="font-bold">{e.profil_code.toUpperCase()}</p>
-                    <p className="truncate text-[10px] opacity-70">{e.libelle}</p>
-                    {v ? (
-                      <>
-                        <p>{fmtDate(v.validated_at)}</p>
-                        {v.user && (
-                          <p className="text-[10px] truncate opacity-80">{v.user.prenom} {v.user.nom}</p>
-                        )}
-                      </>
-                    ) : (
-                      <p>En attente</p>
-                    )}
-                  </div>
-                );
-              })}
             </div>
           )}
-        </div>
+        </>
       )}
 
       <div className="grid grid-cols-3 gap-6">
