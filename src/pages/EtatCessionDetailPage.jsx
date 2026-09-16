@@ -230,11 +230,11 @@ function CircuitStepper({ etat, circuit, onStatut, lignes }) {
             </div>
           )}
 
-          {statut !== "brouillon" && currentEtape && (
+          {statut !== "brouillon" && (
             <div className="space-y-3">
               <p className="text-xs text-gray-500">
                 En attente de validation par <strong className="text-gray-700">
-                  {currentEtape.role?.designation ?? currentEtape.profil_code?.toUpperCase() ?? "—"}
+                  {currentEtape?.role?.designation ?? currentEtape?.profil_code?.toUpperCase() ?? "un validateur"}
                 </strong>
               </p>
               {!showRejet ? (
