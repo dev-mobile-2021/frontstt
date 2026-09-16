@@ -229,6 +229,28 @@ export default function FactureDetailPage() {
         </div>
       </div>
 
+      {/* Émettre — brouillon → emise */}
+      {f.statut === "brouillon" && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</p>
+          <button
+            onClick={async () => {
+              try {
+                await statutMut.mutateAsync({ id: parseInt(f.id, 10), statut: "emise" });
+                addToast("Facture émise.", "success");
+              } catch (err) {
+                addToast(err.response?.data?.errors?.[0] ?? err.response?.data?.error ?? "Erreur.", "error");
+              }
+            }}
+            disabled={statutMut.isPending}
+            className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+          >
+            {statutMut.isPending && <Loader2 size={14} className="animate-spin" />}
+            Émettre la facture
+          </button>
+        </div>
+      )}
+
       {/* Workflow actions — only for "emise" */}
       {f.statut === "emise" && (
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
