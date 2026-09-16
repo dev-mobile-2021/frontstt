@@ -26,7 +26,11 @@ const STATUTS = [
   { value: "cloture",   label: "Clôturé" },
 ];
 
-const TYPES = ["Forfait", "Bordereau de prix", "Régie", "Mixte"];
+const TYPES = [
+  { value: "forfait",       label: "Forfait" },
+  { value: "serie_de_prix", label: "Série de prix" },
+  { value: "regie",         label: "Régie" },
+];
 
 const AVENANT_STATUT_COLORS = {
   brouillon: "bg-gray-100 text-gray-500",
@@ -361,7 +365,7 @@ export default function ContratsListPage() {
                 <Field label="Type de contrat">
                   <select value={form.type_contrat} onChange={e => set("type_contrat", e.target.value)} className={INPUT}>
                     <option value="">— Type —</option>
-                    {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                   </select>
                 </Field>
                 <Field label="Montant initial HT (FCFA)" required>
