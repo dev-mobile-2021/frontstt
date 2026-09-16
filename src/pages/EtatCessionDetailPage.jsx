@@ -39,7 +39,7 @@ function AddLigneForm({ ecId, onClose }) {
         etat_cession_id: ecId,
         poste:           form.poste.trim()  || null,
         designation:     form.designation.trim(),
-        unite:           form.unite.trim()  || null,
+        unite:           form.unite.trim()  || "",
         quantite:        parseFloat(form.quantite),
         prix_unitaire:   parseFloat(form.prix_unitaire),
         ordre:           0,
