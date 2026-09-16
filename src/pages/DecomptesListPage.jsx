@@ -431,7 +431,13 @@ export default function DecomptesListPage() {
                 </select>
                 {errors.etat_cession_id && <p className="text-xs text-red-500 mt-1">{errors.etat_cession_id}</p>}
                 {form.contrat_id && etatsCession.length === 0 && (
-                  <p className="text-xs text-amber-600 mt-1">Aucun état de cession pour ce contrat. Créez-en un d'abord.</p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    Aucun état de cession pour ce contrat.{" "}
+                    <button type="button" onClick={() => { setShowModal(false); navigate("/etats-cession"); }}
+                      className="underline font-medium hover:text-amber-800">
+                      Créer un état de cession
+                    </button>
+                  </p>
                 )}
               </Field>
 
