@@ -7,6 +7,7 @@ import {
 } from "../hooks/useEtatsCession";
 import { useCircuitEtapes } from "../hooks/useCircuit";
 import { useToast } from "../context/ToastContext";
+import { useUser } from "../context/UserContext";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
@@ -113,6 +114,7 @@ function AddLigneForm({ ecId, onClose }) {
 function CircuitStepper({ etat, circuit, onStatut, lignes }) {
   const [showRejet, setShowRejet] = useState(false);
   const [motif, setMotif]         = useState("");
+  const { currentUser } = useUser();
   const statut = etat.statut;
 
   // Build steps list: [Création, ...circuit etapes, Validé final]
@@ -153,6 +155,11 @@ function CircuitStepper({ etat, circuit, onStatut, lignes }) {
   const currentEtape = etapesSorted.find(e => e.statut_avant === statut) ?? null;
   // Next statut when validating (fallback: soumis→valide)
   const nextStatut = currentEtape?.statut_apres ?? "valide";
+
+  // Can current user validate this step?
+  const userRole = currentUser?.role?.designation?.toLowerCase() ?? "";
+  const isAdmin  = userRole === "admin";
+  const canValidate = isAdmin || !currentEtape || userRole === currentEtape.profil_code?.toLowerCase();
 
   async function handleSoumettre() {
     if (lignes.length === 0) {
@@ -237,7 +244,12 @@ function CircuitStepper({ etat, circuit, onStatut, lignes }) {
                   {currentEtape?.role?.designation ?? currentEtape?.profil_code?.toUpperCase() ?? "un validateur"}
                 </strong>
               </p>
-              {!showRejet ? (
+              {!canValidate && (
+                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  Vous n'avez pas le profil requis pour valider cette étape.
+                </p>
+              )}
+              {canValidate && !showRejet ? (
                 <div className="flex gap-3">
                   <button onClick={handleValider}
                     className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors">
@@ -248,7 +260,7 @@ function CircuitStepper({ etat, circuit, onStatut, lignes }) {
                     Rejeter
                   </button>
                 </div>
-              ) : (
+              ) : canValidate && (
                 <div className="flex gap-2 flex-wrap">
                   <input autoFocus placeholder="Motif du rejet (obligatoire)…" value={motif}
                     onChange={e => setMotif(e.target.value)}
