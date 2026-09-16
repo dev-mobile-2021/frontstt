@@ -374,9 +374,13 @@ export default function EtatCessionDetailPage() {
               </button>
             )}
             <button
-              onClick={() => {
+              onClick={async () => {
                 const token = localStorage.getItem("stt_token");
-                window.open(`${import.meta.env.VITE_API_BASE}/api/pdf/etatcession/${id}?token=${token}`, "_blank");
+                const resp = await fetch(`${import.meta.env.VITE_API_BASE}/api/pdf/etatcession/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                window.open(url, "_blank");
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
               }}
               className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50"
             >

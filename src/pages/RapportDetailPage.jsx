@@ -649,8 +649,22 @@ export default function RapportDetailPage() {
     );
   }
 
-  function handleDownload() {
-    window.open(buildExcelUrl(config, filters), "_blank");
+  async function handleDownload() {
+    const url = buildExcelUrl(config, filters);
+    const token = localStorage.getItem("stt_token");
+    try {
+      const resp = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      if (!resp.ok) throw new Error("Erreur téléchargement");
+      const blob = await resp.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      const cd = resp.headers.get("content-disposition");
+      a.download = cd ? cd.split("filename=")[1]?.replace(/"/g, "") : `rapport-${rapportId}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch {
+      alert("Erreur lors du téléchargement.");
+    }
   }
 
   return (
