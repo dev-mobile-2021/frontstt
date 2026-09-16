@@ -52,6 +52,7 @@ export default function FactureDetailPage() {
 
   const [showPayDialog,   setShowPayDialog]   = useState(false);
   const [refPaiement,     setRefPaiement]     = useState("");
+  const [datePaiement,    setDatePaiement]    = useState(new Date().toISOString().slice(0, 10));
   const [showAnnulDialog, setShowAnnulDialog] = useState(false);
   const [motifAnnul,      setMotifAnnul]      = useState("");
 
@@ -78,14 +79,15 @@ export default function FactureDetailPage() {
 
   // ── Actions ───────────────────────────────────────────────────────
   async function handlePayer() {
-    if (!refPaiement.trim()) return;
+    if (!refPaiement.trim() || !datePaiement) return;
     try {
-      await statutMut.mutateAsync({ id: parseInt(f.id, 10), statut: "payee" });
+      await statutMut.mutateAsync({ id: parseInt(f.id, 10), statut: "payee", reference_paiement: refPaiement.trim(), date_paiement: datePaiement });
       addToast("Facture marquée comme payée.", "success");
       setShowPayDialog(false);
       setRefPaiement("");
+      setDatePaiement(new Date().toISOString().slice(0, 10));
     } catch (err) {
-      addToast(err.response?.data?.message ?? "Erreur lors du paiement.", "error");
+      addToast(err.response?.data?.errors?.[0] ?? err.response?.data?.message ?? "Erreur lors du paiement.", "error");
     }
   }
 
@@ -276,8 +278,17 @@ export default function FactureDetailPage() {
 
           {showPayDialog && (
             <div className="flex flex-wrap gap-2 items-end">
-              <div className="flex-1 min-w-[240px]">
-                <label className="text-xs font-medium text-gray-600 block mb-1">Référence de paiement</label>
+              <div className="min-w-[200px]">
+                <label className="text-xs font-medium text-gray-600 block mb-1">Date de paiement *</label>
+                <input
+                  type="date"
+                  value={datePaiement}
+                  onChange={e => setDatePaiement(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                />
+              </div>
+              <div className="flex-1 min-w-[200px]">
+                <label className="text-xs font-medium text-gray-600 block mb-1">Référence de paiement *</label>
                 <input
                   autoFocus
                   placeholder="Ex : VIR-2025-0042"
@@ -288,14 +299,14 @@ export default function FactureDetailPage() {
               </div>
               <button
                 onClick={handlePayer}
-                disabled={!refPaiement.trim() || statutMut.isPending}
+                disabled={!refPaiement.trim() || !datePaiement || statutMut.isPending}
                 className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors inline-flex items-center gap-2"
               >
                 {statutMut.isPending && <Loader2 size={14} className="animate-spin" />}
                 Confirmer
               </button>
               <button
-                onClick={() => { setShowPayDialog(false); setRefPaiement(""); }}
+                onClick={() => { setShowPayDialog(false); setRefPaiement(""); setDatePaiement(new Date().toISOString().slice(0, 10)); }}
                 className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm"
               >
                 Annuler

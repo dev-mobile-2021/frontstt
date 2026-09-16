@@ -64,8 +64,8 @@ export const factureService = {
     return data;
   },
 
-  async setStatut(id, statut) {
-    const { data } = await http.post("/facture/statut", { id, statut });
+  async setStatut(id, statut, extra = {}) {
+    const { data } = await http.post("/facture/statut", { id, statut, ...extra });
     return data;
   },
 

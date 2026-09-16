@@ -28,7 +28,7 @@ export function useSaveFacture() {
 export function useFactureStatut() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, statut }) => factureService.setStatut(id, statut),
+    mutationFn: ({ id, statut, ...extra }) => factureService.setStatut(id, statut, extra),
     onSuccess: (_data, { id }) => {
       qc.invalidateQueries({ queryKey: ["factures"] });
       qc.invalidateQueries({ queryKey: ["facture", String(id)] });
