@@ -230,7 +230,7 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
             {avenants.filter(a => a.statut === "valide").length} avenant(s) validé(s)
           </span>
           <span className="text-violet-900 font-bold">
-            Impact sur montant actuel : {formatMontantCourt(totalValide)} FCFA
+            Impact sur montant actuel : {formatMontantCourt(totalValide)}
           </span>
         </div>
       )}
