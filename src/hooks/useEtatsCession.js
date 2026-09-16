@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { etatCessionService } from "../services/etatCessionService";
 
-export function useEtatsCessionPaginated(filters = {}) {
+export function useEtatsCessionPaginated(filters = {}, options = {}) {
   return useQuery({
     queryKey: ["etats_cession", filters],
     queryFn: () => etatCessionService.list(filters),
     keepPreviousData: true,
+    ...options,
   });
 }
 

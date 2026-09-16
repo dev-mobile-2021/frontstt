@@ -110,7 +110,11 @@ export default function DecomptesListPage() {
   const { data: contratsData } = useContratsPaginated({ count: 100, statut: "actif" });
   const contrats = contratsData?.data ?? [];
 
-  const { data: ecData } = useEtatsCessionPaginated({ count: 100, contrat_id: form.contrat_id || undefined });
+  const contratIdInt = form.contrat_id ? parseInt(form.contrat_id) : undefined;
+  const { data: ecData } = useEtatsCessionPaginated(
+    { count: 100, contrat_id: contratIdInt },
+    { enabled: showModal && !!form.contrat_id, keepPreviousData: false }
+  );
   const etatsCession = ecData?.data ?? [];
 
   const statsKPIs = useMemo(() => {
@@ -150,11 +154,11 @@ export default function DecomptesListPage() {
   const totalReglementsNbr = reglements.reduce((s, r) => s + r.nbr, 0);
 
   useEffect(() => {
-    if (etatsCession.length > 0) {
+    if (showModal && form.contrat_id && etatsCession.length > 0) {
       const last = etatsCession[etatsCession.length - 1];
       setForm(f => ({ ...f, etat_cession_id: String(last.id) }));
     }
-  }, [etatsCession]);
+  }, [etatsCession, showModal, form.contrat_id]);
 
   function reset()    { setSearch(""); setStatut(""); setPage(1); }
   function set(k, v)  { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
