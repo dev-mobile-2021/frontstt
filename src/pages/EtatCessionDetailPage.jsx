@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, ChevronRight, FileDown, Pencil, Plus, Trash2, Loader2, X } from "lucide-react";
+import { ArrowLeft, ChevronRight, FileDown, Pencil, Plus, Trash2, Loader2, CheckCircle2, Circle, Clock } from "lucide-react";
 import {
   useEtatCession, useEtatCessionStatut,
   useSaveLigneEC, useDeleteLigneEC,
 } from "../hooks/useEtatsCession";
+import { useCircuitEtapes } from "../hooks/useCircuit";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
@@ -108,20 +109,55 @@ function AddLigneForm({ ecId, onClose }) {
   );
 }
 
-// ─── Workflow actions ─────────────────────────────────────────────
-function WorkflowActions({ etat, onStatut }) {
+// ─── Circuit Stepper ──────────────────────────────────────────────
+function CircuitStepper({ etat, circuit, onStatut, lignes }) {
   const [showRejet, setShowRejet] = useState(false);
-  const [motif, setMotif] = useState("");
+  const [motif, setMotif]         = useState("");
   const statut = etat.statut;
 
-  if (statut === "valide" || statut === "rejete") return null;
+  // Build steps list: [Création, ...circuit etapes, Validé final]
+  const etapesSorted = [...circuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+
+  // Determine order of statuses from circuit
+  const statutOrder = ["brouillon", ...etapesSorted.map(e => e.statut_avant), "valide"];
+  // deduplicate while preserving order
+  const seen = new Set();
+  const orderedStatuts = statutOrder.filter(s => { if (seen.has(s)) return false; seen.add(s); return true; });
+  if (!orderedStatuts.includes("valide")) orderedStatuts.push("valide");
+
+  const currentIdx = orderedStatuts.indexOf(statut);
+
+  const steps = orderedStatuts.map((s, idx) => {
+    const etape = etapesSorted.find(e => e.statut_avant === s);
+    return {
+      statut: s,
+      label: s === "brouillon" ? "Création"
+           : s === "valide"   ? "Validé"
+           : s === "soumis"   ? "Soumis"
+           : s === "rejete"   ? "Rejeté"
+           : etape?.libelle ?? s,
+      role:  etape?.role?.designation ?? etape?.profil_code ?? null,
+      isDone: statut === "rejete"
+        ? idx < currentIdx
+        : idx < orderedStatuts.indexOf(statut === "valide" ? "valide" : statut),
+      isCurrent: idx === currentIdx,
+      isPending: idx > currentIdx,
+      etape,
+    };
+  });
+
+  // Current etape (the transition FROM current statut)
+  const currentEtape = etapesSorted.find(e => e.statut_avant === statut);
 
   async function handleSoumettre() {
+    if (lignes.length === 0) {
+      return;
+    }
     await onStatut({ id: etat.id, statut: "soumis" });
   }
 
   async function handleValider() {
-    await onStatut({ id: etat.id, statut: "valide" });
+    await onStatut({ id: etat.id, statut: currentEtape?.statut_apres ?? "valide" });
   }
 
   async function handleRejeter() {
@@ -131,46 +167,114 @@ function WorkflowActions({ etat, onStatut }) {
     setMotif("");
   }
 
+  const isTerminal = statut === "valide" || statut === "rejete";
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</p>
-      <div className="flex flex-wrap gap-3 items-end">
-        {statut === "brouillon" && (
-          <button onClick={handleSoumettre}
-            className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors">
-            Soumettre
-          </button>
-        )}
-        {statut === "soumis" && (
-          <>
-            <button onClick={handleValider}
-              className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors">
-              Valider
-            </button>
-            {!showRejet && (
-              <button onClick={() => setShowRejet(true)}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors">
-                Rejeter
-              </button>
-            )}
-            {showRejet && (
-              <div className="flex gap-2 flex-1 min-w-[280px]">
-                <input autoFocus placeholder="Motif du rejet…" value={motif}
-                  onChange={e => setMotif(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none" />
-                <button onClick={handleRejeter} disabled={!motif.trim()}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
-                  Confirmer
-                </button>
-                <button onClick={() => { setShowRejet(false); setMotif(""); }}
-                  className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm">
-                  Annuler
-                </button>
+    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Circuit de validation</p>
+
+      {/* Step bar */}
+      <div className="flex items-start gap-0">
+        {steps.map((step, idx) => (
+          <div key={step.statut} className="flex-1 flex flex-col items-center">
+            <div className="flex items-center w-full">
+              {/* Left connector */}
+              <div className={`flex-1 h-0.5 ${idx === 0 ? "opacity-0" : step.isDone ? "bg-[#087F3E]" : "bg-gray-200"}`} />
+              {/* Icon */}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-colors
+                ${step.isDone    ? "bg-[#087F3E] border-[#087F3E] text-white"
+                : step.isCurrent && statut === "rejete" ? "bg-red-500 border-red-500 text-white"
+                : step.isCurrent ? "bg-white border-[#087F3E] text-[#087F3E]"
+                : "bg-white border-gray-200 text-gray-300"}`}>
+                {step.isDone
+                  ? <CheckCircle2 size={16} />
+                  : step.isCurrent && statut === "rejete"
+                  ? <span className="text-xs font-bold">✕</span>
+                  : step.isCurrent
+                  ? <Clock size={14} />
+                  : <Circle size={14} />}
               </div>
-            )}
-          </>
-        )}
+              {/* Right connector */}
+              <div className={`flex-1 h-0.5 ${idx === steps.length - 1 ? "opacity-0" : step.isDone ? "bg-[#087F3E]" : "bg-gray-200"}`} />
+            </div>
+            {/* Label + role */}
+            <div className="mt-2 text-center px-1">
+              <p className={`text-xs font-semibold ${step.isDone ? "text-[#087F3E]" : step.isCurrent ? "text-gray-900" : "text-gray-400"}`}>
+                {step.label}
+              </p>
+              {step.role && (
+                <p className="text-[10px] text-gray-400 mt-0.5">{step.role}</p>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
+
+      {/* Action zone */}
+      {!isTerminal && (
+        <div className="border-t border-gray-100 pt-4">
+          {statut === "brouillon" && (
+            <div className="flex items-center gap-3">
+              <button onClick={handleSoumettre} disabled={lignes.length === 0}
+                className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                Soumettre pour validation
+              </button>
+              {lignes.length === 0 && (
+                <p className="text-xs text-amber-600">Ajoutez au moins une ligne avant de soumettre.</p>
+              )}
+            </div>
+          )}
+
+          {statut !== "brouillon" && currentEtape && (
+            <div className="space-y-3">
+              <p className="text-xs text-gray-500">
+                En attente de validation par <strong className="text-gray-700">
+                  {currentEtape.role?.designation ?? currentEtape.profil_code?.toUpperCase() ?? "—"}
+                </strong>
+              </p>
+              {!showRejet ? (
+                <div className="flex gap-3">
+                  <button onClick={handleValider}
+                    className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors">
+                    Valider
+                  </button>
+                  <button onClick={() => setShowRejet(true)}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors">
+                    Rejeter
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2 flex-wrap">
+                  <input autoFocus placeholder="Motif du rejet (obligatoire)…" value={motif}
+                    onChange={e => setMotif(e.target.value)}
+                    className="flex-1 min-w-[240px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none" />
+                  <button onClick={handleRejeter} disabled={!motif.trim()}
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+                    Confirmer le rejet
+                  </button>
+                  <button onClick={() => { setShowRejet(false); setMotif(""); }}
+                    className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm border border-gray-200 rounded-lg">
+                    Annuler
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {statut === "valide" && (
+        <div className="border-t border-gray-100 pt-4">
+          <p className="text-sm text-[#087F3E] font-medium">✓ État de cession validé</p>
+        </div>
+      )}
+
+      {statut === "rejete" && etat.motif_rejet && (
+        <div className="border-t border-gray-100 pt-4">
+          <p className="text-xs text-gray-500 mb-1">Motif de rejet</p>
+          <p className="text-sm text-red-600">{etat.motif_rejet}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -185,6 +289,9 @@ export default function EtatCessionDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(null);
 
   const { data: etat, isLoading, isError } = useEtatCession(id);
+  const { data: circuitData = [] }         = useCircuitEtapes({ module: "etat_cession", count: 50 });
+  const circuit = circuitData?.data ?? (Array.isArray(circuitData) ? circuitData : []);
+
   const statutMut    = useEtatCessionStatut();
   const deleteLigneMut = useDeleteLigneEC();
 
@@ -207,10 +314,6 @@ export default function EtatCessionDetailPage() {
   const canEdit  = etat.statut === "brouillon";
 
   async function handleStatut({ id: ecId, statut, motif }) {
-    if (statut === "soumis" && lignes.length === 0) {
-      addToast("Impossible de soumettre : ajoutez au moins une ligne de cession.", "error");
-      return;
-    }
     try {
       await statutMut.mutateAsync({ id: ecId, statut, motif });
       addToast("Statut mis à jour.", "success");
@@ -266,13 +369,6 @@ export default function EtatCessionDetailPage() {
         }
       />
 
-      {/* Motif rejet */}
-      {etat.statut === "rejete" && etat.motif_rejet && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-          <strong>Motif de rejet :</strong> {etat.motif_rejet}
-        </div>
-      )}
-
       {/* KPI band */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-gray-200 rounded-xl px-5 py-4">
@@ -295,8 +391,8 @@ export default function EtatCessionDetailPage() {
         )}
       </div>
 
-      {/* Workflow actions */}
-      <WorkflowActions etat={etat} onStatut={handleStatut} />
+      {/* Circuit stepper */}
+      <CircuitStepper etat={etat} circuit={circuit} onStatut={handleStatut} lignes={lignes} />
 
       {/* Contrat link */}
       {contrat && (
