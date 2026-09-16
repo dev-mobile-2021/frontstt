@@ -255,99 +255,104 @@ function TabCircuit() {
         </table>
       </div>
 
-      {/* Inline form */}
+      {/* Modal étape */}
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-700">{editId ? "Modifier l'étape" : "Nouvelle étape"}</h3>
-            <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
-              Module : {MODULES.find(m => m.value === selectedModule)?.label}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Libellé</label>
-              <input
-                value={form.libelle}
-                onChange={e => setForm(f => ({ ...f, libelle: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-                placeholder="Ex. Validation CT"
-              />
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
+              <h2 className="text-base font-bold text-gray-900">{editId ? "Modifier l'étape" : "Nouvelle étape"}</h2>
+              <button onClick={cancelForm} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Profil code</label>
-              <input
-                value={form.profil_code}
-                onChange={e => setForm(f => ({ ...f, profil_code: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-                placeholder="Ex. ct"
-              />
+            <div className="p-6 space-y-4">
+              <span className="inline-block text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
+                Module : {MODULES.find(m => m.value === selectedModule)?.label}
+              </span>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Libellé</label>
+                  <input
+                    value={form.libelle}
+                    onChange={e => setForm(f => ({ ...f, libelle: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    placeholder="Ex. Validation CT"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Profil code</label>
+                  <input
+                    value={form.profil_code}
+                    onChange={e => setForm(f => ({ ...f, profil_code: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    placeholder="Ex. ct"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Statut avant</label>
+                  <select
+                    value={form.statut_avant}
+                    onChange={e => setForm(f => ({ ...f, statut_avant: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                  >
+                    <option value="">— Choisir —</option>
+                    {(MODULE_STATUTS[selectedModule] ?? []).map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Statut après</label>
+                  <select
+                    value={form.statut_apres}
+                    onChange={e => setForm(f => ({ ...f, statut_apres: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                  >
+                    <option value="">— Choisir —</option>
+                    {(MODULE_STATUTS[selectedModule] ?? []).map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Rôle lié</label>
+                  <select
+                    value={form.role_id}
+                    onChange={e => setForm(f => ({ ...f, role_id: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                  >
+                    <option value="">— Aucun —</option>
+                    {roles.map(r => (
+                      <option key={r.id} value={r.id}>{r.designation}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 self-end pb-2">
+                  <input
+                    type="checkbox"
+                    id="circuit-actif"
+                    checked={form.actif}
+                    onChange={e => setForm(f => ({ ...f, actif: e.target.checked }))}
+                    className="w-4 h-4 accent-[#087F3E]"
+                  />
+                  <label htmlFor="circuit-actif" className="text-sm text-gray-700">Actif</label>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saveMut.isPending || !form.libelle || !form.profil_code}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+                >
+                  {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  Enregistrer
+                </button>
+                <button
+                  onClick={cancelForm}
+                  className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50"
+                >
+                  Annuler
+                </button>
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Statut avant</label>
-              <select
-                value={form.statut_avant}
-                onChange={e => setForm(f => ({ ...f, statut_avant: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-              >
-                <option value="">— Choisir —</option>
-                {(MODULE_STATUTS[selectedModule] ?? []).map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Statut après</label>
-              <select
-                value={form.statut_apres}
-                onChange={e => setForm(f => ({ ...f, statut_apres: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-              >
-                <option value="">— Choisir —</option>
-                {(MODULE_STATUTS[selectedModule] ?? []).map(s => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Rôle lié</label>
-              <select
-                value={form.role_id}
-                onChange={e => setForm(f => ({ ...f, role_id: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-              >
-                <option value="">— Aucun —</option>
-                {roles.map(r => (
-                  <option key={r.id} value={r.id}>{r.designation}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center gap-2 self-end pb-2">
-              <input
-                type="checkbox"
-                id="circuit-actif"
-                checked={form.actif}
-                onChange={e => setForm(f => ({ ...f, actif: e.target.checked }))}
-                className="w-4 h-4 accent-[#087F3E]"
-              />
-              <label htmlFor="circuit-actif" className="text-sm text-gray-700">Actif</label>
-            </div>
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={handleSave}
-              disabled={saveMut.isPending || !form.libelle || !form.profil_code}
-              className="flex items-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-            >
-              {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              Enregistrer
-            </button>
-            <button
-              onClick={cancelForm}
-              className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50"
-            >
-              <X size={14} /> Annuler
-            </button>
           </div>
         </div>
       )}
@@ -363,7 +368,6 @@ function TabParametres() {
 
   const parametres = data?.data ?? [];
 
-  // local edited values: { [cle]: editedValue }
   const [edited, setEdited] = useState({});
 
   useEffect(() => {
@@ -372,7 +376,6 @@ function TabParametres() {
     setEdited(init);
   }, [data]);
 
-  // Group by groupe
   const groupes = {};
   parametres.forEach(p => {
     const g = p.groupe ?? "Général";
@@ -500,6 +503,10 @@ function TabUtilisateurs() {
   function cancelForm() { setShowForm(false); setEditUser(null); }
 
   async function handleSave() {
+    if (!editUser && !form.password) {
+      addToast("Le mot de passe est requis pour un nouvel utilisateur.", "error");
+      return;
+    }
     try {
       const payload = { ...form, role_id: form.role_id ? Number(form.role_id) : null };
       if (editUser) payload.id = editUser.id;
@@ -579,51 +586,59 @@ function TabUtilisateurs() {
         </table>
       </div>
 
+      {/* Modal utilisateur */}
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-gray-700">{editUser ? "Modifier l'utilisateur" : "Nouvel utilisateur"}</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { key: "login", label: "Login" },
-              { key: "nom", label: "Nom" },
-              { key: "prenom", label: "Prénom" },
-              { key: "email", label: "Email", type: "email" },
-              { key: "password", label: editUser ? "Nouveau mot de passe (laisser vide)" : "Mot de passe", type: "password" },
-            ].map(({ key, label, type = "text" }) => (
-              <div key={key}>
-                <label className="text-xs font-medium text-gray-500 block mb-1">{label}</label>
-                <input
-                  type={type}
-                  value={form[key]}
-                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-                />
-              </div>
-            ))}
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Rôle</label>
-              <select
-                value={form.role_id}
-                onChange={e => setForm(f => ({ ...f, role_id: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-              >
-                <option value="">— Choisir un rôle —</option>
-                {roles.map(r => <option key={r.id} value={r.id}>{r.designation}</option>)}
-              </select>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
+              <h2 className="text-base font-bold text-gray-900">{editUser ? "Modifier l'utilisateur" : "Nouvel utilisateur"}</h2>
+              <button onClick={cancelForm} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={handleSave}
-              disabled={saveMut.isPending || !form.login || !form.nom}
-              className="flex items-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-            >
-              {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              Enregistrer
-            </button>
-            <button onClick={cancelForm} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
-              <X size={14} /> Annuler
-            </button>
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { key: "login", label: "Login *" },
+                  { key: "nom", label: "Nom *" },
+                  { key: "prenom", label: "Prénom" },
+                  { key: "email", label: "Email", type: "email" },
+                  { key: "password", label: editUser ? "Nouveau mot de passe (laisser vide)" : "Mot de passe *", type: "password" },
+                ].map(({ key, label, type = "text" }) => (
+                  <div key={key}>
+                    <label className="text-xs font-medium text-gray-500 block mb-1">{label}</label>
+                    <input
+                      type={type}
+                      value={form[key]}
+                      onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    />
+                  </div>
+                ))}
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Rôle</label>
+                  <select
+                    value={form.role_id}
+                    onChange={e => setForm(f => ({ ...f, role_id: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                  >
+                    <option value="">— Choisir un rôle —</option>
+                    {roles.map(r => <option key={r.id} value={r.id}>{r.designation}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saveMut.isPending || !form.login || !form.nom}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+                >
+                  {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  Enregistrer
+                </button>
+                <button onClick={cancelForm} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+                  Annuler
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -720,41 +735,49 @@ function TabRoles() {
         </table>
       </div>
 
+      {/* Modal rôle */}
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-gray-700">{editRole ? "Modifier le rôle" : "Nouveau rôle"}</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Désignation</label>
-              <input
-                value={form.designation}
-                onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-                placeholder="Ex. Directeur Général"
-              />
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
+              <h2 className="text-base font-bold text-gray-900">{editRole ? "Modifier le rôle" : "Nouveau rôle"}</h2>
+              <button onClick={cancelForm} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Description</label>
-              <input
-                value={form.description}
-                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-                placeholder="Description du rôle"
-              />
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Désignation *</label>
+                  <input
+                    value={form.designation}
+                    onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    placeholder="Ex. Directeur Général"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Description</label>
+                  <input
+                    value={form.description}
+                    onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    placeholder="Description du rôle"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saveMut.isPending || !form.designation}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+                >
+                  {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  Enregistrer
+                </button>
+                <button onClick={cancelForm} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+                  Annuler
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={handleSave}
-              disabled={saveMut.isPending || !form.designation}
-              className="flex items-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-            >
-              {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              Enregistrer
-            </button>
-            <button onClick={cancelForm} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
-              <X size={14} /> Annuler
-            </button>
           </div>
         </div>
       )}
@@ -911,73 +934,81 @@ function TabBaremes() {
         </table>
       </div>
 
+      {/* Modal barème */}
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-          <h3 className="text-sm font-semibold text-gray-700">{editBareme ? "Modifier le barème" : "Nouveau barème"}</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Type</label>
-              <select
-                value={form.type}
-                onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-              >
-                <option value="rh">RH</option>
-                <option value="mtx">MTX</option>
-                <option value="mtl">MTL</option>
-              </select>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
+              <h2 className="text-base font-bold text-gray-900">{editBareme ? "Modifier le barème" : "Nouveau barème"}</h2>
+              <button onClick={cancelForm} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Catégorie</label>
-              <input
-                value={form.categorie}
-                onChange={e => setForm(f => ({ ...f, categorie: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-                placeholder="Ex. Sable et agrégats"
-              />
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Type</label>
+                  <select
+                    value={form.type}
+                    onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                  >
+                    <option value="rh">RH</option>
+                    <option value="mtx">MTX</option>
+                    <option value="mtl">MTL</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Catégorie</label>
+                  <input
+                    value={form.categorie}
+                    onChange={e => setForm(f => ({ ...f, categorie: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    placeholder="Ex. Sable et agrégats"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Désignation *</label>
+                  <input
+                    value={form.designation}
+                    onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    placeholder="Ex. Gravier 15/25"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Unité</label>
+                  <input
+                    value={form.unite}
+                    onChange={e => setForm(f => ({ ...f, unite: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    placeholder="Ex. m³"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 block mb-1">Prix unitaire (FCFA)</label>
+                  <input
+                    type="number"
+                    value={form.prix_unitaire}
+                    onChange={e => setForm(f => ({ ...f, prix_unitaire: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    placeholder="0"
+                    min={0}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleSave}
+                  disabled={saveMut.isPending || !form.designation}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+                >
+                  {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  Enregistrer
+                </button>
+                <button onClick={cancelForm} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+                  Annuler
+                </button>
+              </div>
             </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Désignation</label>
-              <input
-                value={form.designation}
-                onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-                placeholder="Ex. Gravier 15/25"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Unité</label>
-              <input
-                value={form.unite}
-                onChange={e => setForm(f => ({ ...f, unite: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-                placeholder="Ex. m³"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-500 block mb-1">Prix unitaire (FCFA)</label>
-              <input
-                type="number"
-                value={form.prix_unitaire}
-                onChange={e => setForm(f => ({ ...f, prix_unitaire: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-                placeholder="0"
-                min={0}
-              />
-            </div>
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={handleSave}
-              disabled={saveMut.isPending || !form.designation}
-              className="flex items-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
-            >
-              {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-              Enregistrer
-            </button>
-            <button onClick={cancelForm} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
-              <X size={14} /> Annuler
-            </button>
           </div>
         </div>
       )}
