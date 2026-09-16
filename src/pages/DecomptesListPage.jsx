@@ -9,6 +9,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
 import { useDecomptesPaginated, useDecompteCircuit, useSaveDecompte } from "../hooks/useDecomptes";
 import { useContratsPaginated } from "../hooks/useContrats";
+import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
@@ -30,7 +31,7 @@ const STATUTS = [
 const STATUTS_INSTANCE = ["soumis", "valide_dacc", "valide_dex", "valide_dga", "valide_dg", "valide_ct", "valide_cp", "valide_daf"];
 
 const INIT = {
-  contrat_id: "", montant_brut: "",
+  contrat_id: "", etat_cession_id: "", montant_brut: "",
   taux_retenue_garantie: "5", taux_tva: "18",
   date_echeance: "", observations: "",
 };
@@ -109,6 +110,9 @@ export default function DecomptesListPage() {
   const { data: contratsData } = useContratsPaginated({ count: 100, statut: "actif" });
   const contrats = contratsData?.data ?? [];
 
+  const { data: ecData } = useEtatsCessionPaginated({ count: 100, contrat_id: form.contrat_id || undefined });
+  const etatsCession = ecData?.data ?? [];
+
   const statsKPIs = useMemo(() => {
     const uniqueContratIds = [...new Set(allDecomptes.map(d => d.contrat_id).filter(Boolean))];
     const uniqueContrats   = allDecomptes
@@ -158,25 +162,28 @@ export default function DecomptesListPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     const errs = {};
-    if (!form.contrat_id)   errs.contrat_id   = "Requis";
-    if (!form.montant_brut) errs.montant_brut = "Requis";
+    if (!form.contrat_id)      errs.contrat_id      = "Requis";
+    if (!form.etat_cession_id) errs.etat_cession_id = "Requis";
+    if (!form.montant_brut)    errs.montant_brut    = "Requis";
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
     try {
       const created = await saveMut.mutateAsync({
         contrat_id:            parseInt(form.contrat_id),
+        etat_cession_id:       parseInt(form.etat_cession_id),
         montant_brut:          parseFloat(form.montant_brut),
         taux_retenue_garantie: parseFloat(form.taux_retenue_garantie || 5),
         taux_tva:              parseFloat(form.taux_tva || 18),
-        date_echeance:         form.date_echeance  || null,
-        observations:          form.observations   || null,
+        date_echeance:         form.date_echeance || null,
+        observations:          form.observations  || null,
         statut: "brouillon",
       });
       addToast("Décompte créé.", "success");
       setShowModal(false);
       if (created?.data?.id) navigate(`/decomptes/${created.data.id}`);
-    } catch {
-      addToast("Erreur lors de la création.", "error");
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.response?.data?.errors?.[0] || "Erreur lors de la création.";
+      addToast(msg, "error");
     }
   }
 
@@ -399,7 +406,7 @@ export default function DecomptesListPage() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <Field label="Contrat" required>
-                <select value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)}
+                <select value={form.contrat_id} onChange={e => { set("contrat_id", e.target.value); set("etat_cession_id", ""); }}
                   className={`${INPUT} ${errors.contrat_id ? "border-red-400" : ""}`}>
                   <option value="">— Sélectionner un contrat —</option>
                   {contrats.map(c => (
@@ -409,6 +416,23 @@ export default function DecomptesListPage() {
                   ))}
                 </select>
                 {errors.contrat_id && <p className="text-xs text-red-500 mt-1">{errors.contrat_id}</p>}
+              </Field>
+
+              <Field label="État de cession" required>
+                <select value={form.etat_cession_id} onChange={e => set("etat_cession_id", e.target.value)}
+                  className={`${INPUT} ${errors.etat_cession_id ? "border-red-400" : ""}`}
+                  disabled={!form.contrat_id}>
+                  <option value="">— Sélectionner un état de cession —</option>
+                  {etatsCession.map(ec => (
+                    <option key={ec.id} value={ec.id}>
+                      {ec.code ?? `EC-${ec.id}`} — {ec.periode_debut ?? ""} → {ec.periode_fin ?? ""}
+                    </option>
+                  ))}
+                </select>
+                {errors.etat_cession_id && <p className="text-xs text-red-500 mt-1">{errors.etat_cession_id}</p>}
+                {form.contrat_id && etatsCession.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">Aucun état de cession pour ce contrat. Créez-en un d'abord.</p>
+                )}
               </Field>
 
               <Field label="Montant brut HT (FCFA)" required>
