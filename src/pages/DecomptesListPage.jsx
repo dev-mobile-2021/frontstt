@@ -149,6 +149,13 @@ export default function DecomptesListPage() {
   const totalReglements    = reglements.reduce((s, r) => s + r.montant, 0);
   const totalReglementsNbr = reglements.reduce((s, r) => s + r.nbr, 0);
 
+  useEffect(() => {
+    if (etatsCession.length > 0) {
+      const last = etatsCession[etatsCession.length - 1];
+      setForm(f => ({ ...f, etat_cession_id: String(last.id) }));
+    }
+  }, [etatsCession]);
+
   function reset()    { setSearch(""); setStatut(""); setPage(1); }
   function set(k, v)  { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
   function openModal(){ setForm(INIT); setErrors({}); setShowModal(true); }
@@ -418,28 +425,29 @@ export default function DecomptesListPage() {
                 {errors.contrat_id && <p className="text-xs text-red-500 mt-1">{errors.contrat_id}</p>}
               </Field>
 
-              <Field label="État de cession" required>
-                <select value={form.etat_cession_id} onChange={e => set("etat_cession_id", e.target.value)}
-                  className={`${INPUT} ${errors.etat_cession_id ? "border-red-400" : ""}`}
-                  disabled={!form.contrat_id}>
-                  <option value="">— Sélectionner un état de cession —</option>
-                  {etatsCession.map(ec => (
-                    <option key={ec.id} value={ec.id}>
-                      {ec.code ?? `EC-${ec.id}`} — {ec.periode_debut ?? ""} → {ec.periode_fin ?? ""}
-                    </option>
-                  ))}
-                </select>
-                {errors.etat_cession_id && <p className="text-xs text-red-500 mt-1">{errors.etat_cession_id}</p>}
-                {form.contrat_id && etatsCession.length === 0 && (
-                  <p className="text-xs text-amber-600 mt-1">
-                    Aucun état de cession pour ce contrat.{" "}
-                    <button type="button" onClick={() => { setShowModal(false); navigate("/etats-cession"); }}
-                      className="underline font-medium hover:text-amber-800">
-                      Créer un état de cession
-                    </button>
-                  </p>
-                )}
-              </Field>
+              {form.contrat_id && (
+                <Field label="État de cession" required>
+                  <select value={form.etat_cession_id} onChange={e => set("etat_cession_id", e.target.value)}
+                    className={`${INPUT} ${errors.etat_cession_id ? "border-red-400" : ""}`}>
+                    <option value="">— Sélectionner un état de cession —</option>
+                    {etatsCession.map(ec => (
+                      <option key={ec.id} value={ec.id}>
+                        {ec.code ?? `EC-${ec.id}`} — {ec.periode_debut ?? ""} → {ec.periode_fin ?? ""}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.etat_cession_id && <p className="text-xs text-red-500 mt-1">{errors.etat_cession_id}</p>}
+                  {etatsCession.length === 0 && (
+                    <p className="text-xs text-amber-600 mt-1">
+                      Aucun état de cession pour ce contrat.{" "}
+                      <button type="button" onClick={() => { setShowModal(false); navigate("/etats-cession"); }}
+                        className="underline font-medium hover:text-amber-800">
+                        Créer un état de cession
+                      </button>
+                    </p>
+                  )}
+                </Field>
+              )}
 
               <Field label="Montant brut HT (FCFA)" required>
                 <input type="number" min="0" value={form.montant_brut} onChange={e => set("montant_brut", e.target.value)}
