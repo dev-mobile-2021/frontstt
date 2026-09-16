@@ -116,8 +116,8 @@ function TabCircuit() {
       await saveMut.mutateAsync(payload);
       addToast(editId ? "Étape mise à jour." : "Étape ajoutée.", "success");
       cancelForm();
-    } catch {
-      addToast("Erreur lors de la sauvegarde.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la sauvegarde.", "error");
     }
   }
 
@@ -126,8 +126,8 @@ function TabCircuit() {
       await deleteMut.mutateAsync(id);
       addToast("Étape supprimée.", "success");
       setConfirmDeleteId(null);
-    } catch {
-      addToast("Erreur lors de la suppression.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la suppression.", "error");
     }
   }
 
@@ -141,8 +141,8 @@ function TabCircuit() {
     newOrder[targetIndex] = tmp;
     try {
       await reorderMut.mutateAsync(newOrder);
-    } catch {
-      addToast("Erreur lors du réordonnancement.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors du réordonnancement.", "error");
     }
   }
 
@@ -387,8 +387,8 @@ function TabParametres() {
     try {
       await updateMut.mutateAsync({ cle: p.cle, valeur: edited[p.cle] });
       addToast(`Paramètre « ${p.label || p.cle} » mis à jour.`, "success");
-    } catch {
-      addToast("Erreur lors de la mise à jour.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la mise à jour.", "error");
     }
   }
 
@@ -398,8 +398,8 @@ function TabParametres() {
     try {
       await Promise.all(modified.map(p => updateMut.mutateAsync({ cle: p.cle, valeur: edited[p.cle] })));
       addToast(`${modified.length} paramètre(s) enregistré(s).`, "success");
-    } catch {
-      addToast("Erreur lors de l'enregistrement.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de l'enregistrement.", "error");
     }
   }
 
@@ -514,8 +514,8 @@ function TabUtilisateurs() {
       await saveMut.mutateAsync(payload);
       addToast(editUser ? "Utilisateur mis à jour." : "Utilisateur créé.", "success");
       cancelForm();
-    } catch {
-      addToast("Erreur lors de la sauvegarde.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la sauvegarde.", "error");
     }
   }
 
@@ -524,8 +524,8 @@ function TabUtilisateurs() {
       await deleteMut.mutateAsync(id);
       addToast("Utilisateur supprimé.", "success");
       setConfirmDeleteId(null);
-    } catch {
-      addToast("Erreur lors de la suppression.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la suppression.", "error");
     }
   }
 
@@ -671,8 +671,8 @@ function TabRoles() {
       await saveMut.mutateAsync(payload);
       addToast(editRole ? "Rôle mis à jour." : "Rôle créé.", "success");
       cancelForm();
-    } catch {
-      addToast("Erreur lors de la sauvegarde.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la sauvegarde.", "error");
     }
   }
 
@@ -681,8 +681,8 @@ function TabRoles() {
       await deleteMut.mutateAsync(id);
       addToast("Rôle supprimé.", "success");
       setConfirmDeleteId(null);
-    } catch {
-      addToast("Erreur lors de la suppression.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la suppression.", "error");
     }
   }
 
@@ -833,8 +833,8 @@ function TabBaremes() {
       await saveMut.mutateAsync(payload);
       addToast(editBareme ? "Barème mis à jour." : "Barème créé.", "success");
       cancelForm();
-    } catch {
-      addToast("Erreur lors de la sauvegarde.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la sauvegarde.", "error");
     }
   }
 
@@ -843,8 +843,8 @@ function TabBaremes() {
       await deleteMut.mutateAsync(id);
       addToast("Barème supprimé.", "success");
       setConfirmDeleteId(null);
-    } catch {
-      addToast("Erreur lors de la suppression.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la suppression.", "error");
     }
   }
 

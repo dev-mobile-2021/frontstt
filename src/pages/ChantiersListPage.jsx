@@ -141,8 +141,8 @@ export default function ChantiersListPage() {
       });
       addToast("Chantier créé.", "success");
       setShowModal(false);
-    } catch {
-      addToast("Erreur lors de la création.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la création.", "error");
     }
   }
 

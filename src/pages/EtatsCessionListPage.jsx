@@ -89,8 +89,8 @@ export default function EtatsCessionListPage() {
       setShowModal(false);
       const newId = res?.data?.id;
       if (newId) navigate(`/etats-cession/${newId}`);
-    } catch {
-      addToast("Erreur lors de la création.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la création.", "error");
     }
   }
 

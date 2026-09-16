@@ -89,8 +89,8 @@ export default function SousTraitantsListPage() {
       });
       addToast("Sous-traitant créé.", "success");
       setShowModal(false);
-    } catch {
-      addToast("Erreur lors de la création.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la création.", "error");
     }
   }
 

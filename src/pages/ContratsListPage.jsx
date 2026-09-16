@@ -123,8 +123,8 @@ export default function ContratsListPage() {
       addToast("Contrat créé.", "success");
       setShowModal(false);
       if (created?.data?.id) navigate(`/contrats/${created.data.id}`);
-    } catch {
-      addToast("Erreur lors de la création.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la création.", "error");
     }
   }
 
