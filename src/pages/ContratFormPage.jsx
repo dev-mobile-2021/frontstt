@@ -578,6 +578,7 @@ export default function ContratFormPage() {
   const { data: sttData }         = useSousTraitantsPaginated({ count: 100 });
   const contratIdInt = !isNew && id ? parseInt(id, 10) : null;
   const { data: decomptesData }   = useDecomptesPaginated({ contrat_id: contratIdInt, count: 100 });
+  const { data: avenantsList = [] } = useAvenantsByContrat(contratIdInt);
 
   const chantiersList = chantiersData?.data ?? [];
   const sttList       = sttData?.data?.filter(s => s.statut !== "blackliste") ?? [];
@@ -701,30 +702,90 @@ export default function ContratFormPage() {
         }
       />
 
-      {/* KPIs — view mode only */}
-      {!isNew && (
-        <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Montant initial</p>
-            <MoneyDisplay amount={contrat.montant_initial ?? 0} className="text-base font-bold text-gray-900" />
+      {/* KPI Bandeau — view mode only */}
+      {!isNew && (() => {
+        const decomptes      = decomptesData?.data ?? [];
+        const VALIDATION_ST  = ["soumis", "valide_ct", "valide_cp", "valide_daf", "valide_dg"];
+        const nbPaye         = decomptes.filter(d => d.statut === "paye").length;
+        const nbValidation   = decomptes.filter(d => VALIDATION_ST.includes(d.statut)).length;
+        const nbBrouillon    = decomptes.filter(d => d.statut === "brouillon").length;
+        const montantActuel  = parseFloat(contrat.montant_actuel ?? contrat.montant_initial ?? 0);
+        const cumulPaye      = decomptes.filter(d => d.statut === "paye").reduce((s, d) => s + parseFloat(d.montant_ht ?? 0), 0);
+        const enValidation   = decomptes.filter(d => VALIDATION_ST.includes(d.statut)).reduce((s, d) => s + parseFloat(d.montant_ht ?? 0), 0);
+        const pct            = montantActuel > 0 ? Math.round((cumulPaye / montantActuel) * 100) : 0;
+        const actualisé      = avenantsList.some(a => a.statut === "valide");
+        const nbAvenants     = avenantsList.length;
+
+        return (
+          <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
+            {/* Row 1 : badges + boutons */}
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                {nbAvenants > 0 && (
+                  <span className="inline-flex items-center text-xs bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full font-medium">
+                    {nbAvenants} avenant{nbAvenants > 1 ? "s" : ""}
+                  </span>
+                )}
+                <StatusBadge statut={contrat.statut} />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setActiveTab("decomptes")}
+                  className="px-4 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Consulter
+                </button>
+                <button
+                  onClick={() => navigate(`/decomptes/nouveau?contrat_id=${id}`)}
+                  className="px-4 py-1.5 text-sm bg-[#087F3E] text-white rounded-lg hover:bg-[#065A2C] transition-colors"
+                >
+                  Créer un décompte
+                </button>
+              </div>
+            </div>
+
+            {/* Row 2 : KPIs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-1 border-t border-gray-100">
+              {/* Montant HT */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Montant HT</p>
+                <p className="text-lg font-bold text-gray-900">{formatMontantCourt(montantActuel)}</p>
+                {actualisé && (
+                  <span className="text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded font-medium">actualisé</span>
+                )}
+              </div>
+
+              {/* Décomptes */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Décomptes</p>
+                <p className="text-sm font-medium text-gray-700 leading-snug">
+                  {nbPaye > 0 && <span className="text-[#087F3E]">{nbPaye} payé{nbPaye > 1 ? "s" : ""}</span>}
+                  {nbPaye > 0 && nbValidation > 0 && <span className="text-gray-300"> · </span>}
+                  {nbValidation > 0 && <span className="text-amber-600">{nbValidation} en validation</span>}
+                  {(nbPaye > 0 || nbValidation > 0) && nbBrouillon > 0 && <span className="text-gray-300"> · </span>}
+                  {nbBrouillon > 0 && <span className="text-gray-500">{nbBrouillon} brouillon{nbBrouillon > 1 ? "s" : ""}</span>}
+                  {decomptes.length === 0 && <span className="text-gray-400">Aucun décompte</span>}
+                </p>
+              </div>
+
+              {/* Cumul payé */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Cumul payé</p>
+                <p className="text-lg font-bold text-[#087F3E]">{pct}%</p>
+                <div className="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden w-full">
+                  <div className="h-full bg-[#087F3E] rounded-full" style={{ width: `${Math.min(pct, 100)}%` }} />
+                </div>
+              </div>
+
+              {/* En validation */}
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">En validation</p>
+                <p className="text-lg font-bold text-amber-600">{formatMontantCourt(enValidation)}</p>
+              </div>
+            </div>
           </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Montant actuel</p>
-            <MoneyDisplay
-              amount={contrat.montant_actuel ?? contrat.montant_initial ?? 0}
-              className={`text-base font-bold ${contrat.montant_actuel !== contrat.montant_initial ? "text-violet-600" : "text-gray-900"}`}
-            />
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Date début</p>
-            <p className="text-base font-bold text-gray-900">{fmtDate(contrat.date_debut)}</p>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Fin prévue</p>
-            <p className="text-base font-bold text-gray-900">{fmtDate(contrat.date_fin_prevue)}</p>
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Workflow — view mode only */}
       {!isNew && transitions.length > 0 && (
