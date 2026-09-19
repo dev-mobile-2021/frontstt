@@ -69,11 +69,12 @@ export default function DecomptesListPage() {
   const { addToast } = useToast();
   const saveMut      = useSaveDecompte();
 
-  const [showStats,  setShowStats]  = useState(true);
-  const [search,     setSearch]     = useState("");
-  const [statut,     setStatut]     = useState("");
-  const [page,       setPage]       = useState(1);
-  const [debounced,  setDebounced]  = useState("");
+  const [showStats,    setShowStats]  = useState(true);
+  const [search,       setSearch]     = useState("");
+  const [statut,       setStatut]     = useState("");
+  const [contratFilter,setContratFilter] = useState("");
+  const [page,         setPage]       = useState(1);
+  const [debounced,    setDebounced]  = useState("");
   const [showModal,  setShowModal]  = useState(false);
   const [form,       setForm]       = useState(INIT);
   const [errors,     setErrors]     = useState({});
@@ -83,7 +84,7 @@ export default function DecomptesListPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const filters = { code: debounced || undefined, statut: statut || undefined, page, count: 15 };
+  const filters = { code: debounced || undefined, statut: statut || undefined, contrat_id: contratFilter ? parseInt(contratFilter) : undefined, page, count: 15 };
 
   const { data: circuitData = [] } = useDecompteCircuit();
 
@@ -102,7 +103,7 @@ export default function DecomptesListPage() {
   const rows       = data?.data ?? [];
   const meta       = data?.metadata ?? {};
   const totalPages = meta.last_page ?? 1;
-  const hasFilter  = search || statut;
+  const hasFilter  = search || statut || contratFilter;
 
   const { data: allData }  = useDecomptesPaginated({ count: 200 });
   const allDecomptes        = allData?.data ?? [];
@@ -160,7 +161,7 @@ export default function DecomptesListPage() {
     }
   }, [etatsCession, showModal, form.contrat_id]);
 
-  function reset()    { setSearch(""); setStatut(""); setPage(1); }
+  function reset()    { setSearch(""); setStatut(""); setContratFilter(""); setPage(1); }
   function set(k, v)  { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
   function openModal(){ setForm(INIT); setErrors({}); setShowModal(true); }
 
@@ -318,6 +319,11 @@ export default function DecomptesListPage() {
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
+          <select value={contratFilter} onChange={e => { setContratFilter(e.target.value); setPage(1); }}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[220px]">
+            <option value="">Tous les contrats</option>
+            {contrats.map(c => <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale}</option>)}
+          </select>
           {hasFilter && (
             <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
               <RotateCcw size={13} /> Réinitialiser
@@ -341,7 +347,7 @@ export default function DecomptesListPage() {
           <table className="w-full min-w-[800px]">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50 border-b border-gray-200">
-                {["Code", "Contrat / STT", "Chantier", "Montant brut", "Net HT", "TTC", "Échéance", "Statut", "Circuit"].map(h => (
+                {["Code", "Contrat / STT", "Période", "Net HT", "TTC", "Statut", "Circuit"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -362,13 +368,13 @@ export default function DecomptesListPage() {
                     <p className="text-sm font-mono text-gray-700">{d.contrat?.code ?? "—"}</p>
                     <p className="text-xs text-gray-400 truncate max-w-[140px]">{d.contrat?.soustraitant?.raison_sociale}</p>
                   </td>
-                  <td className="px-4 py-3.5">
-                    <p className="text-xs text-gray-500 truncate max-w-[120px]">{d.contrat?.chantier?.designation ?? "—"}</p>
+                  <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
+                    {d.etat_cession?.periode_debut && d.etat_cession?.periode_fin
+                      ? `${new Date(d.etat_cession.periode_debut).toLocaleDateString("fr-FR", { day:"2-digit", month:"short" })} — ${new Date(d.etat_cession.periode_fin).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" })}`
+                      : "—"}
                   </td>
-                  <td className="px-4 py-3.5"><MoneyDisplay amount={d.montant_brut ?? 0} variant="small" /></td>
                   <td className="px-4 py-3.5"><MoneyDisplay amount={d.montant_ht ?? 0} variant="small" className="text-[#087F3E]" /></td>
                   <td className="px-4 py-3.5"><MoneyDisplay amount={d.montant_ttc ?? 0} variant="small" className="font-semibold text-gray-800" /></td>
-                  <td className="px-4 py-3.5 text-sm text-gray-500 whitespace-nowrap">{fmtDate(d.date_echeance)}</td>
                   <td className="px-4 py-3.5"><StatusBadge statut={d.statut} /></td>
                   <td className="px-4 py-3.5">
                     {d.statut === "rejete" ? (

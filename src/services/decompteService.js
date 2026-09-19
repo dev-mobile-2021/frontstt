@@ -7,7 +7,7 @@ const LIST_FIELDS = `
   taux_retenue_garantie taux_tva montant_avances_deduites montant_penalites
   date_echeance motif_rejet created_at updated_at
   contrat { id code objet soustraitant { id raison_sociale } chantier { id code designation } }
-  etat_cession { id code }
+  etat_cession { id code periode_debut periode_fin }
 `;
 
 const DETAIL_FIELDS = `
@@ -16,8 +16,8 @@ const DETAIL_FIELDS = `
   montant_avances_deduites montant_penalites montant_ht taux_tva montant_tva montant_ttc
   created_by updated_by created_at updated_at
   validations { id profil_code libelle action motif validated_at user { id nom prenom } }
-  contrat { id code objet soustraitant { id raison_sociale } chantier { id code designation } }
-  etat_cession { id code montant_total }
+  contrat { id code objet montant_initial montant_actuel soustraitant { id raison_sociale } chantier { id code designation } avenants { id statut montant } }
+  etat_cession { id code montant_total periode_debut periode_fin }
 `;
 
 export const decompteService = {
