@@ -11,6 +11,7 @@ import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useDecomptesPaginated } from "../hooks/useDecomptes";
 import { useAvenantsByContrat, useSaveAvenant, useValiderAvenant, useDeleteAvenant } from "../hooks/useAvenants";
 import { useAttachements } from "../hooks/useAttachements";
+import { useBonCommandesByContrat, useSaveBonCommande, useSaveBonCommandeLigne, useDeleteBonCommandeLigne, useBonCommandeStatut, useDeleteBonCommande } from "../hooks/useBonCommandes";
 import { useBaremesPaginated } from "../hooks/useBaremes";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { usePiecesJointes, useUploadPieceJointe, useDeletePieceJointe } from "../hooks/usePiecesJointes";
@@ -905,6 +906,398 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
   );
 }
 
+// ─── Sub-tab: Bons de commande ──────────────────────────────────
+const BC_STATUT_COLORS = {
+  brouillon:   "bg-gray-100 text-gray-600",
+  valide:      "bg-blue-100 text-blue-700",
+  envoye:      "bg-violet-100 text-violet-700",
+  receptionne: "bg-green-100 text-green-700",
+  cloture:     "bg-gray-200 text-gray-500",
+  annule:      "bg-red-100 text-red-600",
+};
+const BC_STATUT_LABELS = {
+  brouillon:   "Brouillon",
+  valide:      "Validé",
+  envoye:      "Envoyé",
+  receptionne: "Réceptionné",
+  cloture:     "Clôturé",
+  annule:      "Annulé",
+};
+const BC_TRANSITIONS = {
+  brouillon:   [{ statut: "valide", label: "Valider" }, { statut: "annule", label: "Annuler" }],
+  valide:      [{ statut: "envoye", label: "Envoyer" }, { statut: "annule", label: "Annuler" }],
+  envoye:      [{ statut: "receptionne", label: "Réceptionner" }, { statut: "annule", label: "Annuler" }],
+  receptionne: [{ statut: "cloture", label: "Clôturer" }],
+  cloture:     [],
+  annule:      [],
+};
+
+const BC_INIT = { objet: "", date_emission: "", date_livraison_prevue: "", observations: "" };
+const LIGNE_INIT = { designation: "", unite: "", quantite: "", prix_unitaire: "" };
+
+function BonCommandeTab({ contratId, isNew }) {
+  const { addToast } = useToast();
+  const [showCreate, setShowCreate]     = useState(false);
+  const [showLigne, setShowLigne]       = useState(null); // bc id
+  const [bcForm, setBcForm]             = useState(BC_INIT);
+  const [ligneForm, setLigneForm]       = useState(LIGNE_INIT);
+  const [confirmDel, setConfirmDel]     = useState(null);
+  const [confirmDelBC, setConfirmDelBC] = useState(null);
+  const [motifAnnul, setMotifAnnul]     = useState("");
+  const [pendingTransit, setPendingTransit] = useState(null); // { bc, statut }
+
+  const { data: bcs = [], isLoading } = useBonCommandesByContrat(!isNew ? contratId : null);
+  const saveMut        = useSaveBonCommande();
+  const saveLigneMut   = useSaveBonCommandeLigne();
+  const delLigneMut    = useDeleteBonCommandeLigne();
+  const statutMut      = useBonCommandeStatut();
+  const deleteMut      = useDeleteBonCommande();
+
+  const fmt = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
+
+  async function handleCreateBC(e) {
+    e.preventDefault();
+    try {
+      await saveMut.mutateAsync({ contrat_id: parseInt(contratId, 10), ...bcForm });
+      addToast("Bon de commande créé.", "success");
+      setShowCreate(false);
+      setBcForm(BC_INIT);
+    } catch (err) {
+      addToast(err.response?.data?.message ?? "Erreur.", "error");
+    }
+  }
+
+  async function handleAddLigne(bcId, e) {
+    e.preventDefault();
+    try {
+      await saveLigneMut.mutateAsync({
+        bon_commande_id: bcId,
+        designation:   ligneForm.designation,
+        unite:         ligneForm.unite,
+        quantite:      parseFloat(ligneForm.quantite),
+        prix_unitaire: parseFloat(ligneForm.prix_unitaire),
+      });
+      addToast("Ligne ajoutée.", "success");
+      setShowLigne(null);
+      setLigneForm(LIGNE_INIT);
+    } catch (err) {
+      addToast(err.response?.data?.message ?? "Erreur.", "error");
+    }
+  }
+
+  async function handleDelLigne(ligneId) {
+    try {
+      await delLigneMut.mutateAsync(ligneId);
+      setConfirmDel(null);
+      addToast("Ligne supprimée.", "success");
+    } catch (err) {
+      addToast(err.response?.data?.message ?? "Erreur.", "error");
+    }
+  }
+
+  async function handleStatut() {
+    if (!pendingTransit) return;
+    try {
+      await statutMut.mutateAsync({ id: pendingTransit.bc.id, statut: pendingTransit.statut, motif: motifAnnul || undefined });
+      addToast("Statut mis à jour.", "success");
+      setPendingTransit(null);
+      setMotifAnnul("");
+    } catch (err) {
+      addToast(err.response?.data?.message ?? "Erreur.", "error");
+    }
+  }
+
+  async function handleDeleteBC(bcId) {
+    try {
+      await deleteMut.mutateAsync(bcId);
+      setConfirmDelBC(null);
+      addToast("Bon de commande supprimé.", "success");
+    } catch (err) {
+      addToast(err.response?.data?.message ?? "Erreur.", "error");
+    }
+  }
+
+  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer les bons de commande.</p>;
+  if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-end">
+        <button
+          onClick={() => setShowCreate(true)}
+          className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors"
+        >
+          <Plus size={13} /> Nouveau bon de commande
+        </button>
+      </div>
+
+      {bcs.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-10">Aucun bon de commande pour ce contrat.</p>
+      ) : (
+        <div className="space-y-6">
+          {bcs.map(bc => {
+            const lignes      = bc.lignes ?? [];
+            const totalLignes = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+            const transitions = BC_TRANSITIONS[bc.statut] ?? [];
+
+            return (
+              <div key={bc.id} className="border border-gray-200 rounded-2xl overflow-hidden">
+                {/* Header BC */}
+                <div className="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-100">
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-sm font-semibold text-gray-900">{bc.code}</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${BC_STATUT_COLORS[bc.statut]}`}>
+                      {BC_STATUT_LABELS[bc.statut]}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {transitions.map(t => (
+                      <button
+                        key={t.statut}
+                        onClick={() => { setPendingTransit({ bc, statut: t.statut }); setMotifAnnul(""); }}
+                        className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors border
+                          ${t.statut === "annule" ? "border-red-300 text-red-600 hover:bg-red-50" : "border-[#087F3E]/40 text-[#087F3E] hover:bg-[#E8F5EE]"}`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                    {bc.statut === "brouillon" && (
+                      confirmDelBC === bc.id ? (
+                        <span className="inline-flex items-center gap-2 text-xs">
+                          <span className="text-red-600">Supprimer ?</span>
+                          <button onClick={() => handleDeleteBC(bc.id)} className="text-red-600 font-medium hover:text-red-800">Oui</button>
+                          <button onClick={() => setConfirmDelBC(null)} className="text-gray-400 hover:text-gray-600">Non</button>
+                        </span>
+                      ) : (
+                        <button onClick={() => setConfirmDelBC(bc.id)} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {/* BC details */}
+                <div className="px-5 py-4 space-y-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Objet</p>
+                      <p className="text-sm text-gray-800 font-medium">{bc.objet || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Date d'émission</p>
+                      <p className="text-sm text-gray-700">{bc.date_emission ? new Date(bc.date_emission).toLocaleDateString("fr-FR") : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Livraison prévue</p>
+                      <p className="text-sm text-gray-700">{bc.date_livraison_prevue ? new Date(bc.date_livraison_prevue).toLocaleDateString("fr-FR") : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Montant total</p>
+                      <p className="text-sm font-bold text-[#087F3E]">{fmt(bc.montant_total)} FCFA</p>
+                    </div>
+                  </div>
+
+                  {/* Lignes */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Lignes du BC ({lignes.length})</p>
+                      {bc.statut === "brouillon" && (
+                        <button
+                          onClick={() => { setShowLigne(bc.id); setLigneForm(LIGNE_INIT); }}
+                          className="text-xs text-[#087F3E] hover:underline"
+                        >
+                          + Ajouter une ligne
+                        </button>
+                      )}
+                    </div>
+
+                    {lignes.length === 0 ? (
+                      <p className="text-xs text-gray-400 py-3 text-center">Aucune ligne. Ajoutez des lignes pour définir le montant.</p>
+                    ) : (
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-100">
+                            <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-400 pb-2 pr-3">Désignation</th>
+                            <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-400 pb-2 pr-2">Unité</th>
+                            <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-400 pb-2 pr-2">Qté</th>
+                            <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-400 pb-2 pr-2">P.U.</th>
+                            <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-400 pb-2">Montant</th>
+                            {bc.statut === "brouillon" && <th className="pb-2"></th>}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                          {lignes.map(l => (
+                            <tr key={l.id} className="hover:bg-gray-50">
+                              <td className="py-2 pr-3 text-gray-800">{l.designation}</td>
+                              <td className="py-2 pr-2 text-gray-500 text-xs">{l.unite || "—"}</td>
+                              <td className="py-2 pr-2 text-right text-gray-700">{l.quantite}</td>
+                              <td className="py-2 pr-2 text-right text-gray-600 text-xs">{fmt(l.prix_unitaire)}</td>
+                              <td className="py-2 text-right font-semibold text-gray-800">{fmt(l.montant)} FCFA</td>
+                              {bc.statut === "brouillon" && (
+                                <td className="py-2 pl-2 text-right">
+                                  {confirmDel === l.id ? (
+                                    <span className="inline-flex items-center gap-1 text-xs">
+                                      <button onClick={() => handleDelLigne(l.id)} className="text-red-600 font-medium">Oui</button>
+                                      <button onClick={() => setConfirmDel(null)} className="text-gray-400">Non</button>
+                                    </span>
+                                  ) : (
+                                    <button onClick={() => setConfirmDel(l.id)} className="text-gray-300 hover:text-red-500"><Trash2 size={13} /></button>
+                                  )}
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="border-t border-gray-200">
+                            <td colSpan={bc.statut === "brouillon" ? 4 : 4} className="pt-2 text-xs text-gray-400 font-medium uppercase tracking-wide">Total</td>
+                            <td className="pt-2 text-right font-bold text-[#087F3E]">{fmt(totalLignes)} FCFA</td>
+                            {bc.statut === "brouillon" && <td></td>}
+                          </tr>
+                        </tfoot>
+                      </table>
+                    )}
+                  </div>
+
+                  {bc.observations && (
+                    <p className="text-xs text-gray-500 italic border-t border-gray-100 pt-3">{bc.observations}</p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Modal: Create BC */}
+      {showCreate && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setShowCreate(false); setBcForm(BC_INIT); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-semibold text-gray-900">Nouveau bon de commande</h3>
+              <button onClick={() => { setShowCreate(false); setBcForm(BC_INIT); }} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            </div>
+            <form onSubmit={handleCreateBC} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Objet *</label>
+                <input
+                  type="text"
+                  value={bcForm.objet}
+                  onChange={e => setBcForm(f => ({ ...f, objet: e.target.value }))}
+                  placeholder="Objet du bon de commande…"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                  required autoFocus
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Date d'émission</label>
+                  <input type="date" value={bcForm.date_emission} onChange={e => setBcForm(f => ({ ...f, date_emission: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Livraison prévue</label>
+                  <input type="date" value={bcForm.date_livraison_prevue} onChange={e => setBcForm(f => ({ ...f, date_livraison_prevue: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Observations</label>
+                <textarea value={bcForm.observations} onChange={e => setBcForm(f => ({ ...f, observations: e.target.value }))}
+                  rows={2} placeholder="Observations éventuelles…"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none resize-none" />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => { setShowCreate(false); setBcForm(BC_INIT); }} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+                <button type="submit" disabled={saveMut.isPending}
+                  className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60">
+                  {saveMut.isPending ? <><Loader2 size={14} className="animate-spin" /> Création…</> : <><Plus size={14} /> Créer</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Add ligne */}
+      {showLigne !== null && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setShowLigne(null); setLigneForm(LIGNE_INIT); }}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-semibold text-gray-900">Ajouter une ligne</h3>
+              <button onClick={() => { setShowLigne(null); setLigneForm(LIGNE_INIT); }} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            </div>
+            <form onSubmit={e => handleAddLigne(showLigne, e)} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Désignation *</label>
+                <input type="text" value={ligneForm.designation} onChange={e => setLigneForm(f => ({ ...f, designation: e.target.value }))}
+                  placeholder="Description de la prestation…" autoFocus required
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Unité</label>
+                  <input type="text" value={ligneForm.unite} onChange={e => setLigneForm(f => ({ ...f, unite: e.target.value }))}
+                    placeholder="m², ml, u…"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Quantité *</label>
+                  <input type="number" value={ligneForm.quantite} onChange={e => setLigneForm(f => ({ ...f, quantite: e.target.value }))}
+                    placeholder="0" required min="0" step="any"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Prix unitaire *</label>
+                  <input type="number" value={ligneForm.prix_unitaire} onChange={e => setLigneForm(f => ({ ...f, prix_unitaire: e.target.value }))}
+                    placeholder="0" required min="0" step="any"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
+                </div>
+              </div>
+              {ligneForm.quantite && ligneForm.prix_unitaire && (
+                <p className="text-xs text-[#087F3E] font-medium">
+                  Montant : {fmt(parseFloat(ligneForm.quantite) * parseFloat(ligneForm.prix_unitaire))} FCFA
+                </p>
+              )}
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => { setShowLigne(null); setLigneForm(LIGNE_INIT); }} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+                <button type="submit" disabled={saveLigneMut.isPending}
+                  className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60">
+                  {saveLigneMut.isPending ? <><Loader2 size={14} className="animate-spin" /> Ajout…</> : <><Plus size={14} /> Ajouter</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Transition statut */}
+      {pendingTransit && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPendingTransit(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-gray-900 mb-4">
+              {BC_STATUT_LABELS[pendingTransit.statut]} le BC {pendingTransit.bc.code} ?
+            </h3>
+            {pendingTransit.statut === "annule" && (
+              <div className="mb-4 space-y-1.5">
+                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Motif d'annulation *</label>
+                <textarea value={motifAnnul} onChange={e => setMotifAnnul(e.target.value)} rows={2}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none resize-none" />
+              </div>
+            )}
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setPendingTransit(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+              <button onClick={handleStatut} disabled={statutMut.isPending || (pendingTransit.statut === "annule" && !motifAnnul)}
+                className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
+                {statutMut.isPending ? <><Loader2 size={14} className="animate-spin" /> …</> : "Confirmer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Sub-tab: Attachements ───────────────────────────────────────
 const STATUT_COLORS_ATT = {
   "Validé":           "bg-green-100 text-green-700",
@@ -1091,6 +1484,7 @@ export default function ContratFormPage() {
   const contratIdInt = !isNew && id ? parseInt(id, 10) : null;
   const { data: decomptesData }   = useDecomptesPaginated({ contrat_id: contratIdInt, count: 100 });
   const { data: avenantsList = [] } = useAvenantsByContrat(contratIdInt);
+  const { data: bcsList = [] }      = useBonCommandesByContrat(contratIdInt);
 
   const chantiersList = chantiersData?.data ?? [];
   const sttList       = sttData?.data?.filter(s => s.statut !== "blackliste") ?? [];
@@ -1198,6 +1592,7 @@ export default function ContratFormPage() {
     { id: "decomptes",     label: nbDec > 0 ? `Décomptes (${nbDec})` : "Décomptes", icon: FileText },
     { id: "pieces",        label: "Pièces jointes",        icon: Upload },
     { id: "circuit",       label: "Circuit de validation", icon: CheckCircle },
+    { id: "bonscommande",  label: bcsList.length > 0 ? `Bons de commande (${bcsList.length})` : "Bons de commande", icon: FileText },
     { id: "factures",      label: "Factures",              icon: Hash },
   ];
 
@@ -1522,6 +1917,11 @@ export default function ContratFormPage() {
           {/* Tab: Pièces jointes */}
           {activeTab === "pieces" && (
             <PiecesJointesTab contratId={id} isNew={isNew} />
+          )}
+
+          {/* Tab: Bons de commande */}
+          {activeTab === "bonscommande" && (
+            <BonCommandeTab contratId={id} isNew={isNew} />
           )}
 
           {/* Tab: Circuit de validation */}
