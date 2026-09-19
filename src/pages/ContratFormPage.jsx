@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle,
   Hash, FileText, Info, FilePlus, CheckCircle, Trash2, Plus, X, Paperclip,
+  Upload, Download, File,
 } from "lucide-react";
 import { useContrat, useSaveContrat, useContratStatut } from "../hooks/useContrats";
 import { useChantiersPaginated } from "../hooks/useChantiers";
@@ -12,6 +13,8 @@ import { useAvenantsByContrat, useSaveAvenant, useValiderAvenant, useDeleteAvena
 import { useAttachements } from "../hooks/useAttachements";
 import { useBaremesPaginated } from "../hooks/useBaremes";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
+import { usePiecesJointes, useUploadPieceJointe, useDeletePieceJointe } from "../hooks/usePiecesJointes";
+import { pieceJointeService } from "../services/pieceJointeService";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
@@ -283,6 +286,175 @@ function CessionsTab({ contratId, isNew }) {
             ))}
           </tbody>
         </table>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-tab: Pièces jointes ────────────────────────────────────
+const CATEGORIES_PJ = [
+  { value: "offre_initiale",    label: "Offre initiale" },
+  { value: "comparatif_offres", label: "Comparatif offres" },
+  { value: "contrat_signe",     label: "Contrat signé" },
+  { value: "avenant",           label: "Avenant" },
+  { value: "autre",             label: "Autre" },
+];
+
+function PiecesJointesTab({ contratId, isNew }) {
+  const { addToast }  = useToast();
+  const [categorie, setCategorie]     = useState("offre_initiale");
+  const [filterCat, setFilterCat]     = useState("all");
+  const [dragging, setDragging]       = useState(false);
+  const [confirmDel, setConfirmDel]   = useState(null);
+
+  const { data: pieces = [], isLoading } = usePiecesJointes(!isNew ? parseInt(contratId) : null);
+  const uploadMut = useUploadPieceJointe();
+  const deleteMut = useDeletePieceJointe();
+
+  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer les pièces jointes.</p>;
+
+  const filtered = filterCat === "all" ? pieces : pieces.filter(p => p.categorie === filterCat);
+
+  const counts = CATEGORIES_PJ.reduce((acc, c) => {
+    acc[c.value] = pieces.filter(p => p.categorie === c.value).length;
+    return acc;
+  }, {});
+
+  async function handleFiles(files) {
+    for (const file of Array.from(files)) {
+      if (file.size > 10 * 1024 * 1024) {
+        addToast(`${file.name} dépasse 10 MB.`, "error");
+        continue;
+      }
+      try {
+        await uploadMut.mutateAsync({ contrat_id: parseInt(contratId), categorie, fichier: file });
+        addToast(`${file.name} ajouté.`, "success");
+      } catch (err) {
+        addToast(err?.response?.data?.errors?.[0] ?? `Erreur upload ${file.name}.`, "error");
+      }
+    }
+  }
+
+  async function handleDelete(pj) {
+    try {
+      await deleteMut.mutateAsync({ id: pj.id, contrat_id: parseInt(contratId) });
+      addToast("Fichier supprimé.", "success");
+      setConfirmDel(null);
+    } catch {
+      addToast("Erreur lors de la suppression.", "error");
+    }
+  }
+
+  async function handleDownload(pj) {
+    const token = localStorage.getItem("stt_token");
+    const url   = pieceJointeService.downloadUrl(pj.id);
+    const resp  = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    const blob  = await resp.blob();
+    const a     = document.createElement("a");
+    a.href      = URL.createObjectURL(blob);
+    a.download  = pj.nom_original;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Upload zone */}
+      <div className="grid grid-cols-[200px_1fr] gap-4">
+        <div className="space-y-1.5">
+          <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Catégorie</label>
+          <select
+            value={categorie}
+            onChange={e => setCategorie(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+          >
+            {CATEGORIES_PJ.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+          </select>
+        </div>
+        <div
+          onDragOver={e => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
+          className={`border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 py-6 cursor-pointer transition-colors
+            ${dragging ? "border-[#087F3E] bg-[#E8F5EE]/60" : "border-gray-200 hover:border-[#087F3E]/50 hover:bg-gray-50"}`}
+          onClick={() => document.getElementById("pj-file-input").click()}
+        >
+          <Upload size={20} className="text-gray-400" />
+          <p className="text-sm text-gray-500">Glissez-déposez vos fichiers ici ou <span className="text-[#087F3E] font-medium">cliquez pour parcourir</span></p>
+          <p className="text-xs text-gray-400">PDF, DOCX, XLSX, JPG, PNG — max 10 MB par fichier</p>
+          <input
+            id="pj-file-input"
+            type="file"
+            multiple
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+            className="hidden"
+            onChange={e => handleFiles(e.target.files)}
+          />
+        </div>
+      </div>
+
+      {/* Filter tabs */}
+      <div className="flex items-center gap-1 border-b border-gray-100 pb-0">
+        {[{ value: "all", label: "Toutes", count: pieces.length }, ...CATEGORIES_PJ.map(c => ({ ...c, count: counts[c.value] }))].map(t => (
+          <button
+            key={t.value}
+            onClick={() => setFilterCat(t.value)}
+            className={`px-3 py-2 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-px
+              ${filterCat === t.value
+                ? "border-[#087F3E] text-[#087F3E]"
+                : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          >
+            {t.label}
+            {t.count > 0 && <span className="ml-1 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{t.count}</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* File list */}
+      {isLoading ? (
+        <p className="text-sm text-gray-400 text-center py-6">Chargement…</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-8">Aucun fichier dans cette catégorie.</p>
+      ) : (
+        <div className="space-y-2">
+          {filtered.map(pj => (
+            <div key={pj.id} className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 hover:border-gray-200 transition-colors">
+              <File size={18} className="text-gray-400 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate">{pj.nom_original}</p>
+                <p className="text-xs text-gray-400">
+                  {pj.taille_fmt} · Ajouté le {pj.created_at}
+                  {pj.uploaded_by && <span> par {pj.uploaded_by}</span>}
+                </p>
+              </div>
+              <span className="text-[10px] bg-white border border-gray-200 text-gray-500 px-2 py-0.5 rounded-full shrink-0">
+                {CATEGORIES_PJ.find(c => c.value === pj.categorie)?.label ?? pj.categorie}
+              </span>
+              <button
+                onClick={() => handleDownload(pj)}
+                title="Télécharger"
+                className="p-1.5 text-gray-400 hover:text-[#087F3E] transition-colors"
+              >
+                <Download size={15} />
+              </button>
+              {confirmDel === pj.id ? (
+                <span className="inline-flex items-center gap-2 text-xs">
+                  <span className="text-red-600">Supprimer ?</span>
+                  <button onClick={() => handleDelete(pj)} className="text-red-600 hover:text-red-800 font-medium">Oui</button>
+                  <button onClick={() => setConfirmDel(null)} className="text-gray-400 hover:text-gray-600">Non</button>
+                </span>
+              ) : (
+                <button
+                  onClick={() => setConfirmDel(pj.id)}
+                  title="Supprimer"
+                  className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                >
+                  <Trash2 size={15} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -839,6 +1011,7 @@ export default function ContratFormPage() {
     { id: "cessions",      label: "Cessions",              icon: FileText },
     { id: "attachements",  label: "Attachements",          icon: Paperclip },
     { id: "decomptes",     label: nbDec > 0 ? `Décomptes (${nbDec})` : "Décomptes", icon: FileText },
+    { id: "pieces",        label: "Pièces jointes",        icon: Upload },
     { id: "factures",      label: "Factures",              icon: Hash },
   ];
 
@@ -1158,6 +1331,11 @@ export default function ContratFormPage() {
           {/* Tab: Attachements */}
           {activeTab === "attachements" && (
             <AttachementsTab contratId={id} chantierId={contrat?.chantier_id} isNew={isNew} />
+          )}
+
+          {/* Tab: Pièces jointes */}
+          {activeTab === "pieces" && (
+            <PiecesJointesTab contratId={id} isNew={isNew} />
           )}
 
           {/* Tab: Factures — placeholder (no contrat_id filter in factureService list) */}
