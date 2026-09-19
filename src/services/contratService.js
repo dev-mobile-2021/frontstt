@@ -20,7 +20,7 @@ const FIELDS = `
   statut motif_suspension motif_resiliation
   code_x3 synced_at created_at updated_at
   chantier { id code designation localisation }
-  soustraitant { id code raison_sociale ninea statut }
+  soustraitant { id code raison_sociale ninea telephone statut }
 `;
 
 export const contratService = {

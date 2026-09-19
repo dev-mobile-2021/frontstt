@@ -61,10 +61,11 @@ export default function ContratsListPage() {
   const { addToast } = useToast();
   const saveMut      = useSaveContrat();
 
-  const [search,    setSearch]    = useState("");
-  const [statut,    setStatut]    = useState("");
-  const [page,      setPage]      = useState(1);
-  const [debounced, setDebounced] = useState("");
+  const [search,       setSearch]       = useState("");
+  const [statut,       setStatut]       = useState("");
+  const [sttFilter,    setSttFilter]    = useState("");
+  const [page,         setPage]         = useState(1);
+  const [debounced,    setDebounced]    = useState("");
   const [expanded,  setExpanded]  = useState({});
   const [showModal, setShowModal] = useState(false);
   const [form,      setForm]      = useState(INIT);
@@ -75,12 +76,12 @@ export default function ContratsListPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const filters = { code: debounced || undefined, statut: statut || undefined, page, count: 15 };
+  const filters = { code: debounced || undefined, statut: statut || undefined, soustraitant_id: sttFilter ? parseInt(sttFilter) : undefined, page, count: 15 };
   const { data, isLoading, isError } = useContratsPaginated(filters);
   const rows       = data?.data ?? [];
   const meta       = data?.metadata ?? {};
   const totalPages = meta.last_page ?? 1;
-  const hasFilter  = search || statut;
+  const hasFilter  = search || statut || sttFilter;
 
   const { data: chantiersData } = useChantiersPaginated({ count: 100 });
   const chantiers = chantiersData?.data ?? [];
@@ -88,7 +89,7 @@ export default function ContratsListPage() {
   const { data: sttData } = useSousTraitantsPaginated({ count: 100, statut: "actif" });
   const sousTraitants = sttData?.data ?? [];
 
-  function reset()    { setSearch(""); setStatut(""); setPage(1); }
+  function reset()    { setSearch(""); setStatut(""); setSttFilter(""); setPage(1); }
   function set(k, v)  { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
   function openModal(){ setForm(INIT); setErrors({}); setShowModal(true); }
 
@@ -148,7 +149,7 @@ export default function ContratsListPage() {
           <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
-              placeholder="Rechercher par code…"
+              placeholder="Rechercher par code, objet…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
@@ -158,6 +159,11 @@ export default function ContratsListPage() {
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+          <select value={sttFilter} onChange={e => { setSttFilter(e.target.value); setPage(1); }}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[200px]">
+            <option value="">Tous les sous-traitants</option>
+            {sousTraitants.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
           </select>
           {hasFilter && (
             <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
@@ -169,6 +175,14 @@ export default function ContratsListPage() {
             <FileSpreadsheet size={14} /> Excel
           </button>
         </div>
+        {!isLoading && meta.total > 0 && (
+          <p className="text-xs text-gray-400 mt-2">
+            {meta.total} contrat{meta.total > 1 ? "s" : ""} affichés
+            {sttFilter && sousTraitants.find(s => s.id === parseInt(sttFilter)) && (
+              <> — {sousTraitants.find(s => s.id === parseInt(sttFilter))?.raison_sociale}</>
+            )}
+          </p>
+        )}
       </div>
 
       {isLoading ? (

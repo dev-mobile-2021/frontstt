@@ -1081,10 +1081,18 @@ export default function ContratFormPage() {
                         <AlertTriangle size={12} /> Ce sous-traitant est actuellement suspendu.
                       </div>
                     )}
-                    {!isNew && contrat?.soustraitant_id && (
-                      <Link to={`/sous-traitants/${contrat.soustraitant_id}`} className="mt-1 inline-block text-xs text-[#087F3E] hover:underline">
-                        Voir la fiche STT →
-                      </Link>
+                    {!isNew && contrat?.soustraitant && (
+                      <div className="mt-2 space-y-0.5">
+                        {contrat.soustraitant.ninea && (
+                          <p className="text-xs text-gray-500">NINEA : <span className="font-mono font-medium text-gray-700">{contrat.soustraitant.ninea}</span></p>
+                        )}
+                        {contrat.soustraitant.telephone && (
+                          <p className="text-xs text-gray-500">Tél : <span className="font-medium text-gray-700">{contrat.soustraitant.telephone}</span></p>
+                        )}
+                        <Link to={`/sous-traitants/${contrat.soustraitant_id}`} className="inline-block text-xs text-[#087F3E] hover:underline mt-0.5">
+                          Voir la fiche →
+                        </Link>
+                      </div>
                     )}
                   </Field>
                 </div>
