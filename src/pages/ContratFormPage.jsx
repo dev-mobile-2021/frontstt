@@ -11,6 +11,7 @@ import { useDecomptesPaginated } from "../hooks/useDecomptes";
 import { useAvenantsByContrat, useSaveAvenant, useValiderAvenant, useDeleteAvenant } from "../hooks/useAvenants";
 import { useAttachements } from "../hooks/useAttachements";
 import { useBaremesPaginated } from "../hooks/useBaremes";
+import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
@@ -106,9 +107,9 @@ function DecomptesTab({ decomptes, contratId, isNew }) {
         <thead>
           <tr className="border-b border-gray-100">
             <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Code</th>
-            <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Net HT</th>
-            <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">TTC</th>
-            <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Échéance</th>
+            <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Période</th>
+            <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Net HT</th>
+            <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">TTC</th>
             <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2">Statut</th>
             <th className="pb-2"></th>
           </tr>
@@ -116,10 +117,14 @@ function DecomptesTab({ decomptes, contratId, isNew }) {
         <tbody className="divide-y divide-gray-50">
           {decomptes.map(d => (
             <tr key={d.id} className="hover:bg-gray-50 transition-colors">
-              <td className="py-2.5 pr-3 font-medium text-gray-900">{d.code}</td>
-              <td className="py-2.5 pr-3 text-gray-700">{formatMontantCourt(parseFloat(d.montant_ht ?? 0))}</td>
-              <td className="py-2.5 pr-3 text-gray-700">{formatMontantCourt(parseFloat(d.montant_ttc ?? 0))}</td>
-              <td className="py-2.5 pr-3 text-gray-500 text-xs">{d.date_echeance ? formatDate(d.date_echeance) : "—"}</td>
+              <td className="py-2.5 pr-3 font-mono text-xs font-medium text-gray-900">{d.code}</td>
+              <td className="py-2.5 pr-3 text-gray-500 text-xs">
+                {d.periode_debut
+                  ? new Date(d.periode_debut).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })
+                  : d.date_echeance ? formatDate(d.date_echeance) : "—"}
+              </td>
+              <td className="py-2.5 pr-3 text-right font-semibold text-gray-800">{formatMontantCourt(parseFloat(d.montant_ht ?? 0))}</td>
+              <td className="py-2.5 pr-3 text-right text-gray-600">{formatMontantCourt(parseFloat(d.montant_ttc ?? 0))}</td>
               <td className="py-2.5"><StatusBadge statut={d.statut} /></td>
               <td className="py-2.5 text-right">
                 <Link to={`/decomptes/${d.id}`} className="text-xs text-[#087F3E] hover:underline">Voir</Link>
@@ -132,6 +137,156 @@ function DecomptesTab({ decomptes, contratId, isNew }) {
   );
 }
 
+
+// ─── Sub-tab: Paramétrage financier ─────────────────────────────
+function ParametrageFinancierTab({ contrat, avenants }) {
+  const fmt = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
+  const montantInitial  = parseFloat(contrat?.montant_initial ?? 0);
+  const montantActuel   = parseFloat(contrat?.montant_actuel ?? montantInitial);
+  const avenatsValides  = avenants.filter(a => a.statut === "valide");
+  const totalAvenants   = avenatsValides.reduce((s, a) => s + parseFloat(a.montant ?? 0), 0);
+  const tauxRG          = parseFloat(contrat?.taux_retenue_garantie ?? 5);
+  const tauxTVA         = parseFloat(contrat?.taux_tva ?? 18);
+
+  return (
+    <div className="space-y-6">
+      {/* Montants */}
+      <div>
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Valeur contractuelle</h3>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Montant initial HT</p>
+            <p className="text-lg font-bold text-gray-900">{fmt(montantInitial)} FCFA</p>
+          </div>
+          <div className={`border rounded-xl p-4 ${totalAvenants !== 0 ? "bg-violet-50 border-violet-200" : "bg-gray-50 border-gray-200"}`}>
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+              Avenants validés
+              {avenatsValides.length > 0 && <span className="ml-1 text-violet-600">({avenatsValides.length})</span>}
+            </p>
+            <p className={`text-lg font-bold ${totalAvenants > 0 ? "text-violet-700" : totalAvenants < 0 ? "text-red-600" : "text-gray-400"}`}>
+              {totalAvenants >= 0 ? "+" : ""}{fmt(totalAvenants)} FCFA
+            </p>
+          </div>
+          <div className="bg-[#E8F5EE] border border-[#087F3E]/30 rounded-xl p-4">
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Montant HT actualisé</p>
+            <p className="text-lg font-bold text-[#087F3E]">{fmt(montantActuel)} FCFA</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">Valeur contractuelle courante</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Taux */}
+      <div>
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Taux applicables</h3>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Retenue de garantie</p>
+            <p className="text-lg font-bold text-gray-900">{tauxRG} %</p>
+          </div>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">TVA</p>
+            <p className="text-lg font-bold text-gray-900">{tauxTVA} %</p>
+          </div>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Type de contrat</p>
+            <p className="text-base font-semibold text-gray-800 capitalize">{contrat?.type_contrat ?? "—"}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Historique avenants */}
+      {avenatsValides.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Historique des avenants validés</h3>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Code</th>
+                <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Objet</th>
+                <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Date signature</th>
+                <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-500 pb-2">Montant</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {avenatsValides.map(a => (
+                <tr key={a.id} className="hover:bg-gray-50">
+                  <td className="py-2.5 pr-3 font-mono text-xs font-medium text-gray-900">{a.code}</td>
+                  <td className="py-2.5 pr-3 text-gray-700 max-w-[260px] truncate">{a.objet}</td>
+                  <td className="py-2.5 pr-3 text-gray-500 text-xs">{a.date_signature ? new Date(a.date_signature).toLocaleDateString("fr-FR") : "—"}</td>
+                  <td className={`py-2.5 text-right font-semibold ${parseFloat(a.montant) >= 0 ? "text-violet-700" : "text-red-600"}`}>
+                    {parseFloat(a.montant) >= 0 ? "+" : ""}{fmt(parseFloat(a.montant))} FCFA
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-tab: Cessions ───────────────────────────────────────────
+function CessionsTab({ contratId, isNew }) {
+  const { data, isLoading } = useEtatsCessionPaginated(
+    { contrat_id: contratId ? parseInt(contratId, 10) : null, count: 50 },
+    { enabled: !isNew && !!contratId }
+  );
+  const cessions = data?.data ?? [];
+
+  const fmtMontant = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
+  const fmtDate    = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
+
+  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour voir les états de cession.</p>;
+  if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">{cessions.length} état(s) de cession pour ce contrat</p>
+        <Link
+          to={`/etats-cession/nouveau?contrat_id=${contratId}`}
+          className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors"
+        >
+          <Plus size={13} /> Créer un état de cession
+        </Link>
+      </div>
+
+      {cessions.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-10">Aucun état de cession pour ce contrat.</p>
+      ) : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Code</th>
+              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Période</th>
+              <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Montant</th>
+              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2">Statut</th>
+              <th className="pb-2"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {cessions.map(ec => (
+              <tr key={ec.id} className="hover:bg-gray-50 transition-colors">
+                <td className="py-2.5 pr-3 font-mono text-xs font-medium text-gray-900">{ec.code}</td>
+                <td className="py-2.5 pr-3 text-gray-600 text-xs">
+                  {fmtDate(ec.periode_debut)} → {fmtDate(ec.periode_fin)}
+                </td>
+                <td className="py-2.5 pr-3 text-right font-semibold text-gray-800">
+                  {fmtMontant(ec.montant_total)} FCFA
+                </td>
+                <td className="py-2.5"><StatusBadge statut={ec.statut} /></td>
+                <td className="py-2.5 text-right">
+                  <Link to={`/etats-cession/${ec.id}`} className="text-xs text-[#087F3E] hover:underline">Voir</Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
 
 // ─── Sub-tab: Avenants ───────────────────────────────────────────
 const AVENANT_INIT = { objet: "", montant: "", date_signature: "", observations: "" };
@@ -673,12 +828,18 @@ export default function ContratFormPage() {
 
   const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
 
+  const decomptesList  = decomptesData?.data ?? [];
+  const nbAv           = avenantsList.length;
+  const nbDec          = decomptesList.length;
+
   const tabs = [
-    { id: "info",          label: "Informations",    icon: Info },
-    { id: "avenants",      label: "Avenants",         icon: FilePlus },
-    { id: "decomptes",     label: "Décomptes",        icon: FileText },
-    { id: "attachements",  label: "Attachements",     icon: Paperclip },
-    { id: "factures",      label: "Factures",         icon: Hash },
+    { id: "info",          label: "Informations",          icon: Info },
+    { id: "parametrage",   label: "Paramétrage financier", icon: Hash },
+    { id: "avenants",      label: nbAv > 0 ? `Avenants (${nbAv})` : "Avenants", icon: FilePlus },
+    { id: "cessions",      label: "Cessions",              icon: FileText },
+    { id: "attachements",  label: "Attachements",          icon: Paperclip },
+    { id: "decomptes",     label: nbDec > 0 ? `Décomptes (${nbDec})` : "Décomptes", icon: FileText },
+    { id: "factures",      label: "Factures",              icon: Hash },
   ];
 
   return (
@@ -966,14 +1127,24 @@ export default function ContratFormPage() {
             </div>
           )}
 
+          {/* Tab: Paramétrage financier */}
+          {activeTab === "parametrage" && (
+            <ParametrageFinancierTab contrat={contrat} avenants={avenantsList} />
+          )}
+
           {/* Tab: Avenants */}
           {activeTab === "avenants" && (
             <AvenantsTab contratId={id} isNew={isNew} montantInitial={contrat?.montant_initial} />
           )}
 
+          {/* Tab: Cessions */}
+          {activeTab === "cessions" && (
+            <CessionsTab contratId={id} isNew={isNew} />
+          )}
+
           {/* Tab: Décomptes */}
           {activeTab === "decomptes" && (
-            <DecomptesTab decomptes={decomptesData?.data ?? []} contratId={id} isNew={isNew} />
+            <DecomptesTab decomptes={decomptesList} contratId={id} isNew={isNew} />
           )}
 
           {/* Tab: Attachements */}
