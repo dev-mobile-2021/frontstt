@@ -3,9 +3,9 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle,
   Hash, FileText, Info, FilePlus, CheckCircle, Trash2, Plus, X, Paperclip,
-  Upload, Download, File,
+  Upload, Download, File, Circle, Clock, CheckCircle2, XCircle,
 } from "lucide-react";
-import { useContrat, useSaveContrat, useContratStatut } from "../hooks/useContrats";
+import { useContrat, useSaveContrat, useContratStatut, useContratCircuit, useSoumettreContrat, useValiderContrat, useRejeterContrat } from "../hooks/useContrats";
 import { useChantiersPaginated } from "../hooks/useChantiers";
 import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useDecomptesPaginated } from "../hooks/useDecomptes";
@@ -16,6 +16,7 @@ import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { usePiecesJointes, useUploadPieceJointe, useDeletePieceJointe } from "../hooks/usePiecesJointes";
 import { pieceJointeService } from "../services/pieceJointeService";
 import { useToast } from "../context/ToastContext";
+import { useUser } from "../context/UserContext";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import Tabs from "../components/Tabs";
@@ -286,6 +287,190 @@ function CessionsTab({ contratId, isNew }) {
             ))}
           </tbody>
         </table>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-tab: Circuit de validation ─────────────────────────────
+function CircuitContratTab({ contrat, contratId, isNew }) {
+  const { addToast }    = useToast();
+  const [showRejet, setShowRejet]     = useState(false);
+  const [motifRejet, setMotifRejet]   = useState("");
+  const { currentUser } = useUser();
+
+  const { data: circuit = [] } = useContratCircuit();
+  const soumettreM = useSoumettreContrat();
+  const validerM   = useValiderContrat();
+  const rejeterM   = useRejeterContrat();
+
+  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour accéder au circuit.</p>;
+
+  const statut      = contrat?.statut ?? "brouillon";
+  const validations = contrat?.validations ?? [];
+  const etapes      = [...circuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+  const lastEtape   = etapes[etapes.length - 1];
+
+  const steps = [
+    { statut: "brouillon", label: "Création",  profil: null },
+    ...(etapes.length > 0
+      ? [{ statut: etapes[0].statut_avant, label: "Soumis", profil: null }]
+      : [{ statut: "soumis", label: "Soumis", profil: null }]),
+    ...etapes.map(e => ({ statut: e.statut_apres, label: e.profil_code.toUpperCase(), profil: e.profil_code, etape: e })),
+    { statut: "actif", label: "Actif", profil: null },
+  ];
+
+  const currentIdx   = steps.findIndex(s => s.statut === statut);
+  const currentEtape = etapes.find(e => e.statut_avant === statut);
+  const isAfterLast  = !!(lastEtape && statut === lastEtape.statut_apres);
+  const isTerminal   = statut === "actif" || statut === "rejete";
+
+  const userRole    = currentUser?.role?.designation?.toLowerCase() ?? "";
+  const isAdmin     = userRole === "admin";
+  const canValidate = isAdmin || !currentEtape || userRole === currentEtape.profil_code?.toLowerCase();
+
+  const findVal    = (profil) => validations.find(v => v.profil_code === profil && v.action === "valide");
+  const soumisVal  = validations.find(v => v.action === "soumis");
+  const fmtD       = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
+
+  async function handleSoumettre() {
+    try {
+      await soumettreM.mutateAsync(parseInt(contratId));
+      addToast("Contrat soumis au circuit.", "success");
+    } catch (err) { addToast(err?.response?.data?.errors?.[0] ?? "Erreur.", "error"); }
+  }
+
+  async function handleValider() {
+    try {
+      await validerM.mutateAsync(parseInt(contratId));
+      addToast("Étape validée.", "success");
+    } catch (err) { addToast(err?.response?.data?.errors?.[0] ?? "Erreur.", "error"); }
+  }
+
+  async function handleRejeter(motif) {
+    try {
+      await rejeterM.mutateAsync({ id: parseInt(contratId), motif });
+      addToast("Contrat rejeté.", "success");
+    } catch (err) { addToast(err?.response?.data?.errors?.[0] ?? "Erreur.", "error"); }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Stepper */}
+      <div className="bg-gray-50 border border-gray-100 rounded-xl p-5">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Circuit de validation</p>
+
+        {circuit.length === 0 ? (
+          <div className="text-center py-6 text-gray-400 text-sm">
+            <p>Aucun circuit configuré pour les contrats.</p>
+            <a href="/parametrage" className="text-xs text-[#087F3E] hover:underline mt-1 inline-block">Configurer dans Paramétrage → Circuit →</a>
+          </div>
+        ) : statut === "rejete" ? (
+          <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
+            <XCircle size={16} /> Rejeté
+            {contrat?.motif_rejet && (
+              <span className="ml-2 text-xs font-normal text-red-700 bg-red-50 border border-red-200 rounded px-2 py-0.5">
+                {contrat.motif_rejet}
+              </span>
+            )}
+          </div>
+        ) : (
+          <div className="flex items-start gap-0">
+            {steps.map((step, idx) => {
+              const done    = idx < currentIdx;
+              const current = idx === currentIdx;
+              const val     = step.profil ? findVal(step.profil) : step.statut === "soumis" ? soumisVal : null;
+              return (
+                <div key={step.statut} className="flex-1 flex flex-col items-center">
+                  <div className="flex items-center w-full">
+                    <div className={`flex-1 h-0.5 ${idx === 0 ? "opacity-0" : done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-colors
+                      ${done ? "bg-[#087F3E] border-[#087F3E] text-white" : current ? "bg-white border-[#087F3E] text-[#087F3E]" : "bg-white border-gray-200 text-gray-300"}`}>
+                      {done ? <CheckCircle2 size={16} /> : current ? <Clock size={14} /> : <Circle size={14} />}
+                    </div>
+                    <div className={`flex-1 h-0.5 ${idx === steps.length - 1 ? "opacity-0" : done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
+                  </div>
+                  <div className="mt-2 text-center px-1 w-full">
+                    <p className={`text-xs font-semibold ${done ? "text-[#087F3E]" : current ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
+                    {val ? (
+                      <>
+                        <p className="text-[10px] text-[#087F3E] mt-0.5">{fmtD(val.validated_at)}</p>
+                        {val.user && <p className="text-[10px] text-gray-500 truncate">{val.user.prenom} {val.user.nom}</p>}
+                      </>
+                    ) : current && step.profil ? (
+                      <p className="text-[10px] text-amber-500 mt-0.5">En attente</p>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Actions */}
+        {!isTerminal && circuit.length > 0 && (
+          <div className="border-t border-gray-200 mt-5 pt-4 space-y-3">
+            {statut === "brouillon" && (
+              <button onClick={handleSoumettre} disabled={soumettreM.isPending}
+                className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
+                Soumettre au circuit
+              </button>
+            )}
+            {statut !== "brouillon" && !isAfterLast && canValidate && !showRejet && (
+              <div className="flex gap-3">
+                <button onClick={handleValider} disabled={validerM.isPending}
+                  className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
+                  Valider — {currentEtape?.profil_code?.toUpperCase() ?? ""}
+                </button>
+                <button onClick={() => setShowRejet(true)}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors">
+                  Rejeter
+                </button>
+              </div>
+            )}
+            {statut !== "brouillon" && !isAfterLast && !canValidate && (
+              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                En attente de validation par <strong>{currentEtape?.profil_code?.toUpperCase()}</strong>. Vous n'avez pas le profil requis.
+              </p>
+            )}
+            {showRejet && (
+              <div className="flex gap-2 flex-wrap">
+                <input autoFocus placeholder="Motif du rejet (obligatoire)…" value={motifRejet}
+                  onChange={e => setMotifRejet(e.target.value)}
+                  className="flex-1 min-w-[240px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 outline-none" />
+                <button onClick={() => { handleRejeter(motifRejet); setShowRejet(false); setMotifRejet(""); }}
+                  disabled={!motifRejet.trim()}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+                  Confirmer
+                </button>
+                <button onClick={() => { setShowRejet(false); setMotifRejet(""); }}
+                  className="px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm">
+                  Annuler
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Historique */}
+      {validations.length > 0 && (
+        <div>
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Historique</h3>
+          <div className="space-y-2">
+            {validations.map((v, i) => (
+              <div key={i} className="flex items-start gap-3 text-sm">
+                <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${v.action === "valide" ? "bg-[#087F3E]" : v.action === "soumis" ? "bg-blue-400" : "bg-red-400"}`} />
+                <div>
+                  <span className="font-medium text-gray-800">{v.libelle}</span>
+                  {v.user && <span className="text-gray-500"> — {v.user.prenom} {v.user.nom}</span>}
+                  <span className="text-gray-400 text-xs ml-2">{fmtD(v.validated_at)}</span>
+                  {v.motif && <p className="text-xs text-red-600 mt-0.5">{v.motif}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1012,6 +1197,7 @@ export default function ContratFormPage() {
     { id: "attachements",  label: "Attachements",          icon: Paperclip },
     { id: "decomptes",     label: nbDec > 0 ? `Décomptes (${nbDec})` : "Décomptes", icon: FileText },
     { id: "pieces",        label: "Pièces jointes",        icon: Upload },
+    { id: "circuit",       label: "Circuit de validation", icon: CheckCircle },
     { id: "factures",      label: "Factures",              icon: Hash },
   ];
 
@@ -1336,6 +1522,11 @@ export default function ContratFormPage() {
           {/* Tab: Pièces jointes */}
           {activeTab === "pieces" && (
             <PiecesJointesTab contratId={id} isNew={isNew} />
+          )}
+
+          {/* Tab: Circuit de validation */}
+          {activeTab === "circuit" && (
+            <CircuitContratTab contrat={contrat} contratId={id} isNew={isNew} />
           )}
 
           {/* Tab: Factures — placeholder (no contrat_id filter in factureService list) */}

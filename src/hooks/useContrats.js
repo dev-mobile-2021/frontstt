@@ -43,3 +43,44 @@ export function useDeleteContrat() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contrats"] }),
   });
 }
+
+export function useContratCircuit() {
+  return useQuery({
+    queryKey: ["contrat_circuit"],
+    queryFn: () => contratService.getCircuit(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useSoumettreContrat() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => contratService.soumettre(id),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ["contrats"] });
+      qc.invalidateQueries({ queryKey: ["contrat", String(id)] });
+    },
+  });
+}
+
+export function useValiderContrat() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => contratService.valider(id),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ["contrats"] });
+      qc.invalidateQueries({ queryKey: ["contrat", String(id)] });
+    },
+  });
+}
+
+export function useRejeterContrat() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, motif }) => contratService.rejeter(id, motif),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: ["contrats"] });
+      qc.invalidateQueries({ queryKey: ["contrat", String(id)] });
+    },
+  });
+}

@@ -21,6 +21,7 @@ const FIELDS = `
   code_x3 synced_at created_at updated_at
   chantier { id code designation localisation }
   soustraitant { id code raison_sociale ninea telephone statut }
+  validations { id profil_code libelle action motif validated_at user { id nom prenom } }
 `;
 
 export const contratService = {
@@ -63,6 +64,26 @@ export const contratService = {
 
   async delete(id) {
     const { data } = await http.delete(`/contrat/delete/${id}`);
+    return data;
+  },
+
+  async getCircuit() {
+    const { data } = await http.get("/contrat/circuit");
+    return data.data ?? [];
+  },
+
+  async soumettre(id) {
+    const { data } = await http.post("/contrat/soumettre", { id });
+    return data;
+  },
+
+  async valider(id) {
+    const { data } = await http.post("/contrat/valider", { id });
+    return data;
+  },
+
+  async rejeter(id, motif) {
+    const { data } = await http.post("/contrat/rejeter", { id, motif });
     return data;
   },
 };
