@@ -8,9 +8,9 @@ const LIST_FIELDS = `
   statut date_paiement reference_paiement motif_annulation
   created_at updated_at
   contrat { id code objet }
-  decompte { id code }
+  decompte { id code etat_cession { periode_debut periode_fin } }
   chantier { id code designation }
-  soustraitant { id raison_sociale }
+  soustraitant { id raison_sociale ninea }
 `;
 
 const DETAIL_FIELDS = `
@@ -19,10 +19,10 @@ const DETAIL_FIELDS = `
   montant_ht taux_tva montant_tva montant_ttc
   statut date_paiement reference_paiement motif_annulation observations
   created_by updated_by created_at updated_at
-  contrat { id code objet }
-  decompte { id code }
+  contrat { id code objet montant_initial montant_actuel }
+  decompte { id code etat_cession { periode_debut periode_fin } }
   chantier { id code designation }
-  soustraitant { id raison_sociale }
+  soustraitant { id raison_sociale ninea }
 `;
 
 export const factureService = {
