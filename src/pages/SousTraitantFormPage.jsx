@@ -1,11 +1,89 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, Phone, Mail, MapPin, Building2, Hash, AlertTriangle, Globe, FileText, Calendar } from "lucide-react";
+import { ArrowLeft, ChevronRight, Phone, Mail, MapPin, Building2, Hash, AlertTriangle, Globe, FileText, Calendar, ExternalLink } from "lucide-react";
 import { useSousTraitant } from "../hooks/useSousTraitants";
+import { useContratsPaginated } from "../hooks/useContrats";
+import { useDecomptesPaginated } from "../hooks/useDecomptes";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
+import MoneyDisplay from "../components/MoneyDisplay";
 import Tabs from "../components/Tabs";
 import { SkeletonCard } from "../components/Skeleton";
+
+function TabContrats({ sttId }) {
+  const navigate = useNavigate();
+  const { data, isLoading } = useContratsPaginated({ soustraitant_id: Number(sttId), count: 100 });
+  const contrats = data?.data ?? [];
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            {["Code", "Chantier", "Objet", "Montant HT", "Statut", ""].map(h => (
+              <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${h === "Montant HT" ? "text-right" : "text-left"}`}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {isLoading && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">Chargement…</td></tr>}
+          {!isLoading && contrats.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">Aucun contrat pour ce sous-traitant</td></tr>}
+          {contrats.map(c => (
+            <tr key={c.id} onClick={() => navigate(`/contrats/${c.id}`)} className="hover:bg-gray-50 cursor-pointer">
+              <td className="px-4 py-3 font-mono text-xs text-[#087F3E] font-semibold">{c.code}</td>
+              <td className="px-4 py-3 text-sm text-gray-700">{c.chantier?.designation ?? "—"}</td>
+              <td className="px-4 py-3 text-sm text-gray-600 max-w-[180px] truncate">{c.objet ?? "—"}</td>
+              <td className="px-4 py-3 text-right"><MoneyDisplay amount={c.montant_actuel ?? 0} variant="small" className="font-semibold" /></td>
+              <td className="px-4 py-3"><StatusBadge statut={c.statut} /></td>
+              <td className="px-4 py-3"><ExternalLink size={14} className="text-gray-400 hover:text-[#087F3E]" /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function TabDecomptes({ sttId }) {
+  const navigate = useNavigate();
+  // On récupère d'abord les contrats du STT pour filtrer les décomptes
+  const { data: contratsData } = useContratsPaginated({ soustraitant_id: Number(sttId), count: 100 });
+  const contratIds = (contratsData?.data ?? []).map(c => c.id);
+  // On prend le premier contrat_id s'il y en a un — pour un vrai multi-contrat il faudrait un filtre backend
+  const firstContratId = contratIds[0] ?? null;
+  const { data, isLoading } = useDecomptesPaginated({ contrat_id: firstContratId, count: 50 });
+  const decomptes = firstContratId ? (data?.data ?? []) : [];
+  const fmtPeriode = d => {
+    const ec = d.etat_cession;
+    if (!ec?.periode_debut) return "—";
+    return new Date(ec.periode_debut).toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+  };
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-gray-50 border-b border-gray-200">
+            {["Code", "Contrat", "Période", "Net HT", "Statut"].map(h => (
+              <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${h === "Net HT" ? "text-right" : "text-left"}`}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {isLoading && <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-sm">Chargement…</td></tr>}
+          {!isLoading && decomptes.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-sm">Aucun décompte pour ce sous-traitant</td></tr>}
+          {decomptes.map(d => (
+            <tr key={d.id} onClick={() => navigate(`/decomptes/${d.id}`)} className="hover:bg-gray-50 cursor-pointer">
+              <td className="px-4 py-3 font-mono text-xs text-[#087F3E] font-semibold">{d.code}</td>
+              <td className="px-4 py-3 text-sm text-gray-700 font-mono">{d.contrat?.code ?? "—"}</td>
+              <td className="px-4 py-3 text-sm text-gray-500">{fmtPeriode(d)}</td>
+              <td className="px-4 py-3 text-right"><MoneyDisplay amount={d.montant_ht ?? 0} variant="small" className="font-semibold" /></td>
+              <td className="px-4 py-3"><StatusBadge statut={d.statut} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 function InfoRow({ icon: Icon, label, value }) {
   if (!value) return null;
@@ -148,19 +226,8 @@ export default function SousTraitantFormPage() {
             </div>
           )}
 
-          {(activeTab === "contrats" || activeTab === "decomptes") && (
-            <div className="text-center py-12 text-gray-400 text-sm">
-              <p className="text-gray-300 text-3xl mb-3">
-                {activeTab === "contrats" ? "📋" : "🧾"}
-              </p>
-              <p className="font-medium text-gray-500">
-                {activeTab === "contrats" ? "Contrats de sous-traitance" : "Décomptes"}
-              </p>
-              <p className="text-xs mt-1 text-gray-400">
-                Module en cours de connexion — disponible prochainement.
-              </p>
-            </div>
-          )}
+          {activeTab === "contrats" && <TabContrats sttId={id} />}
+          {activeTab === "decomptes" && <TabDecomptes sttId={id} />}
         </div>
       </div>
     </div>
