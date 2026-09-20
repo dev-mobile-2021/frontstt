@@ -771,7 +771,7 @@ export default function DecompteFormPage() {
         </div>
       ) : (
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-          <Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} />
+          <Tabs items={tabs} activeTab={activeTab} onChange={setActiveTab} />
           <div className="p-6">
             {activeTab === "structure" && (
               <StructureTab
