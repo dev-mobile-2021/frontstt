@@ -7,6 +7,7 @@ const FIELDS = `
   budget_personnel budget_materiel budget_fournitures
   budget_sous_traitance budget_divers budget_total
   code_x3 synced_at created_at updated_at
+  contrats { id code statut montant_actuel soustraitant { id raison_sociale } }
 `;
 
 export const chantierService = {

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, RotateCcw, MapPin, User, Building2, Plus, X, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Search, RotateCcw, MapPin, User, Building2, Plus, X, ChevronLeft, ChevronRight, Loader2, RefreshCw, Info } from "lucide-react";
 import { useChantiersPaginated, useSaveChantier } from "../hooks/useChantiers";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
@@ -9,7 +9,7 @@ import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonCard } from "../components/Skeleton";
 
 const STATUTS = [
-  { value: "actif",    label: "Actif" },
+  { value: "actif",    label: "En cours" },
   { value: "suspendu", label: "Suspendu" },
   { value: "termine",  label: "Terminé" },
   { value: "cloture",  label: "Clôturé" },
@@ -21,9 +21,8 @@ const INIT = {
   budget_total: "", budget_sous_traitance: "",
 };
 
-function BudgetBar({ pct }) {
-  const p = Math.min(100, Math.max(0, pct));
-  const color = pct > 90 ? "bg-amber-400" : "bg-[#087F3E]";
+function ProgressBar({ pct, color = "bg-[#087F3E]" }) {
+  const p = Math.min(100, Math.max(0, pct || 0));
   return (
     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
       <div className={`h-full rounded-full ${color}`} style={{ width: `${p}%` }} />
@@ -32,15 +31,16 @@ function BudgetBar({ pct }) {
 }
 
 function ChantierCard({ chantier, onClick }) {
-  const pct = chantier.budget_total > 0
-    ? Math.round((chantier.budget_sous_traitance / chantier.budget_total) * 100)
-    : 0;
+  const contrats   = chantier.contrats ?? [];
+  const nbContrats = contrats.length;
+  const sttEngage  = contrats.reduce((s, c) => s + (c.montant_actuel ?? 0), 0);
+  const budgetTotal = chantier.budget_total ?? 0;
+  const sttPct     = budgetTotal > 0 ? Math.round((sttEngage / budgetTotal) * 100) : 0;
 
   return (
-    <div
-      onClick={onClick}
-      className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#087F3E] hover:shadow-md cursor-pointer transition-all duration-200 group flex flex-col gap-3"
-    >
+    <div onClick={onClick}
+      className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#087F3E] hover:shadow-md cursor-pointer transition-all duration-200 group flex flex-col gap-3">
+      {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <span className="text-xs text-gray-400 font-mono">{chantier.code}</span>
@@ -51,30 +51,43 @@ function ChantierCard({ chantier, onClick }) {
         <StatusBadge statut={chantier.statut} />
       </div>
 
+      {/* Localisation */}
       {chantier.localisation && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-          <MapPin size={11} className="flex-shrink-0" />
-          {chantier.localisation}
+        <div className="flex items-start gap-1.5 text-xs text-gray-500">
+          <MapPin size={11} className="flex-shrink-0 mt-0.5" />
+          <span className="line-clamp-2">{chantier.localisation}</span>
         </div>
       )}
 
-      {chantier.chef_projet && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-          <User size={11} className="flex-shrink-0" />
-          <span className="font-medium text-gray-600">{chantier.chef_projet}</span>
+      {/* Responsable */}
+      {(chantier.chef_projet || chantier.conducteur_travaux) && (
+        <div className="flex items-center gap-1.5 text-xs text-gray-600">
+          <User size={11} className="flex-shrink-0 text-gray-400" />
+          <span className="font-medium">{chantier.chef_projet || chantier.conducteur_travaux}</span>
         </div>
       )}
 
+      {/* STT engagé */}
       <div className="space-y-1 pt-1 border-t border-gray-100">
         <div className="flex justify-between text-xs">
-          <span className="text-gray-500">Budget S/T</span>
-          <span className="text-[#087F3E] font-semibold">{pct}%</span>
+          <span className="text-gray-500">STT engagé</span>
+          <span className={`font-semibold ${sttPct > 90 ? "text-amber-600" : "text-[#087F3E]"}`}>{sttPct}%</span>
         </div>
-        <BudgetBar pct={pct} />
+        <ProgressBar pct={sttPct} color={sttPct > 90 ? "bg-amber-400" : "bg-[#087F3E]"} />
         <div className="flex justify-between text-xs text-gray-400">
-          <MoneyDisplay amount={chantier.budget_sous_traitance} variant="small" />
-          <MoneyDisplay amount={chantier.budget_total} variant="small" />
+          <MoneyDisplay amount={sttEngage} variant="small" />
+          <MoneyDisplay amount={budgetTotal} variant="small" />
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center justify-between text-xs text-gray-400 pt-1 border-t border-gray-100">
+        <span>{nbContrats} contrat{nbContrats !== 1 ? "s" : ""} STT</span>
+        {chantier.localisation && (
+          <span className="text-gray-400 truncate max-w-[120px] text-right">
+            {chantier.localisation.split(/[,—\-]/)[0].trim()}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -119,7 +132,6 @@ export default function ChantiersListPage() {
   const hasFilter  = search || statut;
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
-
   function openModal() { setForm(INIT); setErrors({}); setShowModal(true); }
 
   async function handleSubmit(e) {
@@ -127,15 +139,13 @@ export default function ChantiersListPage() {
     const errs = {};
     if (!form.designation.trim()) errs.designation = "Requis";
     if (Object.keys(errs).length) { setErrors(errs); return; }
-
     try {
       await saveMut.mutateAsync({
-        designation:         form.designation.trim(),
-        localisation:        form.localisation || null,
-        description:         form.description  || null,
-        date_debut:          form.date_debut   || null,
-        date_fin_prevue:     form.date_fin_prevue || null,
-        budget_total:        form.budget_total        ? parseFloat(form.budget_total)        : null,
+        designation:           form.designation.trim(),
+        localisation:          form.localisation || null,
+        description:           form.description  || null,
+        date_debut:            form.date_debut   || null,
+        date_fin_prevue:       form.date_fin_prevue || null,
         budget_sous_traitance: form.budget_sous_traitance ? parseFloat(form.budget_sous_traitance) : null,
         statut: "actif",
       });
@@ -152,39 +162,46 @@ export default function ChantiersListPage() {
         title="Chantiers"
         subtitle={isLoading ? "Chargement…" : `${meta.total ?? 0} chantier${(meta.total ?? 0) !== 1 ? "s" : ""}`}
         action={
-          <button
-            onClick={openModal}
-            className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors"
-          >
+          <button onClick={openModal}
+            className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
             <Plus size={16} /> Nouveau chantier
           </button>
         }
       />
 
+      {/* Sync banner */}
+      <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-5 py-3">
+        <Info size={14} className="text-gray-400 flex-shrink-0" />
+        <p className="text-xs text-gray-500 flex-1">
+          Référentiel synchronisé depuis Sage X3 Projets
+          {chantiers[0]?.synced_at ? (
+            <> · Dernière synchronisation : {new Date(chantiers[0].synced_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</>
+          ) : null}
+        </p>
+        <button
+          onClick={() => addToast("Synchronisation Sage X3 non disponible en mode démo.", "info")}
+          className="inline-flex items-center gap-1.5 text-xs text-[#087F3E] border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors font-medium">
+          <RefreshCw size={12} /> Synchroniser depuis Sage X3
+        </button>
+      </div>
+
+      {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[220px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              placeholder="Nom, code ou localisation…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-            />
+            <input placeholder="Nom, code, région, directeur ou conducteur de travaux…"
+              value={search} onChange={e => setSearch(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
           </div>
-          <select
-            value={statut}
-            onChange={e => { setStatut(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30"
-          >
+          <select value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
           {hasFilter && (
-            <button
-              onClick={() => { setSearch(""); setStatut(""); setPage(1); }}
-              className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors"
-            >
+            <button onClick={() => { setSearch(""); setStatut(""); setPage(1); }}
+              className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
               <RotateCcw size={13} /> Réinitialiser
             </button>
           )}
@@ -222,7 +239,7 @@ export default function ChantiersListPage() {
                   className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30">
                   <ChevronLeft size={16} />
                 </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => i + 1).map(n => (
                   <button key={n} onClick={() => setPage(n)}
                     className={`w-8 h-8 text-sm rounded transition-colors ${n === page ? "bg-[#087F3E] text-white font-semibold" : "hover:bg-gray-100 text-gray-600"}`}>
                     {n}
@@ -238,7 +255,7 @@ export default function ChantiersListPage() {
         </div>
       )}
 
-      {/* ── Modal création ── */}
+      {/* Modal création */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
@@ -276,16 +293,10 @@ export default function ChantiersListPage() {
                 </Field>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Budget total HT (FCFA)">
-                  <input type="number" min="0" value={form.budget_total} onChange={e => set("budget_total", e.target.value)}
-                    className={INPUT} placeholder="0" />
-                </Field>
-                <Field label="Budget S/T HT (FCFA)">
-                  <input type="number" min="0" value={form.budget_sous_traitance} onChange={e => set("budget_sous_traitance", e.target.value)}
-                    className={INPUT} placeholder="0" />
-                </Field>
-              </div>
+              <Field label="Budget S/T HT (FCFA)">
+                <input type="number" min="0" value={form.budget_sous_traitance} onChange={e => set("budget_sous_traitance", e.target.value)}
+                  className={INPUT} placeholder="0" />
+              </Field>
 
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)}
