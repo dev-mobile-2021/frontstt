@@ -1,6 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, RotateCcw, ChevronLeft, ChevronRight, Plus, X, Loader2, FileText, FileSpreadsheet } from "lucide-react";
+import {
+  Search, RotateCcw, ChevronLeft, ChevronRight, Plus, X, Loader2,
+  FileText, FileSpreadsheet, CheckCircle2, Clock, FolderOpen, TrendingUp,
+} from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
 import { useEtatsCessionPaginated, useSaveEtatCession } from "../hooks/useEtatsCession";
@@ -10,16 +13,16 @@ import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonTable } from "../components/Skeleton";
+import { formatMontantCourt } from "../utils/formatters";
 
 const STATUTS = [
   { value: "brouillon", label: "Brouillon" },
   { value: "soumis",    label: "Soumis" },
-  { value: "valide",    label: "Validé" },
+  { value: "valide",    label: "Validé / Arrêté" },
   { value: "rejete",    label: "Rejeté" },
 ];
 
 const INIT = { contrat_id: "", periode_debut: "", periode_fin: "", observations: "" };
-
 const INPUT = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]";
 
 function Field({ label, required, children }) {
@@ -33,35 +36,72 @@ function Field({ label, required, children }) {
   );
 }
 
+function KPICard({ icon: Icon, label, value, sub, color = "text-gray-500", bg = "bg-gray-50" }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-3">
+      <div className={`mt-0.5 p-2 rounded-lg ${bg} ${color}`}><Icon size={16} /></div>
+      <div>
+        <p className="text-xs text-gray-500 mb-0.5">{label}</p>
+        <p className="text-lg font-bold text-gray-900">{value}</p>
+        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
 export default function EtatsCessionListPage() {
   const navigate     = useNavigate();
   const { addToast } = useToast();
   const saveMut      = useSaveEtatCession();
 
-  const [search,    setSearch]    = useState("");
-  const [statut,    setStatut]    = useState("");
-  const [page,      setPage]      = useState(1);
-  const [debounced, setDebounced] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [form,      setForm]      = useState(INIT);
-  const [errors,    setErrors]    = useState({});
+  const [search,        setSearch]       = useState("");
+  const [statut,        setStatut]       = useState("");
+  const [contratFilter, setContratFilter] = useState("");
+  const [page,          setPage]         = useState(1);
+  const [debounced,     setDebounced]    = useState("");
+  const [showModal,     setShowModal]    = useState(false);
+  const [form,          setForm]         = useState(INIT);
+  const [errors,        setErrors]       = useState({});
 
   useEffect(() => {
     const t = setTimeout(() => { setDebounced(search.trim()); setPage(1); }, 400);
     return () => clearTimeout(t);
   }, [search]);
 
-  const filters = { code: debounced || undefined, statut: statut || undefined, page, count: 15 };
+  const filters = {
+    code:       debounced || undefined,
+    statut:     statut || undefined,
+    contrat_id: contratFilter ? parseInt(contratFilter) : undefined,
+    page,
+    count: 15,
+  };
+
   const { data, isLoading, isError } = useEtatsCessionPaginated(filters);
   const rows       = data?.data ?? [];
   const meta       = data?.metadata ?? {};
   const totalPages = meta.last_page ?? 1;
-  const hasFilter  = search || statut;
+  const hasFilter  = search || statut || contratFilter;
 
-  const { data: contratsData } = useContratsPaginated({ count: 200, statut: "actif" });
+  const { data: allData } = useEtatsCessionPaginated({ count: 500 });
+  const allEC = allData?.data ?? [];
+
+  const { data: contratsData } = useContratsPaginated({ count: 200 });
   const contrats = contratsData?.data ?? [];
 
-  function reset()   { setSearch(""); setStatut(""); setPage(1); }
+  const kpis = useMemo(() => {
+    const now = new Date();
+    const moisCourant = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return {
+      ouverts:   allEC.filter(e => e.statut === "brouillon").length,
+      enControle: allEC.filter(e => e.statut === "soumis").length,
+      arretes:   allEC.filter(e => e.statut === "valide").length,
+      totalMois: allEC
+        .filter(e => (e.created_at ?? "").startsWith(moisCourant))
+        .reduce((s, e) => s + parseFloat(e.montant_total ?? 0), 0),
+    };
+  }, [allEC]);
+
+  function reset()   { setSearch(""); setStatut(""); setContratFilter(""); setPage(1); }
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
 
   function exportExcel() {
@@ -90,32 +130,44 @@ export default function EtatsCessionListPage() {
       const newId = res?.data?.id;
       if (newId) navigate(`/etats-cession/${newId}`);
     } catch (err) {
-      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la création.", "error");
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur.", "error");
     }
   }
 
-  const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
+  const fmtPeriode = (debut, fin) => {
+    const d = debut ? new Date(debut).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : null;
+    const f = fin   ? new Date(fin).toLocaleDateString("fr-FR",   { day: "2-digit", month: "short", year: "numeric" }) : null;
+    if (d && f) return `${d} → ${f}`;
+    return d ?? "—";
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="États de cession"
-        subtitle={isLoading ? "Chargement…" : `${meta.total ?? 0} état${(meta.total ?? 0) !== 1 ? "s" : ""}`}
+        subtitle="Arrêtés périodiques MTX/MTL/RH, contrôlés et visés, consommés par les décomptes"
         action={
-          <button
-            onClick={() => { setForm(INIT); setErrors({}); setShowModal(true); }}
-            className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors"
-          >
+          <button onClick={() => { setForm(INIT); setErrors({}); setShowModal(true); }}
+            className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
             <Plus size={16} /> Nouvel état de cession
           </button>
         }
       />
 
+      {/* KPI Bandeau */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <KPICard icon={FolderOpen}    label="États ouverts"           value={kpis.ouverts}    sub="En brouillon"            color="text-gray-500"    bg="bg-gray-100" />
+        <KPICard icon={Clock}         label="États en contrôle"       value={kpis.enControle} sub="Soumis, en attente"       color="text-amber-600"   bg="bg-amber-50" />
+        <KPICard icon={CheckCircle2}  label="Arrêtés"                 value={kpis.arretes}    sub="Validés, consommables"    color="text-[#087F3E]"   bg="bg-[#E8F5EE]" />
+        <KPICard icon={TrendingUp}    label="Total valorisé (mois)"   value={formatMontantCourt(kpis.totalMois)} sub="Mois courant"         color="text-violet-600"  bg="bg-violet-50" />
+      </div>
+
+      {/* Filtres */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[200px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input placeholder="Rechercher par code état de cession…" value={search}
+            <input placeholder="Code, contrat, sous-traitant…" value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
           </div>
@@ -123,6 +175,11 @@ export default function EtatsCessionListPage() {
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+          <select value={contratFilter} onChange={e => { setContratFilter(e.target.value); setPage(1); }}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[240px]">
+            <option value="">Tous les contrats</option>
+            {contrats.map(c => <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale}</option>)}
           </select>
           {hasFilter && (
             <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
@@ -136,6 +193,7 @@ export default function EtatsCessionListPage() {
         </div>
       </div>
 
+      {/* Table */}
       {isLoading ? (
         <SkeletonTable rows={8} cols={6} />
       ) : isError ? (
@@ -147,7 +205,7 @@ export default function EtatsCessionListPage() {
           <table className="w-full min-w-[800px]">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50 border-b border-gray-200">
-                {["Code", "Contrat / STT", "Chantier", "Période", "Montant total", "Statut"].map(h => (
+                {["Code", "Contrat / STT", "Chantier", "Période", "MTX", "MTL", "RH", "Total", "Statut"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -155,14 +213,14 @@ export default function EtatsCessionListPage() {
             <tbody className="divide-y divide-gray-100">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-16 text-center">
+                  <td colSpan={9} className="py-16 text-center">
                     <FileText size={28} className="mx-auto mb-2 text-gray-300" />
                     <p className="text-sm text-gray-400">Aucun état de cession ne correspond aux filtres.</p>
                   </td>
                 </tr>
               ) : rows.map(e => (
                 <tr key={e.id} onClick={() => navigate(`/etats-cession/${e.id}`)}
-                  className="hover:bg-gray-50 even:bg-gray-50/40 group cursor-pointer transition-colors">
+                  className="hover:bg-gray-50 even:bg-gray-50/40 cursor-pointer transition-colors">
                   <td className="px-4 py-3.5"><span className="font-mono text-sm font-semibold text-gray-900">{e.code}</span></td>
                   <td className="px-4 py-3.5">
                     <p className="text-sm font-mono text-gray-700">{e.contrat?.code ?? "—"}</p>
@@ -171,9 +229,22 @@ export default function EtatsCessionListPage() {
                   <td className="px-4 py-3.5">
                     <p className="text-xs text-gray-500 truncate max-w-[120px]">{e.contrat?.chantier?.designation ?? "—"}</p>
                   </td>
-                  <td className="px-4 py-3.5 text-sm text-gray-500 whitespace-nowrap">
-                    {fmtDate(e.periode_debut)}{e.periode_fin ? ` → ${fmtDate(e.periode_fin)}` : ""}
-                  </td>
+                  <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{fmtPeriode(e.periode_debut, e.periode_fin)}</td>
+                  {/* MTX / MTL / RH — pas de statut par type sans charger les lignes, on affiche le statut global */}
+                  {["MTX", "MTL", "RH"].map(type => (
+                    <td key={type} className="px-4 py-3.5">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium
+                        ${e.statut === "valide"    ? "bg-green-100 text-green-700"
+                        : e.statut === "soumis"   ? "bg-amber-100 text-amber-700"
+                        : e.statut === "rejete"   ? "bg-red-100 text-red-600"
+                        :                           "bg-gray-100 text-gray-500"}`}>
+                        {e.statut === "valide"  ? "Validé"
+                        : e.statut === "soumis" ? "En contrôle"
+                        : e.statut === "rejete" ? "Rejeté"
+                        :                        "Brouillon"}
+                      </span>
+                    </td>
+                  ))}
                   <td className="px-4 py-3.5"><MoneyDisplay amount={e.montant_total ?? 0} variant="small" /></td>
                   <td className="px-4 py-3.5"><StatusBadge statut={e.statut} /></td>
                 </tr>
@@ -183,9 +254,7 @@ export default function EtatsCessionListPage() {
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
-              <p className="text-xs text-gray-500">
-                Page {meta.current_page} / {meta.last_page} — {meta.total} résultat{meta.total !== 1 ? "s" : ""}
-              </p>
+              <p className="text-xs text-gray-500">Page {meta.current_page} / {meta.last_page} — {meta.total} résultat{meta.total !== 1 ? "s" : ""}</p>
               <div className="flex items-center gap-1">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                   className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30"><ChevronLeft size={16} /></button>
@@ -203,39 +272,29 @@ export default function EtatsCessionListPage() {
         </div>
       )}
 
-      {/* ── Modal création ── */}
+      {/* Modal création */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
               <h2 className="text-base font-bold text-gray-900">Nouvel état de cession</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
-                <X size={18} />
-              </button>
+              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"><X size={18} /></button>
             </div>
-
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <Field label="Contrat" required>
                 <select value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)}
                   className={`${INPUT} ${errors.contrat_id ? "border-red-400" : ""}`}>
-                  <option value="">— Sélectionner un contrat —</option>
-                  {contrats.map(c => (
-                    <option key={c.id} value={c.id}>
-                      {c.code} — {c.soustraitant?.raison_sociale ?? "?"} / {c.chantier?.designation ?? "?"}
-                    </option>
+                  <option value="">— Sélectionner un contrat actif —</option>
+                  {contrats.filter(c => c.statut === "actif").map(c => (
+                    <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale ?? "?"}</option>
                   ))}
                 </select>
                 {errors.contrat_id && <p className="text-xs text-red-500 mt-1">{errors.contrat_id}</p>}
               </Field>
-
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Période début" required>
                   <input type="date" value={form.periode_debut}
-                    onChange={e => {
-                      const v = e.target.value;
-                      setForm(f => ({ ...f, periode_debut: v, periode_fin: f.periode_fin < v ? "" : f.periode_fin }));
-                      setErrors(err => ({ ...err, periode_debut: undefined }));
-                    }}
+                    onChange={e => { const v = e.target.value; setForm(f => ({ ...f, periode_debut: v, periode_fin: f.periode_fin < v ? "" : f.periode_fin })); setErrors(er => ({ ...er, periode_debut: undefined })); }}
                     className={`${INPUT} ${errors.periode_debut ? "border-red-400" : ""}`} />
                   {errors.periode_debut && <p className="text-xs text-red-500 mt-1">{errors.periode_debut}</p>}
                 </Field>
@@ -246,21 +305,16 @@ export default function EtatsCessionListPage() {
                   {errors.periode_fin && <p className="text-xs text-red-500 mt-1">{errors.periode_fin}</p>}
                 </Field>
               </div>
-
               <Field label="Observations">
                 <textarea value={form.observations} onChange={e => set("observations", e.target.value)}
                   rows={2} className={INPUT} placeholder="Notes optionnelles…" />
               </Field>
-
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                  Annuler
-                </button>
+                  className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">Annuler</button>
                 <button type="submit" disabled={saveMut.isPending}
                   className="flex-1 py-2.5 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                  {saveMut.isPending && <Loader2 size={14} className="animate-spin" />}
-                  Créer
+                  {saveMut.isPending && <Loader2 size={14} className="animate-spin" />} Créer
                 </button>
               </div>
             </form>

@@ -1,19 +1,204 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, Save, Loader2 } from "lucide-react";
+import { useParams, useNavigate, Link } from "react-router-dom";
+import { ArrowLeft, ChevronRight, Save, Loader2, Plus, X, Trash2, CheckCircle2, XCircle } from "lucide-react";
 import { useToast } from "../context/ToastContext";
-import { useEtatCession, useSaveEtatCession } from "../hooks/useEtatsCession";
+import {
+  useEtatCession, useSaveEtatCession, useSaveLigneEC,
+  useDeleteLigneEC, useEtatCessionStatut, useDeleteEtatCession,
+} from "../hooks/useEtatsCession";
 import { useContratsPaginated } from "../hooks/useContrats";
 import PageHeader from "../components/PageHeader";
+import StatusBadge from "../components/StatusBadge";
 import { SkeletonCard } from "../components/Skeleton";
 
-const INIT = {
-  contrat_id:    "",
-  periode_debut: "",
-  periode_fin:   "",
-  observations:  "",
+const fmtNum  = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
+const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
+
+const POSTES = [
+  { value: "MTX", label: "Matériaux (MTX)", color: "blue" },
+  { value: "MTL", label: "Matériel (MTL)",  color: "violet" },
+  { value: "RH",  label: "Ressources humaines (RH)", color: "green" },
+];
+
+const POSTE_COLORS = {
+  MTX: { bg: "bg-blue-50",   border: "border-blue-200",   badge: "bg-blue-100 text-blue-700",   dot: "bg-blue-500" },
+  MTL: { bg: "bg-violet-50", border: "border-violet-200", badge: "bg-violet-100 text-violet-700", dot: "bg-violet-500" },
+  RH:  { bg: "bg-green-50",  border: "border-green-200",  badge: "bg-green-100 text-green-700",  dot: "bg-green-500" },
 };
 
+const LIGNE_INIT = { designation: "", unite: "", quantite: "", prix_unitaire: "" };
+
+const INIT = { contrat_id: "", periode_debut: "", periode_fin: "", observations: "" };
+
+// ─── Section lignes par poste ────────────────────────────────────
+function PosteSection({ poste, label, lignes, canEdit, etatId, onAdded, onDeleted }) {
+  const { addToast } = useToast();
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm]         = useState(LIGNE_INIT);
+  const [confirmDel, setConfirmDel] = useState(null);
+
+  const saveMut   = useSaveLigneEC();
+  const deleteMut = useDeleteLigneEC();
+
+  const c      = POSTE_COLORS[poste] ?? POSTE_COLORS.MTX;
+  const total  = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+
+  async function handleAdd(e) {
+    e.preventDefault();
+    try {
+      await saveMut.mutateAsync({
+        etat_cession_id: parseInt(etatId, 10),
+        poste,
+        designation:   form.designation,
+        unite:         form.unite || null,
+        quantite:      parseFloat(form.quantite),
+        prix_unitaire: parseFloat(form.prix_unitaire),
+      });
+      addToast("Ligne ajoutée.", "success");
+      setShowForm(false);
+      setForm(LIGNE_INIT);
+      onAdded?.();
+    } catch (err) {
+      addToast(err.response?.data?.message ?? "Erreur.", "error");
+    }
+  }
+
+  async function handleDelete(id) {
+    try {
+      await deleteMut.mutateAsync(id);
+      setConfirmDel(null);
+      onDeleted?.();
+    } catch (err) {
+      addToast("Erreur suppression.", "error");
+    }
+  }
+
+  return (
+    <div className={`border rounded-2xl overflow-hidden ${c.border}`}>
+      {/* Header */}
+      <div className={`flex items-center justify-between px-5 py-3.5 ${c.bg} border-b ${c.border}`}>
+        <div className="flex items-center gap-2.5">
+          <span className={`w-2 h-2 rounded-full ${c.dot}`} />
+          <span className="text-sm font-semibold text-gray-900">{label}</span>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.badge}`}>
+            {lignes.length} ligne{lignes.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-bold text-gray-800">{fmtNum(total)} FCFA</span>
+          {canEdit && (
+            <button onClick={() => { setShowForm(true); setForm(LIGNE_INIT); }}
+              className="text-xs text-[#087F3E] hover:underline font-medium">+ Ajouter</button>
+          )}
+        </div>
+      </div>
+
+      {/* Table lignes */}
+      {lignes.length === 0 && !showForm ? (
+        <div className="px-5 py-6 text-center text-sm text-gray-400">
+          Aucune ligne {label.split(" ")[0]}. {canEdit && "Cliquez sur « Ajouter » pour commencer."}
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 bg-white">
+                <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Désignation</th>
+                <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-20">Unité</th>
+                <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-24">Quantité</th>
+                <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-28">Prix unit.</th>
+                <th className="text-right px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-32">Montant</th>
+                {canEdit && <th className="w-10" />}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {lignes.map(l => (
+                <tr key={l.id} className="hover:bg-gray-50/50">
+                  <td className="px-5 py-2.5 text-gray-800">{l.designation}</td>
+                  <td className="px-3 py-2.5 text-gray-500 text-xs">{l.unite || "—"}</td>
+                  <td className="px-3 py-2.5 text-right text-gray-700">{fmtNum(l.quantite)}</td>
+                  <td className="px-3 py-2.5 text-right text-gray-600 text-xs">{fmtNum(l.prix_unitaire)}</td>
+                  <td className="px-5 py-2.5 text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</td>
+                  {canEdit && (
+                    <td className="pr-3 py-2.5 text-right">
+                      {confirmDel === l.id ? (
+                        <span className="inline-flex items-center gap-1 text-xs">
+                          <button onClick={() => handleDelete(l.id)} className="text-red-600 font-medium">Oui</button>
+                          <button onClick={() => setConfirmDel(null)} className="text-gray-400">Non</button>
+                        </span>
+                      ) : (
+                        <button onClick={() => setConfirmDel(l.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                          <Trash2 size={13} />
+                        </button>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+            {lignes.length > 0 && (
+              <tfoot>
+                <tr className="border-t border-gray-200 bg-gray-50">
+                  <td colSpan={canEdit ? 4 : 4} className="px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total {poste}</td>
+                  <td className="px-5 py-2.5 text-right font-bold text-gray-900">{fmtNum(total)} FCFA</td>
+                  {canEdit && <td />}
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      )}
+
+      {/* Formulaire ajout inline */}
+      {showForm && (
+        <div className={`border-t ${c.border} ${c.bg} px-5 py-4`}>
+          <form onSubmit={handleAdd} className="grid grid-cols-[1fr_80px_100px_120px_auto] gap-3 items-end">
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">Désignation *</label>
+              <input type="text" value={form.designation} onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
+                autoFocus required placeholder="Description de la prestation…"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">Unité</label>
+              <input type="text" value={form.unite} onChange={e => setForm(f => ({ ...f, unite: e.target.value }))}
+                placeholder="m², u…"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">Quantité *</label>
+              <input type="number" value={form.quantite} onChange={e => setForm(f => ({ ...f, quantite: e.target.value }))}
+                required min="0" step="any" placeholder="0"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-500 font-medium">Prix unit. *</label>
+              <input type="number" value={form.prix_unitaire} onChange={e => setForm(f => ({ ...f, prix_unitaire: e.target.value }))}
+                required min="0" step="any" placeholder="0"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+            </div>
+            <div className="flex items-end gap-2">
+              <button type="submit" disabled={saveMut.isPending}
+                className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60 whitespace-nowrap">
+                {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} OK
+              </button>
+              <button type="button" onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600">
+                <X size={16} />
+              </button>
+            </div>
+          </form>
+          {form.quantite && form.prix_unitaire && (
+            <p className="text-xs text-[#087F3E] font-medium mt-2">
+              Montant : {fmtNum(parseFloat(form.quantite) * parseFloat(form.prix_unitaire))} FCFA
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Page principale ─────────────────────────────────────────────
 export default function EtatCessionFormPage() {
   const { id }       = useParams();
   const isNew        = !id || id === "nouveau";
@@ -21,16 +206,15 @@ export default function EtatCessionFormPage() {
   const { addToast } = useToast();
 
   const [form, setForm] = useState(INIT);
+  const [pendingStatut, setPendingStatut] = useState(null);
 
   const { data: etat, isLoading, isError } = useEtatCession(isNew ? null : id);
-
-  const { data: contratsData } = useContratsPaginated({
-    statut: isNew ? "actif" : undefined,
-    count: 200,
-  });
+  const { data: contratsData } = useContratsPaginated({ count: 200 });
   const contrats = contratsData?.data ?? [];
 
-  const saveMut = useSaveEtatCession();
+  const saveMut    = useSaveEtatCession();
+  const statutMut  = useEtatCessionStatut();
+  const deleteMut  = useDeleteEtatCession();
 
   useEffect(() => {
     if (!isNew && etat) {
@@ -43,20 +227,7 @@ export default function EtatCessionFormPage() {
     }
   }, [isNew, etat]);
 
-  const selectedContrat = contrats.find(c => String(c.id) === String(form.contrat_id));
-
-  function set(field, value) {
-    setForm(f => ({ ...f, [field]: value }));
-  }
-
-  function handleDebutChange(value) {
-    // Reset fin if it becomes anterior to the new debut
-    setForm(f => ({
-      ...f,
-      periode_debut: value,
-      periode_fin: f.periode_fin && f.periode_fin < value ? "" : f.periode_fin,
-    }));
-  }
+  function set(field, value) { setForm(f => ({ ...f, [field]: value })); }
 
   async function handleSave(e) {
     e.preventDefault();
@@ -74,44 +245,47 @@ export default function EtatCessionFormPage() {
 
     try {
       const res = await saveMut.mutateAsync(payload);
-      addToast(isNew ? "État de cession créé." : "État de cession mis à jour.", "success");
+      addToast(isNew ? "État de cession créé." : "Mis à jour.", "success");
       const newId = res?.data?.id ?? id;
       navigate(`/etats-cession/${newId}`, { replace: true });
     } catch (err) {
-      addToast(
-        err.response?.data?.errors?.[0] ?? err.response?.data?.error ?? "Erreur lors de la sauvegarde.",
-        "error"
-      );
+      addToast(err.response?.data?.errors?.[0] ?? err.response?.data?.error ?? "Erreur.", "error");
     }
   }
 
-  if (!isNew && isLoading) {
-    return <div className="space-y-4">{[1, 2, 3].map(i => <SkeletonCard key={i} />)}</div>;
-  }
-  if (!isNew && (isError || !etat)) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-        <p className="text-lg font-semibold">État de cession introuvable</p>
-        <button onClick={() => navigate("/etats-cession")} className="mt-4 text-sm text-[#087F3E] hover:underline">
-          Retour à la liste
-        </button>
-      </div>
-    );
-  }
-  if (!isNew && etat?.statut !== "brouillon") {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-        <p className="text-lg font-semibold">Cet état de cession ne peut plus être modifié</p>
-        <p className="text-sm mt-1">Statut : <strong>{etat?.statut}</strong></p>
-        <button onClick={() => navigate(`/etats-cession/${id}`)} className="mt-4 text-sm text-[#087F3E] hover:underline">
-          Voir le détail
-        </button>
-      </div>
-    );
+  async function handleStatut(statut) {
+    try {
+      await statutMut.mutateAsync({ id: parseInt(id, 10), statut });
+      addToast("Statut mis à jour.", "success");
+      setPendingStatut(null);
+    } catch (err) {
+      addToast(err.response?.data?.errors?.[0] ?? "Erreur.", "error");
+    }
   }
 
-  const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none";
-  const labelCls = "block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1";
+  async function handleDelete() {
+    try {
+      await deleteMut.mutateAsync(parseInt(id, 10));
+      addToast("État de cession supprimé.", "success");
+      navigate("/etats-cession");
+    } catch (err) {
+      addToast(err.response?.data?.errors?.[0] ?? "Erreur.", "error");
+    }
+  }
+
+  if (!isNew && isLoading) return <div className="space-y-4">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>;
+  if (!isNew && (isError || !etat)) return (
+    <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+      <p className="text-lg font-semibold">État de cession introuvable</p>
+      <button onClick={() => navigate("/etats-cession")} className="mt-4 text-sm text-[#087F3E] hover:underline">Retour</button>
+    </div>
+  );
+
+  const canEdit = isNew || etat?.statut === "brouillon";
+  const lignes  = etat?.lignes ?? [];
+  const totalEC = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+
+  const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none";
 
   return (
     <div className="space-y-6">
@@ -121,146 +295,208 @@ export default function EtatCessionFormPage() {
           <ArrowLeft size={14} /> États de cession
         </button>
         <ChevronRight size={14} />
-        <span className="text-gray-900 font-medium">
-          {isNew ? "Nouvel état de cession" : etat?.code}
-        </span>
+        <span className="text-gray-900 font-medium">{isNew ? "Nouvel état de cession" : etat?.code}</span>
       </div>
 
       <PageHeader
-        title={isNew ? "Nouvel état de cession" : `Modifier ${etat?.code}`}
-        subtitle="Renseignez le contrat et la période de travaux"
-      />
-
-      <form onSubmit={handleSave} className="space-y-6">
-        {/* Contrat */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
-          <h3 className="text-sm font-semibold text-gray-700">Contrat</h3>
-
-          <div>
-            <label className={labelCls}>Contrat *</label>
-            <select
-              value={form.contrat_id}
-              onChange={e => set("contrat_id", e.target.value)}
-              className={inputCls}
-              disabled={!isNew}
-            >
-              <option value="">— Sélectionner un contrat actif —</option>
-              {contrats.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.code} · {c.soustraitant?.raison_sociale ?? "?"} · {c.objet}
-                </option>
-              ))}
-            </select>
-            {!isNew && (
-              <p className="text-xs text-gray-400 mt-1">Le contrat ne peut pas être modifié après création.</p>
+        title={isNew ? "Nouvel état de cession" : etat.code}
+        subtitle={isNew ? "Renseignez le contrat et la période" :
+          [etat.contrat?.code, etat.contrat?.chantier?.designation, etat.contrat?.soustraitant?.raison_sociale].filter(Boolean).join(" · ")}
+        action={!isNew && (
+          <div className="flex items-center gap-2">
+            <StatusBadge statut={etat.statut} />
+            {etat.statut === "brouillon" && (
+              <button onClick={() => setPendingStatut("soumis")}
+                className="px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
+                Soumettre
+              </button>
+            )}
+            {etat.statut === "soumis" && (
+              <>
+                <button onClick={() => setPendingStatut("valide")}
+                  className="px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
+                  Valider / Arrêter
+                </button>
+                <button onClick={() => setPendingStatut("rejete")}
+                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors">
+                  Rejeter
+                </button>
+              </>
             )}
           </div>
+        )}
+      />
 
-          {selectedContrat && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Sous-traitant</p>
-                <p className="font-medium text-gray-800">{selectedContrat.soustraitant?.raison_sociale ?? "—"}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Chantier</p>
-                <p className="font-medium text-gray-800">{selectedContrat.chantier?.designation ?? "—"}</p>
-                <p className="text-xs text-gray-400">{selectedContrat.chantier?.code ?? ""}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Objet</p>
-                <p className="font-medium text-gray-800">{selectedContrat.objet ?? "—"}</p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Période */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
-          <h3 className="text-sm font-semibold text-gray-700">Période de travaux</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      {/* Infos globales */}
+      {!isNew && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className={labelCls}>Date de début *</label>
-              <input
-                type="date"
-                value={form.periode_debut}
-                onChange={e => handleDebutChange(e.target.value)}
-                className={inputCls}
-              />
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Période</p>
+              <p className="text-sm font-semibold text-gray-800">
+                {fmtDate(etat.periode_debut)} → {fmtDate(etat.periode_fin)}
+              </p>
             </div>
             <div>
-              <label className={labelCls}>Date de fin *</label>
-              <input
-                type="date"
-                value={form.periode_fin}
-                min={form.periode_debut || undefined}
-                onChange={e => set("periode_fin", e.target.value)}
-                className={inputCls}
-                disabled={!form.periode_debut}
-              />
-              {!form.periode_debut && (
-                <p className="text-xs text-gray-400 mt-1">Choisissez d'abord la date de début.</p>
-              )}
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Contrat</p>
+              <Link to={`/contrats/${etat.contrat_id}`} className="text-sm font-semibold text-[#087F3E] hover:underline">
+                {etat.contrat?.code ?? "—"}
+              </Link>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Sous-traitant</p>
+              <p className="text-sm text-gray-700">{etat.contrat?.soustraitant?.raison_sociale ?? "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total consolidé</p>
+              <p className="text-xl font-bold text-gray-900">{fmtNum(etat.montant_total ?? totalEC)} FCFA</p>
             </div>
           </div>
-
-          {/* Warnings période vs contrat */}
-          {selectedContrat && form.periode_debut && selectedContrat.date_debut && form.periode_debut < selectedContrat.date_debut && (
-            <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-              <span className="mt-0.5">⚠</span>
-              <span>
-                La date de début est antérieure au début du contrat
-                (<strong>{new Date(selectedContrat.date_debut).toLocaleDateString("fr-FR")}</strong>).
-                Le backend rejettera cette saisie.
-              </span>
+          {etat.statut === "rejete" && etat.motif_rejet && (
+            <div className="mt-4 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+              <XCircle size={16} /> Rejeté — {etat.motif_rejet}
             </div>
           )}
-          {selectedContrat && form.periode_fin && selectedContrat.date_fin_prevue && form.periode_fin > selectedContrat.date_fin_prevue && (
-            <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-              <span className="mt-0.5">⚠</span>
-              <span>
-                La date de fin dépasse la fin prévue du contrat
-                (<strong>{new Date(selectedContrat.date_fin_prevue).toLocaleDateString("fr-FR")}</strong>).
-                Le backend rejettera cette saisie.
-              </span>
+          {etat.statut === "valide" && (
+            <div className="mt-4 flex items-center gap-2 bg-[#E8F5EE] border border-[#087F3E]/30 rounded-lg px-4 py-3 text-sm text-[#087F3E]">
+              <CheckCircle2 size={16} /> Arrêté et validé — consommable par les décomptes
             </div>
           )}
-          {selectedContrat && !selectedContrat.date_debut && !selectedContrat.date_fin_prevue && (
-            <p className="text-xs text-gray-400 italic">Aucune date de début/fin renseignée sur ce contrat — vérification de période impossible.</p>
+          {canEdit && etat.statut === "brouillon" && (
+            <div className="mt-4 flex justify-end">
+              <button onClick={() => setPendingStatut("brouillon_delete")}
+                className="text-xs text-red-400 hover:text-red-600 transition-colors">
+                Supprimer cet état de cession
+              </button>
+            </div>
           )}
         </div>
+      )}
 
-        {/* Observations */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <label className={labelCls}>Observations</label>
-          <textarea
-            value={form.observations}
-            onChange={e => set("observations", e.target.value)}
-            rows={3}
-            placeholder="Remarques éventuelles…"
-            className={`${inputCls} resize-none`}
-          />
-        </div>
+      {/* Formulaire création / édition infos de base */}
+      {isNew && (
+        <form onSubmit={handleSave} className="space-y-5">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-gray-700">Contrat</h3>
+            <select value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)} className={inputCls}>
+              <option value="">— Sélectionner un contrat actif —</option>
+              {contrats.filter(c => c.statut === "actif").map(c => (
+                <option key={c.id} value={c.id}>{c.code} · {c.soustraitant?.raison_sociale ?? "?"} · {c.objet}</option>
+              ))}
+            </select>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-semibold text-gray-700">Période de travaux</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Date début *</label>
+                <input type="date" value={form.periode_debut}
+                  onChange={e => { const v = e.target.value; setForm(f => ({ ...f, periode_debut: v, periode_fin: f.periode_fin < v ? "" : f.periode_fin })); }}
+                  className={inputCls} />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Date fin *</label>
+                <input type="date" value={form.periode_fin} min={form.periode_debut || undefined}
+                  onChange={e => set("periode_fin", e.target.value)} disabled={!form.periode_debut}
+                  className={inputCls} />
+              </div>
+            </div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Observations</label>
+            <textarea value={form.observations} onChange={e => set("observations", e.target.value)}
+              rows={3} placeholder="Remarques éventuelles…" className={`${inputCls} resize-none`} />
+          </div>
+          <div className="flex justify-end gap-3">
+            <button type="button" onClick={() => navigate("/etats-cession")}
+              className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors">Annuler</button>
+            <button type="submit" disabled={saveMut.isPending}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium disabled:opacity-60">
+              {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Créer l'état de cession
+            </button>
+          </div>
+        </form>
+      )}
 
-        {/* Actions */}
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => navigate("/etats-cession")}
-            className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-          >
-            Annuler
-          </button>
-          <button
-            type="submit"
-            disabled={saveMut.isLoading}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60"
-          >
-            {saveMut.isLoading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            {isNew ? "Créer l'état de cession" : "Enregistrer"}
-          </button>
+      {/* Sections MTX / MTL / RH */}
+      {!isNew && (
+        <div className="space-y-5">
+          {POSTES.map(p => (
+            <PosteSection
+              key={p.value}
+              poste={p.value}
+              label={p.label}
+              lignes={lignes.filter(l => l.poste === p.value)}
+              canEdit={canEdit}
+              etatId={id}
+            />
+          ))}
+
+          {/* Résumé total */}
+          {lignes.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-2xl p-5">
+              <div className="grid grid-cols-3 gap-4">
+                {POSTES.map(p => {
+                  const montant = lignes.filter(l => l.poste === p.value).reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+                  const c = POSTE_COLORS[p.value];
+                  return (
+                    <div key={p.value} className={`${c.bg} border ${c.border} rounded-xl p-4`}>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">{p.value}</p>
+                      <p className="text-lg font-bold text-gray-900">{fmtNum(montant)} FCFA</p>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                <span className="text-sm font-semibold text-gray-700">Total consolidé</span>
+                <span className="text-xl font-bold text-[#087F3E]">{fmtNum(totalEC)} FCFA</span>
+              </div>
+            </div>
+          )}
         </div>
-      </form>
+      )}
+
+      {/* Modal confirmation statut */}
+      {pendingStatut && pendingStatut !== "brouillon_delete" && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPendingStatut(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">
+              {pendingStatut === "soumis"  ? "Soumettre l'état de cession ?" :
+               pendingStatut === "valide"  ? "Valider et arrêter l'état de cession ?" :
+               pendingStatut === "rejete"  ? "Rejeter l'état de cession ?" : ""}
+            </h3>
+            <p className="text-sm text-gray-500 mb-5">
+              {pendingStatut === "valide" ? "L'état sera arrêté et consommable par les décomptes." :
+               pendingStatut === "soumis" ? "L'état passera en contrôle." : "Cette action est irréversible."}
+            </p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setPendingStatut(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+              <button onClick={() => handleStatut(pendingStatut)} disabled={statutMut.isPending}
+                className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-60 text-white
+                  ${pendingStatut === "rejete" ? "bg-red-500 hover:bg-red-600" : "bg-[#087F3E] hover:bg-[#065A2C]"}`}>
+                {statutMut.isPending ? <Loader2 size={14} className="animate-spin" /> : null} Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal confirmation suppression */}
+      {pendingStatut === "brouillon_delete" && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPendingStatut(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">Supprimer l'état de cession ?</h3>
+            <p className="text-sm text-gray-500 mb-5">Toutes les lignes seront supprimées. Action irréversible.</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setPendingStatut(null)} className="px-4 py-2 text-sm text-gray-600">Annuler</button>
+              <button onClick={handleDelete} disabled={deleteMut.isPending}
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white disabled:opacity-60">
+                {deleteMut.isPending ? <Loader2 size={14} className="animate-spin" /> : null} Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
