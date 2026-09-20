@@ -6,8 +6,19 @@ const FIELDS = `
   date_generation date_envoi date_retour
   motif_contestation ligne_contestee observations
   created_at updated_at
-  contrat { id code objet soustraitant { id raison_sociale } chantier { id code designation } }
-  decompte { id code }
+  contrat {
+    id code objet montant_initial montant_actuel
+    soustraitant { id raison_sociale ninea }
+    chantier { id code designation }
+    avenants { id code statut montant date_signature }
+  }
+  decompte {
+    id code statut
+    montant_brut montant_ht montant_ttc
+    montant_retenue_garantie montant_avances_deduites montant_penalites
+    taux_retenue_garantie taux_tva date_echeance
+    etat_cession { periode_debut periode_fin }
+  }
 `;
 
 export const releveService = {
