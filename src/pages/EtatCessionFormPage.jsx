@@ -11,6 +11,7 @@ import {
   useDeleteLigneEC, useEtatCessionStatut, useDeleteEtatCession,
 } from "../hooks/useEtatsCession";
 import { useContratsPaginated } from "../hooks/useContrats";
+import { useContratBaremes } from "../hooks/useContratBaremes";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import { SkeletonCard } from "../components/Skeleton";
@@ -49,15 +50,17 @@ const POSTE_CONFIG = {
   },
 };
 
-const LIGNE_INIT = { designation: "", unite: "", quantite: "", prix_unitaire: "", bon_transfert: "" };
+const LIGNE_INIT = { bareme_cb_id: "", designation: "", unite: "", quantite: "", prix_unitaire: "", bon_transfert: "" };
+
+// Mapping poste → type barème
+const POSTE_TO_TYPE = { MTX: "mtx", MTL: "mtl", RH: "rh" };
 
 // ─── Bloc par poste ──────────────────────────────────────────────
-function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
-  const { addToast }                    = useToast();
-  const [showForm, setShowForm]         = useState(false);
-  const [form, setForm]                 = useState(LIGNE_INIT);
-  const [confirmDel, setConfirmDel]     = useState(null);
-  const [editPrix, setEditPrix]         = useState({});
+function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes }) {
+  const { addToast }                = useToast();
+  const [showForm, setShowForm]     = useState(false);
+  const [form, setForm]             = useState(LIGNE_INIT);
+  const [confirmDel, setConfirmDel] = useState(null);
 
   const saveMut   = useSaveLigneEC();
   const deleteMut = useDeleteLigneEC();
@@ -65,6 +68,28 @@ function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
   const cfg   = POSTE_CONFIG[poste];
   const c     = cfg.color;
   const total = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+
+  // Articles du barème contrat pour ce type (MTX/MTL/RH) — vide pour GASOIL
+  const baremeType = POSTE_TO_TYPE[poste] ?? null;
+  const articlesBareme = baremeType
+    ? contratBaremes.filter(cb => cb.bareme?.type === baremeType)
+    : [];
+  const useBareme = articlesBareme.length > 0;
+
+  // Quand l'utilisateur sélectionne un article du barème
+  function handleSelectArticle(cbId) {
+    if (!cbId) { setForm(LIGNE_INIT); return; }
+    const cb = articlesBareme.find(a => String(a.id) === String(cbId));
+    if (!cb) return;
+    const prix = cb.prix_contrat != null ? parseFloat(cb.prix_contrat) : parseFloat(cb.bareme?.prix_unitaire ?? 0);
+    setForm(f => ({
+      ...f,
+      bareme_cb_id:  cb.id,
+      designation:   cb.bareme?.designation ?? "",
+      unite:         cb.bareme?.unite ?? "",
+      prix_unitaire: String(prix),
+    }));
+  }
 
   async function handleAdd(e) {
     e.preventDefault();
@@ -84,7 +109,6 @@ function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
       addToast("Ligne ajoutée.", "success");
       setShowForm(false);
       setForm(LIGNE_INIT);
-      onAdded?.();
     } catch (err) {
       addToast(err.response?.data?.error ?? "Erreur.", "error");
     }
@@ -94,11 +118,14 @@ function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
     try {
       await deleteMut.mutateAsync(id);
       setConfirmDel(null);
-      onDeleted?.();
     } catch {
       addToast("Erreur suppression.", "error");
     }
   }
+
+  const montantPreview = form.quantite && form.prix_unitaire
+    ? parseFloat(form.quantite) * parseFloat(form.prix_unitaire)
+    : 0;
 
   return (
     <div className={`border rounded-2xl overflow-hidden ${c.border}`}>
@@ -107,12 +134,8 @@ function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
         <div className="flex items-center gap-2.5">
           <span className={`w-2 h-2 rounded-full ${c.dot}`} />
           <span className="text-sm font-semibold text-gray-900">{cfg.label}</span>
-          {cfg.gmao && (
-            <span className="text-[10px] px-2 py-0.5 bg-violet-200 text-violet-700 rounded-full font-medium">GMAO</span>
-          )}
-          {cfg.prixEditable && (
-            <span className="text-[10px] px-2 py-0.5 bg-orange-200 text-orange-700 rounded-full font-medium">Prix libre</span>
-          )}
+          {cfg.gmao && <span className="text-[10px] px-2 py-0.5 bg-violet-200 text-violet-700 rounded-full font-medium">GMAO</span>}
+          {cfg.prixEditable && <span className="text-[10px] px-2 py-0.5 bg-orange-200 text-orange-700 rounded-full font-medium">Prix libre</span>}
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.badge}`}>
             {lignes.length} ligne{lignes.length !== 1 ? "s" : ""}
           </span>
@@ -120,10 +143,8 @@ function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
         <div className="flex items-center gap-3">
           <span className="text-sm font-bold text-gray-800">{fmtNum(total)} FCFA</span>
           {canEdit && !cfg.gmao && (
-            <button
-              onClick={() => { setShowForm(s => !s); setForm(LIGNE_INIT); }}
-              className={`text-xs font-medium hover:underline ${c.btn}`}
-            >
+            <button onClick={() => { setShowForm(s => !s); setForm(LIGNE_INIT); }}
+              className={`text-xs font-medium hover:underline ${c.btn}`}>
               + Ajouter
             </button>
           )}
@@ -137,7 +158,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
         </div>
       )}
 
-      {/* Tableau */}
+      {/* Tableau lignes */}
       {(!cfg.gmao || lignes.length > 0) && lignes.length === 0 && !showForm ? (
         <div className="px-5 py-6 text-center text-sm text-gray-400">
           Aucune ligne. {canEdit && "Cliquez sur « Ajouter » pour commencer."}
@@ -154,9 +175,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
                   Prix unit. {cfg.prixEditable ? <span className="text-orange-400">✏</span> : <span className="text-gray-300">🔒</span>}
                 </th>
                 <th className="text-right px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-32">Montant</th>
-                {cfg.hasBonTransfert && (
-                  <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Bon transfert</th>
-                )}
+                {cfg.hasBonTransfert && <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Bon transfert</th>}
                 {canEdit && <th className="w-10" />}
               </tr>
             </thead>
@@ -166,31 +185,13 @@ function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
                   <td className="px-5 py-2.5 text-gray-800">{l.designation}</td>
                   <td className="px-3 py-2.5 text-gray-500 text-xs uppercase">{l.unite || "—"}</td>
                   <td className="px-3 py-2.5 text-right text-gray-700">{fmtNum(l.quantite)}</td>
-                  <td className="px-3 py-2.5 text-right text-xs">
-                    {cfg.prixEditable && canEdit ? (
-                      <input
-                        type="number"
-                        defaultValue={l.prix_unitaire}
-                        onBlur={e => {
-                          const v = parseFloat(e.target.value);
-                          if (!isNaN(v) && v !== parseFloat(l.prix_unitaire)) {
-                            setEditPrix(ep => ({ ...ep, [l.id]: v }));
-                          }
-                        }}
-                        className="w-24 border border-orange-300 rounded px-2 py-1 text-right text-xs focus:ring-1 focus:ring-orange-400 outline-none"
-                      />
-                    ) : (
-                      <span className="text-gray-600">{fmtNum(l.prix_unitaire)}</span>
-                    )}
-                  </td>
+                  <td className="px-3 py-2.5 text-right text-xs text-gray-600">{fmtNum(l.prix_unitaire)}</td>
                   <td className="px-5 py-2.5 text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</td>
                   {cfg.hasBonTransfert && (
                     <td className="px-3 py-2.5 text-xs text-gray-500">
-                      {l.bon_transfert ? (
-                        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
-                          <FileText size={10} /> {l.bon_transfert}
-                        </span>
-                      ) : "—"}
+                      {l.bon_transfert
+                        ? <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full"><FileText size={10} /> {l.bon_transfert}</span>
+                        : "—"}
                     </td>
                   )}
                   {canEdit && (
@@ -212,8 +213,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
             </tbody>
             <tfoot>
               <tr className="border-t border-gray-200 bg-gray-50">
-                <td colSpan={cfg.hasBonTransfert ? (canEdit ? 4 : 4) : (canEdit ? 4 : 4)}
-                  className="px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                <td colSpan={cfg.hasBonTransfert ? 4 : 4} className="px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                   Total {cfg.label}
                 </td>
                 <td className="px-5 py-2.5 text-right font-bold text-gray-900">{fmtNum(total)} FCFA</td>
@@ -229,60 +229,115 @@ function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
       {showForm && canEdit && (
         <div className={`border-t ${c.border} ${c.bg} px-5 py-4`}>
           <form onSubmit={handleAdd}>
-            <div className={`grid gap-3 items-end ${cfg.hasBonTransfert ? "grid-cols-[1fr_70px_90px_110px_140px_auto]" : "grid-cols-[1fr_70px_90px_110px_auto]"}`}>
-              <div className="space-y-1">
-                <label className="text-xs text-gray-500 font-medium">Désignation *</label>
-                <input type="text" value={form.designation}
-                  onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
-                  autoFocus required placeholder="Description…"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-gray-500 font-medium">Unité</label>
-                <input type="text" value={form.unite}
-                  onChange={e => setForm(f => ({ ...f, unite: e.target.value }))}
-                  placeholder="T, L…"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-gray-500 font-medium">Quantité *</label>
-                <input type="number" value={form.quantite}
-                  onChange={e => setForm(f => ({ ...f, quantite: e.target.value }))}
-                  required min="0" step="any" placeholder="0"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-gray-500 font-medium">
-                  Prix unit. {cfg.prixEditable ? <span className="text-orange-500">*</span> : null}
-                </label>
-                <input type="number" value={form.prix_unitaire}
-                  onChange={e => setForm(f => ({ ...f, prix_unitaire: e.target.value }))}
-                  required={cfg.prixEditable} min="0" step="any" placeholder="0"
-                  disabled={!cfg.prixEditable}
-                  className={`w-full border rounded-lg px-3 py-2 text-sm outline-none ${cfg.prixEditable ? "border-orange-300 focus:ring-2 focus:ring-orange-400" : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"}`} />
-              </div>
-              {cfg.hasBonTransfert && (
+
+            {/* Saisie via barème (MTX / MTL / RH avec articles définis) */}
+            {useBareme ? (
+              <div className="space-y-3">
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-500 font-medium">Bon de transfert</label>
-                  <input type="text" value={form.bon_transfert}
-                    onChange={e => setForm(f => ({ ...f, bon_transfert: e.target.value }))}
-                    placeholder="BT-2026-001"
+                  <label className="text-xs text-gray-500 font-medium">Article du barème *</label>
+                  <select
+                    value={form.bareme_cb_id}
+                    onChange={e => handleSelectArticle(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none"
+                    autoFocus
+                  >
+                    <option value="">— Sélectionner un article —</option>
+                    {articlesBareme.map(cb => (
+                      <option key={cb.id} value={cb.id}>
+                        {cb.bareme?.designation} — {fmtNum(cb.prix_contrat ?? cb.bareme?.prix_unitaire)} FCFA / {cb.bareme?.unite}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {form.bareme_cb_id && (
+                  <div className={`grid gap-3 items-end ${cfg.hasBonTransfert ? "grid-cols-[120px_160px_auto]" : "grid-cols-[120px_auto]"}`}>
+                    <div className="space-y-1">
+                      <label className="text-xs text-gray-500 font-medium">Quantité *</label>
+                      <input type="number" value={form.quantite}
+                        onChange={e => setForm(f => ({ ...f, quantite: e.target.value }))}
+                        required min="0" step="any" placeholder="0" autoFocus
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                    </div>
+                    {cfg.hasBonTransfert && (
+                      <div className="space-y-1">
+                        <label className="text-xs text-gray-500 font-medium">Bon de transfert</label>
+                        <input type="text" value={form.bon_transfert}
+                          onChange={e => setForm(f => ({ ...f, bon_transfert: e.target.value }))}
+                          placeholder="BT-2026-001"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                      </div>
+                    )}
+                    <div className="flex items-end gap-2 pb-0.5">
+                      <button type="submit" disabled={saveMut.isPending}
+                        className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
+                        {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} OK
+                      </button>
+                      <button type="button" onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600"><X size={16} /></button>
+                    </div>
+                  </div>
+                )}
+
+                {!form.bareme_cb_id && (
+                  <div className="flex justify-end">
+                    <button type="button" onClick={() => setShowForm(false)} className="text-xs text-gray-400 hover:text-gray-600">Annuler</button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Saisie libre (GASOIL ou barème vide) */
+              <div className={`grid gap-3 items-end ${cfg.hasBonTransfert ? "grid-cols-[1fr_70px_90px_110px_140px_auto]" : "grid-cols-[1fr_70px_90px_110px_auto]"}`}>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500 font-medium">Désignation *</label>
+                  <input type="text" value={form.designation}
+                    onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
+                    autoFocus required placeholder="Description…"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
                 </div>
-              )}
-              <div className="flex items-end gap-2 pb-0.5">
-                <button type="submit" disabled={saveMut.isPending}
-                  className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60 whitespace-nowrap">
-                  {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} OK
-                </button>
-                <button type="button" onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600">
-                  <X size={16} />
-                </button>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500 font-medium">Unité</label>
+                  <input type="text" value={form.unite}
+                    onChange={e => setForm(f => ({ ...f, unite: e.target.value }))}
+                    placeholder="T, L…"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500 font-medium">Quantité *</label>
+                  <input type="number" value={form.quantite}
+                    onChange={e => setForm(f => ({ ...f, quantite: e.target.value }))}
+                    required min="0" step="any" placeholder="0"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500 font-medium">Prix unit. {cfg.prixEditable && <span className="text-orange-500">*</span>}</label>
+                  <input type="number" value={form.prix_unitaire}
+                    onChange={e => setForm(f => ({ ...f, prix_unitaire: e.target.value }))}
+                    required={cfg.prixEditable} min="0" step="any" placeholder="0"
+                    disabled={!cfg.prixEditable}
+                    className={`w-full border rounded-lg px-3 py-2 text-sm outline-none ${cfg.prixEditable ? "border-orange-300 focus:ring-2 focus:ring-orange-400" : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"}`} />
+                </div>
+                {cfg.hasBonTransfert && (
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500 font-medium">Bon de transfert</label>
+                    <input type="text" value={form.bon_transfert}
+                      onChange={e => setForm(f => ({ ...f, bon_transfert: e.target.value }))}
+                      placeholder="BT-2026-001"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                  </div>
+                )}
+                <div className="flex items-end gap-2 pb-0.5">
+                  <button type="submit" disabled={saveMut.isPending}
+                    className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60 whitespace-nowrap">
+                    {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} OK
+                  </button>
+                  <button type="button" onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600"><X size={16} /></button>
+                </div>
               </div>
-            </div>
-            {form.quantite && form.prix_unitaire && (
+            )}
+
+            {montantPreview > 0 && (
               <p className="text-xs text-[#087F3E] font-medium mt-2">
-                Montant : {fmtNum(parseFloat(form.quantite) * parseFloat(form.prix_unitaire))} FCFA
+                Montant : {fmtNum(montantPreview)} FCFA
               </p>
             )}
           </form>
@@ -386,6 +441,9 @@ export default function EtatCessionFormPage() {
   const canEdit = isNew || etat?.statut === "brouillon";
   const lignes  = etat?.lignes ?? [];
   const totalEC = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+
+  const contratIdForBareme = !isNew && etat ? etat.contrat_id : null;
+  const { data: contratBaremes = [] } = useContratBaremes(contratIdForBareme);
 
   const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none";
 
@@ -537,6 +595,7 @@ export default function EtatCessionFormPage() {
               lignes={lignes.filter(l => l.poste === poste)}
               canEdit={canEdit}
               etatId={id}
+              contratBaremes={contratBaremes}
             />
           ))}
 
