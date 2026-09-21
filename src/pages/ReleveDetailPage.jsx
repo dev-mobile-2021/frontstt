@@ -96,6 +96,22 @@ export default function ReleveDetailPage() {
 
   const busy = changerStatut.isLoading;
 
+  async function downloadPDF() {
+    try {
+      const token = localStorage.getItem("stt_token");
+      const resp = await fetch(`${import.meta.env.VITE_API_BASE}/api/pdf/releve/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) { addToast("Erreur lors du téléchargement.", "error"); return; }
+      const blob = await resp.blob();
+      const url  = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      addToast("Erreur lors du téléchargement.", "error");
+    }
+  }
+
   // Calcul cumulatifs pour historique décomptes
   let cumulBrut = 0, cumulHTAcc = 0, cumulRGAcc = 0, cumulADAcc = 0;
 
@@ -380,7 +396,7 @@ export default function ReleveDetailPage() {
               <FileText size={15} /> Enregistrer la facture du sous-traitant
             </Link>
           )}
-          <button onClick={() => addToast("PDF non disponible pour les relevés.", "info")}
+          <button onClick={downloadPDF}
             className="flex items-center gap-2 border border-gray-200 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm transition-colors">
             <Download size={14} /> Télécharger en PDF
           </button>

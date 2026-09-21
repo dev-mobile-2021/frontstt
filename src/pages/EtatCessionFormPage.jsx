@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, ChevronRight, Save, Loader2, Plus, X, Trash2, CheckCircle2, XCircle } from "lucide-react";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
+import {
+  ArrowLeft, ChevronRight, Save, Loader2, Plus, X, Trash2,
+  CheckCircle2, XCircle, Search, FileText, Fuel,
+} from "lucide-react";
 import { useToast } from "../context/ToastContext";
+import { useUser } from "../context/UserContext";
 import {
   useEtatCession, useSaveEtatCession, useSaveLigneEC,
   useDeleteLigneEC, useEtatCessionStatut, useDeleteEtatCession,
@@ -14,52 +18,75 @@ import { SkeletonCard } from "../components/Skeleton";
 const fmtNum  = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
 const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
-const POSTES = [
-  { value: "MTX", label: "Matériaux (MTX)", color: "blue" },
-  { value: "MTL", label: "Matériel (MTL)",  color: "violet" },
-  { value: "RH",  label: "Ressources humaines (RH)", color: "green" },
-];
+// Rôles DCG — ne voient pas le bloc RH
+const DCG_ROLES = ["DCG", "Assistant DCG"];
 
-const POSTE_COLORS = {
-  MTX: { bg: "bg-blue-50",   border: "border-blue-200",   badge: "bg-blue-100 text-blue-700",   dot: "bg-blue-500" },
-  MTL: { bg: "bg-violet-50", border: "border-violet-200", badge: "bg-violet-100 text-violet-700", dot: "bg-violet-500" },
-  RH:  { bg: "bg-green-50",  border: "border-green-200",  badge: "bg-green-100 text-green-700",  dot: "bg-green-500" },
+const POSTE_CONFIG = {
+  MTX: {
+    label:  "Cession Matériaux (MTX)",
+    color:  { bg: "bg-blue-50", border: "border-blue-200", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-500", btn: "text-blue-600" },
+    prixEditable: false,
+    hasBonTransfert: true,
+  },
+  GASOIL: {
+    label:  "Gasoil",
+    color:  { bg: "bg-orange-50", border: "border-orange-200", badge: "bg-orange-100 text-orange-700", dot: "bg-orange-400", btn: "text-orange-600" },
+    prixEditable: true,
+    hasBonTransfert: false,
+  },
+  MTL: {
+    label:  "Cession Matériel (MTL)",
+    color:  { bg: "bg-violet-50", border: "border-violet-200", badge: "bg-violet-100 text-violet-700", dot: "bg-violet-500", btn: "text-violet-600" },
+    prixEditable: false,
+    hasBonTransfert: false,
+    gmao: true,
+  },
+  RH: {
+    label:  "Ressources Humaines (RH)",
+    color:  { bg: "bg-green-50", border: "border-green-200", badge: "bg-green-100 text-green-700", dot: "bg-green-500", btn: "text-green-600" },
+    prixEditable: false,
+    hasBonTransfert: false,
+  },
 };
 
-const LIGNE_INIT = { designation: "", unite: "", quantite: "", prix_unitaire: "" };
+const LIGNE_INIT = { designation: "", unite: "", quantite: "", prix_unitaire: "", bon_transfert: "" };
 
-const INIT = { contrat_id: "", periode_debut: "", periode_fin: "", observations: "" };
-
-// ─── Section lignes par poste ────────────────────────────────────
-function PosteSection({ poste, label, lignes, canEdit, etatId, onAdded, onDeleted }) {
-  const { addToast } = useToast();
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm]         = useState(LIGNE_INIT);
-  const [confirmDel, setConfirmDel] = useState(null);
+// ─── Bloc par poste ──────────────────────────────────────────────
+function PosteSection({ poste, lignes, canEdit, etatId, onAdded, onDeleted }) {
+  const { addToast }                    = useToast();
+  const [showForm, setShowForm]         = useState(false);
+  const [form, setForm]                 = useState(LIGNE_INIT);
+  const [confirmDel, setConfirmDel]     = useState(null);
+  const [editPrix, setEditPrix]         = useState({});
 
   const saveMut   = useSaveLigneEC();
   const deleteMut = useDeleteLigneEC();
 
-  const c      = POSTE_COLORS[poste] ?? POSTE_COLORS.MTX;
-  const total  = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+  const cfg   = POSTE_CONFIG[poste];
+  const c     = cfg.color;
+  const total = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
 
   async function handleAdd(e) {
     e.preventDefault();
+    if (!form.designation) return addToast("Désignation obligatoire.", "error");
+    if (!form.quantite)    return addToast("Quantité obligatoire.", "error");
+    if (cfg.prixEditable && !form.prix_unitaire) return addToast("Prix unitaire obligatoire.", "error");
     try {
       await saveMut.mutateAsync({
         etat_cession_id: parseInt(etatId, 10),
         poste,
-        designation:   form.designation,
-        unite:         form.unite || null,
-        quantite:      parseFloat(form.quantite),
-        prix_unitaire: parseFloat(form.prix_unitaire),
+        designation:    form.designation,
+        unite:          form.unite || null,
+        quantite:       parseFloat(form.quantite),
+        prix_unitaire:  parseFloat(form.prix_unitaire || 0),
+        bon_transfert:  form.bon_transfert || null,
       });
       addToast("Ligne ajoutée.", "success");
       setShowForm(false);
       setForm(LIGNE_INIT);
       onAdded?.();
     } catch (err) {
-      addToast(err.response?.data?.message ?? "Erreur.", "error");
+      addToast(err.response?.data?.error ?? "Erreur.", "error");
     }
   }
 
@@ -68,7 +95,7 @@ function PosteSection({ poste, label, lignes, canEdit, etatId, onAdded, onDelete
       await deleteMut.mutateAsync(id);
       setConfirmDel(null);
       onDeleted?.();
-    } catch (err) {
+    } catch {
       addToast("Erreur suppression.", "error");
     }
   }
@@ -79,35 +106,57 @@ function PosteSection({ poste, label, lignes, canEdit, etatId, onAdded, onDelete
       <div className={`flex items-center justify-between px-5 py-3.5 ${c.bg} border-b ${c.border}`}>
         <div className="flex items-center gap-2.5">
           <span className={`w-2 h-2 rounded-full ${c.dot}`} />
-          <span className="text-sm font-semibold text-gray-900">{label}</span>
+          <span className="text-sm font-semibold text-gray-900">{cfg.label}</span>
+          {cfg.gmao && (
+            <span className="text-[10px] px-2 py-0.5 bg-violet-200 text-violet-700 rounded-full font-medium">GMAO</span>
+          )}
+          {cfg.prixEditable && (
+            <span className="text-[10px] px-2 py-0.5 bg-orange-200 text-orange-700 rounded-full font-medium">Prix libre</span>
+          )}
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.badge}`}>
             {lignes.length} ligne{lignes.length !== 1 ? "s" : ""}
           </span>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm font-bold text-gray-800">{fmtNum(total)} FCFA</span>
-          {canEdit && (
-            <button onClick={() => { setShowForm(true); setForm(LIGNE_INIT); }}
-              className="text-xs text-[#087F3E] hover:underline font-medium">+ Ajouter</button>
+          {canEdit && !cfg.gmao && (
+            <button
+              onClick={() => { setShowForm(s => !s); setForm(LIGNE_INIT); }}
+              className={`text-xs font-medium hover:underline ${c.btn}`}
+            >
+              + Ajouter
+            </button>
           )}
         </div>
       </div>
 
-      {/* Table lignes */}
-      {lignes.length === 0 && !showForm ? (
-        <div className="px-5 py-6 text-center text-sm text-gray-400">
-          Aucune ligne {label.split(" ")[0]}. {canEdit && "Cliquez sur « Ajouter » pour commencer."}
+      {/* GMAO notice */}
+      {cfg.gmao && lignes.length === 0 && (
+        <div className="px-5 py-6 text-center text-sm text-violet-400 bg-violet-50/40">
+          En attente des données GMAO — les lignes MTL sont importées automatiquement.
         </div>
-      ) : (
+      )}
+
+      {/* Tableau */}
+      {(!cfg.gmao || lignes.length > 0) && lignes.length === 0 && !showForm ? (
+        <div className="px-5 py-6 text-center text-sm text-gray-400">
+          Aucune ligne. {canEdit && "Cliquez sur « Ajouter » pour commencer."}
+        </div>
+      ) : lignes.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-white">
                 <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Désignation</th>
-                <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-20">Unité</th>
+                <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-16">Unité</th>
                 <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-24">Quantité</th>
-                <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-28">Prix unit.</th>
+                <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-28">
+                  Prix unit. {cfg.prixEditable ? <span className="text-orange-400">✏</span> : <span className="text-gray-300">🔒</span>}
+                </th>
                 <th className="text-right px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-32">Montant</th>
+                {cfg.hasBonTransfert && (
+                  <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Bon transfert</th>
+                )}
                 {canEdit && <th className="w-10" />}
               </tr>
             </thead>
@@ -115,16 +164,41 @@ function PosteSection({ poste, label, lignes, canEdit, etatId, onAdded, onDelete
               {lignes.map(l => (
                 <tr key={l.id} className="hover:bg-gray-50/50">
                   <td className="px-5 py-2.5 text-gray-800">{l.designation}</td>
-                  <td className="px-3 py-2.5 text-gray-500 text-xs">{l.unite || "—"}</td>
+                  <td className="px-3 py-2.5 text-gray-500 text-xs uppercase">{l.unite || "—"}</td>
                   <td className="px-3 py-2.5 text-right text-gray-700">{fmtNum(l.quantite)}</td>
-                  <td className="px-3 py-2.5 text-right text-gray-600 text-xs">{fmtNum(l.prix_unitaire)}</td>
+                  <td className="px-3 py-2.5 text-right text-xs">
+                    {cfg.prixEditable && canEdit ? (
+                      <input
+                        type="number"
+                        defaultValue={l.prix_unitaire}
+                        onBlur={e => {
+                          const v = parseFloat(e.target.value);
+                          if (!isNaN(v) && v !== parseFloat(l.prix_unitaire)) {
+                            setEditPrix(ep => ({ ...ep, [l.id]: v }));
+                          }
+                        }}
+                        className="w-24 border border-orange-300 rounded px-2 py-1 text-right text-xs focus:ring-1 focus:ring-orange-400 outline-none"
+                      />
+                    ) : (
+                      <span className="text-gray-600">{fmtNum(l.prix_unitaire)}</span>
+                    )}
+                  </td>
                   <td className="px-5 py-2.5 text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</td>
+                  {cfg.hasBonTransfert && (
+                    <td className="px-3 py-2.5 text-xs text-gray-500">
+                      {l.bon_transfert ? (
+                        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+                          <FileText size={10} /> {l.bon_transfert}
+                        </span>
+                      ) : "—"}
+                    </td>
+                  )}
                   {canEdit && (
                     <td className="pr-3 py-2.5 text-right">
                       {confirmDel === l.id ? (
                         <span className="inline-flex items-center gap-1 text-xs">
                           <button onClick={() => handleDelete(l.id)} className="text-red-600 font-medium">Oui</button>
-                          <button onClick={() => setConfirmDel(null)} className="text-gray-400">Non</button>
+                          <button onClick={() => setConfirmDel(null)} className="text-gray-400 ml-1">Non</button>
                         </span>
                       ) : (
                         <button onClick={() => setConfirmDel(l.id)} className="text-gray-300 hover:text-red-500 transition-colors">
@@ -136,62 +210,82 @@ function PosteSection({ poste, label, lignes, canEdit, etatId, onAdded, onDelete
                 </tr>
               ))}
             </tbody>
-            {lignes.length > 0 && (
-              <tfoot>
-                <tr className="border-t border-gray-200 bg-gray-50">
-                  <td colSpan={canEdit ? 4 : 4} className="px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total {poste}</td>
-                  <td className="px-5 py-2.5 text-right font-bold text-gray-900">{fmtNum(total)} FCFA</td>
-                  {canEdit && <td />}
-                </tr>
-              </tfoot>
-            )}
+            <tfoot>
+              <tr className="border-t border-gray-200 bg-gray-50">
+                <td colSpan={cfg.hasBonTransfert ? (canEdit ? 4 : 4) : (canEdit ? 4 : 4)}
+                  className="px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  Total {cfg.label}
+                </td>
+                <td className="px-5 py-2.5 text-right font-bold text-gray-900">{fmtNum(total)} FCFA</td>
+                {cfg.hasBonTransfert && <td />}
+                {canEdit && <td />}
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}
 
       {/* Formulaire ajout inline */}
-      {showForm && (
+      {showForm && canEdit && (
         <div className={`border-t ${c.border} ${c.bg} px-5 py-4`}>
-          <form onSubmit={handleAdd} className="grid grid-cols-[1fr_80px_100px_120px_auto] gap-3 items-end">
-            <div className="space-y-1">
-              <label className="text-xs text-gray-500 font-medium">Désignation *</label>
-              <input type="text" value={form.designation} onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
-                autoFocus required placeholder="Description de la prestation…"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+          <form onSubmit={handleAdd}>
+            <div className={`grid gap-3 items-end ${cfg.hasBonTransfert ? "grid-cols-[1fr_70px_90px_110px_140px_auto]" : "grid-cols-[1fr_70px_90px_110px_auto]"}`}>
+              <div className="space-y-1">
+                <label className="text-xs text-gray-500 font-medium">Désignation *</label>
+                <input type="text" value={form.designation}
+                  onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
+                  autoFocus required placeholder="Description…"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-gray-500 font-medium">Unité</label>
+                <input type="text" value={form.unite}
+                  onChange={e => setForm(f => ({ ...f, unite: e.target.value }))}
+                  placeholder="T, L…"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-gray-500 font-medium">Quantité *</label>
+                <input type="number" value={form.quantite}
+                  onChange={e => setForm(f => ({ ...f, quantite: e.target.value }))}
+                  required min="0" step="any" placeholder="0"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs text-gray-500 font-medium">
+                  Prix unit. {cfg.prixEditable ? <span className="text-orange-500">*</span> : null}
+                </label>
+                <input type="number" value={form.prix_unitaire}
+                  onChange={e => setForm(f => ({ ...f, prix_unitaire: e.target.value }))}
+                  required={cfg.prixEditable} min="0" step="any" placeholder="0"
+                  disabled={!cfg.prixEditable}
+                  className={`w-full border rounded-lg px-3 py-2 text-sm outline-none ${cfg.prixEditable ? "border-orange-300 focus:ring-2 focus:ring-orange-400" : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"}`} />
+              </div>
+              {cfg.hasBonTransfert && (
+                <div className="space-y-1">
+                  <label className="text-xs text-gray-500 font-medium">Bon de transfert</label>
+                  <input type="text" value={form.bon_transfert}
+                    onChange={e => setForm(f => ({ ...f, bon_transfert: e.target.value }))}
+                    placeholder="BT-2026-001"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                </div>
+              )}
+              <div className="flex items-end gap-2 pb-0.5">
+                <button type="submit" disabled={saveMut.isPending}
+                  className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60 whitespace-nowrap">
+                  {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} OK
+                </button>
+                <button type="button" onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600">
+                  <X size={16} />
+                </button>
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className="text-xs text-gray-500 font-medium">Unité</label>
-              <input type="text" value={form.unite} onChange={e => setForm(f => ({ ...f, unite: e.target.value }))}
-                placeholder="m², u…"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-gray-500 font-medium">Quantité *</label>
-              <input type="number" value={form.quantite} onChange={e => setForm(f => ({ ...f, quantite: e.target.value }))}
-                required min="0" step="any" placeholder="0"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-gray-500 font-medium">Prix unit. *</label>
-              <input type="number" value={form.prix_unitaire} onChange={e => setForm(f => ({ ...f, prix_unitaire: e.target.value }))}
-                required min="0" step="any" placeholder="0"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-            </div>
-            <div className="flex items-end gap-2">
-              <button type="submit" disabled={saveMut.isPending}
-                className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60 whitespace-nowrap">
-                {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} OK
-              </button>
-              <button type="button" onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600">
-                <X size={16} />
-              </button>
-            </div>
+            {form.quantite && form.prix_unitaire && (
+              <p className="text-xs text-[#087F3E] font-medium mt-2">
+                Montant : {fmtNum(parseFloat(form.quantite) * parseFloat(form.prix_unitaire))} FCFA
+              </p>
+            )}
           </form>
-          {form.quantite && form.prix_unitaire && (
-            <p className="text-xs text-[#087F3E] font-medium mt-2">
-              Montant : {fmtNum(parseFloat(form.quantite) * parseFloat(form.prix_unitaire))} FCFA
-            </p>
-          )}
         </div>
       )}
     </div>
@@ -200,21 +294,29 @@ function PosteSection({ poste, label, lignes, canEdit, etatId, onAdded, onDelete
 
 // ─── Page principale ─────────────────────────────────────────────
 export default function EtatCessionFormPage() {
-  const { id }       = useParams();
-  const isNew        = !id || id === "nouveau";
-  const navigate     = useNavigate();
-  const { addToast } = useToast();
+  const { id }          = useParams();
+  const isNew           = !id || id === "nouveau";
+  const navigate        = useNavigate();
+  const { addToast }    = useToast();
+  const { currentUser } = useUser();
+  const [searchParams]  = useSearchParams();
 
-  const [form, setForm] = useState(INIT);
+  const isDCG = DCG_ROLES.includes(currentUser?.role?.designation);
+
+  // Postes visibles selon profil
+  const POSTES_VISIBLES = isNew ? [] :
+    Object.keys(POSTE_CONFIG).filter(p => !(p === "RH" && isDCG));
+
+  const [form, setForm]           = useState({ contrat_id: searchParams.get("contrat_id") ?? "", periode_debut: "", periode_fin: "", observations: "" });
   const [pendingStatut, setPendingStatut] = useState(null);
 
   const { data: etat, isLoading, isError } = useEtatCession(isNew ? null : id);
   const { data: contratsData } = useContratsPaginated({ count: 200 });
   const contrats = contratsData?.data ?? [];
 
-  const saveMut    = useSaveEtatCession();
-  const statutMut  = useEtatCessionStatut();
-  const deleteMut  = useDeleteEtatCession();
+  const saveMut   = useSaveEtatCession();
+  const statutMut = useEtatCessionStatut();
+  const deleteMut = useDeleteEtatCession();
 
   useEffect(() => {
     if (!isNew && etat) {
@@ -304,6 +406,13 @@ export default function EtatCessionFormPage() {
           [etat.contrat?.code, etat.contrat?.chantier?.designation, etat.contrat?.soustraitant?.raison_sociale].filter(Boolean).join(" · ")}
         action={!isNew && (
           <div className="flex items-center gap-2">
+            {/* Bouton raccourci CONSULTATION */}
+            <Link
+              to="/etats-cession/consultation"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-2 border-[#087F3E] text-[#087F3E] rounded-lg hover:bg-[#087F3E] hover:text-white transition-all"
+            >
+              <Search size={13} /> CONSULTATION
+            </Link>
             <StatusBadge statut={etat.statut} />
             {etat.statut === "brouillon" && (
               <button onClick={() => setPendingStatut("soumis")}
@@ -373,7 +482,7 @@ export default function EtatCessionFormPage() {
         </div>
       )}
 
-      {/* Formulaire création / édition infos de base */}
+      {/* Formulaire création */}
       {isNew && (
         <form onSubmit={handleSave} className="space-y-5">
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
@@ -418,15 +527,14 @@ export default function EtatCessionFormPage() {
         </form>
       )}
 
-      {/* Sections MTX / MTL / RH */}
+      {/* Blocs par poste */}
       {!isNew && (
         <div className="space-y-5">
-          {POSTES.map(p => (
+          {POSTES_VISIBLES.map(poste => (
             <PosteSection
-              key={p.value}
-              poste={p.value}
-              label={p.label}
-              lignes={lignes.filter(l => l.poste === p.value)}
+              key={poste}
+              poste={poste}
+              lignes={lignes.filter(l => l.poste === poste)}
               canEdit={canEdit}
               etatId={id}
             />
@@ -435,13 +543,14 @@ export default function EtatCessionFormPage() {
           {/* Résumé total */}
           {lignes.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-2xl p-5">
-              <div className="grid grid-cols-3 gap-4">
-                {POSTES.map(p => {
-                  const montant = lignes.filter(l => l.poste === p.value).reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
-                  const c = POSTE_COLORS[p.value];
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {POSTES_VISIBLES.map(poste => {
+                  const montant = lignes.filter(l => l.poste === poste).reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+                  const cfg = POSTE_CONFIG[poste];
+                  const c   = cfg.color;
                   return (
-                    <div key={p.value} className={`${c.bg} border ${c.border} rounded-xl p-4`}>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">{p.value}</p>
+                    <div key={poste} className={`${c.bg} border ${c.border} rounded-xl p-4`}>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">{poste}</p>
                       <p className="text-lg font-bold text-gray-900">{fmtNum(montant)} FCFA</p>
                     </div>
                   );
@@ -461,13 +570,13 @@ export default function EtatCessionFormPage() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPendingStatut(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-semibold text-gray-900 mb-2">
-              {pendingStatut === "soumis"  ? "Soumettre l'état de cession ?" :
-               pendingStatut === "valide"  ? "Valider et arrêter l'état de cession ?" :
-               pendingStatut === "rejete"  ? "Rejeter l'état de cession ?" : ""}
+              {pendingStatut === "soumis" ? "Soumettre l'état de cession ?" :
+               pendingStatut === "valide" ? "Valider et arrêter l'état de cession ?" :
+               "Rejeter l'état de cession ?"}
             </h3>
             <p className="text-sm text-gray-500 mb-5">
               {pendingStatut === "valide" ? "L'état sera arrêté et consommable par les décomptes." :
-               pendingStatut === "soumis" ? "L'état passera en contrôle." : "Cette action est irréversible."}
+               pendingStatut === "soumis" ? "L'état passera en contrôle DCG." : "Cette action est irréversible."}
             </p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setPendingStatut(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
@@ -481,7 +590,7 @@ export default function EtatCessionFormPage() {
         </div>
       )}
 
-      {/* Modal confirmation suppression */}
+      {/* Modal suppression */}
       {pendingStatut === "brouillon_delete" && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPendingStatut(null)}>
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>

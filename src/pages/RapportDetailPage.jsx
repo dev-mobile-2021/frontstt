@@ -67,6 +67,12 @@ const RAPPORT_CONFIG = {
     excel: { base: "rapport/reglements-instance" },
     filters: ["chantier_id", "soustraitant_id", "statut_circuit"],
   },
+  r9: {
+    badge: "R9", title: "Récap États de Cession",
+    desc:  "Récapitulatif mensuel des états de cession par sous-traitant — format Sage X3",
+    pdf:   { base: "pdf/recap-cessions" },
+    filters: ["chantier_id", "mois_debut", "mois_fin"],
+  },
 };
 
 // Valeurs initiales des filtres
@@ -77,6 +83,8 @@ const FILTER_INIT = {
   date_debut:      "",
   date_fin:        "",
   statut_circuit:  "",
+  mois_debut:      "",
+  mois_fin:        "",
 };
 
 // Construire l'URL d'export avec tous les filtres actifs
@@ -205,6 +213,22 @@ function FilterPanel({ filterKeys, filters, onChange }) {
               onChange={e => onChange({ date_fin: e.target.value })}
               className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
             />
+          </div>
+        )}
+
+        {filterKeys.includes("mois_debut") && (
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Mois début</label>
+            <input type="month" value={filters.mois_debut} onChange={e => onChange({ mois_debut: e.target.value })}
+              className="pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+          </div>
+        )}
+
+        {filterKeys.includes("mois_fin") && (
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Mois fin</label>
+            <input type="month" value={filters.mois_fin} onChange={e => onChange({ mois_fin: e.target.value })}
+              className="pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
           </div>
         )}
 
@@ -650,7 +674,16 @@ export default function RapportDetailPage() {
   }
 
   async function handleDownload() {
-    const url = buildExcelUrl(config, filters);
+    const isPdf = !!config.pdf;
+    let url;
+    if (isPdf) {
+      const qs = new URLSearchParams();
+      config.filters.forEach(key => { if (filters[key]) qs.set(key, filters[key]); });
+      const q = qs.toString();
+      url = `${API_BASE}/${config.pdf.base}${q ? "?" + q : ""}`;
+    } else {
+      url = buildExcelUrl(config, filters);
+    }
     const token = localStorage.getItem("stt_token");
     try {
       const resp = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
@@ -659,7 +692,7 @@ export default function RapportDetailPage() {
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
       const cd = resp.headers.get("content-disposition");
-      a.download = cd ? cd.split("filename=")[1]?.replace(/"/g, "") : `rapport-${rapportId}.xlsx`;
+      a.download = cd ? cd.split("filename=")[1]?.replace(/"/g, "") : `rapport-${rapportId}.${isPdf ? "pdf" : "xlsx"}`;
       a.click();
       URL.revokeObjectURL(a.href);
     } catch {
@@ -684,7 +717,7 @@ export default function RapportDetailPage() {
               onClick={handleDownload}
               className="flex items-center gap-2 bg-[#087F3E] text-white hover:bg-[#065A2C] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             >
-              <Download size={14} /> Télécharger Excel
+              <Download size={14} /> {config.pdf ? "Télécharger PDF" : "Télécharger Excel"}
             </button>
           </div>
         }

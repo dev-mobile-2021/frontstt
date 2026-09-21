@@ -16,9 +16,11 @@ const FIELDS = `
   id code objet type_contrat
   chantier_id soustraitant_id
   montant_initial montant_actuel
-  date_debut date_fin_prevue date_fin_reelle
+  date_debut date_fin_prevue date_fin_reelle date_signature
   statut motif_suspension motif_resiliation
   code_x3 synced_at created_at updated_at
+  taux_rg taux_avance taux_remboursement_avance delai_paiement
+  taux_penalite plafond_penalite taux_tva delai_execution financement
   chantier { id code designation localisation }
   soustraitant { id code raison_sociale ninea telephone statut }
   validations { id profil_code libelle action motif validated_at user { id nom prenom } }

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Wallet, FileText, BarChart3, DollarSign, AlertCircle } from "lucide-react";
+import { Wallet, FileText, BarChart3, DollarSign, AlertCircle, ClipboardList } from "lucide-react";
 import PageHeader from "../components/PageHeader";
 import ReportCard from "../components/ReportCard";
 
@@ -11,7 +11,8 @@ const REPORTS = [
   { id: "r5", icon: BarChart3,   badge: "R5", title: "Cessions mensuelles / période",  description: "Montants cédés regroupés par mois et famille RAM" },
   { id: "r6", icon: BarChart3,   badge: "R6", title: "Cessions mensuelles / STT",      description: "Montants cédés regroupés par sous-traitant et famille RAM" },
   { id: "r7", icon: DollarSign,  badge: "R7", title: "Règlements réalisés",            description: "Décomptes payés — base de référence des règlements effectifs" },
-  { id: "r8", icon: AlertCircle, badge: "R8", title: "Règlements en instance",         description: "Décomptes en circuit de validation, en attente de paiement" },
+  { id: "r8", icon: AlertCircle,    badge: "R8", title: "Règlements en instance",         description: "Décomptes en circuit de validation, en attente de paiement" },
+  { id: "r9", icon: ClipboardList, badge: "R9", title: "Récap États de Cession",         description: "Récapitulatif mensuel des états de cession par sous-traitant — format Sage X3" },
 ];
 
 export default function RapportsPage() {

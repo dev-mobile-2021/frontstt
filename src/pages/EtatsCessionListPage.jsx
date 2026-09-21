@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Search, RotateCcw, ChevronLeft, ChevronRight, Plus, X, Loader2,
-  FileText, FileSpreadsheet, CheckCircle2, Clock, FolderOpen, TrendingUp,
+  FileText, FileSpreadsheet, CheckCircle2, Clock, FolderOpen, TrendingUp, Eye,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
@@ -147,10 +147,18 @@ export default function EtatsCessionListPage() {
         title="États de cession"
         subtitle="Arrêtés périodiques MTX/MTL/RH, contrôlés et visés, consommés par les décomptes"
         action={
-          <button onClick={() => { setForm(INIT); setErrors({}); setShowModal(true); }}
-            className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
-            <Plus size={16} /> Nouvel état de cession
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/etats-cession/consultation"
+              className="inline-flex items-center gap-1.5 border-2 border-[#087F3E] text-[#087F3E] px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#087F3E] hover:text-white transition-all"
+            >
+              <Eye size={15} /> CONSULTATION
+            </Link>
+            <button onClick={() => { setForm(INIT); setErrors({}); setShowModal(true); }}
+              className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
+              <Plus size={16} /> Nouvel état de cession
+            </button>
+          </div>
         }
       />
 

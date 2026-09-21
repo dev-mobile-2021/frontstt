@@ -11,7 +11,7 @@ const DETAIL_FIELDS = `
   id code contrat_id periode_debut periode_fin montant_total statut
   motif_rejet observations created_by updated_by created_at updated_at
   contrat { id code objet soustraitant { id raison_sociale } chantier { id code designation } }
-  lignes { id etat_cession_id poste bareme_id designation unite quantite prix_unitaire montant ordre }
+  lignes { id etat_cession_id poste bareme_id designation unite quantite prix_unitaire montant ordre bon_transfert }
 `;
 
 export const etatCessionService = {

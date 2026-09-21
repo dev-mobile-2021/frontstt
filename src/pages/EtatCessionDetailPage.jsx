@@ -16,7 +16,7 @@ import { SkeletonCard } from "../components/Skeleton";
 const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
 const fmt = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
 
-const LIGNE_INIT = { poste: "", designation: "", unite: "", quantite: "", prix_unitaire: "" };
+const LIGNE_INIT = { poste: "", designation: "", unite: "", quantite: "", prix_unitaire: "", bon_transfert: "" };
 
 // ─── Formulaire ajout ligne ───────────────────────────────────────
 function AddLigneForm({ ecId, onClose }) {
@@ -44,6 +44,7 @@ function AddLigneForm({ ecId, onClose }) {
         unite:           form.unite.trim()  || "",
         quantite:        parseFloat(form.quantite),
         prix_unitaire:   parseFloat(form.prix_unitaire),
+        bon_transfert:   form.bon_transfert.trim() || null,
         ordre:           0,
       });
       addToast("Ligne ajoutée.", "success");
@@ -57,13 +58,18 @@ function AddLigneForm({ ecId, onClose }) {
 
   return (
     <tr className="bg-[#E8F5EE]/50">
-      <td colSpan={7} className="px-4 py-4">
+      <td colSpan={8} className="px-4 py-4">
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-6 gap-3 mb-3">
+          <div className="grid grid-cols-7 gap-3 mb-3">
             <div>
               <label className="text-xs text-gray-500 mb-1 block">Poste</label>
-              <input value={form.poste} onChange={e => set("poste", e.target.value)}
-                placeholder="A1" className={inputCls} />
+              <select value={form.poste} onChange={e => set("poste", e.target.value)} className={inputCls}>
+                <option value="">—</option>
+                <option value="MTX">MTX</option>
+                <option value="MTL">MTL</option>
+                <option value="RH">RH</option>
+                <option value="GASOIL">GASOIL</option>
+              </select>
             </div>
             <div className="col-span-2">
               <label className="text-xs text-gray-500 mb-1 block">Désignation *</label>
@@ -87,6 +93,13 @@ function AddLigneForm({ ecId, onClose }) {
                 onChange={e => set("prix_unitaire", e.target.value)}
                 placeholder="5000" className={inputCls} required />
             </div>
+            {form.poste === "MTX" && (
+              <div>
+                <label className="text-xs text-gray-500 mb-1 block">Bon transfert</label>
+                <input value={form.bon_transfert} onChange={e => set("bon_transfert", e.target.value)}
+                  placeholder="BT-2026-001" className={inputCls} />
+              </div>
+            )}
           </div>
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-500">
@@ -447,7 +460,7 @@ export default function EtatCessionDetailPage() {
         <table className="w-full">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              {["Poste", "Désignation", "Unité", "Quantité", "Prix unit.", "Montant", canEdit ? "" : null]
+              {["Poste", "Désignation", "Unité", "Quantité", "Prix unit.", "Montant", "Bon transfert", canEdit ? "" : null]
                 .filter(Boolean)
                 .map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
@@ -460,7 +473,7 @@ export default function EtatCessionDetailPage() {
             )}
             {lignes.length === 0 && !showAddLigne ? (
               <tr>
-                <td colSpan={canEdit ? 7 : 6} className="py-12 text-center text-sm text-gray-400">
+                <td colSpan={canEdit ? 8 : 7} className="py-12 text-center text-sm text-gray-400">
                   {canEdit
                     ? "Aucune ligne — cliquez \"Ajouter une ligne\" pour commencer."
                     : "Aucune ligne dans cet état de cession."}
@@ -480,6 +493,9 @@ export default function EtatCessionDetailPage() {
                   </td>
                   <td className="px-4 py-3">
                     <MoneyDisplay amount={ligne.montant ?? 0} variant="small" className="font-semibold" />
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-500">
+                    {ligne.bon_transfert || "—"}
                   </td>
                   {canEdit && (
                     <td className="px-4 py-3">
@@ -511,6 +527,7 @@ export default function EtatCessionDetailPage() {
                 <td className="px-4 py-3">
                   <MoneyDisplay amount={etat.montant_total ?? 0} variant="small" className="font-bold" />
                 </td>
+                <td />
                 {canEdit && <td />}
               </tr>
             </tfoot>

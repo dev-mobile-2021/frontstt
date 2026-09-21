@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ConfirmModal from "../components/ConfirmModal";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle,
@@ -145,13 +146,44 @@ function DecomptesTab({ decomptes, contratId, isNew }) {
 
 // ─── Sub-tab: Paramétrage financier ─────────────────────────────
 function ParametrageFinancierTab({ contrat, avenants }) {
+  const { addToast } = useToast();
+  const saveContrat = useSaveContrat();
   const fmt = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
-  const montantInitial  = parseFloat(contrat?.montant_initial ?? 0);
-  const montantActuel   = parseFloat(contrat?.montant_actuel ?? montantInitial);
-  const avenatsValides  = avenants.filter(a => a.statut === "valide");
-  const totalAvenants   = avenatsValides.reduce((s, a) => s + parseFloat(a.montant ?? 0), 0);
-  const tauxRG          = parseFloat(contrat?.taux_retenue_garantie ?? 5);
-  const tauxTVA         = parseFloat(contrat?.taux_tva ?? 18);
+
+  const montantInitial = parseFloat(contrat?.montant_initial ?? 0);
+  const montantActuel  = parseFloat(contrat?.montant_actuel ?? montantInitial);
+  const avenatsValides = avenants.filter(a => a.statut === "valide");
+  const totalAvenants  = avenatsValides.reduce((s, a) => s + parseFloat(a.montant ?? 0), 0);
+
+  const [fin, setFin] = useState({
+    taux_rg:                   contrat?.taux_rg ?? 5,
+    taux_avance:               contrat?.taux_avance ?? 5,
+    taux_remboursement_avance: contrat?.taux_remboursement_avance ?? 6.25,
+    delai_paiement:            contrat?.delai_paiement ?? 30,
+    taux_penalite:             contrat?.taux_penalite ?? 0.1,
+    plafond_penalite:          contrat?.plafond_penalite ?? 10,
+    taux_tva:                  contrat?.taux_tva ?? 18,
+    delai_execution:           contrat?.delai_execution ?? "",
+    date_signature:            contrat?.date_signature ? contrat.date_signature.substring(0, 10) : "",
+    financement:               contrat?.financement ?? "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  const set = (k, v) => setFin(f => ({ ...f, [k]: v }));
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await saveContrat.mutateAsync({ id: contrat.id, ...fin });
+      addToast("Conditions financières enregistrées", "success");
+    } catch {
+      addToast("Erreur lors de l'enregistrement", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none transition-all";
 
   return (
     <div className="space-y-6">
@@ -180,22 +212,61 @@ function ParametrageFinancierTab({ contrat, avenants }) {
         </div>
       </div>
 
-      {/* Taux */}
+      {/* Conditions financières éditables */}
       <div>
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Taux applicables</h3>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Retenue de garantie</p>
-            <p className="text-lg font-bold text-gray-900">{tauxRG} %</p>
+        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Conditions financières</h3>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+          <div className="space-y-1">
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Retenue de garantie (%)</label>
+            <input type="number" step="0.01" value={fin.taux_rg} onChange={e => set("taux_rg", e.target.value)} className={inputCls} />
           </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">TVA</p>
-            <p className="text-lg font-bold text-gray-900">{tauxTVA} %</p>
+          <div className="space-y-1">
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">TVA (%)</label>
+            <input type="number" step="0.01" value={fin.taux_tva} onChange={e => set("taux_tva", e.target.value)} className={inputCls} />
           </div>
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Type de contrat</p>
-            <p className="text-base font-semibold text-gray-800 capitalize">{contrat?.type_contrat ?? "—"}</p>
+          <div className="space-y-1">
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Taux avance (%)</label>
+            <input type="number" step="0.01" value={fin.taux_avance} onChange={e => set("taux_avance", e.target.value)} className={inputCls} />
           </div>
+          <div className="space-y-1">
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Remboursement avance / décompte (%)</label>
+            <input type="number" step="0.01" value={fin.taux_remboursement_avance} onChange={e => set("taux_remboursement_avance", e.target.value)} className={inputCls} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Délai de paiement (jours)</label>
+            <input type="number" step="1" value={fin.delai_paiement} onChange={e => set("delai_paiement", e.target.value)} className={inputCls} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Délai d'exécution (jours)</label>
+            <input type="number" step="1" value={fin.delai_execution} onChange={e => set("delai_execution", e.target.value)} className={inputCls} placeholder="—" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Pénalité de retard (%/jour)</label>
+            <input type="number" step="0.001" value={fin.taux_penalite} onChange={e => set("taux_penalite", e.target.value)} className={inputCls} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Plafond pénalités (%)</label>
+            <input type="number" step="0.01" value={fin.plafond_penalite} onChange={e => set("plafond_penalite", e.target.value)} className={inputCls} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Date de signature</label>
+            <input type="date" value={fin.date_signature} onChange={e => set("date_signature", e.target.value)} className={inputCls} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Financement</label>
+            <input type="text" value={fin.financement} onChange={e => set("financement", e.target.value)} className={inputCls} placeholder="ex: BCI, FCP…" />
+          </div>
+        </div>
+
+        <div className="flex justify-end mt-4">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors disabled:opacity-60"
+          >
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            Enregistrer
+          </button>
         </div>
       </div>
 
@@ -654,6 +725,7 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(AVENANT_INIT);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmValider, setConfirmValider] = useState(null);
 
   const { data: avenants = [], isLoading } = useAvenantsByContrat(!isNew ? contratId : null);
   const saveMut    = useSaveAvenant();
@@ -794,9 +866,9 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
                     <span className="inline-flex items-center gap-3">
                       {a.statut === "brouillon" && (
                         <button
-                          onClick={() => handleValider(a.id)}
+                          onClick={() => setConfirmValider(a.id)}
                           disabled={validerMut.isPending}
-                          title="Valider"
+                          title="Valider l'avenant"
                           className="text-[#087F3E] hover:text-[#065A2C] transition-colors disabled:opacity-40"
                         >
                           <CheckCircle size={15} />
@@ -827,6 +899,15 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
           <Plus size={13} /> Nouvel avenant
         </button>
       </div>
+
+      <ConfirmModal
+        open={!!confirmValider}
+        title="Valider l'avenant"
+        message="Cette action est irréversible. Le montant du contrat sera mis à jour définitivement. Confirmer la validation ?"
+        confirmLabel="Valider l'avenant"
+        onConfirm={() => { handleValider(confirmValider); setConfirmValider(null); }}
+        onCancel={() => setConfirmValider(null)}
+      />
 
       {/* Modal overlay */}
       {showForm && (
@@ -1644,6 +1725,19 @@ export default function ContratFormPage() {
                 <StatusBadge statut={contrat.statut} />
               </div>
               <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    const token = localStorage.getItem("stt_token");
+                    const resp = await fetch(`${import.meta.env.VITE_API_BASE}/api/pdf/contrat/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                    const blob = await resp.blob();
+                    const url = URL.createObjectURL(blob);
+                    window.open(url, "_blank");
+                    setTimeout(() => URL.revokeObjectURL(url), 60000);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  <Download size={13} /> PDF
+                </button>
                 <button
                   onClick={() => setActiveTab("decomptes")}
                   className="px-4 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"

@@ -29,6 +29,7 @@ import FactureDetailPage from "./pages/FactureDetailPage";
 import EtatsCessionListPage from "./pages/EtatsCessionListPage";
 import EtatCessionDetailPage from "./pages/EtatCessionDetailPage";
 import EtatCessionFormPage from "./pages/EtatCessionFormPage";
+import ConsultationEtatsCessionPage from "./pages/ConsultationEtatsCessionPage";
 import AttachementsListPage from "./pages/AttachementsListPage";
 import AttachementDetailPage from "./pages/AttachementDetailPage";
 
@@ -64,6 +65,7 @@ export default function App() {
 
                 {/* États de cession */}
                 <Route path="/etats-cession" element={<EtatsCessionListPage />} />
+                <Route path="/etats-cession/consultation" element={<ConsultationEtatsCessionPage />} />
                 <Route path="/etats-cession/nouveau" element={<EtatCessionFormPage />} />
                 <Route path="/etats-cession/:id/modifier" element={<EtatCessionFormPage />} />
                 <Route path="/etats-cession/:id" element={<EtatCessionDetailPage />} />

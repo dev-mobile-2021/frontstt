@@ -213,7 +213,18 @@ export default function FacturesListPage() {
               {(form.type === "fac_stt" || form.type === "fac_cse") && (
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-600">Décompte lié *</label>
-                  <select value={form.decompte_id} onChange={e => setForm(f => ({ ...f, decompte_id: e.target.value }))}
+                  <select value={form.decompte_id} onChange={e => {
+                    const dec = decompteOptions.find(d => d.id === parseInt(e.target.value));
+                    setForm(f => ({
+                      ...f,
+                      decompte_id:    e.target.value,
+                      contrat_id:     dec?.contrat_id ? String(dec.contrat_id) : f.contrat_id,
+                      soustraitant_id: dec?.contrat?.soustraitant?.id ? String(dec.contrat.soustraitant.id) : f.soustraitant_id,
+                      montant_ht:     dec?.montant_ht ? String(dec.montant_ht) : f.montant_ht,
+                      taux_tva:       dec?.taux_tva   ? String(dec.taux_tva)   : f.taux_tva,
+                      objet:          dec?.contrat?.objet ? `Facture travaux — ${dec.contrat.objet}` : f.objet,
+                    }));
+                  }}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
                     <option value="">— Sélectionner un décompte —</option>
                     {decompteOptions.map(d => (
@@ -243,6 +254,12 @@ export default function FacturesListPage() {
                   </select>
                 </div>
               </>)}
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-gray-600">Objet *</label>
+                <input type="text" value={form.objet} onChange={e => setForm(f => ({ ...f, objet: e.target.value }))}
+                  placeholder="Objet de la facture" className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
