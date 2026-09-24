@@ -12,6 +12,7 @@ import {
 } from "../hooks/useEtatsCession";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useContratBaremes } from "../hooks/useContratBaremes";
+import { x3Service } from "../services/x3Service";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import { SkeletonCard } from "../components/Skeleton";
@@ -56,11 +57,13 @@ const LIGNE_INIT = { bareme_cb_id: "", designation: "", unite: "", quantite: "",
 const POSTE_TO_TYPE = { MTX: "mtx", MTL: "mtl", RH: "rh" };
 
 // ─── Bloc par poste ──────────────────────────────────────────────
-function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes }) {
+function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config }) {
   const { addToast }                = useToast();
   const [showForm, setShowForm]     = useState(false);
   const [form, setForm]             = useState(LIGNE_INIT);
   const [confirmDel, setConfirmDel] = useState(null);
+  const [x3Loading, setX3Loading]   = useState(false);
+  const [x3Preview, setX3Preview]   = useState(null); // lignes proposées par X3
 
   const saveMut   = useSaveLigneEC();
   const deleteMut = useDeleteLigneEC();
@@ -123,6 +126,47 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes }) {
     }
   }
 
+  async function handleX3Import() {
+    if (!x3Config?.chantier_code) return addToast("Ce chantier n'a pas de code X3 configuré.", "error");
+    setX3Loading(true);
+    try {
+      const rows = await x3Service.getCessionsMtx({
+        chantier_code: x3Config.chantier_code,
+        periode_debut: x3Config.periode_debut,
+        periode_fin:   x3Config.periode_fin,
+      });
+      // Filtre : seulement les articles MTX (pas GASOIL)
+      const mtxRows = rows.filter(r => r.code_article !== "GASOIL");
+      if (mtxRows.length === 0) return addToast("Aucune donnée X3 pour cette période.", "info");
+      setX3Preview(mtxRows);
+    } catch {
+      addToast("Erreur lors de la récupération des données X3.", "error");
+    } finally {
+      setX3Loading(false);
+    }
+  }
+
+  async function confirmX3Import() {
+    if (!x3Preview) return;
+    try {
+      for (const row of x3Preview) {
+        await saveMut.mutateAsync({
+          etat_cession_id: parseInt(etatId, 10),
+          poste,
+          designation:   row.designation,
+          unite:         row.unite,
+          quantite:      parseFloat(row.quantite),
+          prix_unitaire: parseFloat(row.prix_unitaire),
+          bon_transfert: null,
+        });
+      }
+      addToast(`${x3Preview.length} lignes importées depuis X3.`, "success");
+      setX3Preview(null);
+    } catch {
+      addToast("Erreur lors de l'import X3.", "error");
+    }
+  }
+
   const montantPreview = form.quantite && form.prix_unitaire
     ? parseFloat(form.quantite) * parseFloat(form.prix_unitaire)
     : 0;
@@ -142,6 +186,13 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes }) {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-sm font-bold text-gray-800">{fmtNum(total)} FCFA</span>
+          {canEdit && poste === "MTX" && x3Config?.chantier_code && (
+            <button onClick={handleX3Import} disabled={x3Loading}
+              className="inline-flex items-center gap-1 text-xs font-medium bg-blue-600 text-white px-2.5 py-1 rounded-lg hover:bg-blue-700 disabled:opacity-60">
+              {x3Loading ? <Loader2 size={11} className="animate-spin" /> : <FileText size={11} />}
+              Charger X3
+            </button>
+          )}
           {canEdit && !cfg.gmao && (
             <button onClick={() => { setShowForm(s => !s); setForm(LIGNE_INIT); }}
               className={`text-xs font-medium hover:underline ${c.btn}`}>
@@ -222,6 +273,50 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes }) {
               </tr>
             </tfoot>
           </table>
+        </div>
+      )}
+
+      {/* Prévisualisation import X3 */}
+      {x3Preview && (
+        <div className="border-t border-blue-200 bg-blue-50 px-5 py-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-blue-800">
+              {x3Preview.length} article{x3Preview.length > 1 ? "s" : ""} trouvé{x3Preview.length > 1 ? "s" : ""} dans X3 — confirmer l'import ?
+            </p>
+            <button onClick={() => setX3Preview(null)} className="text-blue-400 hover:text-blue-600"><X size={16} /></button>
+          </div>
+          <div className="overflow-x-auto rounded-lg border border-blue-200">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-blue-100 text-blue-700">
+                  <th className="text-left px-3 py-2">Désignation</th>
+                  <th className="text-left px-3 py-2">Unité</th>
+                  <th className="text-right px-3 py-2">Quantité</th>
+                  <th className="text-right px-3 py-2">Prix unit.</th>
+                  <th className="text-right px-3 py-2">Montant</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-blue-100 bg-white">
+                {x3Preview.map((r, i) => (
+                  <tr key={i}>
+                    <td className="px-3 py-1.5 text-gray-800">{r.designation}</td>
+                    <td className="px-3 py-1.5 text-gray-500 uppercase">{r.unite}</td>
+                    <td className="px-3 py-1.5 text-right">{fmtNum(r.quantite)}</td>
+                    <td className="px-3 py-1.5 text-right">{fmtNum(r.prix_unitaire)}</td>
+                    <td className="px-3 py-1.5 text-right font-semibold">{fmtNum(parseFloat(r.quantite) * parseFloat(r.prix_unitaire))} FCFA</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setX3Preview(null)} className="px-4 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">Annuler</button>
+            <button onClick={confirmX3Import} disabled={saveMut.isPending}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60">
+              {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+              Importer {x3Preview.length} ligne{x3Preview.length > 1 ? "s" : ""}
+            </button>
+          </div>
         </div>
       )}
 
@@ -445,6 +540,12 @@ export default function EtatCessionFormPage() {
   const contratIdForBareme = !isNew && etat ? etat.contrat_id : null;
   const { data: contratBaremes = [] } = useContratBaremes(contratIdForBareme);
 
+  const x3Config = !isNew && etat ? {
+    chantier_code: etat.contrat?.chantier?.code_x3 ?? null,
+    periode_debut: etat.periode_debut?.slice(0, 10) ?? null,
+    periode_fin:   etat.periode_fin?.slice(0, 10)   ?? null,
+  } : null;
+
   const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none";
 
   return (
@@ -596,6 +697,7 @@ export default function EtatCessionFormPage() {
               canEdit={canEdit}
               etatId={id}
               contratBaremes={contratBaremes}
+              x3Config={x3Config}
             />
           ))}
 
