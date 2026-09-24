@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle,
   Hash, FileText, Info, FilePlus, CheckCircle, Trash2, Plus, X, Paperclip,
-  Upload, Download, File, Circle, Clock, CheckCircle2, XCircle,
+  Upload, Download, File, Circle, Clock, CheckCircle2, XCircle, Search,
 } from "lucide-react";
 import { useContrat, useSaveContrat, useContratStatut, useContratCircuit, useSoumettreContrat, useValiderContrat, useRejeterContrat } from "../hooks/useContrats";
 import { useChantiersPaginated } from "../hooks/useChantiers";
@@ -14,6 +14,7 @@ import { useAvenantsByContrat, useSaveAvenant, useValiderAvenant, useDeleteAvena
 import { useAttachements } from "../hooks/useAttachements";
 import { useBonCommandesByContrat, useSaveBonCommande, useSaveBonCommandeLigne, useDeleteBonCommandeLigne, useBonCommandeStatut, useDeleteBonCommande } from "../hooks/useBonCommandes";
 import { useBaremesPaginated } from "../hooks/useBaremes";
+import { useContratBaremes, useAddContratBareme, useUpdateContratBaremePrix, useValiderContratBaremePrix, useRemoveContratBareme } from "../hooks/useContratBaremes";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { usePiecesJointes, useUploadPieceJointe, useDeletePieceJointe } from "../hooks/usePiecesJointes";
 import { pieceJointeService } from "../services/pieceJointeService";
@@ -298,6 +299,312 @@ function ParametrageFinancierTab({ contrat, avenants }) {
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Sub-tab: Barème de cessions ────────────────────────────────
+const POSTE_TYPES = [
+  { key: "mtx", label: "MTX — Matériaux",          color: "text-blue-700",   bg: "bg-blue-50",   border: "border-blue-200" },
+  { key: "mtl", label: "MTL — Matériel",            color: "text-violet-700", bg: "bg-violet-50", border: "border-violet-200" },
+  { key: "rh",  label: "RH — Ressources humaines",  color: "text-green-700",  bg: "bg-green-50",  border: "border-green-200" },
+];
+
+function BaremeCessionsTab({ contratId, isNew }) {
+  const { addToast } = useToast();
+  const [showModal, setShowModal]   = useState(null); // null | 'mtx' | 'mtl' | 'rh'
+  const [editingId, setEditingId]   = useState(null);
+  const [editPrix, setEditPrix]     = useState("");
+  const [confirmDel, setConfirmDel] = useState(null);
+  const [search, setSearch]         = useState("");
+  const [importing, setImporting]   = useState(null); // type en cours d'import
+
+  const contratIdInt = contratId ? parseInt(contratId, 10) : null;
+  const { data: lignes = [], isLoading } = useContratBaremes(contratIdInt);
+  const { data: refData } = useBaremesPaginated({ statut: "actif", count: 500 });
+  const refArticles = refData?.data ?? [];
+
+  const addMut     = useAddContratBareme(contratIdInt);
+  const updateMut  = useUpdateContratBaremePrix(contratIdInt);
+  const validerMut = useValiderContratBaremePrix(contratIdInt);
+  const removeMut  = useRemoveContratBareme(contratIdInt);
+
+  const fmt = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
+
+  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer le barème de cessions.</p>;
+
+  // Articles du référentiel pas encore ajoutés pour ce type
+  function getDisponibles(type) {
+    const dejaPris = new Set(lignes.map(l => l.bareme_id));
+    return refArticles.filter(b => b.type === type && !dejaPris.has(b.id));
+  }
+
+  async function handleAdd(baremeId) {
+    try {
+      await addMut.mutateAsync({ bareme_id: baremeId });
+      addToast("Article ajouté au barème.", "success");
+    } catch (err) {
+      if (err.response?.status === 409) return addToast("Cet article est déjà dans le barème.", "error");
+      addToast("Erreur lors de l'ajout.", "error");
+    }
+  }
+
+  async function handleSavePrix(cb) {
+    const val = parseFloat(editPrix);
+    if (isNaN(val) || val < 0) return addToast("Prix invalide.", "error");
+    try {
+      await updateMut.mutateAsync({ id: cb.id, prix_contrat: val });
+      setEditingId(null);
+      addToast("Prix mis à jour.", "success");
+    } catch { addToast("Erreur.", "error"); }
+  }
+
+  async function handleValider(id) {
+    try {
+      await validerMut.mutateAsync(id);
+      addToast("Prix validé.", "success");
+    } catch { addToast("Erreur.", "error"); }
+  }
+
+  async function handleRemove(id) {
+    try {
+      await removeMut.mutateAsync(id);
+      setConfirmDel(null);
+      addToast("Article retiré.", "success");
+    } catch { addToast("Erreur.", "error"); }
+  }
+
+  function handleDownloadTemplate(type) {
+    const { label } = POSTE_TYPES.find(p => p.key === type);
+    const rows = [
+      ["Code article", "Désignation", "Unité", "Prix contrat (FCFA)"],
+      ["EX001", "Exemple article", "m3", "15000"],
+    ];
+    const csv = rows.map(r => r.map(c => `"${c}"`).join(";")).join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `modele_bareme_${type}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleImportCSV(type, file) {
+    setImporting(type);
+    try {
+      const text = await file.text();
+      const lines = text.split(/\r?\n/).filter(Boolean);
+      // Ignore header
+      const dataLines = lines.slice(1);
+      let added = 0, skipped = 0;
+      for (const line of dataLines) {
+        const cols = line.split(/[;,]/).map(c => c.replace(/^"|"$/g, "").trim());
+        const [codeArticle, , , prixStr] = cols;
+        if (!codeArticle) continue;
+        // Cherche dans le référentiel par code
+        const bareme = refArticles.find(b => b.type === type &&
+          b.code?.toLowerCase() === codeArticle.toLowerCase());
+        if (!bareme) { skipped++; continue; }
+        const dejaPris = lignes.some(l => l.bareme_id === bareme.id);
+        if (dejaPris) { skipped++; continue; }
+        const prix = prixStr ? parseFloat(prixStr.replace(/\s/g, "")) : null;
+        await addMut.mutateAsync({ bareme_id: bareme.id, prix_contrat: isNaN(prix) ? null : prix });
+        added++;
+      }
+      addToast(`Import terminé — ${added} ajouté${added > 1 ? "s" : ""}, ${skipped} ignoré${skipped > 1 ? "s" : ""}.`, "success");
+    } catch {
+      addToast("Erreur lors de l'import du fichier.", "error");
+    } finally {
+      setImporting(null);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-gray-500 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        Ce barème définit les articles MTX, MTL et RH que ce contrat peut céder au sous-traitant, avec leur prix contractuel.
+        Un prix différent du référentiel passe en attente de validation DACC.
+      </p>
+
+      {isLoading ? (
+        <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>
+      ) : (
+        POSTE_TYPES.map(({ key, label, color, bg, border }) => {
+          const items = lignes.filter(l => l.bareme?.type === key);
+          const dispos = getDisponibles(key);
+          return (
+            <div key={key} className={`border rounded-xl overflow-hidden ${border}`}>
+              {/* Header bloc */}
+              <div className={`px-4 py-2.5 flex items-center justify-between gap-2 ${bg}`}>
+                <span className={`text-xs font-bold uppercase tracking-wide ${color}`}>
+                  {label} <span className="font-normal opacity-70">({items.length})</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  {/* Télécharger le modèle */}
+                  <button onClick={() => handleDownloadTemplate(key)}
+                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
+                    <Download size={11} /> Modèle
+                  </button>
+                  {/* Importer CSV */}
+                  <label className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-colors
+                    ${importing === key ? "opacity-60 cursor-not-allowed bg-white border border-gray-200 text-gray-400" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                    {importing === key
+                      ? <Loader2 size={11} className="animate-spin" />
+                      : <Upload size={11} />}
+                    Importer
+                    <input type="file" accept=".csv" className="hidden"
+                      disabled={importing === key}
+                      onChange={e => { if (e.target.files[0]) handleImportCSV(key, e.target.files[0]); e.target.value = ""; }} />
+                  </label>
+                  {/* Sélectionner depuis le référentiel */}
+                  <button
+                    onClick={() => { setShowModal(key); setSearch(""); }}
+                    disabled={dispos.length === 0}
+                    className={`text-xs px-3 py-1 rounded-lg font-medium transition-colors
+                      ${dispos.length === 0
+                        ? "opacity-30 cursor-not-allowed bg-white border border-gray-200 text-gray-400"
+                        : `bg-white border ${border} ${color} hover:bg-white/70`}`}
+                  >
+                    + Sélectionner depuis le référentiel
+                  </button>
+                </div>
+              </div>
+
+              {/* Table */}
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Désignation</th>
+                    <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Unité</th>
+                    <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Prix référence</th>
+                    <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Prix contrat</th>
+                    <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
+                    <th className="px-4 py-2"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {items.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-6 text-center text-xs text-gray-400">
+                        Aucun article — cliquez "Sélectionner depuis le référentiel".
+                      </td>
+                    </tr>
+                  ) : items.map(cb => {
+                    const prixRef = parseFloat(cb.bareme?.prix_unitaire ?? 0);
+                    const prixCtt = cb.prix_contrat != null ? parseFloat(cb.prix_contrat) : prixRef;
+                    const isEditing = editingId === cb.id;
+                    return (
+                      <tr key={cb.id} className="hover:bg-gray-50/60">
+                        <td className="px-4 py-3 text-sm text-gray-800">{cb.bareme?.designation ?? "—"}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{cb.bareme?.unite ?? "—"}</td>
+                        <td className="px-4 py-3 text-right text-sm text-gray-500 tabular-nums">{fmt(prixRef)} FCFA</td>
+                        <td className="px-4 py-3 text-right">
+                          {isEditing ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <input
+                                type="number" min="0" step="any"
+                                value={editPrix}
+                                onChange={e => setEditPrix(e.target.value)}
+                                className="w-28 border border-gray-300 rounded-lg px-2 py-1 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none"
+                                autoFocus
+                              />
+                              <button onClick={() => handleSavePrix(cb)}
+                                className="text-xs text-white bg-[#087F3E] px-2 py-1 rounded-lg hover:bg-[#065A2C]">OK</button>
+                              <button onClick={() => setEditingId(null)}
+                                className="text-xs text-gray-500 px-2 py-1 rounded-lg border border-gray-200 hover:bg-gray-50">✕</button>
+                            </div>
+                          ) : (
+                            <button onClick={() => { setEditingId(cb.id); setEditPrix(String(prixCtt)); }}
+                              className="text-sm font-semibold text-gray-800 hover:text-[#087F3E] tabular-nums transition-colors">
+                              {fmt(prixCtt)} FCFA
+                            </button>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {cb.statut_prix === "en_attente" ? (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">En attente DACC</span>
+                              <button onClick={() => handleValider(cb.id)}
+                                className="text-xs text-[#087F3E] hover:underline font-medium">Valider</button>
+                            </div>
+                          ) : (
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Prix validé</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {confirmDel === cb.id ? (
+                            <span className="inline-flex items-center gap-2 text-xs">
+                              <span className="text-red-600">Retirer ?</span>
+                              <button onClick={() => handleRemove(cb.id)} className="text-red-600 hover:text-red-800 font-medium">Oui</button>
+                              <button onClick={() => setConfirmDel(null)} className="text-gray-400 hover:text-gray-600">Non</button>
+                            </span>
+                          ) : (
+                            <button onClick={() => setConfirmDel(cb.id)}
+                              className="text-gray-300 hover:text-red-500 transition-colors">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          );
+        })
+      )}
+
+      {/* Modal sélection référentiel */}
+      {showModal && (() => {
+        const type = showModal;
+        const { label } = POSTE_TYPES.find(p => p.key === type);
+        const dispos = getDisponibles(type).filter(b =>
+          !search || b.designation.toLowerCase().includes(search.toLowerCase())
+        );
+        return (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <h3 className="text-sm font-bold text-gray-900">Ajouter depuis le référentiel — {label}</h3>
+                <button onClick={() => setShowModal(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="px-5 py-3 border-b border-gray-100">
+                <div className="relative">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input value={search} onChange={e => setSearch(e.target.value)}
+                    placeholder="Rechercher un article…"
+                    className="w-full pl-8 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+                </div>
+              </div>
+              <div className="overflow-y-auto flex-1 divide-y divide-gray-100">
+                {dispos.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-10">Tous les articles sont déjà ajoutés.</p>
+                ) : dispos.map(b => (
+                  <div key={b.id} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">{b.designation}</p>
+                      <p className="text-xs text-gray-500">{b.unite} · {fmt(b.prix_unitaire)} FCFA</p>
+                    </div>
+                    <button onClick={() => handleAdd(b.id)}
+                      disabled={addMut.isPending}
+                      className="text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors disabled:opacity-50">
+                      + Ajouter
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="px-5 py-3 border-t border-gray-100">
+                <button onClick={() => setShowModal(null)}
+                  className="w-full py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
+                  Fermer
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
@@ -1566,6 +1873,7 @@ export default function ContratFormPage() {
   const { data: decomptesData }   = useDecomptesPaginated({ contrat_id: contratIdInt, count: 100 });
   const { data: avenantsList = [] } = useAvenantsByContrat(contratIdInt);
   const { data: bcsList = [] }      = useBonCommandesByContrat(contratIdInt);
+  const { data: lignes = [] }       = useContratBaremes(contratIdInt);
 
   const chantiersList = chantiersData?.data ?? [];
   const sttList       = sttData?.data?.filter(s => s.statut !== "blackliste") ?? [];
@@ -1668,6 +1976,7 @@ export default function ContratFormPage() {
     { id: "info",          label: "Informations",          icon: Info },
     { id: "parametrage",   label: "Paramétrage financier", icon: Hash },
     { id: "avenants",      label: nbAv > 0 ? `Avenants (${nbAv})` : "Avenants", icon: FilePlus },
+    { id: "bareme",        label: lignes.length > 0 ? `Barème de cessions (${lignes.length})` : "Barème de cessions", icon: FileText },
     { id: "cessions",      label: "Cessions",              icon: FileText },
     { id: "attachements",  label: "Attachements",          icon: Paperclip },
     { id: "decomptes",     label: nbDec > 0 ? `Décomptes (${nbDec})` : "Décomptes", icon: FileText },
@@ -1991,6 +2300,11 @@ export default function ContratFormPage() {
           {/* Tab: Avenants */}
           {activeTab === "avenants" && (
             <AvenantsTab contratId={id} isNew={isNew} montantInitial={contrat?.montant_initial} />
+          )}
+
+          {/* Tab: Barème de cessions */}
+          {activeTab === "bareme" && (
+            <BaremeCessionsTab contratId={id} isNew={isNew} />
           )}
 
           {/* Tab: Cessions */}
