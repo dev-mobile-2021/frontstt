@@ -202,6 +202,26 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
         </div>
       </div>
 
+      {/* Bons de transfert (MTX seulement) */}
+      {poste === "MTX" && lignes.length > 0 && (() => {
+        const bts = [...new Set(lignes.map(l => l.bon_transfert).filter(Boolean))];
+        if (bts.length === 0) return null;
+        return (
+          <div className="px-5 py-3 border-b border-blue-100 bg-blue-50/40">
+            <p className="text-xs font-semibold text-blue-700 mb-2">
+              Bons de transfert ({bts.length})
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {bts.map(bt => (
+                <span key={bt} className="inline-flex items-center gap-1 text-xs bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full">
+                  <FileText size={10} /> {bt}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* GMAO notice */}
       {cfg.gmao && lignes.length === 0 && (
         <div className="px-5 py-6 text-center text-sm text-violet-400 bg-violet-50/40">
