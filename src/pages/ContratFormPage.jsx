@@ -344,8 +344,8 @@ function BaremeCessionsTab({ contratId, isNew }) {
 
   async function handleAdd(baremeId) {
     const prixStr = prixInput[baremeId] ?? "";
-    const prix = prixStr !== "" ? parseFloat(prixStr) : null;
-    if (prixStr !== "" && (isNaN(prix) || prix < 0)) return addToast("Prix invalide.", "error");
+    const prix = parseFloat(prixStr);
+    if (!prixStr || isNaN(prix) || prix <= 0) return addToast("Saisissez un prix unitaire valide.", "error");
     try {
       await addMut.mutateAsync({ bareme_id: baremeId, prix_contrat: prix });
       setPrixInput(p => { const n = { ...p }; delete n[baremeId]; return n; });
@@ -593,7 +593,7 @@ function BaremeCessionsTab({ contratId, isNew }) {
                     </div>
                     <input
                       type="number" min="0" step="any"
-                      placeholder="Prix (FCFA)"
+                      placeholder="PU (FCFA) *"
                       value={prixInput[b.id] ?? ""}
                       onChange={e => setPrixInput(p => ({ ...p, [b.id]: e.target.value }))}
                       className="w-32 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none"
