@@ -319,6 +319,7 @@ function BaremeCessionsTab({ contratId, isNew }) {
   const [search, setSearch]         = useState("");
   const [importing, setImporting]   = useState(null);
   const [prixInput, setPrixInput]   = useState({}); // { [baremeId]: string }
+  const [uniteInput, setUniteInput] = useState({}); // { [baremeId]: string }
 
   const contratIdInt = contratId ? parseInt(contratId, 10) : null;
   const { data: lignes = [], isLoading } = useContratBaremes(contratIdInt);
@@ -346,9 +347,11 @@ function BaremeCessionsTab({ contratId, isNew }) {
     const prixStr = prixInput[baremeId] ?? "";
     const prix = parseFloat(prixStr);
     if (!prixStr || isNaN(prix) || prix <= 0) return addToast("Saisissez un prix unitaire valide.", "error");
+    const unite = uniteInput[baremeId] ?? null;
     try {
-      await addMut.mutateAsync({ bareme_id: baremeId, prix_contrat: prix });
+      await addMut.mutateAsync({ bareme_id: baremeId, prix_contrat: prix, unite: unite || null });
       setPrixInput(p => { const n = { ...p }; delete n[baremeId]; return n; });
+      setUniteInput(p => { const n = { ...p }; delete n[baremeId]; return n; });
       addToast("Article ajouté au barème.", "success");
     } catch (err) {
       if (err.response?.status === 409) return addToast("Cet article est déjà dans le barème.", "error");
@@ -500,7 +503,7 @@ function BaremeCessionsTab({ contratId, isNew }) {
                     return (
                       <tr key={cb.id} className="hover:bg-gray-50/60">
                         <td className="px-4 py-3 text-sm text-gray-800">{cb.bareme?.designation ?? "—"}</td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{cb.bareme?.unite ?? "—"}</td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{cb.unite ?? cb.bareme?.unite ?? "—"}</td>
                         <td className="px-4 py-3 text-right">
                           {isEditing ? (
                             <div className="flex items-center justify-end gap-2">
@@ -589,8 +592,15 @@ function BaremeCessionsTab({ contratId, isNew }) {
                   <div key={b.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">{b.designation}</p>
-                      <p className="text-xs text-gray-500">{b.unite}</p>
+                      <p className="text-xs text-gray-400">{b.unite}</p>
                     </div>
+                    <input
+                      type="text"
+                      placeholder={b.unite || "Unité"}
+                      value={uniteInput[b.id] ?? ""}
+                      onChange={e => setUniteInput(p => ({ ...p, [b.id]: e.target.value }))}
+                      className="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-center focus:ring-2 focus:ring-[#087F3E] outline-none"
+                    />
                     <input
                       type="number" min="0" step="any"
                       placeholder="PU (FCFA) *"
