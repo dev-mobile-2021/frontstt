@@ -1712,7 +1712,8 @@ function AttachementsTab({ contratId, chantierId, isNew }) {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { attachements, addAttachement } = useAttachements();
-  const { data: baremeData } = useBaremesPaginated({ statut: "actif", count: 500 });
+  const contratIdInt = contratId ? parseInt(contratId, 10) : null;
+  const { data: contratBaremesData } = useContratBaremes(contratIdInt);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ periode_debut: "", periode_fin: "" });
   const [loading, setLoading] = useState(false);
@@ -1744,15 +1745,15 @@ function AttachementsTab({ contratId, chantierId, isNew }) {
     }
     setLoading(true);
     try {
-      const baremes = baremeData?.data ?? [];
-      const lignesCSE = baremes.map(b => ({
-        id: `dqe-${b.id}`,
+      const contratBaremes = contratBaremesData ?? [];
+      const lignesCSE = contratBaremes.map(cb => ({
+        id: `dqe-${cb.bareme_id}`,
         source: "DQE",
-        refDQE: b.code,
-        designation: b.designation,
-        unite: b.unite ?? "",
+        refDQE: cb.bareme?.code ?? "",
+        designation: cb.bareme?.designation ?? "",
+        unite: cb.bareme?.unite ?? "",
         quantitePrevueDQE: 0,
-        prixUnitaireHT: parseFloat(b.prix_unitaire ?? 0),
+        prixUnitaireHT: parseFloat(cb.prix_contrat ?? 0),
         quantiteRealisee: 0,
         montant: 0,
       }));
