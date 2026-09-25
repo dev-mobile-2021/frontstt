@@ -304,6 +304,8 @@ function ParametrageFinancierTab({ contrat, avenants }) {
 }
 
 // ─── Sub-tab: Barème de cessions ────────────────────────────────
+const UNITES = ["LITRE", "SAC", "TONNE", "BARRE", "KILO", "M3", "ML", "M2", "U", "H", "JOUR", "MOIS"];
+
 const POSTE_TYPES = [
   { key: "mtx", label: "MTX — Matériaux",          color: "text-blue-700",   bg: "bg-blue-50",   border: "border-blue-200", types: ["mtx", "gasoil"] },
   { key: "rh",  label: "RH — Ressources humaines",  color: "text-green-700",  bg: "bg-green-50",  border: "border-green-200", types: ["rh"] },
@@ -594,13 +596,13 @@ function BaremeCessionsTab({ contratId, isNew }) {
                       <p className="text-sm font-medium text-gray-800 truncate">{b.designation}</p>
                       <p className="text-xs text-gray-400">{b.unite}</p>
                     </div>
-                    <input
-                      type="text"
-                      placeholder={b.unite || "Unité"}
-                      value={uniteInput[b.id] ?? ""}
+                    <select
+                      value={uniteInput[b.id] ?? b.unite ?? ""}
                       onChange={e => setUniteInput(p => ({ ...p, [b.id]: e.target.value }))}
-                      className="w-20 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-center focus:ring-2 focus:ring-[#087F3E] outline-none"
-                    />
+                      className="w-24 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white"
+                    >
+                      {UNITES.map(u => <option key={u} value={u}>{u}</option>)}
+                    </select>
                     <input
                       type="number" min="0" step="any"
                       placeholder="PU (FCFA) *"
