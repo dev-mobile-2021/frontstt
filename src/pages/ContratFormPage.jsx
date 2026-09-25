@@ -317,7 +317,8 @@ function BaremeCessionsTab({ contratId, isNew }) {
   const [editPrix, setEditPrix]     = useState("");
   const [confirmDel, setConfirmDel] = useState(null);
   const [search, setSearch]         = useState("");
-  const [importing, setImporting]   = useState(null); // type en cours d'import
+  const [importing, setImporting]   = useState(null);
+  const [prixInput, setPrixInput]   = useState({}); // { [baremeId]: string }
 
   const contratIdInt = contratId ? parseInt(contratId, 10) : null;
   const { data: lignes = [], isLoading } = useContratBaremes(contratIdInt);
@@ -342,8 +343,12 @@ function BaremeCessionsTab({ contratId, isNew }) {
   }
 
   async function handleAdd(baremeId) {
+    const prixStr = prixInput[baremeId] ?? "";
+    const prix = prixStr !== "" ? parseFloat(prixStr) : null;
+    if (prixStr !== "" && (isNaN(prix) || prix < 0)) return addToast("Prix invalide.", "error");
     try {
-      await addMut.mutateAsync({ bareme_id: baremeId });
+      await addMut.mutateAsync({ bareme_id: baremeId, prix_contrat: prix });
+      setPrixInput(p => { const n = { ...p }; delete n[baremeId]; return n; });
       addToast("Article ajouté au barème.", "success");
     } catch (err) {
       if (err.response?.status === 409) return addToast("Cet article est déjà dans le barème.", "error");
@@ -477,7 +482,6 @@ function BaremeCessionsTab({ contratId, isNew }) {
                   <tr className="bg-gray-50 border-b border-gray-100">
                     <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Désignation</th>
                     <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Unité</th>
-                    <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Prix référence</th>
                     <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Prix contrat</th>
                     <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
                     <th className="px-4 py-2"></th>
@@ -486,19 +490,17 @@ function BaremeCessionsTab({ contratId, isNew }) {
                 <tbody className="divide-y divide-gray-100">
                   {items.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-4 py-6 text-center text-xs text-gray-400">
+                      <td colSpan={5} className="px-4 py-6 text-center text-xs text-gray-400">
                         Aucun article — cliquez "Sélectionner depuis le référentiel".
                       </td>
                     </tr>
                   ) : items.map(cb => {
-                    const prixRef = parseFloat(cb.bareme?.prix_unitaire ?? 0);
-                    const prixCtt = cb.prix_contrat != null ? parseFloat(cb.prix_contrat) : prixRef;
+                    const prixCtt = cb.prix_contrat != null ? parseFloat(cb.prix_contrat) : 0;
                     const isEditing = editingId === cb.id;
                     return (
                       <tr key={cb.id} className="hover:bg-gray-50/60">
                         <td className="px-4 py-3 text-sm text-gray-800">{cb.bareme?.designation ?? "—"}</td>
                         <td className="px-4 py-3 text-sm text-gray-500">{cb.bareme?.unite ?? "—"}</td>
-                        <td className="px-4 py-3 text-right text-sm text-gray-500 tabular-nums">{fmt(prixRef)} FCFA</td>
                         <td className="px-4 py-3 text-right">
                           {isEditing ? (
                             <div className="flex items-center justify-end gap-2">
@@ -584,14 +586,21 @@ function BaremeCessionsTab({ contratId, isNew }) {
                 {dispos.length === 0 ? (
                   <p className="text-sm text-gray-400 text-center py-10">Tous les articles sont déjà ajoutés.</p>
                 ) : dispos.map(b => (
-                  <div key={b.id} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{b.designation}</p>
-                      <p className="text-xs text-gray-500">{b.unite} · {fmt(b.prix_unitaire)} FCFA</p>
+                  <div key={b.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{b.designation}</p>
+                      <p className="text-xs text-gray-500">{b.unite}</p>
                     </div>
+                    <input
+                      type="number" min="0" step="any"
+                      placeholder="Prix (FCFA)"
+                      value={prixInput[b.id] ?? ""}
+                      onChange={e => setPrixInput(p => ({ ...p, [b.id]: e.target.value }))}
+                      className="w-32 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none"
+                    />
                     <button onClick={() => handleAdd(b.id)}
                       disabled={addMut.isPending}
-                      className="text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors disabled:opacity-50">
+                      className="text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors disabled:opacity-50 shrink-0">
                       + Ajouter
                     </button>
                   </div>
