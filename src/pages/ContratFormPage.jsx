@@ -305,9 +305,9 @@ function ParametrageFinancierTab({ contrat, avenants }) {
 
 // ─── Sub-tab: Barème de cessions ────────────────────────────────
 const POSTE_TYPES = [
-  { key: "mtx", label: "MTX — Matériaux",          color: "text-blue-700",   bg: "bg-blue-50",   border: "border-blue-200" },
-  { key: "mtl", label: "MTL — Matériel",            color: "text-violet-700", bg: "bg-violet-50", border: "border-violet-200" },
-  { key: "rh",  label: "RH — Ressources humaines",  color: "text-green-700",  bg: "bg-green-50",  border: "border-green-200" },
+  { key: "mtx", label: "MTX — Matériaux",          color: "text-blue-700",   bg: "bg-blue-50",   border: "border-blue-200", types: ["mtx", "gasoil"] },
+  { key: "rh",  label: "RH — Ressources humaines",  color: "text-green-700",  bg: "bg-green-50",  border: "border-green-200", types: ["rh"] },
+  // MTL masqué — API GMAO non disponible
 ];
 
 function BaremeCessionsTab({ contratId, isNew }) {
@@ -333,10 +333,12 @@ function BaremeCessionsTab({ contratId, isNew }) {
 
   if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer le barème de cessions.</p>;
 
-  // Articles du référentiel pas encore ajoutés pour ce type
-  function getDisponibles(type) {
+  // Articles du référentiel pas encore ajoutés pour ce bloc
+  function getDisponibles(key) {
+    const poste = POSTE_TYPES.find(p => p.key === key);
+    const types = poste?.types ?? [key];
     const dejaPris = new Set(lignes.map(l => l.bareme_id));
-    return refArticles.filter(b => b.type === type && !dejaPris.has(b.id));
+    return refArticles.filter(b => types.includes(b.type) && !dejaPris.has(b.id));
   }
 
   async function handleAdd(baremeId) {
@@ -428,8 +430,8 @@ function BaremeCessionsTab({ contratId, isNew }) {
       {isLoading ? (
         <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>
       ) : (
-        POSTE_TYPES.map(({ key, label, color, bg, border }) => {
-          const items = lignes.filter(l => l.bareme?.type === key);
+        POSTE_TYPES.map(({ key, label, color, bg, border, types }) => {
+          const items = lignes.filter(l => (types ?? [key]).includes(l.bareme?.type));
           const dispos = getDisponibles(key);
           return (
             <div key={key} className={`border rounded-xl overflow-hidden ${border}`}>
