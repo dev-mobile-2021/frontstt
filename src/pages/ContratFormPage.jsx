@@ -15,6 +15,7 @@ import { useAttachements } from "../hooks/useAttachements";
 import { useBonCommandesByContrat, useSaveBonCommande, useSaveBonCommandeLigne, useDeleteBonCommandeLigne, useBonCommandeStatut, useDeleteBonCommande } from "../hooks/useBonCommandes";
 import { useBaremesPaginated } from "../hooks/useBaremes";
 import { useContratBaremes, useAddContratBareme, useUpdateContratBaremePrix, useValiderContratBaremePrix, useRemoveContratBareme } from "../hooks/useContratBaremes";
+import { useParametresPaginated } from "../hooks/useParametres";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { usePiecesJointes, useUploadPieceJointe, useDeletePieceJointe } from "../hooks/usePiecesJointes";
 import { pieceJointeService } from "../services/pieceJointeService";
@@ -304,7 +305,7 @@ function ParametrageFinancierTab({ contrat, avenants }) {
 }
 
 // ─── Sub-tab: Barème de cessions ────────────────────────────────
-const UNITES = ["LITRE", "SAC", "TONNE", "BARRE", "KILO", "M3", "ML", "M2", "U", "H", "JOUR", "MOIS"];
+const UNITES_DEFAULT = ["LITRE", "SAC", "TONNE", "BARRE", "KILO", "M3", "ML", "M2", "U", "H", "JOUR", "MOIS"];
 
 const POSTE_TYPES = [
   { key: "mtx", label: "MTX — Matériaux",          color: "text-blue-700",   bg: "bg-blue-50",   border: "border-blue-200", types: ["mtx", "gasoil"] },
@@ -327,6 +328,9 @@ function BaremeCessionsTab({ contratId, isNew }) {
   const { data: lignes = [], isLoading } = useContratBaremes(contratIdInt);
   const { data: refData } = useBaremesPaginated({ statut: "actif", count: 500 });
   const refArticles = refData?.data ?? [];
+  const { data: parametresData } = useParametresPaginated();
+  const unitesParam = parametresData?.bareme?.find(p => p.cle === "unites_bareme");
+  const UNITES = unitesParam ? unitesParam.valeur.split(",").map(u => u.trim()) : UNITES_DEFAULT;
 
   const addMut     = useAddContratBareme(contratIdInt);
   const updateMut  = useUpdateContratBaremePrix(contratIdInt);
