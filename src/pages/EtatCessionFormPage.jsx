@@ -8,7 +8,7 @@ import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import {
   useEtatCession, useSaveEtatCession, useSaveLigneEC,
-  useDeleteLigneEC, useEtatCessionStatut, useDeleteEtatCession,
+  useDeleteLigneEC, useEtatCessionStatut, useEtatCessionStatutBloc, useDeleteEtatCession,
 } from "../hooks/useEtatsCession";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useContratBaremes } from "../hooks/useContratBaremes";
@@ -54,16 +54,27 @@ const POSTE_CONFIG = {
 const LIGNE_INIT = { bareme_cb_id: "", designation: "", unite: "", quantite: "", prix_unitaire: "", bon_transfert: "" };
 
 // Mapping poste → type barème
-const POSTE_TO_TYPE = { MTX: "mtx", MTL: "mtl", RH: "rh" };
+const POSTE_TO_TYPE = { MTX: "mtx", GASOIL: "gasoil", MTL: "mtl", RH: "rh" };
+
+// Labels statuts bloc
+const STATUT_BLOC_LABEL = {
+  vide:         { label: "Vide",               color: "bg-gray-100 text-gray-500" },
+  alimente:     { label: "Alimenté",           color: "bg-blue-100 text-blue-700" },
+  qte_visees:   { label: "Quantités visées",   color: "bg-amber-100 text-amber-700" },
+  prix_valides: { label: "Prix validés",       color: "bg-green-100 text-green-700" },
+  arrete:       { label: "Arrêté",             color: "bg-purple-100 text-purple-700" },
+};
 
 // ─── Bloc par poste ──────────────────────────────────────────────
-function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config }) {
+function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config, statutBloc, onStatutBloc }) {
   const { addToast }                = useToast();
   const [showForm, setShowForm]     = useState(false);
   const [form, setForm]             = useState(LIGNE_INIT);
   const [confirmDel, setConfirmDel] = useState(null);
   const [x3Loading, setX3Loading]   = useState(false);
-  const [x3Preview, setX3Preview]   = useState(null); // lignes proposées par X3
+  const [x3Preview, setX3Preview]   = useState(null);
+  const [editingLigne, setEditingLigne] = useState(null);
+  const [editLignePrix, setEditLignePrix] = useState("");
 
   const saveMut   = useSaveLigneEC();
   const deleteMut = useDeleteLigneEC();
@@ -126,6 +137,12 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
     }
   }
 
+  // Trouve le prix contrat pour un article X3 (par code_article → bareme.code)
+  function getPrixBareme(codeArticle) {
+    const cb = contratBaremes.find(cb => cb.bareme?.code === codeArticle);
+    return cb?.prix_contrat ?? null;
+  }
+
   async function handleX3Import() {
     if (!x3Config?.chantier_code) return addToast("Ce chantier n'a pas de code X3 configuré.", "error");
     setX3Loading(true);
@@ -135,10 +152,22 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
         periode_debut: x3Config.periode_debut,
         periode_fin:   x3Config.periode_fin,
       });
-      // Filtre : seulement les articles MTX (pas GASOIL)
-      const mtxRows = rows.filter(r => r.code_article !== "GASOIL");
-      if (mtxRows.length === 0) return addToast("Aucune donnée X3 pour cette période.", "info");
-      setX3Preview(mtxRows);
+      // Filtre selon le bloc : MTX exclut GASOIL, GASOIL n'inclut que GASOIL
+      const gasoilCodes = contratBaremes
+        .filter(cb => cb.bareme?.type === "gasoil")
+        .map(cb => cb.bareme?.code);
+      const filtered = poste === "GASOIL"
+        ? rows.filter(r => gasoilCodes.includes(r.code_article))
+        : rows.filter(r => !gasoilCodes.includes(r.code_article));
+
+      if (filtered.length === 0) return addToast("Aucune donnée X3 pour cette période.", "info");
+
+      // Enrichir avec le prix du barème contrat
+      const enriched = filtered.map(r => ({
+        ...r,
+        prix_barème: getPrixBareme(r.code_article),
+      }));
+      setX3Preview(enriched);
     } catch {
       addToast("Erreur lors de la récupération des données X3.", "error");
     } finally {
@@ -150,13 +179,14 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
     if (!x3Preview) return;
     try {
       for (const row of x3Preview) {
+        const prix = row.prix_barème ?? parseFloat(row.prix_unitaire);
         await saveMut.mutateAsync({
           etat_cession_id: parseInt(etatId, 10),
           poste,
           designation:   row.designation,
           unite:         row.unite,
           quantite:      parseFloat(row.quantite),
-          prix_unitaire: parseFloat(row.prix_unitaire),
+          prix_unitaire: prix,
           bon_transfert: null,
         });
       }
@@ -164,6 +194,26 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
       setX3Preview(null);
     } catch {
       addToast("Erreur lors de l'import X3.", "error");
+    }
+  }
+
+  async function handleUpdateLignePrix(ligneId) {
+    const prix = parseFloat(editLignePrix);
+    if (isNaN(prix) || prix < 0) return addToast("Prix invalide.", "error");
+    try {
+      await saveMut.mutateAsync({
+        id:              ligneId,
+        etat_cession_id: parseInt(etatId, 10),
+        poste,
+        designation:     lignes.find(l => l.id === ligneId)?.designation ?? "",
+        unite:           lignes.find(l => l.id === ligneId)?.unite ?? "",
+        quantite:        lignes.find(l => l.id === ligneId)?.quantite ?? 0,
+        prix_unitaire:   prix,
+      });
+      setEditingLigne(null);
+      addToast("Prix mis à jour.", "success");
+    } catch {
+      addToast("Erreur.", "error");
     }
   }
 
@@ -179,14 +229,31 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
           <span className={`w-2 h-2 rounded-full ${c.dot}`} />
           <span className="text-sm font-semibold text-gray-900">{cfg.label}</span>
           {cfg.gmao && <span className="text-[10px] px-2 py-0.5 bg-violet-200 text-violet-700 rounded-full font-medium">GMAO</span>}
-          {cfg.prixEditable && <span className="text-[10px] px-2 py-0.5 bg-orange-200 text-orange-700 rounded-full font-medium">Prix libre</span>}
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.badge}`}>
             {lignes.length} ligne{lignes.length !== 1 ? "s" : ""}
           </span>
+          {statutBloc && (() => {
+            const s = STATUT_BLOC_LABEL[statutBloc] ?? STATUT_BLOC_LABEL.vide;
+            return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.color}`}>{s.label}</span>;
+          })()}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-gray-800">{fmtNum(total)} FCFA</span>
-          {canEdit && poste === "MTX" && x3Config?.chantier_code && (
+          {/* Boutons validation bloc */}
+          {statutBloc === "alimente" && onStatutBloc && (
+            <button onClick={() => onStatutBloc(poste.toLowerCase(), "qte_visees")}
+              className="inline-flex items-center gap-1 text-xs font-medium bg-amber-500 text-white px-2.5 py-1 rounded-lg hover:bg-amber-600">
+              <CheckCircle2 size={11} /> Viser quantités
+            </button>
+          )}
+          {statutBloc === "qte_visees" && onStatutBloc && (
+            <button onClick={() => onStatutBloc(poste.toLowerCase(), "prix_valides")}
+              className="inline-flex items-center gap-1 text-xs font-medium bg-green-600 text-white px-2.5 py-1 rounded-lg hover:bg-green-700">
+              <CheckCircle2 size={11} /> Valider prix
+            </button>
+          )}
+          {/* Charger X3 pour MTX et GASOIL */}
+          {canEdit && (poste === "MTX" || poste === "GASOIL") && x3Config?.chantier_code && (
             <button onClick={handleX3Import} disabled={x3Loading}
               className="inline-flex items-center gap-1 text-xs font-medium bg-blue-600 text-white px-2.5 py-1 rounded-lg hover:bg-blue-700 disabled:opacity-60">
               {x3Loading ? <Loader2 size={11} className="animate-spin" /> : <FileText size={11} />}
@@ -243,7 +310,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                 <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-16">Unité</th>
                 <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-24">Quantité</th>
                 <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-28">
-                  Prix unit. {cfg.prixEditable ? <span className="text-orange-400">✏</span> : <span className="text-gray-300">🔒</span>}
+                  Prix unit. <span className="text-gray-300 text-xs">✏</span>
                 </th>
                 <th className="text-right px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-32">Montant</th>
                 {cfg.hasBonTransfert && <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Bon transfert</th>}
@@ -256,7 +323,23 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                   <td className="px-5 py-2.5 text-gray-800">{l.designation}</td>
                   <td className="px-3 py-2.5 text-gray-500 text-xs uppercase">{l.unite || "—"}</td>
                   <td className="px-3 py-2.5 text-right text-gray-700">{fmtNum(l.quantite)}</td>
-                  <td className="px-3 py-2.5 text-right text-xs text-gray-600">{fmtNum(l.prix_unitaire)}</td>
+                  <td className="px-3 py-2.5 text-right text-xs">
+                    {editingLigne === l.id ? (
+                      <div className="flex items-center justify-end gap-1">
+                        <input type="number" min="0" step="any" value={editLignePrix}
+                          onChange={e => setEditLignePrix(e.target.value)}
+                          className="w-24 border border-gray-300 rounded px-1.5 py-1 text-xs text-right focus:ring-1 focus:ring-[#087F3E] outline-none"
+                          autoFocus />
+                        <button onClick={() => handleUpdateLignePrix(l.id)} className="text-[#087F3E] font-bold text-xs">✓</button>
+                        <button onClick={() => setEditingLigne(null)} className="text-gray-400 text-xs">✕</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => { setEditingLigne(l.id); setEditLignePrix(String(l.prix_unitaire)); }}
+                        className="text-gray-600 hover:text-[#087F3E] transition-colors tabular-nums">
+                        {fmtNum(l.prix_unitaire)}
+                      </button>
+                    )}
+                  </td>
                   <td className="px-5 py-2.5 text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</td>
                   {cfg.hasBonTransfert && (
                     <td className="px-3 py-2.5 text-xs text-gray-500">
@@ -312,20 +395,27 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                   <th className="text-left px-3 py-2">Désignation</th>
                   <th className="text-left px-3 py-2">Unité</th>
                   <th className="text-right px-3 py-2">Quantité</th>
-                  <th className="text-right px-3 py-2">Prix unit.</th>
+                  <th className="text-right px-3 py-2">Prix barème</th>
                   <th className="text-right px-3 py-2">Montant</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-blue-100 bg-white">
-                {x3Preview.map((r, i) => (
-                  <tr key={i}>
-                    <td className="px-3 py-1.5 text-gray-800">{r.designation}</td>
-                    <td className="px-3 py-1.5 text-gray-500 uppercase">{r.unite}</td>
-                    <td className="px-3 py-1.5 text-right">{fmtNum(r.quantite)}</td>
-                    <td className="px-3 py-1.5 text-right">{fmtNum(r.prix_unitaire)}</td>
-                    <td className="px-3 py-1.5 text-right font-semibold">{fmtNum(parseFloat(r.quantite) * parseFloat(r.prix_unitaire))} FCFA</td>
-                  </tr>
-                ))}
+                {x3Preview.map((r, i) => {
+                  const prix = r["prix_barème"] ?? parseFloat(r.prix_unitaire);
+                  return (
+                    <tr key={i}>
+                      <td className="px-3 py-1.5 text-gray-800">{r.designation}</td>
+                      <td className="px-3 py-1.5 text-gray-500 uppercase">{r.unite}</td>
+                      <td className="px-3 py-1.5 text-right">{fmtNum(r.quantite)}</td>
+                      <td className="px-3 py-1.5 text-right">
+                        {r["prix_barème"] != null
+                          ? <span className="font-semibold text-green-700">{fmtNum(r["prix_barème"])}</span>
+                          : <span className="text-red-500 text-xs">Non configuré</span>}
+                      </td>
+                      <td className="px-3 py-1.5 text-right font-semibold">{fmtNum(parseFloat(r.quantite) * prix)} FCFA</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -484,9 +574,10 @@ export default function EtatCessionFormPage() {
   const { data: contratsData } = useContratsPaginated({ count: 200 });
   const contrats = contratsData?.data ?? [];
 
-  const saveMut   = useSaveEtatCession();
-  const statutMut = useEtatCessionStatut();
-  const deleteMut = useDeleteEtatCession();
+  const saveMut      = useSaveEtatCession();
+  const statutMut    = useEtatCessionStatut();
+  const statutBlocMut = useEtatCessionStatutBloc();
+  const deleteMut    = useDeleteEtatCession();
 
   useEffect(() => {
     if (!isNew && etat) {
@@ -718,6 +809,8 @@ export default function EtatCessionFormPage() {
               etatId={id}
               contratBaremes={contratBaremes}
               x3Config={x3Config}
+              statutBloc={etat?.["statut_" + poste.toLowerCase()] ?? "vide"}
+              onStatutBloc={(bloc, statut) => statutBlocMut.mutateAsync({ id: parseInt(id, 10), bloc, statut })}
             />
           ))}
 

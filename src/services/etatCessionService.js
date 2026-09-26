@@ -10,6 +10,7 @@ const LIST_FIELDS = `
 
 const DETAIL_FIELDS = `
   id code contrat_id periode_debut periode_fin montant_total statut
+  statut_mtx statut_gasoil statut_rh statut_mtl vise_qte_par vise_qte_le
   motif_rejet observations created_by updated_by created_at updated_at
   contrat { id code objet soustraitant { id raison_sociale } chantier { id code designation code_x3 } }
   lignes { id etat_cession_id poste bareme_id designation unite quantite prix_unitaire montant ordre bon_transfert }
@@ -58,6 +59,11 @@ export const etatCessionService = {
 
   async setStatut(id, statut) {
     const { data } = await http.post("/etatcession/statut", { id, statut });
+    return data;
+  },
+
+  async setStatutBloc(id, bloc, statut) {
+    const { data } = await http.post("/etatcession/statut-bloc", { id, bloc, statut });
     return data;
   },
 

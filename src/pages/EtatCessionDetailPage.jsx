@@ -442,98 +442,131 @@ export default function EtatCessionDetailPage() {
         </div>
       )}
 
-      {/* Lignes table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-700">Lignes de cession</h3>
-            <p className="text-xs text-gray-400 mt-0.5">{lignes.length} ligne{lignes.length !== 1 ? "s" : ""}</p>
-          </div>
-          {canEdit && !showAddLigne && (
-            <button onClick={() => setShowAddLigne(true)}
-              className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
-              <Plus size={14} /> Ajouter une ligne
-            </button>
-          )}
-        </div>
+      {/* Lignes groupées par type */}
+      {(() => {
+        const POSTES = [
+          { key: "MTX",    label: "MTX — Matériaux de construction", headerCls: "bg-blue-50 border-blue-200",   textCls: "text-blue-700",   badgeCls: "bg-blue-100 text-blue-700" },
+          { key: "MTL",    label: "MTL — Matériel",                  headerCls: "bg-violet-50 border-violet-200", textCls: "text-violet-700", badgeCls: "bg-violet-100 text-violet-700" },
+          { key: "GASOIL", label: "GASOIL",                          headerCls: "bg-orange-50 border-orange-200", textCls: "text-orange-700", badgeCls: "bg-orange-100 text-orange-700" },
+          { key: "RH",     label: "RH — Ressources humaines",        headerCls: "bg-green-50 border-green-200",  textCls: "text-green-700",  badgeCls: "bg-green-100 text-green-700" },
+          { key: null,     label: "Autres",                           headerCls: "bg-gray-50 border-gray-200",    textCls: "text-gray-700",   badgeCls: "bg-gray-100 text-gray-600" },
+        ];
+        const sorted = [...lignes].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+        const grouped = POSTES.map(p => ({
+          ...p,
+          rows: sorted.filter(l => (l.poste ?? null) === p.key),
+        })).filter(g => g.rows.length > 0);
+        const hasAny = lignes.length > 0;
 
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              {["Poste", "Désignation", "Unité", "Quantité", "Prix unit.", "Montant", "Bon transfert", canEdit ? "" : null]
-                .filter(Boolean)
-                .map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
-                ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {showAddLigne && (
-              <AddLigneForm ecId={parseInt(id, 10)} onClose={() => setShowAddLigne(false)} />
+        return (
+          <div className="space-y-4">
+            {/* Header global */}
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700">Lignes de cession</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">{lignes.length} ligne{lignes.length !== 1 ? "s" : ""}</p>
+                </div>
+                {canEdit && !showAddLigne && (
+                  <button onClick={() => setShowAddLigne(true)}
+                    className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
+                    <Plus size={14} /> Ajouter une ligne
+                  </button>
+                )}
+              </div>
+
+              {/* Formulaire ajout — toujours en haut si ouvert */}
+              {showAddLigne && (
+                <table className="w-full">
+                  <tbody>
+                    <AddLigneForm ecId={parseInt(id, 10)} onClose={() => setShowAddLigne(false)} />
+                  </tbody>
+                </table>
+              )}
+
+              {!hasAny && !showAddLigne && (
+                <div className="py-12 text-center text-sm text-gray-400">
+                  {canEdit ? "Aucune ligne — cliquez \"Ajouter une ligne\" pour commencer." : "Aucune ligne dans cet état de cession."}
+                </div>
+              )}
+            </div>
+
+            {/* Blocs par type */}
+            {grouped.map(({ key, label, headerCls, textCls, badgeCls, rows }) => {
+              const subtotal = rows.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+              const cols = canEdit ? 8 : 7;
+              return (
+                <div key={key ?? "_other"} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                  {/* Titre bloc */}
+                  <div className={`px-5 py-2.5 border-b flex items-center justify-between ${headerCls}`}>
+                    <span className={`text-xs font-bold uppercase tracking-wide ${textCls}`}>{label}</span>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badgeCls}`}>
+                      {new Intl.NumberFormat("fr-FR").format(Math.round(subtotal))} FCFA
+                    </span>
+                  </div>
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 border-b border-gray-100">
+                        {["Désignation", "Unité", "Quantité", "Prix unit.", key === "MTX" ? "Bon transfert" : null, "Montant", canEdit ? "" : null]
+                          .filter(Boolean)
+                          .map(h => (
+                            <th key={h} className="text-left px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                          ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {rows.map(ligne => (
+                        <tr key={ligne.id} className="hover:bg-gray-50/60">
+                          <td className="px-4 py-3 text-sm text-gray-800">{ligne.designation}</td>
+                          <td className="px-4 py-3 text-sm text-gray-500">{ligne.unite ?? "—"}</td>
+                          <td className="px-4 py-3 text-sm text-gray-700 tabular-nums">
+                            {ligne.quantite != null ? new Intl.NumberFormat("fr-FR").format(ligne.quantite) : "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <MoneyDisplay amount={ligne.prix_unitaire ?? 0} variant="small" />
+                          </td>
+                          {key === "MTX" && (
+                            <td className="px-4 py-3 text-sm text-gray-500 font-mono">{ligne.bon_transfert || "—"}</td>
+                          )}
+                          <td className="px-4 py-3">
+                            <MoneyDisplay amount={ligne.montant ?? 0} variant="small" className="font-semibold" />
+                          </td>
+                          {canEdit && (
+                            <td className="px-4 py-3">
+                              {confirmDelete === ligne.id ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-red-600">Confirmer ?</span>
+                                  <button onClick={() => handleDeleteLigne(ligne.id)} disabled={deleteLigneMut.isPending}
+                                    className="text-xs text-red-600 hover:text-red-800 font-medium">Oui</button>
+                                  <button onClick={() => setConfirmDelete(null)}
+                                    className="text-xs text-gray-500 hover:text-gray-700">Non</button>
+                                </div>
+                              ) : (
+                                <button onClick={() => setConfirmDelete(ligne.id)}
+                                  className="text-gray-400 hover:text-red-500 transition-colors">
+                                  <Trash2 size={14} />
+                                </button>
+                              )}
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
+
+            {/* Total général */}
+            {hasAny && (
+              <div className="bg-white border border-gray-200 rounded-xl px-5 py-3 flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-700">Total général</span>
+                <MoneyDisplay amount={etat.montant_total ?? 0} variant="small" className="font-bold text-base" />
+              </div>
             )}
-            {lignes.length === 0 && !showAddLigne ? (
-              <tr>
-                <td colSpan={canEdit ? 8 : 7} className="py-12 text-center text-sm text-gray-400">
-                  {canEdit
-                    ? "Aucune ligne — cliquez \"Ajouter une ligne\" pour commencer."
-                    : "Aucune ligne dans cet état de cession."}
-                </td>
-              </tr>
-            ) : (
-              [...lignes].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)).map(ligne => (
-                <tr key={ligne.id} className="hover:bg-gray-50/60">
-                  <td className="px-4 py-3 text-sm font-mono text-gray-700">{ligne.poste ?? "—"}</td>
-                  <td className="px-4 py-3 text-sm text-gray-800">{ligne.designation}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{ligne.unite ?? "—"}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700 tabular-nums">
-                    {ligne.quantite != null ? new Intl.NumberFormat("fr-FR").format(ligne.quantite) : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <MoneyDisplay amount={ligne.prix_unitaire ?? 0} variant="small" />
-                  </td>
-                  <td className="px-4 py-3">
-                    <MoneyDisplay amount={ligne.montant ?? 0} variant="small" className="font-semibold" />
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-500">
-                    {ligne.bon_transfert || "—"}
-                  </td>
-                  {canEdit && (
-                    <td className="px-4 py-3">
-                      {confirmDelete === ligne.id ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-red-600">Confirmer ?</span>
-                          <button onClick={() => handleDeleteLigne(ligne.id)}
-                            disabled={deleteLigneMut.isPending}
-                            className="text-xs text-red-600 hover:text-red-800 font-medium">Oui</button>
-                          <button onClick={() => setConfirmDelete(null)}
-                            className="text-xs text-gray-500 hover:text-gray-700">Non</button>
-                        </div>
-                      ) : (
-                        <button onClick={() => setConfirmDelete(ligne.id)}
-                          className="text-gray-400 hover:text-red-500 transition-colors">
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))
-            )}
-          </tbody>
-          {lignes.length > 0 && (
-            <tfoot>
-              <tr className="border-t border-gray-200 bg-gray-50">
-                <td colSpan={canEdit ? 6 : 5} className="px-4 py-3 text-sm font-semibold text-gray-700 text-right">Total</td>
-                <td className="px-4 py-3">
-                  <MoneyDisplay amount={etat.montant_total ?? 0} variant="small" className="font-bold" />
-                </td>
-                <td />
-                {canEdit && <td />}
-              </tr>
-            </tfoot>
-          )}
-        </table>
-      </div>
+          </div>
+        );
+      })()}
 
       {/* Observations */}
       {etat.observations && (

@@ -57,6 +57,17 @@ export function useEtatCessionStatut() {
   });
 }
 
+export function useEtatCessionStatutBloc() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, bloc, statut }) => etatCessionService.setStatutBloc(id, bloc, statut),
+    onSuccess: (_data, { id }) => {
+      qc.invalidateQueries({ queryKey: ["etats_cession"] });
+      qc.invalidateQueries({ queryKey: ["etat_cession", String(id)] });
+    },
+  });
+}
+
 export function useDeleteEtatCession() {
   const qc = useQueryClient();
   return useMutation({

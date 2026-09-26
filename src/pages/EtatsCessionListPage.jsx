@@ -213,7 +213,7 @@ export default function EtatsCessionListPage() {
           <table className="w-full min-w-[800px]">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50 border-b border-gray-200">
-                {["Code", "Contrat / STT", "Chantier", "Période", "MTX", "MTL", "RH", "Total", "Statut"].map(h => (
+                {["Code", "Contrat / STT", "Chantier", "Période", "MTX", "MTL", "RH", "GASOIL", "Total", "Statut"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -221,7 +221,7 @@ export default function EtatsCessionListPage() {
             <tbody className="divide-y divide-gray-100">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center">
+                  <td colSpan={10} className="py-16 text-center">
                     <FileText size={28} className="mx-auto mb-2 text-gray-300" />
                     <p className="text-sm text-gray-400">Aucun état de cession ne correspond aux filtres.</p>
                   </td>
@@ -238,21 +238,18 @@ export default function EtatsCessionListPage() {
                     <p className="text-xs text-gray-500 truncate max-w-[120px]">{e.contrat?.chantier?.designation ?? "—"}</p>
                   </td>
                   <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{fmtPeriode(e.periode_debut, e.periode_fin)}</td>
-                  {/* MTX / MTL / RH — pas de statut par type sans charger les lignes, on affiche le statut global */}
-                  {["MTX", "MTL", "RH"].map(type => (
-                    <td key={type} className="px-4 py-3.5">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium
-                        ${e.statut === "valide"    ? "bg-green-100 text-green-700"
-                        : e.statut === "soumis"   ? "bg-amber-100 text-amber-700"
-                        : e.statut === "rejete"   ? "bg-red-100 text-red-600"
-                        :                           "bg-gray-100 text-gray-500"}`}>
-                        {e.statut === "valide"  ? "Validé"
-                        : e.statut === "soumis" ? "En contrôle"
-                        : e.statut === "rejete" ? "Rejeté"
-                        :                        "Brouillon"}
-                      </span>
-                    </td>
-                  ))}
+                  {["MTX", "MTL", "RH", "GASOIL"].map(type => {
+                    const lignes = e.lignes ?? [];
+                    const total = lignes.filter(l => l.poste === type).reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+                    const hasType = lignes.some(l => l.poste === type);
+                    return (
+                      <td key={type} className="px-4 py-3.5 text-xs tabular-nums">
+                        {hasType
+                          ? <span className="font-medium text-gray-700">{new Intl.NumberFormat("fr-FR").format(Math.round(total))}</span>
+                          : <span className="text-gray-300">—</span>}
+                      </td>
+                    );
+                  })}
                   <td className="px-4 py-3.5"><MoneyDisplay amount={e.montant_total ?? 0} variant="small" /></td>
                   <td className="px-4 py-3.5"><StatusBadge statut={e.statut} /></td>
                 </tr>
