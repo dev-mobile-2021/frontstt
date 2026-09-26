@@ -66,7 +66,7 @@ const STATUT_BLOC_LABEL = {
 };
 
 // ─── Bloc par poste ──────────────────────────────────────────────
-function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config, statutBloc, onStatutBloc }) {
+function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config, statutBloc, onStatutBloc, viseQtePar, viseQteLe, visePrixPar, visePrixLe }) {
   const { addToast }                = useToast();
   const [showForm, setShowForm]     = useState(false);
   const [form, setForm]             = useState(LIGNE_INIT);
@@ -247,9 +247,21 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
             </button>
           )}
           {statutBloc === "qte_visees" && onStatutBloc && (
-            <button onClick={() => onStatutBloc(poste.toLowerCase(), "prix_valides")}
-              className="inline-flex items-center gap-1 text-xs font-medium bg-green-600 text-white px-2.5 py-1 rounded-lg hover:bg-green-700">
-              <CheckCircle2 size={11} /> Valider prix
+            <>
+              <button onClick={() => onStatutBloc(poste.toLowerCase(), "prix_valides")}
+                className="inline-flex items-center gap-1 text-xs font-medium bg-green-600 text-white px-2.5 py-1 rounded-lg hover:bg-green-700">
+                <CheckCircle2 size={11} /> Valider les prix
+              </button>
+              <button onClick={() => onStatutBloc(poste.toLowerCase(), "alimente")}
+                className="inline-flex items-center gap-1 text-xs font-medium bg-red-500 text-white px-2.5 py-1 rounded-lg hover:bg-red-600">
+                <XCircle size={11} /> Rejeter
+              </button>
+            </>
+          )}
+          {statutBloc === "prix_valides" && onStatutBloc && (
+            <button onClick={() => onStatutBloc(poste.toLowerCase(), "qte_visees")}
+              className="inline-flex items-center gap-1 text-xs font-medium bg-red-500 text-white px-2.5 py-1 rounded-lg hover:bg-red-600">
+              <XCircle size={11} /> Rejeter
             </button>
           )}
           {/* Charger X3 pour MTX et GASOIL */}
@@ -268,6 +280,24 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
           )}
         </div>
       </div>
+
+      {/* Traceabilité */}
+      {(viseQtePar || visePrixPar) && (
+        <div className="px-5 py-2 border-b border-gray-100 bg-gray-50/60 text-xs text-gray-500 flex flex-wrap gap-3">
+          {viseQtePar && (
+            <span>
+              Quantités visées par <strong className="text-gray-700">{viseQtePar}</strong>
+              {viseQteLe && <> le {new Date(viseQteLe).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}</>}
+            </span>
+          )}
+          {visePrixPar && (
+            <span>
+              · Montants visés par <strong className="text-gray-700">{visePrixPar}</strong>
+              {visePrixLe && <> le {new Date(visePrixLe).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}</>}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Bons de transfert (MTX seulement) */}
       {poste === "MTX" && lignes.length > 0 && (() => {
@@ -810,6 +840,10 @@ export default function EtatCessionFormPage() {
               x3Config={x3Config}
               statutBloc={etat?.["statut_" + poste.toLowerCase()] ?? "vide"}
               onStatutBloc={(bloc, statut) => statutBlocMut.mutateAsync({ id: parseInt(id, 10), bloc, statut })}
+              viseQtePar={etat?.vise_qte_par}
+              viseQteLe={etat?.vise_qte_le}
+              visePrixPar={etat?.vise_prix_par}
+              visePrixLe={etat?.vise_prix_le}
             />
           ))}
 
