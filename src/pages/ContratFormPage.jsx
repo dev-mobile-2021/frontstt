@@ -598,7 +598,6 @@ function BaremeCessionsTab({ contratId, isNew }) {
                   <div key={b.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 truncate">{b.designation}</p>
-                      <p className="text-xs text-gray-400">{b.unite}</p>
                     </div>
                     <select
                       value={uniteInput[b.id] ?? b.unite ?? ""}
