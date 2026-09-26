@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, ChevronRight, FileDown, Pencil, Plus, Trash2, Loader2, CheckCircle2, Circle, Clock } from "lucide-react";
 import {
@@ -321,6 +321,13 @@ export default function EtatCessionDetailPage() {
   const { data: etat, isLoading, isError } = useEtatCession(id);
   const { data: circuitData = [] }         = useCircuitEtapes({ module: "etat_cession", count: 50 });
   const circuit = circuitData?.data ?? (Array.isArray(circuitData) ? circuitData : []);
+
+  // Brouillon → page de saisie avec les blocs MTX/GASOIL/RH/MTL
+  useEffect(() => {
+    if (etat?.statut === "brouillon") {
+      navigate(`/etats-cession/${id}/modifier`, { replace: true });
+    }
+  }, [etat]);
 
   const statutMut    = useEtatCessionStatut();
   const deleteLigneMut = useDeleteLigneEC();
