@@ -586,7 +586,6 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
 export default function EtatCessionFormPage() {
   const { id }          = useParams();
   const isNew           = !id || id === "nouveau";
-  console.log(">>> FORMPAGE RENDU id=", id, "isNew=", isNew);
   const navigate        = useNavigate();
   const { addToast }    = useToast();
   const { currentUser } = useUser();

@@ -67,8 +67,7 @@ export default function ConsultationEtatsCessionPage() {
   const etats     = data?.data ?? [];
   const meta      = data?.metadata ?? {};
 
-  // Filtrer par type_poste côté client (les lignes sont déjà chargées dans le détail)
-  // et par mois côté client
+  // Filtrer par type_poste et mois côté client (les lignes sont déjà dans LIST_FIELDS)
   const etatsFiltres = etats.filter(ec => {
     if (applied.mois_debut) {
       const debut = ec.periode_debut?.slice(0, 7);
@@ -77,6 +76,10 @@ export default function ConsultationEtatsCessionPage() {
     if (applied.mois_fin) {
       const debut = ec.periode_debut?.slice(0, 7);
       if (debut > applied.mois_fin) return false;
+    }
+    if (applied.type_poste) {
+      const hasPoste = (ec.lignes ?? []).some(l => l.poste?.toUpperCase() === applied.type_poste.toUpperCase());
+      if (!hasPoste) return false;
     }
     return true;
   });

@@ -17,15 +17,15 @@ const DETAIL_FIELDS = `
 `;
 
 export const etatCessionService = {
-  async list({ page = 1, count = 15, code, contrat_id, statut } = {}) {
+  async list({ page = 1, count = 15, code, contrat_id, chantier_id, soustraitant_id, statut } = {}) {
     const data = await gql(
-      `query ListEtatsCession($page: Int, $count: Int, $code: String, $contrat_id: Int, $statut: String) {
-        etatsCessionPaginated(page: $page, count: $count, code: $code, contrat_id: $contrat_id, statut: $statut) {
+      `query ListEtatsCession($page: Int, $count: Int, $code: String, $contrat_id: Int, $chantier_id: Int, $soustraitant_id: Int, $statut: String) {
+        etatsCessionPaginated(page: $page, count: $count, code: $code, contrat_id: $contrat_id, chantier_id: $chantier_id, soustraitant_id: $soustraitant_id, statut: $statut) {
           data { ${LIST_FIELDS} }
           metadata { total current_page per_page last_page }
         }
       }`,
-      { page, count, code: code || null, contrat_id: contrat_id || null, statut: statut || null }
+      { page, count, code: code || null, contrat_id: contrat_id || null, chantier_id: chantier_id || null, soustraitant_id: soustraitant_id || null, statut: statut || null }
     );
     return data.etatsCessionPaginated;
   },
