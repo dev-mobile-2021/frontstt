@@ -16,7 +16,8 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const isLoginCall = err.config?.url?.includes("/user/connexion");
+    if (err.response?.status === 401 && !isLoginCall) {
       localStorage.removeItem("stt_token");
       localStorage.removeItem("stt_user");
       window.location.href = "/sous-traitance/login";
