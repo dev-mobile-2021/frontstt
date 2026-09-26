@@ -10,6 +10,15 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       react(),
     ],
+    build: {
+      rollupOptions: {
+        output: {
+          entryFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+          chunkFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
+          assetFileNames: `assets/[name]-[hash]-${Date.now()}.[ext]`,
+        },
+      },
+    },
     server: {
       port: parseInt(process.env.PORT || "5173"),
     },
