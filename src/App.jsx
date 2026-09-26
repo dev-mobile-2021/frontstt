@@ -68,7 +68,7 @@ export default function App() {
                 <Route path="/etats-cession/consultation" element={<ConsultationEtatsCessionPage />} />
                 <Route path="/etats-cession/nouveau" element={<EtatCessionFormPage />} />
                 <Route path="/etats-cession/:id/modifier" element={<EtatCessionFormPage />} />
-                <Route path="/etats-cession/:id" element={<EtatCessionDetailPage />} />
+                <Route path="/etats-cession/:id" element={<EtatCessionFormPage />} />
 
                 {/* Décomptes */}
                 <Route path="/decomptes" element={<DecomptesListPage />} />
