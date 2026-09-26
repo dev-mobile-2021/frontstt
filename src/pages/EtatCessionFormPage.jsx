@@ -574,6 +574,7 @@ export default function EtatCessionFormPage() {
   const { data: etat, isLoading, isError } = useEtatCession(isNew ? null : id);
   const { data: contratsData } = useContratsPaginated({ count: 200 });
   const contrats = contratsData?.data ?? [];
+  const { data: contratBaremes = [] } = useContratBaremes(isNew ? null : etat?.contrat_id ?? null);
 
   const saveMut      = useSaveEtatCession();
   const statutMut    = useEtatCessionStatut();
@@ -648,9 +649,6 @@ export default function EtatCessionFormPage() {
   const canEdit = isNew || etat?.statut === "brouillon";
   const lignes  = etat?.lignes ?? [];
   const totalEC = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
-
-  const contratIdForBareme = !isNew && etat ? etat.contrat_id : null;
-  const { data: contratBaremes = [] } = useContratBaremes(contratIdForBareme);
 
   const x3Config = !isNew && etat ? {
     chantier_code: etat.contrat?.chantier?.code_x3 ?? null,
