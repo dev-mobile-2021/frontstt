@@ -11,13 +11,7 @@ export default defineConfig(({ mode }) => {
       react(),
     ],
     build: {
-      rollupOptions: {
-        output: {
-          entryFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
-          chunkFileNames: `assets/[name]-[hash]-${Date.now()}.js`,
-          assetFileNames: `assets/[name]-[hash]-${Date.now()}.[ext]`,
-        },
-      },
+      emptyOutDir: true,
     },
     server: {
       port: parseInt(process.env.PORT || "5173"),
