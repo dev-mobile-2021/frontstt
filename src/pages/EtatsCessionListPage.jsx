@@ -258,7 +258,7 @@ export default function EtatsCessionListPage() {
                     return (
                       <td key={type} className="px-4 py-3.5 text-xs tabular-nums">
                         {hasType
-                          ? <span className="font-medium text-gray-700">{new Intl.NumberFormat("fr-FR").format(Math.round(total))}</span>
+                          ? <span className="font-medium text-gray-700">{new Intl.NumberFormat("fr-FR").format(Math.round(total))} FCFA</span>
                           : <span className="text-gray-300">—</span>}
                       </td>
                     );

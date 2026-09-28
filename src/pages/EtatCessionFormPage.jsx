@@ -380,7 +380,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                     ) : (
                       <button onClick={() => { setEditingLigne(l.id); setEditLignePrix(String(l.prix_unitaire)); }}
                         className="text-gray-600 hover:text-[#087F3E] transition-colors tabular-nums">
-                        {fmtNum(l.prix_unitaire)}
+                        {fmtNum(l.prix_unitaire)} FCFA
                       </button>
                     )}
                   </td>
