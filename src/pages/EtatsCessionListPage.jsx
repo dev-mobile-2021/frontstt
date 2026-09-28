@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
-function getAuthHeader() { const t = localStorage.getItem("token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
+function getAuthHeader() { const t = localStorage.getItem("stt_token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
 import { useEtatsCessionPaginated, useSaveEtatCession, useDeleteEtatCession } from "../hooks/useEtatsCession";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useToast } from "../context/ToastContext";
