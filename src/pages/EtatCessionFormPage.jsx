@@ -161,11 +161,13 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
           etat_cession_id: parseInt(etatId, 10),
           poste,
           code_article:  row.code_article,
+          date_sortie:   row.date_sortie ?? null,
+          ref_bs:        row.ref_bs ?? null,
+          ref_br:        row.ref_br ?? null,
           designation:   row.designation,
           unite:         row.unite,
           quantite:      parseFloat(row.quantite),
           prix_unitaire: prix,
-          bon_transfert: null,
         });
       }
       addToast(`${filtered.length} lignes importées depuis X3.`, "success");
@@ -278,22 +280,44 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
         </div>
       )}
 
-      {/* Bons de transfert (MTX seulement) */}
+      {/* Bons de sortie X3 + Bons de réception (MTX seulement) */}
       {poste === "MTX" && lignes.length > 0 && (() => {
-        const bts = [...new Set(lignes.map(l => l.bon_transfert).filter(Boolean))];
-        if (bts.length === 0) return null;
+        const bsList = [...new Map(lignes.filter(l => l.ref_bs).map(l => [l.ref_bs, { ref: l.ref_bs, date: l.date_sortie }])).values()];
+        const brList = [...new Map(lignes.filter(l => l.ref_br).map(l => [l.ref_br, { ref: l.ref_br, fournisseur: l.fournisseur_br }])).values()];
+        if (bsList.length === 0 && brList.length === 0) return null;
+        const fmtD = d => d ? new Date(d).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" }) : null;
         return (
-          <div className="px-5 py-3 border-b border-blue-100 bg-blue-50/40">
-            <p className="text-xs font-semibold text-blue-700 mb-2">
-              Bons de transfert ({bts.length})
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {bts.map(bt => (
-                <span key={bt} className="inline-flex items-center gap-1 text-xs bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full">
-                  <FileText size={10} /> {bt}
-                </span>
-              ))}
-            </div>
+          <div className="px-5 py-3 border-b border-blue-100 bg-blue-50/30 space-y-3">
+            {bsList.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1.5">
+                  <FileText size={11} /> Bons de sortie X3 ({bsList.length})
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {bsList.map(bs => (
+                    <span key={bs.ref} className="inline-flex items-center gap-1.5 text-xs bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full font-mono">
+                      {bs.ref}
+                      {bs.date && <span className="text-blue-400 font-sans">· {fmtD(bs.date)}</span>}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {brList.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-green-700 mb-2 flex items-center gap-1.5">
+                  <FileText size={11} /> Bons de réception chantier ({brList.length})
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {brList.map(br => (
+                    <span key={br.ref} className="inline-flex items-center gap-1.5 text-xs bg-white border border-green-200 text-green-700 px-2.5 py-1 rounded-full font-mono">
+                      {br.ref}
+                      {br.fournisseur && <span className="text-green-400 font-sans">· {br.fournisseur}</span>}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         );
       })()}
@@ -318,6 +342,9 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                 <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-28">Code article</th>
                 <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Désignation</th>
                 <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-16">Unité</th>
+                {poste === "MTX" && <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-24">Date sortie</th>}
+                {poste === "MTX" && <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Réf. BS</th>}
+                {poste === "MTX" && <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Réf. BR</th>}
                 <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-24">Quantité</th>
                 <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-28">
                   Prix unit. <span className="text-gray-300 text-xs">✏</span>
@@ -335,6 +362,9 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                       : <span className="text-gray-300">—</span>}
                   </td>
                   <td className="px-3 py-2.5 text-gray-800">{l.designation}</td>
+                  {poste === "MTX" && <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">{l.date_sortie ? new Date(l.date_sortie).toLocaleDateString("fr-FR", {day:"2-digit",month:"short",year:"numeric"}) : "—"}</td>}
+                  {poste === "MTX" && <td className="px-3 py-2.5"><span className="font-mono text-xs text-blue-600">{l.ref_bs ?? "—"}</span></td>}
+                  {poste === "MTX" && <td className="px-3 py-2.5"><span className="font-mono text-xs text-green-600">{l.ref_br ?? "—"}</span></td>}
                   <td className="px-3 py-2.5 text-gray-500 text-xs uppercase">{l.unite || "—"}</td>
                   <td className="px-3 py-2.5 text-right text-gray-700">{fmtNum(l.quantite)}</td>
                   <td className="px-3 py-2.5 text-right text-xs">
