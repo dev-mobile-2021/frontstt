@@ -262,7 +262,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
               Charger X3
             </button>
           )}
-          {canEdit && !cfg.gmao && statutBloc !== "prix_valides" && (
+          {canEdit && !cfg.gmao && poste !== "MTX" && poste !== "GASOIL" && statutBloc !== "prix_valides" && (
             <button onClick={() => { setShowForm(s => !s); setForm(LIGNE_INIT); }}
               className={`text-xs font-medium hover:underline ${c.btn}`}>
               + Ajouter
