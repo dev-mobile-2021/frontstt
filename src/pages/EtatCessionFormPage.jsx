@@ -189,20 +189,26 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
   async function handleUpdateLignePrix(ligneId) {
     const prix = parseFloat(editLignePrix);
     if (isNaN(prix) || prix < 0) return addToast("Prix invalide.", "error");
+    const l = lignes.find(l => l.id === ligneId);
+    if (!l) return;
     try {
       await saveMut.mutateAsync({
         id:              ligneId,
         etat_cession_id: parseInt(etatId, 10),
         poste,
-        designation:     lignes.find(l => l.id === ligneId)?.designation ?? "",
-        unite:           lignes.find(l => l.id === ligneId)?.unite ?? "",
-        quantite:        lignes.find(l => l.id === ligneId)?.quantite ?? 0,
+        code_article:    l.code_article ?? null,
+        date_sortie:     l.date_sortie  ?? null,
+        ref_bs:          l.ref_bs       ?? null,
+        ref_br:          l.ref_br       ?? null,
+        designation:     l.designation  ?? "",
+        unite:           l.unite        ?? "",
+        quantite:        l.quantite     ?? 0,
         prix_unitaire:   prix,
       });
       setEditingLigne(null);
       addToast("Prix mis à jour.", "success");
-    } catch {
-      addToast("Erreur.", "error");
+    } catch (err) {
+      addToast(err?.response?.data?.error ?? "Erreur.", "error");
     }
   }
 
