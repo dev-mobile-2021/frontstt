@@ -72,7 +72,6 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
   const [form, setForm]             = useState(LIGNE_INIT);
   const [confirmDel, setConfirmDel] = useState(null);
   const [x3Loading, setX3Loading]   = useState(false);
-  const [x3Preview, setX3Preview]   = useState(null);
   const [editingLigne, setEditingLigne] = useState(null);
   const [editLignePrix, setEditLignePrix] = useState("");
 
@@ -152,7 +151,6 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
         periode_debut: x3Config.periode_debut,
         periode_fin:   x3Config.periode_fin,
       });
-      // Filtre selon le bloc : MTX exclut GASOIL, GASOIL n'inclut que GASOIL
       const gasoilCodes = contratBaremes
         .filter(cb => cb.bareme?.type === "gasoil")
         .map(cb => cb.bareme?.code);
@@ -162,27 +160,12 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
 
       if (filtered.length === 0) return addToast("Aucune donnée X3 pour cette période.", "info");
 
-      // Enrichir avec le prix du barème contrat
-      const enriched = filtered.map(r => ({
-        ...r,
-        prix_barème: getPrixBareme(r.code_article),
-      }));
-      setX3Preview(enriched);
-    } catch {
-      addToast("Erreur lors de la récupération des données X3.", "error");
-    } finally {
-      setX3Loading(false);
-    }
-  }
-
-  async function confirmX3Import() {
-    if (!x3Preview) return;
-    try {
-      for (const row of x3Preview) {
-        const prix = row.prix_barème ?? parseFloat(row.prix_unitaire);
+      for (const row of filtered) {
+        const prix = getPrixBareme(row.code_article) ?? parseFloat(row.prix_unitaire);
         await saveMut.mutateAsync({
           etat_cession_id: parseInt(etatId, 10),
           poste,
+          code_article:  row.code_article,
           designation:   row.designation,
           unite:         row.unite,
           quantite:      parseFloat(row.quantite),
@@ -190,10 +173,11 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
           bon_transfert: null,
         });
       }
-      addToast(`${x3Preview.length} lignes importées depuis X3.`, "success");
-      setX3Preview(null);
+      addToast(`${filtered.length} lignes importées depuis X3.`, "success");
     } catch {
       addToast("Erreur lors de l'import X3.", "error");
+    } finally {
+      setX3Loading(false);
     }
   }
 
@@ -336,7 +320,8 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-white">
-                <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Désignation</th>
+                <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-28">Code article</th>
+                <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Désignation</th>
                 <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-16">Unité</th>
                 <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-24">Quantité</th>
                 <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-28">
@@ -350,7 +335,12 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
             <tbody className="divide-y divide-gray-50">
               {lignes.map(l => (
                 <tr key={l.id} className="hover:bg-gray-50/50">
-                  <td className="px-5 py-2.5 text-gray-800">{l.designation}</td>
+                  <td className="px-5 py-2.5">
+                    {l.code_article
+                      ? <span className="font-mono text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{l.code_article}</span>
+                      : <span className="text-gray-300">—</span>}
+                  </td>
+                  <td className="px-3 py-2.5 text-gray-800">{l.designation}</td>
                   <td className="px-3 py-2.5 text-gray-500 text-xs uppercase">{l.unite || "—"}</td>
                   <td className="px-3 py-2.5 text-right text-gray-700">{fmtNum(l.quantite)}</td>
                   <td className="px-3 py-2.5 text-right text-xs">
@@ -410,55 +400,6 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
       )}
 
       {/* Prévisualisation import X3 */}
-      {x3Preview && (
-        <div className="border-t border-blue-200 bg-blue-50 px-5 py-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-blue-800">
-              {x3Preview.length} article{x3Preview.length > 1 ? "s" : ""} trouvé{x3Preview.length > 1 ? "s" : ""} dans X3 — confirmer l'import ?
-            </p>
-            <button onClick={() => setX3Preview(null)} className="text-blue-400 hover:text-blue-600"><X size={16} /></button>
-          </div>
-          <div className="overflow-x-auto rounded-lg border border-blue-200">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-blue-100 text-blue-700">
-                  <th className="text-left px-3 py-2">Désignation</th>
-                  <th className="text-left px-3 py-2">Unité</th>
-                  <th className="text-right px-3 py-2">Quantité</th>
-                  <th className="text-right px-3 py-2">Prix barème</th>
-                  <th className="text-right px-3 py-2">Montant</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-blue-100 bg-white">
-                {x3Preview.map((r, i) => {
-                  const prix = r["prix_barème"] ?? parseFloat(r.prix_unitaire);
-                  return (
-                    <tr key={i}>
-                      <td className="px-3 py-1.5 text-gray-800">{r.designation}</td>
-                      <td className="px-3 py-1.5 text-gray-500 uppercase">{r.unite}</td>
-                      <td className="px-3 py-1.5 text-right">{fmtNum(r.quantite)}</td>
-                      <td className="px-3 py-1.5 text-right">
-                        {r["prix_barème"] != null
-                          ? <span className="font-semibold text-green-700">{fmtNum(r["prix_barème"])}</span>
-                          : <span className="text-red-500 text-xs">Non configuré</span>}
-                      </td>
-                      <td className="px-3 py-1.5 text-right font-semibold">{fmtNum(parseFloat(r.quantite) * prix)} FCFA</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button onClick={() => setX3Preview(null)} className="px-4 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">Annuler</button>
-            <button onClick={confirmX3Import} disabled={saveMut.isPending}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60">
-              {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
-              Importer {x3Preview.length} ligne{x3Preview.length > 1 ? "s" : ""}
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Formulaire ajout inline */}
       {showForm && canEdit && (

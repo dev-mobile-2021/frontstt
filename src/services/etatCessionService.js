@@ -13,7 +13,7 @@ const DETAIL_FIELDS = `
   statut_mtx statut_gasoil statut_rh statut_mtl vise_qte_par vise_qte_le vise_prix_par vise_prix_le
   motif_rejet observations created_by updated_by created_at updated_at
   contrat { id code objet soustraitant { id raison_sociale } chantier { id code designation code_x3 } }
-  lignes { id etat_cession_id poste bareme_id designation unite quantite prix_unitaire montant ordre bon_transfert }
+  lignes { id etat_cession_id poste bareme_id code_article designation unite quantite prix_unitaire montant ordre bon_transfert }
 `;
 
 export const etatCessionService = {
