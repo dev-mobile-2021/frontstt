@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
+function getAuthHeader() { const t = localStorage.getItem("token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
 import { useEtatsCessionPaginated, useSaveEtatCession, useDeleteEtatCession } from "../hooks/useEtatsCession";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useToast } from "../context/ToastContext";
@@ -117,10 +118,22 @@ export default function EtatsCessionListPage() {
   function reset()   { setSearch(""); setStatut(""); setContratFilter(""); setPage(1); }
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
 
-  function exportExcel() {
-    const params = new URLSearchParams();
-    if (statut) params.set("statut", statut);
-    window.open(`${API_BASE}/excel/etatscessions?${params.toString()}`, "_blank");
+  async function exportExcel() {
+    try {
+      const params = new URLSearchParams();
+      if (statut) params.set("statut", statut);
+      const resp = await fetch(`${API_BASE}/excel/etatscessions?${params.toString()}`, { headers: getAuthHeader() });
+      if (!resp.ok) throw new Error("Erreur export");
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `etatscessions-${new Date().toISOString().slice(0,10)}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      addToast("Erreur lors de l'export Excel.", "error");
+    }
   }
 
   async function handleSubmit(e) {
