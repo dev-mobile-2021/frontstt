@@ -359,18 +359,20 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                   <td className="px-3 py-2.5 text-gray-500 text-xs uppercase">{l.unite || "—"}</td>
                   <td className="px-3 py-2.5 text-right text-gray-700">{fmtNum(l.quantite)}</td>
                   <td className="px-3 py-2.5 text-right text-xs">
-                    {editingLigne === l.id ? (
+                    {canEdit && editingLigne === l.id ? (
                       <input type="number" min="0" step="any" value={editLignePrix}
                         onChange={e => setEditLignePrix(e.target.value)}
                         onBlur={() => handleUpdateLignePrix(l.id)}
                         onKeyDown={e => { if (e.key === "Enter") handleUpdateLignePrix(l.id); if (e.key === "Escape") setEditingLigne(null); }}
                         className="w-28 border border-[#087F3E] rounded px-1.5 py-1 text-xs text-right focus:ring-1 focus:ring-[#087F3E] outline-none"
                         autoFocus />
-                    ) : (
+                    ) : canEdit ? (
                       <button onClick={() => { setEditingLigne(l.id); setEditLignePrix(String(l.prix_unitaire)); }}
                         className="text-gray-600 hover:text-[#087F3E] transition-colors tabular-nums">
                         {fmtNum(l.prix_unitaire)} FCFA
                       </button>
+                    ) : (
+                      <span className="tabular-nums text-gray-600">{fmtNum(l.prix_unitaire)} FCFA</span>
                     )}
                   </td>
                   <td className="px-5 py-2.5 text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</td>
