@@ -2,11 +2,11 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Search, RotateCcw, ChevronLeft, ChevronRight, Plus, X, Loader2,
-  FileText, FileSpreadsheet, CheckCircle2, Clock, FolderOpen, TrendingUp, Eye,
+  FileText, FileSpreadsheet, CheckCircle2, Clock, FolderOpen, TrendingUp, Eye, Trash2,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
-import { useEtatsCessionPaginated, useSaveEtatCession } from "../hooks/useEtatsCession";
+import { useEtatsCessionPaginated, useSaveEtatCession, useDeleteEtatCession } from "../hooks/useEtatsCession";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
@@ -53,6 +53,8 @@ export default function EtatsCessionListPage() {
   const navigate     = useNavigate();
   const { addToast } = useToast();
   const saveMut      = useSaveEtatCession();
+  const deleteMut    = useDeleteEtatCession();
+  const [confirmDelete, setConfirmDelete] = useState(null); // { id, code }
 
   const [search,        setSearch]       = useState("");
   const [statut,        setStatut]       = useState("");
@@ -100,6 +102,17 @@ export default function EtatsCessionListPage() {
         .reduce((s, e) => s + parseFloat(e.montant_total ?? 0), 0),
     };
   }, [allEC]);
+
+  async function handleDelete() {
+    try {
+      await deleteMut.mutateAsync(confirmDelete.id);
+      addToast(`État ${confirmDelete.code} supprimé.`, "success");
+    } catch (err) {
+      addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la suppression.", "error");
+    } finally {
+      setConfirmDelete(null);
+    }
+  }
 
   function reset()   { setSearch(""); setStatut(""); setContratFilter(""); setPage(1); }
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
@@ -213,7 +226,7 @@ export default function EtatsCessionListPage() {
           <table className="w-full min-w-[800px]">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50 border-b border-gray-200">
-                {["Code", "Contrat / STT", "Chantier", "Période", "MTX", "MTL", "RH", "GASOIL", "Total", "Statut"].map(h => (
+                {["Code", "Contrat / STT", "Chantier", "Période", "MTX", "MTL", "RH", "GASOIL", "Total", "Statut", ""].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -252,6 +265,17 @@ export default function EtatsCessionListPage() {
                   })}
                   <td className="px-4 py-3.5"><MoneyDisplay amount={e.montant_total ?? 0} variant="small" /></td>
                   <td className="px-4 py-3.5"><StatusBadge statut={e.statut} /></td>
+                  <td className="px-4 py-3.5" onClick={ev => ev.stopPropagation()}>
+                    {e.statut === "brouillon" && (
+                      <button
+                        onClick={() => setConfirmDelete({ id: e.id, code: e.code })}
+                        className="p-1.5 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -274,6 +298,29 @@ export default function EtatsCessionListPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Modal confirmation suppression */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-full bg-red-50"><Trash2 size={18} className="text-red-500" /></div>
+              <h2 className="text-base font-bold text-gray-900">Supprimer {confirmDelete.code} ?</h2>
+            </div>
+            <p className="text-sm text-gray-500">Toutes les lignes seront supprimées. Cette action est irréversible.</p>
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setConfirmDelete(null)}
+                className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                Annuler
+              </button>
+              <button onClick={handleDelete} disabled={deleteMut.isPending}
+                className="flex-1 py-2.5 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                {deleteMut.isPending && <Loader2 size={14} className="animate-spin" />} Supprimer
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
