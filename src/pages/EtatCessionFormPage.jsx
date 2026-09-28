@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, Save, Loader2, Plus, X, Trash2,
-  CheckCircle2, XCircle, Search, FileText, Fuel,
+  CheckCircle2, XCircle, Search, FileText, Fuel, FileDown, Sheet,
 } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
@@ -62,7 +62,7 @@ const STATUT_BLOC_LABEL = {
 };
 
 // ─── Bloc par poste ──────────────────────────────────────────────
-function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config, statutBloc, onStatutBloc, viseQtePar, viseQteLe, visePrixPar, visePrixLe }) {
+function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config, statutBloc, onStatutBloc, viseQtePar, viseQteLe, visePrixPar, visePrixLe, onDownloadBon }) {
   const { addToast }                = useToast();
   const [showForm, setShowForm]     = useState(false);
   const [form, setForm]             = useState(LIGNE_INIT);
@@ -155,24 +155,33 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
 
       if (filtered.length === 0) return addToast("Aucune donnée X3 pour cette période.", "info");
 
+      // Supprimer les lignes existantes pour ce poste avant de réimporter
+      const existingForPoste = (etat?.lignes ?? []).filter(l => l.poste === poste);
+      for (const l of existingForPoste) {
+        await deleteMut.mutateAsync(l.id);
+      }
+
       for (const row of filtered) {
-        const prix = getPrixBareme(row.code_article) ?? parseFloat(row.prix_unitaire);
+        const prixBareme = getPrixBareme(row.code_article);
+        const prixX3     = parseFloat(row.prix_unitaire);
+        const prix       = prixBareme ?? (isNaN(prixX3) ? 0 : prixX3);
         await saveMut.mutateAsync({
           etat_cession_id: parseInt(etatId, 10),
           poste,
-          code_article:  row.code_article,
+          code_article:  row.code_article ?? null,
           date_sortie:   row.date_sortie ?? null,
           ref_bs:        row.ref_bs ?? null,
           ref_br:        row.ref_br ?? null,
           designation:   row.designation,
-          unite:         row.unite,
-          quantite:      parseFloat(row.quantite),
+          unite:         row.unite ?? null,
+          quantite:      parseFloat(row.quantite) || 0,
           prix_unitaire: prix,
         });
       }
       addToast(`${filtered.length} lignes importées depuis X3.`, "success");
-    } catch {
-      addToast("Erreur lors de l'import X3.", "error");
+    } catch (err) {
+      const msg = err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? "Erreur inconnue";
+      addToast(`Erreur import X3 : ${msg}`, "error");
     } finally {
       setX3Loading(false);
     }
@@ -239,12 +248,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
               </button>
             </>
           )}
-          {statutBloc === "prix_valides" && onStatutBloc && (
-            <button onClick={() => onStatutBloc(poste.toLowerCase(), "qte_visees")}
-              className="inline-flex items-center gap-1 text-xs font-medium bg-red-500 text-white px-2.5 py-1 rounded-lg hover:bg-red-600">
-              <XCircle size={11} /> Rejeter
-            </button>
-          )}
+          {/* prix_valides = état final du bloc — aucun bouton de régression */}
           {/* Charger X3 pour MTX et GASOIL */}
           {canEdit && (poste === "MTX" || poste === "GASOIL") && x3Config?.chantier_code && (
             <button onClick={handleX3Import} disabled={x3Loading}
@@ -253,7 +257,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
               Charger X3
             </button>
           )}
-          {canEdit && !cfg.gmao && (
+          {canEdit && !cfg.gmao && statutBloc !== "prix_valides" && (
             <button onClick={() => { setShowForm(s => !s); setForm(LIGNE_INIT); }}
               className={`text-xs font-medium hover:underline ${c.btn}`}>
               + Ajouter
@@ -280,44 +284,32 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
         </div>
       )}
 
-      {/* Bons de sortie X3 + Bons de réception (MTX seulement) */}
+      {/* Bons de transfert (MTX seulement) */}
       {poste === "MTX" && lignes.length > 0 && (() => {
         const bsList = [...new Map(lignes.filter(l => l.ref_bs).map(l => [l.ref_bs, { ref: l.ref_bs, date: l.date_sortie }])).values()];
-        const brList = [...new Map(lignes.filter(l => l.ref_br).map(l => [l.ref_br, { ref: l.ref_br, fournisseur: l.fournisseur_br }])).values()];
-        if (bsList.length === 0 && brList.length === 0) return null;
+        const brList = [...new Map(lignes.filter(l => l.ref_br).map(l => [l.ref_br, { ref: l.ref_br }])).values()];
+        const allRefs = [
+          ...bsList.map(b => ({ ref: b.ref, date: b.date, type: "bs" })),
+          ...brList.map(b => ({ ref: b.ref, date: null, type: "br" })),
+        ];
+        if (allRefs.length === 0) return null;
         const fmtD = d => d ? new Date(d).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" }) : null;
         return (
-          <div className="px-5 py-3 border-b border-blue-100 bg-blue-50/30 space-y-3">
-            {bsList.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1.5">
-                  <FileText size={11} /> Bons de sortie X3 ({bsList.length})
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {bsList.map(bs => (
-                    <span key={bs.ref} className="inline-flex items-center gap-1.5 text-xs bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full font-mono">
-                      {bs.ref}
-                      {bs.date && <span className="text-blue-400 font-sans">· {fmtD(bs.date)}</span>}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-            {brList.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-green-700 mb-2 flex items-center gap-1.5">
-                  <FileText size={11} /> Bons de réception chantier ({brList.length})
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {brList.map(br => (
-                    <span key={br.ref} className="inline-flex items-center gap-1.5 text-xs bg-white border border-green-200 text-green-700 px-2.5 py-1 rounded-full font-mono">
-                      {br.ref}
-                      {br.fournisseur && <span className="text-green-400 font-sans">· {br.fournisseur}</span>}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
+          <div className="px-5 py-3 border-b border-blue-100 bg-blue-50/30">
+            <p className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1.5">
+              <FileText size={11} /> Bons de transfert ({allRefs.length})
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {allRefs.map(r => (
+                <button key={r.ref}
+                  onClick={() => onDownloadBon && onDownloadBon(r.ref)}
+                  className="inline-flex items-center gap-1.5 text-xs bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full font-mono hover:bg-blue-50 hover:border-blue-400 transition-colors cursor-pointer">
+                  <FileDown size={10} />
+                  {r.ref}
+                  {r.date && <span className="text-blue-400 font-sans">· {fmtD(r.date)}</span>}
+                </button>
+              ))}
+            </div>
           </div>
         );
       })()}
@@ -387,16 +379,9 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                   <td className="px-5 py-2.5 text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</td>
                   {canEdit && (
                     <td className="pr-3 py-2.5 text-right">
-                      {confirmDel === l.id ? (
-                        <span className="inline-flex items-center gap-1 text-xs">
-                          <button onClick={() => handleDelete(l.id)} className="text-red-600 font-medium">Oui</button>
-                          <button onClick={() => setConfirmDel(null)} className="text-gray-400 ml-1">Non</button>
-                        </span>
-                      ) : (
-                        <button onClick={() => setConfirmDel(l.id)} className="text-gray-300 hover:text-red-500 transition-colors">
-                          <Trash2 size={13} />
-                        </button>
-                      )}
+                      <button onClick={() => setConfirmDel(l.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                        <Trash2 size={13} />
+                      </button>
                     </td>
                   )}
                 </tr>
@@ -415,60 +400,54 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
         </div>
       )}
 
-      {/* Prévisualisation import X3 */}
-
-      {/* Formulaire ajout inline */}
-      {showForm && canEdit && (
+      {/* Formulaire ajout (barème ou libre) */}
+      {showForm && canEdit && useBareme && (
         <div className={`border-t ${c.border} ${c.bg} px-5 py-4`}>
           <form onSubmit={handleAdd}>
-
-            {/* Saisie via barème (MTX / MTL / RH avec articles définis) */}
-            {useBareme ? (
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-xs text-gray-500 font-medium">Article du barème *</label>
-                  <select
-                    value={form.bareme_cb_id}
-                    onChange={e => handleSelectArticle(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none"
-                    autoFocus
-                  >
-                    <option value="">— Sélectionner un article —</option>
-                    {articlesBareme.map(cb => (
-                      <option key={cb.id} value={cb.id}>
-                        {cb.bareme?.designation} — {fmtNum(cb.prix_contrat ?? cb.bareme?.prix_unitaire)} FCFA / {cb.bareme?.unite}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {form.bareme_cb_id && (
-                  <div className="grid gap-3 items-end grid-cols-[120px_auto]">
-                    <div className="space-y-1">
-                      <label className="text-xs text-gray-500 font-medium">Quantité *</label>
-                      <input type="number" value={form.quantite}
-                        onChange={e => setForm(f => ({ ...f, quantite: e.target.value }))}
-                        required min="0" step="any" placeholder="0" autoFocus
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-                    </div>
-                        <div className="flex items-end gap-2 pb-0.5">
-                      <button type="submit" disabled={saveMut.isPending}
-                        className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
-                        {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} OK
-                      </button>
-                      <button type="button" onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600"><X size={16} /></button>
-                    </div>
-                  </div>
-                )}
-
-                {!form.bareme_cb_id && (
-                  <div className="flex justify-end">
-                    <button type="button" onClick={() => setShowForm(false)} className="text-xs text-gray-400 hover:text-gray-600">Annuler</button>
-                  </div>
-                )}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs text-gray-500 font-medium">Article du barème *</label>
+                <select value={form.bareme_cb_id} onChange={e => handleSelectArticle(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" autoFocus>
+                  <option value="">— Sélectionner un article —</option>
+                  {articlesBareme.map(cb => (
+                    <option key={cb.id} value={cb.id}>
+                      {cb.bareme?.designation} — {fmtNum(cb.prix_contrat ?? cb.bareme?.prix_unitaire)} FCFA / {cb.bareme?.unite}
+                    </option>
+                  ))}
+                </select>
               </div>
-            ) : (
-              /* Saisie libre (GASOIL ou barème vide) */
+              {form.bareme_cb_id && (
+                <div className="grid gap-3 items-end grid-cols-[120px_auto]">
+                  <div className="space-y-1">
+                    <label className="text-xs text-gray-500 font-medium">Quantité *</label>
+                    <input type="number" value={form.quantite}
+                      onChange={e => setForm(f => ({ ...f, quantite: e.target.value }))}
+                      required min="0" step="any" placeholder="0" autoFocus
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                  </div>
+                  <div className="flex items-end gap-2 pb-0.5">
+                    <button type="submit" disabled={saveMut.isPending}
+                      className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
+                      {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} OK
+                    </button>
+                    <button type="button" onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600"><X size={16} /></button>
+                  </div>
+                </div>
+              )}
+              {!form.bareme_cb_id && (
+                <div className="flex justify-end">
+                  <button type="button" onClick={() => setShowForm(false)} className="text-xs text-gray-400 hover:text-gray-600">Annuler</button>
+                </div>
+              )}
+            </div>
+          </form>
+        </div>
+      )}
+
+      {showForm && canEdit && !useBareme && (
+        <div className={`border-t ${c.border} ${c.bg} px-5 py-4`}>
+          <form onSubmit={handleAdd}>
               <div className="grid gap-3 items-end grid-cols-[1fr_70px_90px_110px_auto]">
                 <div className="space-y-1">
                   <label className="text-xs text-gray-500 font-medium">Désignation *</label>
@@ -507,7 +486,6 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                   <button type="button" onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600"><X size={16} /></button>
                 </div>
               </div>
-            )}
 
             {montantPreview > 0 && (
               <p className="text-xs text-[#087F3E] font-medium mt-2">
@@ -515,6 +493,34 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
               </p>
             )}
           </form>
+        </div>
+      )}
+
+      {/* Modal confirmation suppression */}
+      {confirmDel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-50 rounded-xl">
+                <Trash2 size={18} className="text-red-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Supprimer la ligne ?</p>
+                <p className="text-xs text-gray-400 mt-0.5">Cette action est irréversible.</p>
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setConfirmDel(null)}
+                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
+                Annuler
+              </button>
+              <button onClick={() => handleDelete(confirmDel)} disabled={deleteMut.isPending}
+                className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-60 inline-flex items-center gap-1.5">
+                {deleteMut.isPending && <Loader2 size={13} className="animate-spin" />}
+                Supprimer
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -538,6 +544,24 @@ export default function EtatCessionFormPage() {
 
   const [form, setForm]           = useState({ contrat_id: searchParams.get("contrat_id") ?? "", periode_debut: "", periode_fin: "", observations: "" });
   const [pendingStatut, setPendingStatut] = useState(null);
+  const [motifRejet,    setMotifRejet]    = useState("");
+
+  const handleDownload = async (url, filename) => {
+    try {
+      const token = localStorage.getItem("stt_token");
+      const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!resp.ok) throw new Error("Erreur téléchargement");
+      const blob = await resp.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+    } catch (e) {
+      addToast("Erreur lors du téléchargement", "error");
+    }
+  };
+  const handlePdf   = () => handleDownload(`${import.meta.env.VITE_API_BASE}/api/pdf/etatcession/${id}`,   `dossier-cession-${etat?.code ?? id}.pdf`);
+  const handleExcel = () => handleDownload(`${import.meta.env.VITE_API_BASE}/api/excel/etatcession/${id}`, `dossier-cession-${etat?.code ?? id}.xlsx`);
 
   const { data: etat, isLoading, isError } = useEtatCession(isNew ? null : id);
   const { data: contratsData } = useContratsPaginated({ count: 200 });
@@ -586,13 +610,20 @@ export default function EtatCessionFormPage() {
     }
   }
 
-  async function handleStatut(statut) {
+  async function handleStatut(statut, motif) {
     try {
-      await statutMut.mutateAsync({ id: parseInt(id, 10), statut });
-      addToast("Statut mis à jour.", "success");
+      await statutMut.mutateAsync({ id: parseInt(id, 10), statut, motif: motif ?? null });
+      addToast(
+        statut === "soumis"    ? "État soumis à la validation DCG."       :
+        statut === "valide"    ? "État validé et arrêté."                  :
+        statut === "brouillon" ? "Remis en brouillon — vous pouvez corriger les lignes." :
+        "État rejeté.",
+        statut === "rejete" ? "error" : "success"
+      );
       setPendingStatut(null);
+      setMotifRejet("");
     } catch (err) {
-      addToast(err.response?.data?.errors?.[0] ?? "Erreur.", "error");
+      addToast(err.response?.data?.error ?? err.response?.data?.errors?.[0] ?? "Erreur.", "error");
     }
   }
 
@@ -614,7 +645,10 @@ export default function EtatCessionFormPage() {
     </div>
   );
 
+  // Édition des lignes : brouillon uniquement
   const canEdit = isNew || etat?.statut === "brouillon";
+  // Avancement des statuts de bloc (Viser qtés, Valider prix) : soumis uniquement
+  const canAdvanceBloc = etat?.statut === "soumis";
   const lignes  = etat?.lignes ?? [];
   const totalEC = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
 
@@ -650,13 +684,25 @@ export default function EtatCessionFormPage() {
             >
               <Search size={13} /> CONSULTATION
             </Link>
+            <button onClick={handlePdf}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-red-400 text-red-600 rounded-lg hover:bg-red-50 transition-all">
+              <FileDown size={13} /> PDF
+            </button>
+            <button onClick={handleExcel}
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-emerald-500 text-emerald-700 rounded-lg hover:bg-emerald-50 transition-all">
+              <Sheet size={13} /> Excel
+            </button>
             <StatusBadge statut={etat.statut} />
+
+            {/* brouillon : soumettre */}
             {etat.statut === "brouillon" && (
               <button onClick={() => setPendingStatut("soumis")}
                 className="px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
                 Soumettre
               </button>
             )}
+
+            {/* soumis : valider ou rejeter */}
             {etat.statut === "soumis" && (
               <>
                 <button onClick={() => setPendingStatut("valide")}
@@ -668,6 +714,14 @@ export default function EtatCessionFormPage() {
                   Rejeter
                 </button>
               </>
+            )}
+
+            {/* rejete : remettre en brouillon pour correction */}
+            {etat.statut === "rejete" && (
+              <button onClick={() => setPendingStatut("brouillon")}
+                className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
+                Corriger (remettre en brouillon)
+              </button>
             )}
           </div>
         )}
@@ -698,17 +752,34 @@ export default function EtatCessionFormPage() {
               <p className="text-xl font-bold text-gray-900">{fmtNum(etat.montant_total ?? totalEC)} FCFA</p>
             </div>
           </div>
+          {/* Bandeaux d'état */}
+          {etat.statut === "soumis" && (
+            <div className="mt-4 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+              <Loader2 size={16} className="flex-shrink-0" />
+              <span>En attente de validation DCG — les lignes ne peuvent plus être modifiées.</span>
+            </div>
+          )}
           {etat.statut === "rejete" && etat.motif_rejet && (
+            <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+              <XCircle size={16} className="flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Rejeté</p>
+                <p className="mt-0.5">{etat.motif_rejet}</p>
+                <p className="mt-1 text-xs text-red-500">Cliquez sur « Corriger » dans la barre d'actions pour remettre en brouillon et modifier les lignes.</p>
+              </div>
+            </div>
+          )}
+          {etat.statut === "rejete" && !etat.motif_rejet && (
             <div className="mt-4 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-              <XCircle size={16} /> Rejeté — {etat.motif_rejet}
+              <XCircle size={16} /> Rejeté — cliquez sur « Corriger » pour remettre en brouillon.
             </div>
           )}
           {etat.statut === "valide" && (
             <div className="mt-4 flex items-center gap-2 bg-[#E8F5EE] border border-[#087F3E]/30 rounded-lg px-4 py-3 text-sm text-[#087F3E]">
-              <CheckCircle2 size={16} /> Arrêté et validé — consommable par les décomptes
+              <CheckCircle2 size={16} /> Arrêté et validé — consommable par les décomptes. Les lignes sont verrouillées.
             </div>
           )}
-          {canEdit && etat.statut === "brouillon" && (
+          {etat.statut === "brouillon" && (
             <div className="mt-4 flex justify-end">
               <button onClick={() => setPendingStatut("brouillon_delete")}
                 className="text-xs text-red-400 hover:text-red-600 transition-colors">
@@ -777,11 +848,22 @@ export default function EtatCessionFormPage() {
               contratBaremes={contratBaremes}
               x3Config={x3Config}
               statutBloc={etat?.["statut_" + poste.toLowerCase()] ?? "vide"}
-              onStatutBloc={(bloc, statut) => statutBlocMut.mutateAsync({ id: parseInt(id, 10), bloc, statut })}
+              onStatutBloc={canAdvanceBloc ? async (bloc, statut) => {
+                try {
+                  await statutBlocMut.mutateAsync({ id: parseInt(id, 10), bloc, statut });
+                  addToast(`Statut ${bloc.toUpperCase()} mis à jour.`, "success");
+                } catch (e) {
+                  addToast(`Erreur : ${e?.response?.data?.error ?? e?.message ?? "Impossible de changer le statut."}`, "error");
+                }
+              } : null}
               viseQtePar={etat?.vise_qte_par}
               viseQteLe={etat?.vise_qte_le}
               visePrixPar={etat?.vise_prix_par}
               visePrixLe={etat?.vise_prix_le}
+              onDownloadBon={(ref) => handleDownload(
+                `${import.meta.env.VITE_API_BASE}/api/pdf/bon-transfert/${id}/${encodeURIComponent(ref)}`,
+                `bon-transfert-${ref}.pdf`
+              )}
             />
           ))}
 
@@ -813,22 +895,47 @@ export default function EtatCessionFormPage() {
       {/* Modal confirmation statut */}
       {pendingStatut && pendingStatut !== "brouillon_delete" && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPendingStatut(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-semibold text-gray-900 mb-2">
-              {pendingStatut === "soumis" ? "Soumettre l'état de cession ?" :
-               pendingStatut === "valide" ? "Valider et arrêter l'état de cession ?" :
-               "Rejeter l'état de cession ?"}
-            </h3>
-            <p className="text-sm text-gray-500 mb-5">
-              {pendingStatut === "valide" ? "L'état sera arrêté et consommable par les décomptes." :
-               pendingStatut === "soumis" ? "L'état passera en contrôle DCG." : "Cette action est irréversible."}
-            </p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setPendingStatut(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
-              <button onClick={() => handleStatut(pendingStatut)} disabled={statutMut.isPending}
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+            <div>
+              <h3 className="text-base font-semibold text-gray-900">
+                {pendingStatut === "soumis"    ? "Soumettre l'état de cession ?"          :
+                 pendingStatut === "valide"    ? "Valider et arrêter l'état de cession ?" :
+                 pendingStatut === "brouillon" ? "Remettre en brouillon ?"                :
+                 "Rejeter l'état de cession ?"}
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                {pendingStatut === "soumis"    ? "L'état passera en contrôle DCG. Les lignes seront verrouillées." :
+                 pendingStatut === "valide"    ? "L'état sera arrêté et consommable par les décomptes. Action irréversible." :
+                 pendingStatut === "brouillon" ? "Les lignes seront de nouveau modifiables pour correction." :
+                 "L'état sera rejeté. Saisissez un motif."}
+              </p>
+            </div>
+
+            {/* Motif de rejet */}
+            {pendingStatut === "rejete" && (
+              <div>
+                <label className="text-xs font-medium text-gray-600 block mb-1">Motif du rejet <span className="text-red-500">*</span></label>
+                <textarea
+                  value={motifRejet ?? ""}
+                  onChange={e => setMotifRejet(e.target.value)}
+                  rows={3}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 resize-none"
+                  placeholder="Raison du rejet…"
+                />
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3 pt-1">
+              <button onClick={() => { setPendingStatut(null); setMotifRejet(""); }}
+                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+              <button
+                onClick={() => handleStatut(pendingStatut, pendingStatut === "rejete" ? motifRejet : undefined)}
+                disabled={statutMut.isPending || (pendingStatut === "rejete" && !motifRejet?.trim())}
                 className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-60 text-white
-                  ${pendingStatut === "rejete" ? "bg-red-500 hover:bg-red-600" : "bg-[#087F3E] hover:bg-[#065A2C]"}`}>
-                {statutMut.isPending ? <Loader2 size={14} className="animate-spin" /> : null} Confirmer
+                  ${pendingStatut === "rejete"    ? "bg-red-500 hover:bg-red-600"      :
+                    pendingStatut === "brouillon" ? "bg-amber-500 hover:bg-amber-600"  :
+                    "bg-[#087F3E] hover:bg-[#065A2C]"}`}>
+                {statutMut.isPending && <Loader2 size={14} className="animate-spin" />} Confirmer
               </button>
             </div>
           </div>

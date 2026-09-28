@@ -21,7 +21,10 @@ export function useSaveSousTraitant() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload) => soustraitantService.save(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["soustraitants"] }),
+    onSuccess: (_data, payload) => {
+      qc.invalidateQueries({ queryKey: ["soustraitants"] });
+      if (payload.id) qc.invalidateQueries({ queryKey: ["soustraitant", String(payload.id)] });
+    },
   });
 }
 

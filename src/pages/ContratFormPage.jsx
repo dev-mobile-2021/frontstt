@@ -4,9 +4,9 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle,
   Hash, FileText, Info, FilePlus, CheckCircle, Trash2, Plus, X, Paperclip,
-  Upload, Download, File, Circle, Clock, CheckCircle2, XCircle, Search,
+  Upload, Download, File, Circle, Clock, CheckCircle2, XCircle, Search, Archive,
 } from "lucide-react";
-import { useContrat, useSaveContrat, useContratStatut, useContratCircuit, useSoumettreContrat, useValiderContrat, useRejeterContrat } from "../hooks/useContrats";
+import { useContrat, useSaveContrat, useContratStatut, useContratCircuit, useSoumettreContrat, useValiderContrat, useRejeterContrat, useDeleteContrat } from "../hooks/useContrats";
 import { useChantiersPaginated } from "../hooks/useChantiers";
 import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useDecomptesPaginated } from "../hooks/useDecomptes";
@@ -473,17 +473,59 @@ function BaremeCessionsTab({ contratId, isNew }) {
                   </label>
                   {/* Sélectionner depuis le référentiel */}
                   <button
-                    onClick={() => { setShowModal(key); setSearch(""); }}
+                    onClick={() => { setShowModal(showModal === key ? null : key); setSearch(""); }}
                     disabled={dispos.length === 0}
                     className={`text-xs px-3 py-1 rounded-lg font-medium transition-colors
                       ${dispos.length === 0
                         ? "opacity-30 cursor-not-allowed bg-white border border-gray-200 text-gray-400"
-                        : `bg-white border ${border} ${color} hover:bg-white/70`}`}
+                        : showModal === key
+                          ? `bg-gray-100 border ${border} ${color}`
+                          : `bg-white border ${border} ${color} hover:bg-white/70`}`}
                   >
-                    + Sélectionner depuis le référentiel
+                    {showModal === key ? "✕ Fermer" : "+ Sélectionner depuis le référentiel"}
                   </button>
                 </div>
               </div>
+
+              {/* Zone inline référentiel — au-dessus du tableau */}
+              {showModal === key && (
+                <div className={`border border-dashed ${border} rounded-xl mx-1 mb-3 bg-white`}>
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <div className="relative">
+                      <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input value={search} onChange={e => setSearch(e.target.value)}
+                        placeholder="Rechercher un article…" autoFocus
+                        className="w-full pl-8 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+                    </div>
+                  </div>
+                  <div className="divide-y divide-gray-100 max-h-64 overflow-y-auto">
+                    {dispos.filter(b => !search || b.designation.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
+                      <p className="text-sm text-gray-400 text-center py-6">Tous les articles sont déjà ajoutés.</p>
+                    ) : dispos.filter(b => !search || b.designation.toLowerCase().includes(search.toLowerCase())).map(b => (
+                      <div key={b.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-800 truncate">{b.designation}</p>
+                          <p className="text-xs text-gray-400">{b.code}</p>
+                        </div>
+                        <select
+                          value={uniteInput[b.id] ?? b.unite ?? ""}
+                          onChange={e => setUniteInput(p => ({ ...p, [b.id]: e.target.value }))}
+                          className="w-24 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white">
+                          {UNITES.map(u => <option key={u} value={u}>{u}</option>)}
+                        </select>
+                        <input type="number" min="0" step="any" placeholder="Prix (FCFA) *"
+                          value={prixInput[b.id] ?? ""}
+                          onChange={e => setPrixInput(p => ({ ...p, [b.id]: e.target.value }))}
+                          className="w-32 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                        <button onClick={() => handleAdd(b.id)} disabled={addMut.isPending}
+                          className="text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors disabled:opacity-50 shrink-0">
+                          + Ajouter
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Table */}
               <table className="w-full text-sm">
@@ -544,18 +586,10 @@ function BaremeCessionsTab({ contratId, isNew }) {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {confirmDel === cb.id ? (
-                            <span className="inline-flex items-center gap-2 text-xs">
-                              <span className="text-red-600">Retirer ?</span>
-                              <button onClick={() => handleRemove(cb.id)} className="text-red-600 hover:text-red-800 font-medium">Oui</button>
-                              <button onClick={() => setConfirmDel(null)} className="text-gray-400 hover:text-gray-600">Non</button>
-                            </span>
-                          ) : (
-                            <button onClick={() => setConfirmDel(cb.id)}
-                              className="text-gray-300 hover:text-red-500 transition-colors">
-                              <Trash2 size={14} />
-                            </button>
-                          )}
+                          <button onClick={() => setConfirmDel(cb.id)}
+                            className="text-gray-300 hover:text-red-500 transition-colors">
+                            <Trash2 size={14} />
+                          </button>
                         </td>
                       </tr>
                     );
@@ -567,70 +601,31 @@ function BaremeCessionsTab({ contratId, isNew }) {
         })
       )}
 
-      {/* Modal sélection référentiel */}
-      {showModal && (() => {
-        const type = showModal;
-        const { label } = POSTE_TYPES.find(p => p.key === type);
-        const dispos = getDisponibles(type).filter(b =>
-          !search || b.designation.toLowerCase().includes(search.toLowerCase())
-        );
-        return (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h3 className="text-sm font-bold text-gray-900">Ajouter depuis le référentiel — {label}</h3>
-                <button onClick={() => setShowModal(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
-                  <X size={16} />
-                </button>
-              </div>
-              <div className="px-5 py-3 border-b border-gray-100">
-                <div className="relative">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input value={search} onChange={e => setSearch(e.target.value)}
-                    placeholder="Rechercher un article…"
-                    className="w-full pl-8 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
-                </div>
-              </div>
-              <div className="overflow-y-auto flex-1 divide-y divide-gray-100">
-                {dispos.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-10">Tous les articles sont déjà ajoutés.</p>
-                ) : dispos.map(b => (
-                  <div key={b.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 transition-colors">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{b.designation}</p>
-                    </div>
-                    <select
-                      value={uniteInput[b.id] ?? b.unite ?? ""}
-                      onChange={e => setUniteInput(p => ({ ...p, [b.id]: e.target.value }))}
-                      className="w-24 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white"
-                    >
-                      {UNITES.map(u => <option key={u} value={u}>{u}</option>)}
-                    </select>
-                    <input
-                      type="number" min="0" step="any"
-                      placeholder="PU (FCFA) *"
-                      value={prixInput[b.id] ?? ""}
-                      onChange={e => setPrixInput(p => ({ ...p, [b.id]: e.target.value }))}
-                      className="w-32 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none"
-                    />
-                    <button onClick={() => handleAdd(b.id)}
-                      disabled={addMut.isPending}
-                      className="text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors disabled:opacity-50 shrink-0">
-                      + Ajouter
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="px-5 py-3 border-t border-gray-100">
-                <button onClick={() => setShowModal(null)}
-                  className="w-full py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
-                  Fermer
-                </button>
+      {/* Modal confirmation suppression barème */}
+      {confirmDel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-50 rounded-xl"><Trash2 size={18} className="text-red-500" /></div>
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Retirer cet article ?</p>
+                <p className="text-xs text-gray-400 mt-0.5">Cette action est irréversible.</p>
               </div>
             </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setConfirmDel(null)}
+                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
+                Annuler
+              </button>
+              <button onClick={() => handleRemove(confirmDel)} disabled={removeMut.isPending}
+                className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-60 inline-flex items-center gap-1.5">
+                {removeMut.isPending && <Loader2 size={13} className="animate-spin" />}
+                Retirer
+              </button>
+            </div>
           </div>
-        );
-      })()}
+        </div>
+      )}
     </div>
   );
 }
@@ -1879,7 +1874,9 @@ export default function ContratFormPage() {
 
   const [activeTab, setActiveTab] = useState("info");
   const [motif, setMotif]         = useState("");
-  const [pendingStatut, setPendingStatut] = useState(null);
+  const [pendingStatut, setPendingStatut]   = useState(null);
+  const [confirmDelContrat, setConfirmDelContrat]   = useState(false);
+  const [confirmArchContrat, setConfirmArchContrat] = useState(false);
 
   // ── Formulaire ──────────────────────────────────────────────
   const [form, setForm] = useState({
@@ -1905,8 +1902,9 @@ export default function ContratFormPage() {
   const chantiersList = chantiersData?.data ?? [];
   const sttList       = sttData?.data?.filter(s => s.statut !== "blackliste") ?? [];
 
-  const saveMut   = useSaveContrat();
-  const statutMut = useContratStatut();
+  const saveMut      = useSaveContrat();
+  const statutMut    = useContratStatut();
+  const deleteMut    = useDeleteContrat();
 
   // Populate form when contrat loads (edit mode)
   useEffect(() => {
@@ -1922,6 +1920,29 @@ export default function ContratFormPage() {
       });
     }
   }, [contrat]);
+
+  // ── Delete / Archive contrat ─────────────────────────────────
+  async function handleDeleteContrat() {
+    try {
+      await deleteMut.mutateAsync(parseInt(id, 10));
+      addToast("Contrat supprimé", "success");
+      navigate("/contrats");
+    } catch (e) {
+      addToast(e?.response?.data?.message ?? "Erreur lors de la suppression", "error");
+    }
+    setConfirmDelContrat(false);
+  }
+
+  async function handleArchiveContrat() {
+    try {
+      await statutMut.mutateAsync({ id: parseInt(id, 10), statut: "archive" });
+      addToast("Contrat archivé", "success");
+      setConfirmArchContrat(false);
+    } catch (e) {
+      addToast(e?.response?.data?.message ?? "Erreur lors de l'archivage", "error");
+      setConfirmArchContrat(false);
+    }
+  }
 
   // ── Save ────────────────────────────────────────────────────
   async function handleSave() {
@@ -2060,7 +2081,19 @@ export default function ContratFormPage() {
                 )}
                 <StatusBadge statut={contrat.statut} />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                {["brouillon", "soumis"].includes(contrat.statut) && (
+                  <button onClick={() => setConfirmArchContrat(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors">
+                    <Archive size={13} /> Archiver
+                  </button>
+                )}
+                {["brouillon", "soumis"].includes(contrat.statut) && (
+                  <button onClick={() => setConfirmDelContrat(true)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-red-200 rounded-lg text-red-500 hover:bg-red-50 transition-colors">
+                    <Trash2 size={13} /> Supprimer
+                  </button>
+                )}
                 <button
                   onClick={async () => {
                     const token = localStorage.getItem("stt_token");
@@ -2378,6 +2411,64 @@ export default function ContratFormPage() {
 
         </div>
       </div>
+
+      {/* ── Modal suppression contrat ── */}
+      {confirmDelContrat && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+                <Trash2 size={18} className="text-red-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Supprimer le contrat</p>
+                <p className="text-xs text-gray-500 font-mono">{contrat?.code}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">Cette action est irréversible. Le contrat et ses données associées seront supprimés définitivement.</p>
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setConfirmDelContrat(false)}
+                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                Annuler
+              </button>
+              <button onClick={handleDeleteContrat} disabled={deleteMut.isPending}
+                className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                {deleteMut.isPending && <Loader2 size={13} className="animate-spin" />}
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal archivage contrat ── */}
+      {confirmArchContrat && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                <Archive size={18} className="text-slate-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Archiver le contrat</p>
+                <p className="text-xs text-gray-500 font-mono">{contrat?.code}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">Le contrat sera archivé et ne pourra plus être modifié.</p>
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setConfirmArchContrat(false)}
+                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                Annuler
+              </button>
+              <button onClick={handleArchiveContrat} disabled={statutMut.isPending}
+                className="flex-1 py-2 rounded-lg bg-slate-600 text-white text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                {statutMut.isPending && <Loader2 size={13} className="animate-spin" />}
+                Archiver
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

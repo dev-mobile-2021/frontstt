@@ -3,11 +3,11 @@ import { useNavigate, Link } from "react-router-dom";
 import { Fragment } from "react";
 import {
   Search, RotateCcw, ChevronLeft, ChevronRight, Plus, Eye, X, Loader2,
-  FileText, FileSpreadsheet, ChevronDown, ChevronRight as ChevronRightIcon,
+  FileText, FileSpreadsheet, ChevronDown, ChevronRight as ChevronRightIcon, Trash2, Archive,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
-import { useContratsPaginated, useSaveContrat } from "../hooks/useContrats";
+import { useContratsPaginated, useSaveContrat, useDeleteContrat, useContratStatut } from "../hooks/useContrats";
 import { useChantiersPaginated } from "../hooks/useChantiers";
 import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useToast } from "../context/ToastContext";
@@ -24,6 +24,7 @@ const STATUTS = [
   { value: "resilie",   label: "Résilié" },
   { value: "termine",   label: "Terminé" },
   { value: "cloture",   label: "Clôturé" },
+  { value: "archive",   label: "Archivé" },
 ];
 
 const TYPES = [
@@ -60,16 +61,20 @@ export default function ContratsListPage() {
   const navigate     = useNavigate();
   const { addToast } = useToast();
   const saveMut      = useSaveContrat();
+  const deleteMut    = useDeleteContrat();
+  const statutMut    = useContratStatut();
 
   const [search,       setSearch]       = useState("");
   const [statut,       setStatut]       = useState("");
   const [sttFilter,    setSttFilter]    = useState("");
   const [page,         setPage]         = useState(1);
   const [debounced,    setDebounced]    = useState("");
-  const [expanded,  setExpanded]  = useState({});
-  const [showModal, setShowModal] = useState(false);
-  const [form,      setForm]      = useState(INIT);
-  const [errors,    setErrors]    = useState({});
+  const [expanded,       setExpanded]       = useState({});
+  const [showModal,      setShowModal]      = useState(false);
+  const [form,           setForm]           = useState(INIT);
+  const [errors,         setErrors]         = useState({});
+  const [confirmDelete,  setConfirmDelete]  = useState(null);
+  const [confirmArchive, setConfirmArchive] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => { setDebounced(search.trim()); setPage(1); }, 400);
@@ -94,6 +99,28 @@ export default function ContratsListPage() {
   function openModal(){ setForm(INIT); setErrors({}); setShowModal(true); }
 
   function toggleExpand(id) { setExpanded(prev => ({ ...prev, [id]: !prev[id] })); }
+
+  async function handleDelete(id) {
+    try {
+      await deleteMut.mutateAsync(id);
+      addToast("Contrat supprimé", "success");
+      setConfirmDelete(null);
+    } catch (e) {
+      addToast(e?.response?.data?.message ?? "Erreur lors de la suppression", "error");
+      setConfirmDelete(null);
+    }
+  }
+
+  async function handleArchive(id) {
+    try {
+      await statutMut.mutateAsync({ id, statut: "archive" });
+      addToast("Contrat archivé", "success");
+      setConfirmArchive(null);
+    } catch (e) {
+      addToast(e?.response?.data?.message ?? "Erreur lors de l'archivage", "error");
+      setConfirmArchive(null);
+    }
+  }
 
   function exportExcel() {
     const params = new URLSearchParams();
@@ -277,6 +304,18 @@ export default function ContratsListPage() {
                               </span>
                             </>
                           ) : <span className="text-xs text-gray-300 ml-5">—</span>}
+                          {["brouillon", "soumis"].includes(c.statut) && (
+                            <button title="Archiver" onClick={() => setConfirmArchive(c)}
+                              className="p-1 rounded text-gray-300 hover:text-slate-500 transition-colors opacity-0 group-hover:opacity-100">
+                              <Archive size={14} />
+                            </button>
+                          )}
+                          {["brouillon", "soumis"].includes(c.statut) && (
+                            <button title="Supprimer" onClick={() => setConfirmDelete(c)}
+                              className="p-1 rounded text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                           <Link to={`/contrats/${c.id}`}
                             className="ml-auto p-1 rounded text-gray-300 hover:text-[#087F3E] transition-colors opacity-0 group-hover:opacity-100">
                             <Eye size={14} />
@@ -410,6 +449,64 @@ export default function ContratsListPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirmation suppression ── */}
+      {confirmDelete && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+                <Trash2 size={18} className="text-red-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Supprimer le contrat</p>
+                <p className="text-xs text-gray-500 font-mono">{confirmDelete.code}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">Cette action est irréversible. Le contrat et ses données associées seront supprimés définitivement.</p>
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setConfirmDelete(null)}
+                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                Annuler
+              </button>
+              <button onClick={() => handleDelete(confirmDelete.id)} disabled={deleteMut.isPending}
+                className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                {deleteMut.isPending && <Loader2 size={13} className="animate-spin" />}
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirmation archivage ── */}
+      {confirmArchive && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
+                <Archive size={18} className="text-slate-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Archiver le contrat</p>
+                <p className="text-xs text-gray-500 font-mono">{confirmArchive.code}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">Le contrat sera archivé et ne pourra plus être modifié.</p>
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setConfirmArchive(null)}
+                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                Annuler
+              </button>
+              <button onClick={() => handleArchive(confirmArchive.id)} disabled={statutMut.isPending}
+                className="flex-1 py-2 rounded-lg bg-slate-600 text-white text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                {statutMut.isPending && <Loader2 size={13} className="animate-spin" />}
+                Archiver
+              </button>
+            </div>
           </div>
         </div>
       )}

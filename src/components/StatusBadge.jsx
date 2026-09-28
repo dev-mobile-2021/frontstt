@@ -18,6 +18,7 @@ const CONFIGS = {
   "valide_dg":    { cls: "bg-[#E8F5EE] text-[#065A2C]",label: "Validé DG",  icon: Check },
   "paye":         { cls: "bg-[#E8F5EE] text-[#065A2C]",label: "Payé",       icon: Check },
   "resilie":      { cls: "bg-red-50 text-red-700",      label: "Résilié",    icon: null },
+  "archive":      { cls: "bg-slate-100 text-slate-500", label: "Archivé",    icon: null },
   "emise":        { cls: "bg-gray-100 text-gray-700",   label: "Émise",      icon: null },
   "payee":        { cls: "bg-[#E8F5EE] text-[#065A2C]",label: "Payée",      icon: Check },
   "annulee":      { cls: "bg-red-50 text-red-700",      label: "Annulée",    icon: null },
