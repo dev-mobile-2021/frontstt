@@ -360,14 +360,12 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                   <td className="px-3 py-2.5 text-right text-gray-700">{fmtNum(l.quantite)}</td>
                   <td className="px-3 py-2.5 text-right text-xs">
                     {editingLigne === l.id ? (
-                      <div className="flex items-center justify-end gap-1">
-                        <input type="number" min="0" step="any" value={editLignePrix}
-                          onChange={e => setEditLignePrix(e.target.value)}
-                          className="w-24 border border-gray-300 rounded px-1.5 py-1 text-xs text-right focus:ring-1 focus:ring-[#087F3E] outline-none"
-                          autoFocus />
-                        <button onClick={() => handleUpdateLignePrix(l.id)} className="text-[#087F3E] font-bold text-xs">✓</button>
-                        <button onClick={() => setEditingLigne(null)} className="text-gray-400 text-xs">✕</button>
-                      </div>
+                      <input type="number" min="0" step="any" value={editLignePrix}
+                        onChange={e => setEditLignePrix(e.target.value)}
+                        onBlur={() => handleUpdateLignePrix(l.id)}
+                        onKeyDown={e => { if (e.key === "Enter") handleUpdateLignePrix(l.id); if (e.key === "Escape") setEditingLigne(null); }}
+                        className="w-28 border border-[#087F3E] rounded px-1.5 py-1 text-xs text-right focus:ring-1 focus:ring-[#087F3E] outline-none"
+                        autoFocus />
                     ) : (
                       <button onClick={() => { setEditingLigne(l.id); setEditLignePrix(String(l.prix_unitaire)); }}
                         className="text-gray-600 hover:text-[#087F3E] transition-colors tabular-nums">
