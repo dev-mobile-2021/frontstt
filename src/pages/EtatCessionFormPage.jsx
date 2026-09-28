@@ -28,30 +28,26 @@ const POSTE_CONFIG = {
     label:  "Cession Matériaux (MTX)",
     color:  { bg: "bg-blue-50", border: "border-blue-200", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-500", btn: "text-blue-600" },
     prixEditable: false,
-    hasBonTransfert: true,
   },
   GASOIL: {
     label:  "Gasoil",
     color:  { bg: "bg-orange-50", border: "border-orange-200", badge: "bg-orange-100 text-orange-700", dot: "bg-orange-400", btn: "text-orange-600" },
     prixEditable: true,
-    hasBonTransfert: false,
   },
   MTL: {
     label:  "Cession Matériel (MTL)",
     color:  { bg: "bg-violet-50", border: "border-violet-200", badge: "bg-violet-100 text-violet-700", dot: "bg-violet-500", btn: "text-violet-600" },
     prixEditable: false,
-    hasBonTransfert: false,
     gmao: true,
   },
   RH: {
     label:  "Ressources Humaines (RH)",
     color:  { bg: "bg-green-50", border: "border-green-200", badge: "bg-green-100 text-green-700", dot: "bg-green-500", btn: "text-green-600" },
     prixEditable: false,
-    hasBonTransfert: false,
   },
 };
 
-const LIGNE_INIT = { bareme_cb_id: "", designation: "", unite: "", quantite: "", prix_unitaire: "", bon_transfert: "" };
+const LIGNE_INIT = { bareme_cb_id: "", designation: "", unite: "", quantite: "", prix_unitaire: "" };
 
 // Mapping poste → type barème
 const POSTE_TO_TYPE = { MTX: "mtx", GASOIL: "gasoil", MTL: "mtl", RH: "rh" };
@@ -117,7 +113,6 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
         unite:          form.unite || null,
         quantite:       parseFloat(form.quantite),
         prix_unitaire:  parseFloat(form.prix_unitaire || 0),
-        bon_transfert:  form.bon_transfert || null,
       });
       addToast("Ligne ajoutée.", "success");
       setShowForm(false);
@@ -328,7 +323,6 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                   Prix unit. <span className="text-gray-300 text-xs">✏</span>
                 </th>
                 <th className="text-right px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-32">Montant</th>
-                {cfg.hasBonTransfert && <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Bon transfert</th>}
                 {canEdit && <th className="w-10" />}
               </tr>
             </thead>
@@ -361,13 +355,6 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                     )}
                   </td>
                   <td className="px-5 py-2.5 text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</td>
-                  {cfg.hasBonTransfert && (
-                    <td className="px-3 py-2.5 text-xs text-gray-500">
-                      {l.bon_transfert
-                        ? <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full"><FileText size={10} /> {l.bon_transfert}</span>
-                        : "—"}
-                    </td>
-                  )}
                   {canEdit && (
                     <td className="pr-3 py-2.5 text-right">
                       {confirmDel === l.id ? (
@@ -391,7 +378,6 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                   Total {cfg.label}
                 </td>
                 <td className="px-5 py-2.5 text-right font-bold text-gray-900">{fmtNum(total)} FCFA</td>
-                {cfg.hasBonTransfert && <td />}
                 {canEdit && <td />}
               </tr>
             </tfoot>
@@ -427,7 +413,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                 </div>
 
                 {form.bareme_cb_id && (
-                  <div className={`grid gap-3 items-end ${cfg.hasBonTransfert ? "grid-cols-[120px_160px_auto]" : "grid-cols-[120px_auto]"}`}>
+                  <div className="grid gap-3 items-end grid-cols-[120px_auto]">
                     <div className="space-y-1">
                       <label className="text-xs text-gray-500 font-medium">Quantité *</label>
                       <input type="number" value={form.quantite}
@@ -435,16 +421,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                         required min="0" step="any" placeholder="0" autoFocus
                         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
                     </div>
-                    {cfg.hasBonTransfert && (
-                      <div className="space-y-1">
-                        <label className="text-xs text-gray-500 font-medium">Bon de transfert</label>
-                        <input type="text" value={form.bon_transfert}
-                          onChange={e => setForm(f => ({ ...f, bon_transfert: e.target.value }))}
-                          placeholder="BT-2026-001"
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-                      </div>
-                    )}
-                    <div className="flex items-end gap-2 pb-0.5">
+                        <div className="flex items-end gap-2 pb-0.5">
                       <button type="submit" disabled={saveMut.isPending}
                         className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
                         {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} OK
@@ -462,7 +439,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
               </div>
             ) : (
               /* Saisie libre (GASOIL ou barème vide) */
-              <div className={`grid gap-3 items-end ${cfg.hasBonTransfert ? "grid-cols-[1fr_70px_90px_110px_140px_auto]" : "grid-cols-[1fr_70px_90px_110px_auto]"}`}>
+              <div className="grid gap-3 items-end grid-cols-[1fr_70px_90px_110px_auto]">
                 <div className="space-y-1">
                   <label className="text-xs text-gray-500 font-medium">Désignation *</label>
                   <input type="text" value={form.designation}
@@ -492,15 +469,6 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                     disabled={!cfg.prixEditable}
                     className={`w-full border rounded-lg px-3 py-2 text-sm outline-none ${cfg.prixEditable ? "border-orange-300 focus:ring-2 focus:ring-orange-400" : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"}`} />
                 </div>
-                {cfg.hasBonTransfert && (
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-500 font-medium">Bon de transfert</label>
-                    <input type="text" value={form.bon_transfert}
-                      onChange={e => setForm(f => ({ ...f, bon_transfert: e.target.value }))}
-                      placeholder="BT-2026-001"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-                  </div>
-                )}
                 <div className="flex items-end gap-2 pb-0.5">
                   <button type="submit" disabled={saveMut.isPending}
                     className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60 whitespace-nowrap">
