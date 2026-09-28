@@ -156,8 +156,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
       if (filtered.length === 0) return addToast("Aucune donnée X3 pour cette période.", "info");
 
       // Supprimer les lignes existantes pour ce poste avant de réimporter
-      const existingForPoste = (etat?.lignes ?? []).filter(l => l.poste === poste);
-      for (const l of existingForPoste) {
+      for (const l of lignes) {
         await deleteMut.mutateAsync(l.id);
       }
 
