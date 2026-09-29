@@ -220,8 +220,8 @@ export default function ConsultationEtatsCessionPage() {
               className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-40">
               <FileDown size={14} /> PDF récap
             </button>
-            <button onClick={handleExcel} disabled={lignes.length === 0}
-              className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-40">
+            <button onClick={handleExcel}
+              className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50">
               <FileSpreadsheet size={14} /> Excel
             </button>
           </div>
