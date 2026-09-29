@@ -109,39 +109,33 @@ export default function ConsultationEtatsCessionPage() {
   const totalRows  = data?.total  ?? 0;
   const totalPages = data?.pages  ?? 1;
 
-  // Tri côté client, toujours groupé par code_article en premier
-  const lignes = useMemo(() => {
-    const arr = [...lignesRaw];
-    arr.sort((a, b) => {
-      // Groupe par code_article d'abord
-      const ca = a.code_article ?? "zzz";
-      const cb = b.code_article ?? "zzz";
-      if (ca < cb) return -1;
-      if (ca > cb) return 1;
-      // Puis tri secondaire choisi
-      let va = a[sortCol] ?? "";
-      let vb = b[sortCol] ?? "";
-      if (sortCol === "montant" || sortCol === "quantite") { va = parseFloat(va) || 0; vb = parseFloat(vb) || 0; }
-      if (va < vb) return sortDir === "asc" ? -1 : 1;
-      if (va > vb) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-    return arr;
-  }, [lignesRaw, sortCol, sortDir]);
+  const lignes = lignesRaw;
 
-  // Groupes par code_article pour affichage avec sous-totaux
-  const groupesArticle = useMemo(() => {
-    const map = {};
+  // Grouper par mois (periode_debut) puis par ref_bs (ND)
+  const groupesMois = useMemo(() => {
+    const moisMap = {};
     for (const l of lignes) {
-      const key = l.code_article || "__sans_code__";
-      if (!map[key]) map[key] = { code: l.code_article, designation: l.designation, unite: l.unite, lignes: [] };
-      map[key].lignes.push(l);
+      const moisKey = l.periode_debut ? l.periode_debut.slice(0, 7) : "____";
+      if (!moisMap[moisKey]) moisMap[moisKey] = { moisKey, lignes: [] };
+      moisMap[moisKey].lignes.push(l);
     }
-    return Object.values(map).map(g => ({
-      ...g,
-      totalQte:     g.lignes.reduce((s, l) => s + (parseFloat(l.quantite) || 0), 0),
-      totalMontant: g.lignes.reduce((s, l) => s + (parseFloat(l.montant) || 0), 0),
-    }));
+    return Object.values(moisMap).sort((a, b) => a.moisKey.localeCompare(b.moisKey)).map(mois => {
+      const ndMap = {};
+      for (const l of mois.lignes) {
+        const ndKey = l.ref_bs || "__sans_nd__";
+        if (!ndMap[ndKey]) ndMap[ndKey] = {
+          ref_bs:       l.ref_bs,
+          date_sortie:  l.date_sortie,
+          chantier:     l.chantier,
+          soustraitant: l.soustraitant,
+          lignes:       [],
+        };
+        ndMap[ndKey].lignes.push(l);
+      }
+      const nds = Object.values(ndMap);
+      const total = mois.lignes.reduce((s, l) => s + (parseFloat(l.montant) || 0), 0);
+      return { ...mois, nds, total };
+    });
   }, [lignes]);
 
   // KPIs
@@ -161,10 +155,7 @@ export default function ConsultationEtatsCessionPage() {
     setApplied({});
     setPage(1);
   }
-  function toggleSort(col) {
-    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortCol(col); setSortDir("desc"); }
-  }
+  function toggleSort() {}
 
   async function handlePdfRecap() {
     setPdfLoading(true);
@@ -330,152 +321,103 @@ export default function ConsultationEtatsCessionPage() {
         </div>
       )}
 
-      {/* Tableau */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+      {/* Tableau style RECAP ETATS DE CESSION */}
+      <div className="space-y-0">
         {isLoading ? (
-          <div className="py-16 text-center text-sm text-gray-400">Chargement…</div>
+          <div className="bg-white border border-gray-200 rounded-2xl py-16 text-center text-sm text-gray-400">Chargement…</div>
         ) : lignes.length === 0 ? (
-          <div className="py-16 text-center text-sm text-gray-400">
-            Aucun article trouvé.
+          <div className="bg-white border border-gray-200 rounded-2xl py-16 text-center text-sm text-gray-400">
+            Aucun article trouvé. Appliquez des filtres pour afficher les données.
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200 bg-gray-50">
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                      État / Chantier
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">
-                      Sous-traitant
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Poste
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-700 whitespace-nowrap"
-                      onClick={() => toggleSort("code_article")}>
-                      <span className="flex items-center gap-1">Code article <SortIcon col="code_article" /></span>
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-700"
-                      onClick={() => toggleSort("designation")}>
-                      <span className="flex items-center gap-1">Désignation <SortIcon col="designation" /></span>
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 uppercase tracking-wide">Unité</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-700 whitespace-nowrap"
-                      onClick={() => toggleSort("date_sortie")}>
-                      <span className="flex items-center gap-1">Date sortie <SortIcon col="date_sortie" /></span>
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Réf. BS</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Réf. BR</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide">Quantité</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Prix unit.</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wide cursor-pointer hover:text-gray-700"
-                      onClick={() => toggleSort("montant")}>
-                      <span className="flex items-center gap-1 justify-end">Montant <SortIcon col="montant" /></span>
-                    </th>
-                    <th className="px-4 py-3"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {groupesArticle.map((groupe, gi) => (
-                    <>
-                      {/* Lignes du groupe */}
-                      {groupe.lignes.map((l, i) => {
-                        const poste = POSTE_MAP[l.poste?.toUpperCase()];
-                        const Icon  = poste?.icon;
-                        return (
-                          <tr key={l.id} className={`border-t border-gray-100 ${i % 2 === 0 ? "bg-white hover:bg-gray-50" : "bg-gray-50/40 hover:bg-gray-100/50"}`}>
-                            <td className="px-4 py-2.5 whitespace-nowrap">
-                              <div className="font-mono text-xs font-bold text-gray-800">{l.etat_code ?? "—"}</div>
-                              <div className="text-xs text-gray-400 mt-0.5">
-                                {l.chantier?.code && <span>{l.chantier.code}</span>}
-                                {l.periode_debut && <span className="ml-1 text-gray-300">· {l.periode_debut?.slice(0,7)}</span>}
-                              </div>
-                            </td>
-                            <td className="px-4 py-2.5 text-xs text-gray-600 whitespace-nowrap max-w-[140px] truncate">
-                              {l.soustraitant?.raison_sociale ?? "—"}
-                            </td>
-                            <td className="px-4 py-2.5">
-                              {poste ? (
-                                <span className={`inline-flex items-center gap-1 text-xs font-medium ${poste.color} ${poste.bg} ${poste.border} border px-2 py-0.5 rounded-full`}>
-                                  {Icon && <Icon size={10} />} {poste.label}
-                                </span>
-                              ) : (
-                                <span className="text-xs text-gray-400">{l.poste ?? "—"}</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-2.5 font-mono text-xs text-gray-700 whitespace-nowrap">
-                              {l.code_article || <span className="text-gray-300">—</span>}
-                            </td>
-                            <td className="px-4 py-2.5 text-sm text-gray-800 max-w-[220px]">
-                              <span className="line-clamp-2">{l.designation}</span>
-                            </td>
-                            <td className="px-4 py-2.5 text-center text-xs text-gray-500 uppercase font-mono">
-                              {l.unite || "—"}
-                            </td>
-                            <td className="px-4 py-2.5 text-xs text-gray-600 whitespace-nowrap">
-                              {fmtDate(l.date_sortie)}
-                            </td>
-                            <td className="px-4 py-2.5 font-mono text-xs text-blue-600 whitespace-nowrap">
-                              {l.ref_bs || <span className="text-gray-300">—</span>}
-                            </td>
-                            <td className="px-4 py-2.5 font-mono text-xs text-indigo-600 whitespace-nowrap">
-                              {l.ref_br || <span className="text-gray-300">—</span>}
-                            </td>
-                            <td className="px-4 py-2.5 text-right text-sm text-gray-700 whitespace-nowrap">
-                              {l.quantite != null ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(l.quantite) : "—"}
-                            </td>
-                            <td className="px-4 py-2.5 text-right text-xs text-gray-600 whitespace-nowrap">
-                              {l.prix_unitaire != null ? fmtNum(l.prix_unitaire) + " FCFA" : "—"}
-                            </td>
-                            <td className="px-4 py-2.5 text-right font-semibold text-sm text-gray-900 whitespace-nowrap">
-                              {l.montant != null ? fmtNum(l.montant) + " FCFA" : "—"}
-                            </td>
-                            <td className="px-4 py-2.5">
-                              <Link to={`/etats-cession/${l.etat_cession_id}`}
-                                className="p-1.5 text-gray-300 hover:text-[#087F3E] hover:bg-green-50 rounded-lg transition-colors inline-flex">
-                                <Eye size={13} />
-                              </Link>
-                            </td>
-                          </tr>
-                        );
-                      })}
+            {groupesMois.map(mois => {
+              const moisLabel = new Date(mois.moisKey + "-15").toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+              return (
+                <div key={mois.moisKey} className="mb-6">
+                  {/* En-tête mois */}
+                  <div className="bg-[#e8f4fb] border border-[#b8d9ec] rounded-t-xl px-6 py-3 text-center">
+                    <span className="text-base font-semibold text-gray-700 italic">{moisLabel}</span>
+                  </div>
 
-                      {/* Ligne sous-total article */}
-                      <tr key={`st-${gi}`} className="bg-[#f0fdf4] border-t-2 border-[#087F3E]/20">
-                        <td colSpan={3} className="px-4 py-2"></td>
-                        <td className="px-4 py-2 font-mono text-xs font-bold text-[#087F3E]">
-                          {groupe.code || <span className="italic text-gray-400">Sans code</span>}
-                        </td>
-                        <td className="px-4 py-2 text-xs font-semibold text-gray-700 italic">
-                          {groupe.designation} — sous-total
-                        </td>
-                        <td className="px-4 py-2 text-center text-xs text-gray-500 uppercase font-mono">
-                          {groupe.unite || "—"}
-                        </td>
-                        <td colSpan={3} className="px-4 py-2"></td>
-                        <td className="px-4 py-2 text-right font-bold text-sm text-[#087F3E] whitespace-nowrap">
-                          {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(groupe.totalQte)}
-                        </td>
-                        <td className="px-4 py-2"></td>
-                        <td className="px-4 py-2 text-right font-bold text-sm text-[#087F3E] whitespace-nowrap">
-                          {fmtNum(groupe.totalMontant)} FCFA
-                        </td>
-                        <td className="px-4 py-2"></td>
-                      </tr>
-                    </>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  {/* NDs du mois */}
+                  {mois.nds.map((nd, ndIdx) => {
+                    const ndTotal = nd.lignes.reduce((s, l) => s + (parseFloat(l.montant) || 0), 0);
+                    return (
+                      <div key={nd.ref_bs || ndIdx} className="border-x border-b border-gray-200 bg-white overflow-hidden">
+                        {/* En-tête ND */}
+                        <div className="bg-gray-100 border-b border-gray-200 px-4 py-2 grid grid-cols-4 gap-4 text-sm font-semibold text-gray-700">
+                          <span className="font-mono">{nd.ref_bs || "—"}</span>
+                          <span>{nd.date_sortie ? new Date(nd.date_sortie).toLocaleDateString("fr-FR") : "—"}</span>
+                          <span>{nd.chantier?.code_x3 || nd.chantier?.code || "—"}</span>
+                          <span>{nd.soustraitant?.raison_sociale || "—"}</span>
+                        </div>
+
+                        {/* Colonnes */}
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-dashed border-gray-300">
+                              <th className="px-4 py-2 text-left text-sm font-bold text-gray-800 w-36">Code article</th>
+                              <th className="px-4 py-2 text-left text-sm font-bold text-gray-800">Description article</th>
+                              <th className="px-4 py-2 text-center text-sm font-bold text-gray-800 w-20">Unite</th>
+                              <th className="px-4 py-2 text-right text-sm font-bold text-gray-800 w-32">Qté demandée</th>
+                              <th className="px-4 py-2 text-right text-sm font-bold text-gray-800 w-28">P.U</th>
+                              <th className="px-4 py-2 text-right text-sm font-bold text-gray-800 w-36">Valeur</th>
+                              <th className="w-8"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {nd.lignes.map(l => (
+                              <tr key={l.id} className="border-b border-dashed border-gray-100 hover:bg-gray-50">
+                                <td className="px-4 py-2 font-mono text-sm text-gray-800">{l.code_article || "—"}</td>
+                                <td className="px-4 py-2 text-sm text-gray-700">{l.designation}</td>
+                                <td className="px-4 py-2 text-center text-sm text-gray-600 uppercase">{l.unite || "—"}</td>
+                                <td className="px-4 py-2 text-right text-sm text-gray-800">
+                                  {l.quantite != null ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(l.quantite) : "—"}
+                                </td>
+                                <td className="px-4 py-2 text-right text-sm text-gray-800">
+                                  {l.prix_unitaire != null ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(l.prix_unitaire) : "—"}
+                                </td>
+                                <td className="px-4 py-2 text-right text-sm text-gray-900 font-medium">
+                                  {l.montant != null ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(l.montant) : "—"}
+                                </td>
+                                <td className="px-2 py-2">
+                                  <Link to={`/etats-cession/${l.etat_cession_id}`}
+                                    className="text-gray-300 hover:text-[#087F3E] transition-colors inline-flex">
+                                    <Eye size={12} />
+                                  </Link>
+                                </td>
+                              </tr>
+                            ))}
+                            {/* Sous-total ND */}
+                            <tr className="border-t border-gray-300 bg-gray-50/50">
+                              <td colSpan={5} className="px-4 py-2 text-right text-sm font-semibold text-gray-700 border-t border-gray-300">
+                              </td>
+                              <td className="px-4 py-2 text-right text-sm font-bold text-gray-900 border-t-2 border-gray-400">
+                                {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ndTotal)}
+                              </td>
+                              <td></td>
+                            </tr>
+                          </tbody>
+                        </table>
+
+                        {/* TOTAL ND en vert */}
+                        <div className="px-4 py-2 text-right bg-gray-50 border-t border-gray-200">
+                          <span className="text-sm font-bold text-[#087F3E]">
+                            TOTAL : {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ndTotal)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
-                <span className="text-xs text-gray-500">
-                  Page {page} / {totalPages} · {totalRows} lignes
-                </span>
+              <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-5 py-3">
+                <span className="text-xs text-gray-500">Page {page} / {totalPages} · {totalRows} lignes</span>
                 <div className="flex gap-2">
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                     className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-white disabled:opacity-40">
