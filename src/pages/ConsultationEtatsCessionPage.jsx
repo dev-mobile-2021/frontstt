@@ -187,7 +187,7 @@ export default function ConsultationEtatsCessionPage() {
     if (applied.statut_ec)       params.set("statut", applied.statut_ec);
     if (applied.mois_debut)      params.set("date_debut", applied.mois_debut + "-01");
     if (applied.mois_fin)        params.set("date_fin", applied.mois_fin + "-31");
-    const resp = await fetch(`${API_BASE}/excel/etatscessions?${params}`, { headers: getAuthHeader() });
+    const resp = await fetch(`${API_BASE}/excel/consultation-lignes?${params}`, { headers: getAuthHeader() });
     const blob = await resp.blob();
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "consultation-cessions.xlsx"; a.click();
   }
