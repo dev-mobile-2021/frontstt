@@ -111,7 +111,7 @@ export default function ConsultationEtatsCessionPage() {
 
   const lignes = lignesRaw;
 
-  // Grouper par mois (periode_debut) puis par ND (ref_bs)
+  // Grouper par mois (periode_debut) puis par ref_bs (ND)
   const groupesMois = useMemo(() => {
     const moisMap = {};
     for (const l of lignes) {
@@ -122,7 +122,7 @@ export default function ConsultationEtatsCessionPage() {
     return Object.values(moisMap).sort((a, b) => a.moisKey.localeCompare(b.moisKey)).map(mois => {
       const ndMap = {};
       for (const l of mois.lignes) {
-        const ndKey = l.ref_bs || `__ec_${l.etat_cession_id}__`;
+        const ndKey = l.ref_bs || "__sans_nd__";
         if (!ndMap[ndKey]) ndMap[ndKey] = {
           ref_bs:       l.ref_bs,
           date_sortie:  l.date_sortie,
@@ -321,7 +321,7 @@ export default function ConsultationEtatsCessionPage() {
         </div>
       )}
 
-      {/* Tableau style RECAP ETATS DE CESSION — identique au PDF */}
+      {/* Tableau style RECAP ETATS DE CESSION */}
       <div className="space-y-0">
         {isLoading ? (
           <div className="bg-white border border-gray-200 rounded-2xl py-16 text-center text-sm text-gray-400">Chargement…</div>
@@ -330,83 +330,81 @@ export default function ConsultationEtatsCessionPage() {
             Aucun article trouvé. Appliquez des filtres pour afficher les données.
           </div>
         ) : (
-          <div className="border border-gray-300 rounded-xl overflow-hidden">
-            {groupesMois.map((mois, moisIdx) => {
+          <>
+            {groupesMois.map(mois => {
               const moisLabel = new Date(mois.moisKey + "-15").toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
               return (
-                <div key={mois.moisKey}>
-                  {/* Séparateur mois — fond bleu clair */}
-                  <div className="bg-[#cce5f6] border-b border-[#a0c8e8] px-4 py-2 text-center">
-                    <span className="text-sm font-bold text-gray-800">{moisLabel}</span>
+                <div key={mois.moisKey} className="mb-6">
+                  {/* En-tête mois */}
+                  <div className="bg-[#e8f4fb] border border-[#b8d9ec] rounded-t-xl px-6 py-3 text-center">
+                    <span className="text-base font-semibold text-gray-700 italic">{moisLabel}</span>
                   </div>
 
+                  {/* NDs du mois */}
                   {mois.nds.map((nd, ndIdx) => {
                     const ndTotal = nd.lignes.reduce((s, l) => s + (parseFloat(l.montant) || 0), 0);
                     return (
-                      <div key={nd.ref_bs || ndIdx}>
-                        {/* Header ND : ref | date | chantier | sous-traitant */}
-                        <table className="w-full border-collapse">
-                          <tbody>
-                            <tr className="bg-white border-b border-gray-300">
-                              <td className="px-3 py-1.5 text-xs font-semibold text-gray-800 border-r border-gray-300 w-36">{nd.ref_bs || "—"}</td>
-                              <td className="px-3 py-1.5 text-xs text-gray-700 border-r border-gray-300 w-32">
-                                {nd.date_sortie ? new Date(nd.date_sortie).toLocaleDateString("fr-FR") : "—"}
-                              </td>
-                              <td className="px-3 py-1.5 text-xs font-semibold text-gray-800 border-r border-gray-300 w-28">
-                                {nd.chantier?.code_x3 || nd.chantier?.code || "—"}
-                              </td>
-                              <td className="px-3 py-1.5 text-xs text-gray-700">
-                                {nd.soustraitant?.raison_sociale || "—"}
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
+                      <div key={nd.ref_bs || ndIdx} className="border-x border-b border-gray-200 bg-white overflow-hidden">
+                        {/* En-tête ND */}
+                        <div className="bg-gray-100 border-b border-gray-200 px-4 py-2 grid grid-cols-4 gap-4 text-sm font-semibold text-gray-700">
+                          <span className="font-mono">{nd.ref_bs || "—"}</span>
+                          <span>{nd.date_sortie ? new Date(nd.date_sortie).toLocaleDateString("fr-FR") : "—"}</span>
+                          <span>{nd.chantier?.code_x3 || nd.chantier?.code || "—"}</span>
+                          <span>{nd.soustraitant?.raison_sociale || "—"}</span>
+                        </div>
 
-                        {/* Tableau articles */}
-                        <table className="w-full border-collapse">
+                        {/* Colonnes */}
+                        <table className="w-full text-sm">
                           <thead>
-                            <tr className="border-b border-gray-300">
-                              <th className="px-3 py-1.5 text-left text-xs font-bold text-gray-900 border-r border-gray-200 w-32">Code article</th>
-                              <th className="px-3 py-1.5 text-left text-xs font-bold text-gray-900 border-r border-gray-200">Description article</th>
-                              <th className="px-3 py-1.5 text-center text-xs font-bold text-gray-900 border-r border-gray-200 w-16">Unite</th>
-                              <th className="px-3 py-1.5 text-right text-xs font-bold text-gray-900 border-r border-gray-200 w-28">Qté demandée</th>
-                              <th className="px-3 py-1.5 text-right text-xs font-bold text-gray-900 border-r border-gray-200 w-28">P.U</th>
-                              <th className="px-3 py-1.5 text-right text-xs font-bold text-gray-900 w-36">Valeur</th>
+                            <tr className="border-b border-dashed border-gray-300">
+                              <th className="px-4 py-2 text-left text-sm font-bold text-gray-800 w-36">Code article</th>
+                              <th className="px-4 py-2 text-left text-sm font-bold text-gray-800">Description article</th>
+                              <th className="px-4 py-2 text-center text-sm font-bold text-gray-800 w-20">Unite</th>
+                              <th className="px-4 py-2 text-right text-sm font-bold text-gray-800 w-32">Qté demandée</th>
+                              <th className="px-4 py-2 text-right text-sm font-bold text-gray-800 w-28">P.U</th>
+                              <th className="px-4 py-2 text-right text-sm font-bold text-gray-800 w-36">Valeur</th>
+                              <th className="w-8"></th>
                             </tr>
                           </thead>
                           <tbody>
                             {nd.lignes.map(l => (
-                              <tr key={l.id} className="border-b border-dashed border-gray-200 hover:bg-gray-50">
-                                <td className="px-3 py-1.5 text-xs text-gray-800 border-r border-gray-200">{l.code_article || l.poste || "—"}</td>
-                                <td className="px-3 py-1.5 text-xs text-gray-700 border-r border-gray-200">{l.designation}</td>
-                                <td className="px-3 py-1.5 text-center text-xs text-gray-700 border-r border-gray-200 uppercase">{l.unite || "—"}</td>
-                                <td className="px-3 py-1.5 text-right text-xs text-gray-800 border-r border-gray-200">
+                              <tr key={l.id} className="border-b border-dashed border-gray-100 hover:bg-gray-50">
+                                <td className="px-4 py-2 font-mono text-sm text-gray-800">{l.code_article || "—"}</td>
+                                <td className="px-4 py-2 text-sm text-gray-700">{l.designation}</td>
+                                <td className="px-4 py-2 text-center text-sm text-gray-600 uppercase">{l.unite || "—"}</td>
+                                <td className="px-4 py-2 text-right text-sm text-gray-800">
                                   {l.quantite != null ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(l.quantite) : "—"}
                                 </td>
-                                <td className="px-3 py-1.5 text-right text-xs text-gray-800 border-r border-gray-200">
+                                <td className="px-4 py-2 text-right text-sm text-gray-800">
                                   {l.prix_unitaire != null ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(l.prix_unitaire) : "—"}
                                 </td>
-                                <td className="px-3 py-1.5 text-right text-xs text-gray-900">
+                                <td className="px-4 py-2 text-right text-sm text-gray-900 font-medium">
                                   {l.montant != null ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(l.montant) : "—"}
+                                </td>
+                                <td className="px-2 py-2">
+                                  <Link to={`/etats-cession/${l.etat_cession_id}`}
+                                    className="text-gray-300 hover:text-[#087F3E] transition-colors inline-flex">
+                                    <Eye size={12} />
+                                  </Link>
                                 </td>
                               </tr>
                             ))}
                             {/* Sous-total ND */}
-                            <tr className="border-t-2 border-gray-400">
-                              <td colSpan={5} className="px-3 py-1 text-right text-xs text-gray-400">
-                                ─────────────────────────
+                            <tr className="border-t border-gray-300 bg-gray-50/50">
+                              <td colSpan={5} className="px-4 py-2 text-right text-sm font-semibold text-gray-700 border-t border-gray-300">
                               </td>
-                              <td className="px-3 py-1 text-right text-xs font-bold text-gray-900">
+                              <td className="px-4 py-2 text-right text-sm font-bold text-gray-900 border-t-2 border-gray-400">
                                 {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ndTotal)}
                               </td>
+                              <td></td>
                             </tr>
                           </tbody>
                         </table>
 
-                        {/* TOTAL ND — texte vert, aligné droite */}
-                        <div className="px-4 py-2 text-right border-b border-gray-200">
+                        {/* TOTAL ND en vert */}
+                        <div className="px-4 py-2 text-right bg-gray-50 border-t border-gray-200">
                           <span className="text-sm font-bold text-[#087F3E]">
-                            TOTAL&nbsp;:&nbsp;{new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ndTotal)}
+                            TOTAL : {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ndTotal)}
                           </span>
                         </div>
                       </div>
@@ -416,31 +414,23 @@ export default function ConsultationEtatsCessionPage() {
               );
             })}
 
-            {/* TOTAL GÉNÉRAL */}
-            <div className="border-t-2 border-[#087F3E] bg-[#E8F5EE] px-4 py-3 text-right">
-              <span className="text-sm font-bold text-[#087F3E] mr-4">TOTAL GENERAL :</span>
-              <span className="text-sm font-bold text-[#087F3E]">
-                {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalMontant)} FCFA
-              </span>
-            </div>
-
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-between bg-white border-t border-gray-200 px-5 py-3">
+              <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-5 py-3">
                 <span className="text-xs text-gray-500">Page {page} / {totalPages} · {totalRows} lignes</span>
                 <div className="flex gap-2">
                   <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                    className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40">
+                    className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-white disabled:opacity-40">
                     <ChevronLeft size={14} />
                   </button>
                   <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                    className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40">
+                    className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-white disabled:opacity-40">
                     <ChevronRight size={14} />
                   </button>
                 </div>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </div>
