@@ -214,7 +214,7 @@ export default function ConsultationEtatsCessionPage() {
       <PageHeader
         title="Consultation Articles"
         subtitle="Vue détail des lignes de cession — style Sage X3"
-        actions={
+        action={
           <div className="flex gap-2">
             <button onClick={handlePdfRecap} disabled={pdfLoading || lignes.length === 0}
               className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-40">
