@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -41,9 +41,69 @@ const POSTE_OPTIONS = [
 
 const INIT_FILTERS = {
   chantier_id: "", soustraitant_id: "", poste: "",
-  statut_ec: "", mois_debut: "", mois_fin: "",
+  statut_ec: "", date_debut: "", date_fin: "",
   code_article: "", ref_bs: "", ref_br: "",
 };
+
+function ChantierSelect({ value, onChange, chantiers }) {
+  const [open, setOpen]     = useState(false);
+  const [search, setSearch] = useState("");
+  const ref                 = useRef(null);
+
+  const selected   = chantiers.find(c => String(c.id) === String(value));
+  const filtered   = chantiers.filter(c =>
+    !search || `${c.code} ${c.designation}`.toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => {
+    function onClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  function pick(id) { onChange(id); setOpen(false); setSearch(""); }
+
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
+        <span className={selected ? "text-gray-800 truncate" : "text-gray-400"}>
+          {selected ? `${selected.code} — ${selected.designation}` : "Tous les chantiers"}
+        </span>
+        <ChevronDown size={14} className={`ml-2 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+          <div className="p-2 border-b border-gray-100">
+            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
+              <Search size={13} className="text-gray-400 shrink-0" />
+              <input autoFocus type="text" placeholder="Rechercher..." value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400" />
+              {search && <button onClick={() => setSearch("")}><X size={12} className="text-gray-400 hover:text-gray-600" /></button>}
+            </div>
+          </div>
+          <ul className="max-h-52 overflow-y-auto py-1">
+            <li onClick={() => pick("")}
+              className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] ${!value ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-500"}`}>
+              Tous les chantiers
+            </li>
+            {filtered.length === 0 && (
+              <li className="px-3 py-3 text-sm text-gray-400 text-center">Aucun résultat</li>
+            )}
+            {filtered.map(c => (
+              <li key={c.id} onClick={() => pick(String(c.id))}
+                className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] transition-colors ${String(value) === String(c.id) ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
+                <span className="font-mono text-xs text-gray-400 mr-2">{c.code}</span>{c.designation}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const COUNT = 100;
 
@@ -91,8 +151,8 @@ export default function ConsultationEtatsCessionPage() {
     if (applied.soustraitant_id) p.soustraitant_id = applied.soustraitant_id;
     if (applied.poste)           p.poste           = applied.poste;
     if (applied.statut_ec)       p.statut_ec       = applied.statut_ec;
-    if (applied.mois_debut)      p.date_debut      = applied.mois_debut + "-01";
-    if (applied.mois_fin)        p.date_fin        = applied.mois_fin   + "-31";
+    if (applied.date_debut)      p.date_debut      = applied.date_debut;
+    if (applied.date_fin)        p.date_fin        = applied.date_fin;
     if (applied.code_article)    p.code_article    = applied.code_article;
     if (applied.ref_bs)          p.ref_bs          = applied.ref_bs;
     if (applied.ref_br)          p.ref_br          = applied.ref_br;
@@ -163,8 +223,8 @@ export default function ConsultationEtatsCessionPage() {
       const params = new URLSearchParams();
       if (applied.chantier_id) params.set("chantier_id", applied.chantier_id);
       if (applied.statut_ec)   params.set("statut", applied.statut_ec);
-      if (applied.mois_debut)  params.set("date_debut", applied.mois_debut + "-01");
-      if (applied.mois_fin)    params.set("date_fin",   applied.mois_fin   + "-31");
+      if (applied.date_debut)  params.set("date_debut", applied.date_debut);
+      if (applied.date_fin)    params.set("date_fin",   applied.date_fin);
       const resp = await fetch(`${API_BASE}/pdf/recap-cessions?${params}`, { headers: getAuthHeader() });
       const blob = await resp.blob();
       window.open(URL.createObjectURL(blob), "_blank");
@@ -176,8 +236,8 @@ export default function ConsultationEtatsCessionPage() {
     if (applied.chantier_id)     params.set("chantier_id", applied.chantier_id);
     if (applied.soustraitant_id) params.set("soustraitant_id", applied.soustraitant_id);
     if (applied.statut_ec)       params.set("statut", applied.statut_ec);
-    if (applied.mois_debut)      params.set("date_debut", applied.mois_debut + "-01");
-    if (applied.mois_fin)        params.set("date_fin",   applied.mois_fin   + "-31");
+    if (applied.date_debut)      params.set("date_debut", applied.date_debut);
+    if (applied.date_fin)        params.set("date_fin",   applied.date_fin);
     const resp = await fetch(`${API_BASE}/excel/consultation-lignes?${params}`, { headers: getAuthHeader() });
     const blob = await resp.blob();
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "consultation-cessions.xlsx"; a.click();
@@ -234,10 +294,7 @@ export default function ConsultationEtatsCessionPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Chantier</label>
-            <select value={filters.chantier_id} onChange={e => set("chantier_id", e.target.value)} className={inputCls}>
-              <option value="">Tous</option>
-              {chantiers.map(c => <option key={c.id} value={c.id}>{c.code} — {c.designation}</option>)}
-            </select>
+            <ChantierSelect value={filters.chantier_id} onChange={v => set("chantier_id", v)} chantiers={chantiers} />
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Sous-traitant</label>
@@ -268,12 +325,12 @@ export default function ConsultationEtatsCessionPage() {
         {/* Ligne 2 */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
           <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Mois début</label>
-            <input type="month" value={filters.mois_debut} onChange={e => set("mois_debut", e.target.value)} className={inputCls} />
+            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date début</label>
+            <input type="date" value={filters.date_debut} onChange={e => set("date_debut", e.target.value)} className={inputCls} />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Mois fin</label>
-            <input type="month" value={filters.mois_fin} min={filters.mois_debut || undefined} onChange={e => set("mois_fin", e.target.value)} className={inputCls} />
+            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date fin</label>
+            <input type="date" value={filters.date_fin} min={filters.date_debut || undefined} onChange={e => set("date_fin", e.target.value)} className={inputCls} />
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Réf. BS</label>
