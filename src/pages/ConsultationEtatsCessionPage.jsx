@@ -74,7 +74,7 @@ function ChantierSelect({ value, onChange, chantiers }) {
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+        <div className="absolute z-[999] mt-1 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
           <div className="p-2 border-b border-gray-100">
             <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
               <Search size={13} className="text-gray-400 shrink-0" />
