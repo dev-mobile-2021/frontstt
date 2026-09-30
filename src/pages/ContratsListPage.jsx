@@ -122,10 +122,18 @@ export default function ContratsListPage() {
     }
   }
 
-  function exportExcel() {
+  async function exportExcel() {
     const params = new URLSearchParams();
     if (statut) params.set("statut", statut);
-    window.open(`${API_BASE}/excel/contrats?${params.toString()}`, "_blank");
+    const token = localStorage.getItem("stt_token");
+    const resp = await fetch(`${API_BASE}/excel/contrats?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const blob = await resp.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `contrats-${new Date().toISOString().slice(0,10)}.xlsx`;
+    a.click();
   }
 
   async function handleSubmit(e) {
