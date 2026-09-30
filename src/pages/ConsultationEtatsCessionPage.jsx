@@ -291,8 +291,8 @@ export default function ConsultationEtatsCessionPage() {
         </div>
 
         {/* Ligne 1 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          <div className="space-y-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="space-y-1 lg:col-span-2">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Chantier</label>
             <ChantierSelect value={filters.chantier_id} onChange={v => set("chantier_id", v)} chantiers={chantiers} />
           </div>
@@ -304,15 +304,27 @@ export default function ConsultationEtatsCessionPage() {
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Poste</label>
-            <select value={filters.poste} onChange={e => set("poste", e.target.value)} className={inputCls}>
-              {POSTE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-          <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Statut EC</label>
             <select value={filters.statut_ec} onChange={e => set("statut_ec", e.target.value)} className={inputCls}>
               {STATUT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Ligne 2 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date début</label>
+            <input type="date" value={filters.date_debut} onChange={e => set("date_debut", e.target.value)} className={inputCls} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date fin</label>
+            <input type="date" value={filters.date_fin} min={filters.date_debut || undefined} onChange={e => set("date_fin", e.target.value)} className={inputCls} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Poste</label>
+            <select value={filters.poste} onChange={e => set("poste", e.target.value)} className={inputCls}>
+              {POSTE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
           <div className="space-y-1">
@@ -322,16 +334,8 @@ export default function ConsultationEtatsCessionPage() {
           </div>
         </div>
 
-        {/* Ligne 2 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date début</label>
-            <input type="date" value={filters.date_debut} onChange={e => set("date_debut", e.target.value)} className={inputCls} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date fin</label>
-            <input type="date" value={filters.date_fin} min={filters.date_debut || undefined} onChange={e => set("date_fin", e.target.value)} className={inputCls} />
-          </div>
+        {/* Ligne 3 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Réf. BS</label>
             <input value={filters.ref_bs} onChange={e => set("ref_bs", e.target.value)}
@@ -342,12 +346,14 @@ export default function ConsultationEtatsCessionPage() {
             <input value={filters.ref_br} onChange={e => set("ref_br", e.target.value)}
               placeholder="ex. BR-..." className={inputCls} />
           </div>
-          <div className="flex items-end">
-            <button onClick={handleApply}
-              className="w-full inline-flex items-center justify-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors">
-              <Search size={14} /> Appliquer
-            </button>
-          </div>
+        </div>
+
+        {/* Bouton Appliquer */}
+        <div className="flex justify-end pt-1">
+          <button onClick={handleApply}
+            className="inline-flex items-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white px-8 py-2.5 rounded-lg text-sm font-medium transition-colors">
+            <Search size={14} /> Appliquer
+          </button>
         </div>
       </div>
 
