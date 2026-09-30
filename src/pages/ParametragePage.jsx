@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import {
   Plus, Trash2, Edit2, Save, X, GripVertical,
-  CheckCircle, ChevronUp, ChevronDown, Loader2, Users, Settings, GitBranch, Tags, Shield,
+  CheckCircle, ChevronUp, ChevronDown, Loader2, Users, Settings, GitBranch, Tags, Shield, Search,
   FileText, Upload, Download, FolderOpen,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -1024,6 +1024,57 @@ function TabBaremes() {
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
 function getToken() { return localStorage.getItem("stt_token"); }
 
+function ChantierSearchSelect({ value, onChange, chantiers, placeholder = "Tous les chantiers" }) {
+  const [open, setOpen]     = useState(false);
+  const [search, setSearch] = useState("");
+  const ref                 = useRef(null);
+  const selected = chantiers.find(c => (c.code_x3 ?? c.code) === value);
+  const filtered = chantiers.filter(c =>
+    !search || `${c.code_x3 ?? c.code} ${c.designation}`.toLowerCase().includes(search.toLowerCase())
+  );
+  useEffect(() => {
+    const onClick = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+  return (
+    <div ref={ref} className="relative w-72">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
+        <span className={selected ? "text-gray-800 truncate" : "text-gray-400"}>
+          {selected ? `${selected.code_x3 ?? selected.code} — ${selected.designation}` : `— ${placeholder} —`}
+        </span>
+        <ChevronDown size={14} className={`ml-2 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute z-[999] mt-1 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+          <div className="p-2 border-b border-gray-100">
+            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
+              <Search size={13} className="text-gray-400 shrink-0" />
+              <input autoFocus type="text" placeholder="Rechercher..." value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400" />
+              {search && <button onClick={() => setSearch("")}><X size={12} className="text-gray-400 hover:text-gray-600" /></button>}
+            </div>
+          </div>
+          <ul className="max-h-52 overflow-y-auto py-1">
+            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-gray-400 text-center">Aucun résultat</li>}
+            {filtered.map(c => {
+              const code = c.code_x3 ?? c.code;
+              return (
+                <li key={c.id} onClick={() => { onChange(code); setOpen(false); setSearch(""); }}
+                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] transition-colors ${value === code ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
+                  <span className="font-mono text-xs text-gray-400 mr-2">{code}</span>{c.designation}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const MOIS_FR = ['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
 function TabMtxUpload() {
@@ -1091,13 +1142,7 @@ function TabMtxUpload() {
           <p className="text-xs text-gray-400 mt-0.5">Uploadez les fichiers Excel ND pour alimenter le "Charger X3" dans les états de cession.</p>
         </div>
         <div className="flex items-center gap-2">
-          <select value={chantierCode} onChange={e => setChantierCode(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none">
-            <option value="">— Sélectionner un chantier —</option>
-            {chantiers.map(c => (
-              <option key={c.id} value={c.code_x3 ?? c.code}>{c.code_x3 ?? c.code} — {c.designation}</option>
-            ))}
-          </select>
+          <ChantierSearchSelect value={chantierCode} onChange={setChantierCode} chantiers={chantiers} placeholder="Sélectionner un chantier" />
           <button onClick={() => inputRef.current?.click()} disabled={uploading || !chantierCode}
             className="inline-flex items-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
             {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
