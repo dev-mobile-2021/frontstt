@@ -68,7 +68,7 @@ function ChantierSelect({ value, onChange, chantiers }) {
       <button type="button" onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
         <span className={selected ? "text-gray-800 truncate" : "text-gray-400"}>
-          {selected ? `${selected.code} — ${selected.designation}` : "Tous les chantiers"}
+          {selected ? selected.designation : "Tous les chantiers"}
         </span>
         <ChevronDown size={14} className={`ml-2 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
@@ -95,7 +95,7 @@ function ChantierSelect({ value, onChange, chantiers }) {
             {filtered.map(c => (
               <li key={c.id} onClick={() => pick(String(c.id))}
                 className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] transition-colors ${String(value) === String(c.id) ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
-                <span className="font-mono text-xs text-gray-400 mr-2">{c.code}</span>{c.designation}
+                {c.designation}
               </li>
             ))}
           </ul>
