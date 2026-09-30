@@ -1019,9 +1019,143 @@ function TabBaremes() {
   );
 }
 
-// ─── Tab Bons de Transfert ───────────────────────────────────────────────────
+// ─── Tab Fichiers MTX ────────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
 function getToken() { return localStorage.getItem("stt_token"); }
+
+const MOIS_FR = ['','Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+function TabMtxUpload() {
+  const { addToast } = useToast();
+  const qc           = useQueryClient();
+  const inputRef     = useRef(null);
+  const [uploading, setUploading]         = useState(false);
+  const [dragOver, setDragOver]           = useState(false);
+  const [chantierCode, setChantierCode]   = useState("");
+
+  const { data: chantiersData } = useQuery({
+    queryKey: ["chantiers_mtx"],
+    queryFn: () => axios.get(`${API_BASE}/chantiers?count=200`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    }).then(r => r.data.data ?? []),
+  });
+  const chantiers = chantiersData ?? [];
+
+  const { data: periodes = [], isLoading } = useQuery({
+    queryKey: ["mtx_upload"],
+    queryFn: () => axios.get(`${API_BASE}/mtx-upload`, {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    }).then(r => r.data.data ?? []),
+  });
+
+  async function handleUpload(files) {
+    const xlsxFiles = Array.from(files).filter(f => f.name.match(/\.(xlsx|xls)$/i));
+    if (!xlsxFiles.length) return addToast("Seuls les fichiers Excel (.xlsx) sont acceptés.", "error");
+    if (!chantierCode) return addToast("Sélectionnez un chantier avant d'uploader.", "error");
+    setUploading(true);
+    for (const file of xlsxFiles) {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("chantier_code_x3", chantierCode);
+      try {
+        const res = await axios.post(`${API_BASE}/mtx-upload`, fd, {
+          headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "multipart/form-data" },
+        });
+        addToast(res.data.message ?? "Importé avec succès.", "success");
+      } catch (e) {
+        const msg = e?.response?.data?.error ?? e?.response?.data?.message ?? "Erreur";
+        addToast(`${file.name} : ${msg}`, "error");
+      }
+    }
+    setUploading(false);
+    qc.invalidateQueries(["mtx_upload"]);
+  }
+
+  async function handleDelete(chantier, annee, mois) {
+    try {
+      await axios.delete(`${API_BASE}/mtx-upload/${encodeURIComponent(chantier)}/${annee}/${mois}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      qc.invalidateQueries(["mtx_upload"]);
+      addToast("Données supprimées.", "success");
+    } catch { addToast("Erreur suppression.", "error"); }
+  }
+
+  const grouped = periodes.reduce((acc, p) => {
+    if (!acc[p.chantier_code_x3]) acc[p.chantier_code_x3] = [];
+    acc[p.chantier_code_x3].push(p);
+    return acc;
+  }, {});
+
+  return (
+    <div className="py-6 space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h3 className="font-semibold text-gray-800">Fichiers MTX (Bons de Sortie)</h3>
+          <p className="text-xs text-gray-400 mt-0.5">Uploadez les fichiers Excel ND pour alimenter le "Charger X3" dans les états de cession.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select value={chantierCode} onChange={e => setChantierCode(e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none">
+            <option value="">— Sélectionner un chantier —</option>
+            {chantiers.map(c => (
+              <option key={c.id} value={c.code_x3 ?? c.code}>{c.code_x3 ?? c.code} — {c.designation}</option>
+            ))}
+          </select>
+          <button onClick={() => inputRef.current?.click()} disabled={uploading || !chantierCode}
+            className="inline-flex items-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
+            {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+            Uploader
+          </button>
+          <input ref={inputRef} type="file" accept=".xlsx,.xls" multiple className="hidden"
+            onChange={e => { handleUpload(e.target.files); e.target.value = ""; }} />
+        </div>
+      </div>
+
+      {/* Zone drag & drop */}
+      <div
+        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={e => { e.preventDefault(); setDragOver(false); handleUpload(e.dataTransfer.files); }}
+        className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${dragOver && chantierCode ? "border-[#087F3E] bg-green-50" : "border-gray-200 bg-gray-50"}`}>
+        <FolderOpen size={28} className={`mx-auto mb-2 ${dragOver && chantierCode ? "text-[#087F3E]" : "text-gray-300"}`} />
+        <p className="text-sm text-gray-400">{chantierCode ? "Glissez-déposez le fichier Excel ici" : "Sélectionnez d'abord un chantier"}</p>
+      </div>
+
+      {isLoading && <p className="text-sm text-gray-400 text-center py-4">Chargement…</p>}
+
+      {!isLoading && periodes.length === 0 && (
+        <p className="text-sm text-gray-400 text-center py-6">Aucun fichier MTX importé.</p>
+      )}
+
+      {Object.entries(grouped).map(([code, items]) => (
+        <div key={code}>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{code}</p>
+          <div className="space-y-2">
+            {items.map(p => (
+              <div key={`${p.chantier_code_x3}-${p.annee}-${p.mois}`}
+                className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 hover:border-gray-300 transition-colors">
+                <div className="flex items-center gap-3">
+                  <FileText size={16} className="text-green-500 shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-700">{MOIS_FR[p.mois]} {p.annee}</p>
+                    <p className="text-xs text-gray-400">{p.nb_lignes} lignes</p>
+                  </div>
+                </div>
+                <button onClick={() => handleDelete(p.chantier_code_x3, p.annee, p.mois)}
+                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Tab Bons de Transfert ───────────────────────────────────────────────────
 
 function TabBtDocuments() {
   const { addToast }  = useToast();
@@ -1155,6 +1289,7 @@ const TAB_ITEMS = [
   { id: "utilisateurs", label: "Utilisateurs",  icon: Users },
   { id: "roles",        label: "Rôles",         icon: Shield },
   { id: "baremes",      label: "Barèmes",       icon: Tags },
+  { id: "mtx",          label: "Fichiers MTX",      icon: Upload },
   { id: "bt",           label: "Bons de Transfert", icon: FileText },
 ];
 
@@ -1175,6 +1310,7 @@ export default function ParametragePage() {
           {activeTab === "utilisateurs" && <TabUtilisateurs />}
           {activeTab === "roles"        && <TabRoles />}
           {activeTab === "baremes"      && <TabBaremes />}
+          {activeTab === "mtx"          && <TabMtxUpload />}
           {activeTab === "bt"           && <TabBtDocuments />}
         </div>
       </div>
