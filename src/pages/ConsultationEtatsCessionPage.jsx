@@ -41,7 +41,7 @@ const POSTE_OPTIONS = [
 
 const INIT_FILTERS = {
   chantier_id: "", soustraitant_id: "", poste: "",
-  statut_ec: "", mois_debut: "", mois_fin: "",
+  statut_ec: "", date_debut: "", date_fin: "",
   code_article: "", ref_bs: "", ref_br: "",
 };
 
@@ -77,6 +77,7 @@ export default function ConsultationEtatsCessionPage() {
   const [sortCol, setSortCol] = useState("date_sortie");
   const [sortDir, setSortDir] = useState("desc");
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [chantierSearch, setChantierSearch] = useState("");
 
   const set = (k, v) => setFilters(f => ({ ...f, [k]: v }));
 
@@ -91,8 +92,8 @@ export default function ConsultationEtatsCessionPage() {
     if (applied.soustraitant_id) p.soustraitant_id = applied.soustraitant_id;
     if (applied.poste)           p.poste           = applied.poste;
     if (applied.statut_ec)       p.statut_ec       = applied.statut_ec;
-    if (applied.mois_debut)      p.mois_debut      = applied.mois_debut;
-    if (applied.mois_fin)        p.mois_fin        = applied.mois_fin;
+    if (applied.date_debut)       p.date_debut      = applied.date_debut;
+    if (applied.date_fin)         p.date_fin        = applied.date_fin;
     if (applied.code_article)    p.code_article    = applied.code_article;
     if (applied.ref_bs)          p.ref_bs          = applied.ref_bs;
     if (applied.ref_br)          p.ref_br          = applied.ref_br;
@@ -163,8 +164,8 @@ export default function ConsultationEtatsCessionPage() {
       const params = new URLSearchParams();
       if (applied.chantier_id) params.set("chantier_id", applied.chantier_id);
       if (applied.statut_ec)   params.set("statut", applied.statut_ec);
-      if (applied.mois_debut)  params.set("mois_debut", applied.mois_debut);
-      if (applied.mois_fin)    params.set("mois_fin", applied.mois_fin);
+      if (applied.date_debut)  params.set("date_debut", applied.date_debut);
+      if (applied.date_fin)    params.set("date_fin", applied.date_fin);
       const resp = await fetch(`${API_BASE}/pdf/recap-cessions?${params}`, { headers: getAuthHeader() });
       const blob = await resp.blob();
       window.open(URL.createObjectURL(blob), "_blank");
@@ -176,8 +177,8 @@ export default function ConsultationEtatsCessionPage() {
     if (applied.chantier_id)     params.set("chantier_id", applied.chantier_id);
     if (applied.soustraitant_id) params.set("soustraitant_id", applied.soustraitant_id);
     if (applied.statut_ec)       params.set("statut", applied.statut_ec);
-    if (applied.mois_debut)      params.set("date_debut", applied.mois_debut + "-01");
-    if (applied.mois_fin)        params.set("date_fin", applied.mois_fin + "-31");
+    if (applied.date_debut)      params.set("date_debut", applied.date_debut);
+    if (applied.date_fin)        params.set("date_fin", applied.date_fin);
     const resp = await fetch(`${API_BASE}/excel/consultation-lignes?${params}`, { headers: getAuthHeader() });
     const blob = await resp.blob();
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "consultation-cessions.xlsx"; a.click();
@@ -234,9 +235,18 @@ export default function ConsultationEtatsCessionPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Chantier</label>
-            <select value={filters.chantier_id} onChange={e => set("chantier_id", e.target.value)} className={inputCls}>
+            <input
+              type="text"
+              placeholder="Rechercher un chantier..."
+              value={chantierSearch}
+              onChange={e => setChantierSearch(e.target.value)}
+              className={inputCls + " mb-1"}
+            />
+            <select value={filters.chantier_id} onChange={e => set("chantier_id", e.target.value)} className={inputCls} size={3} style={{height:"auto"}}>
               <option value="">Tous</option>
-              {chantiers.map(c => <option key={c.id} value={c.id}>{c.code} — {c.designation}</option>)}
+              {chantiers
+                .filter(c => !chantierSearch || `${c.code} ${c.designation}`.toLowerCase().includes(chantierSearch.toLowerCase()))
+                .map(c => <option key={c.id} value={c.id}>{c.code} — {c.designation}</option>)}
             </select>
           </div>
           <div className="space-y-1">
@@ -268,12 +278,12 @@ export default function ConsultationEtatsCessionPage() {
         {/* Ligne 2 */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
           <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Mois début</label>
-            <input type="month" value={filters.mois_debut} onChange={e => set("mois_debut", e.target.value)} className={inputCls} />
+            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date début</label>
+            <input type="date" value={filters.date_debut} onChange={e => set("date_debut", e.target.value)} className={inputCls} />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Mois fin</label>
-            <input type="month" value={filters.mois_fin} min={filters.mois_debut || undefined} onChange={e => set("mois_fin", e.target.value)} className={inputCls} />
+            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date fin</label>
+            <input type="date" value={filters.date_fin} min={filters.date_debut || undefined} onChange={e => set("date_fin", e.target.value)} className={inputCls} />
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Réf. BS</label>
