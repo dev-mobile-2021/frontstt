@@ -219,9 +219,9 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
       }
 
       for (const row of filtered) {
-        const prixBareme = getPrixBareme(row.code_article);
         const prixX3     = parseFloat(row.prix_unitaire);
-        const prix       = prixBareme ?? (isNaN(prixX3) ? 0 : prixX3);
+        const prixBareme = getPrixBareme(row.code_article);
+        const prix       = !isNaN(prixX3) && prixX3 > 0 ? prixX3 : (prixBareme ?? 0);
         await saveMut.mutateAsync({
           etat_cession_id: parseInt(etatId, 10),
           poste,
