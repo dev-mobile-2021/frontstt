@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, Save, Loader2, Plus, X, Trash2,
@@ -60,6 +62,62 @@ const STATUT_BLOC_LABEL = {
   prix_valides: { label: "Prix validés",       color: "bg-green-100 text-green-700" },
   arrete:       { label: "Arrêté",             color: "bg-purple-100 text-purple-700" },
 };
+
+// ─── Bons de Transfert dynamiques ────────────────────────────────
+const EC_API = import.meta.env.VITE_API_BASE + "/api";
+function getAuthHdr() {
+  const t = localStorage.getItem("stt_token");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
+
+function BtDocumentsBloc({ x3Config }) {
+  const periode = x3Config?.periode_debut?.slice(0, 7) ?? null; // YYYY-MM
+
+  const { data: btDocs = [], isLoading } = useQuery({
+    queryKey: ["bt_documents", x3Config?.chantier_code, x3Config?.soustraitant_code, periode],
+    enabled: !!(x3Config?.chantier_code && x3Config?.soustraitant_code && periode),
+    queryFn: () => axios.get(`${EC_API}/bt-documents`, {
+      headers: getAuthHdr(),
+      params: {
+        chantier_code:     x3Config.chantier_code,
+        soustraitant_code: x3Config.soustraitant_code,
+        periode,
+      },
+    }).then(r => r.data.data ?? []),
+  });
+
+  async function handleDownload(doc) {
+    const resp = await fetch(`${EC_API}/bt-documents/${doc.id}/download`, { headers: getAuthHdr() });
+    const blob = await resp.blob();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
+    a.download = doc.filename; a.click();
+  }
+
+  if (isLoading) return (
+    <div className="px-5 py-3 border-b border-blue-100 bg-blue-50/30 text-xs text-blue-400">
+      Chargement des bons de transfert…
+    </div>
+  );
+
+  if (!btDocs.length) return null;
+
+  return (
+    <div className="px-5 py-3 border-b border-blue-100 bg-blue-50/30">
+      <p className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1.5">
+        <FileText size={11} /> Bons de transfert ({btDocs.length})
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {btDocs.map(doc => (
+          <button key={doc.id} onClick={() => handleDownload(doc)}
+            className="inline-flex items-center gap-1.5 text-xs bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full font-mono hover:bg-blue-50 hover:border-blue-400 transition-colors cursor-pointer">
+            <FileDown size={10} />
+            {doc.filename}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ─── Bloc par poste ──────────────────────────────────────────────
 function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config, statutBloc, onStatutBloc, viseQtePar, viseQteLe, visePrixPar, visePrixLe, onDownloadBon }) {
@@ -290,34 +348,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
       )}
 
       {/* Bons de transfert (MTX seulement) */}
-      {poste === "MTX" && lignes.length > 0 && (() => {
-        const bsList = [...new Map(lignes.filter(l => l.ref_bs).map(l => [l.ref_bs, { ref: l.ref_bs, date: l.date_sortie }])).values()];
-        const brList = [...new Map(lignes.filter(l => l.ref_br).map(l => [l.ref_br, { ref: l.ref_br }])).values()];
-        const allRefs = [
-          ...bsList.map(b => ({ ref: b.ref, date: b.date, type: "bs" })),
-          ...brList.map(b => ({ ref: b.ref, date: null, type: "br" })),
-        ];
-        if (allRefs.length === 0) return null;
-        const fmtD = d => d ? new Date(d).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" }) : null;
-        return (
-          <div className="px-5 py-3 border-b border-blue-100 bg-blue-50/30">
-            <p className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1.5">
-              <FileText size={11} /> Bons de transfert ({allRefs.length})
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {allRefs.map(r => (
-                <button key={r.ref}
-                  onClick={() => onDownloadBon && onDownloadBon(r.ref)}
-                  className="inline-flex items-center gap-1.5 text-xs bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full font-mono hover:bg-blue-50 hover:border-blue-400 transition-colors cursor-pointer">
-                  <FileDown size={10} />
-                  {r.ref}
-                  {r.date && <span className="text-blue-400 font-sans">· {fmtD(r.date)}</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
+      {poste === "MTX" && <BtDocumentsBloc x3Config={x3Config} />}
 
       {/* GMAO notice */}
       {cfg.gmao && lignes.length === 0 && (
@@ -658,9 +689,10 @@ export default function EtatCessionFormPage() {
   const totalEC = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
 
   const x3Config = !isNew && etat ? {
-    chantier_code: etat.contrat?.chantier?.code_x3 ?? null,
-    periode_debut: etat.periode_debut?.slice(0, 10) ?? null,
-    periode_fin:   etat.periode_fin?.slice(0, 10)   ?? null,
+    chantier_code:    etat.contrat?.chantier?.code_x3 ?? null,
+    soustraitant_code: etat.contrat?.soustraitant?.code ?? null,
+    periode_debut:    etat.periode_debut?.slice(0, 10) ?? null,
+    periode_fin:      etat.periode_fin?.slice(0, 10)   ?? null,
   } : null;
 
   const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none";
