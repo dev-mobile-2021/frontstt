@@ -27,7 +27,7 @@ const POSTE_CONFIG = {
   MTX: {
     label:  "Cession Matériaux (MTX)",
     color:  { bg: "bg-blue-50", border: "border-blue-200", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-500", btn: "text-blue-600" },
-    prixEditable: false,
+    prixEditable: true,
   },
   GASOIL: {
     label:  "Gasoil",
