@@ -64,7 +64,7 @@ function ChantierSelect({ value, onChange, chantiers }) {
   function pick(id) { onChange(id); setOpen(false); setSearch(""); }
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative w-full">
       <button type="button" onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
         <span className={selected ? "text-gray-800 truncate" : "text-gray-400"}>
@@ -74,7 +74,7 @@ function ChantierSelect({ value, onChange, chantiers }) {
       </button>
 
       {open && (
-        <div className="absolute z-[999] mt-1 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+        <div className="absolute z-[999] mt-1 left-0 min-w-[220px] w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
           <div className="p-2 border-b border-gray-100">
             <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
               <Search size={13} className="text-gray-400 shrink-0" />
