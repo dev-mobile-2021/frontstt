@@ -11,6 +11,7 @@ import Tabs from "../components/Tabs";
 import StatusBadge from "../components/StatusBadge";
 import { useToast } from "../context/ToastContext";
 import { useCircuitEtapes, useSaveCircuitEtape, useDeleteCircuitEtape, useReorderCircuit } from "../hooks/useCircuit";
+import { useChantiersPaginated } from "../hooks/useChantiers";
 import { useParametresPaginated, useUpdateParametre } from "../hooks/useParametres";
 import { useUsersPaginated, useSaveUser, useDeleteUser } from "../hooks/useUsers";
 import { useRolesPaginated, useSaveRole, useDeleteRole } from "../hooks/useRoles";
@@ -1033,13 +1034,8 @@ function TabMtxUpload() {
   const [dragOver, setDragOver]           = useState(false);
   const [chantierCode, setChantierCode]   = useState("");
 
-  const { data: chantiersData } = useQuery({
-    queryKey: ["chantiers_mtx"],
-    queryFn: () => axios.get(`${API_BASE}/chantiers?count=200`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    }).then(r => r.data.data ?? []),
-  });
-  const chantiers = chantiersData ?? [];
+  const { data: chantiersResp } = useChantiersPaginated({ count: 200 });
+  const chantiers = chantiersResp?.data ?? [];
 
   const { data: periodes = [], isLoading } = useQuery({
     queryKey: ["mtx_upload"],
@@ -1138,8 +1134,8 @@ function TabMtxUpload() {
                 <div className="flex items-center gap-3">
                   <FileText size={16} className="text-green-500 shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-gray-700">{MOIS_FR[p.mois]} {p.annee}</p>
-                    <p className="text-xs text-gray-400">{p.nb_lignes} lignes</p>
+                    <p className="text-sm font-medium text-gray-700">{p.chantier_designation} — {MOIS_FR[p.mois]} {p.annee}</p>
+                    <p className="text-xs text-gray-400">{p.nb_lignes} lignes · {p.chantier_code_x3}</p>
                   </div>
                 </div>
                 <button onClick={() => handleDelete(p.chantier_code_x3, p.annee, p.mois)}
