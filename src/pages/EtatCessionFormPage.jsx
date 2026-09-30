@@ -19,7 +19,11 @@ import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import { SkeletonCard } from "../components/Skeleton";
 
-const fmtNum  = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
+const fmtNum  = n => {
+  const v = n ?? 0;
+  const hasDecimals = v % 1 !== 0;
+  return new Intl.NumberFormat("fr-FR", hasDecimals ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : {}).format(v);
+};
 const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 // Rôles DCG — ne voient pas le bloc RH
