@@ -129,7 +129,8 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
   const [showForm, setShowForm]     = useState(false);
   const [form, setForm]             = useState(LIGNE_INIT);
   const [confirmDel, setConfirmDel] = useState(null);
-  const [x3Loading, setX3Loading]   = useState(false);
+  const [x3Loading, setX3Loading]     = useState(false);
+  const [gmaoLoading, setGmaoLoading] = useState(false);
   const [editingLigne, setEditingLigne] = useState(null);
   const [editLignePrix, setEditLignePrix] = useState("");
 
@@ -248,6 +249,48 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
     }
   }
 
+  async function handleGmaoImport() {
+    if (!x3Config?.chantier_code) return addToast("Ce chantier n'a pas de code X3 configuré.", "error");
+    if (!x3Config?.soustraitant_code) return addToast("Le sous-traitant n'a pas de code STT configuré.", "error");
+    setGmaoLoading(true);
+    try {
+      const resp = await axios.get(`${EC_API}/gmao/pointages`, {
+        headers: getAuthHdr(),
+        params: {
+          debut:             x3Config.periode_debut,
+          fin:               x3Config.periode_fin,
+          chantier_code:     x3Config.chantier_code,
+          soustraitant_code: x3Config.soustraitant_code,
+        },
+      });
+      const gmaoData = resp.data?.data ?? {};
+      const lignesGmao = gmaoData.lignes ?? [];
+
+      if (lignesGmao.length === 0) return addToast("Aucune donnée GMAO pour cette période.", "info");
+
+      for (const l of lignes) await deleteMut.mutateAsync(l.id);
+
+      for (const row of lignesGmao) {
+        await saveMut.mutateAsync({
+          etat_cession_id: parseInt(etatId, 10),
+          poste:           "MTL",
+          code_article:    row.equipement?.code ?? null,
+          date_sortie:     row.date ?? null,
+          designation:     `${row.equipement?.libelle ?? ""} — ${row.bareme?.type ?? ""}`.trim(),
+          unite:           row.bareme?.mode ?? "horaire",
+          quantite:        parseFloat(row.heures) || 0,
+          prix_unitaire:   parseFloat(row.bareme?.taux) || 0,
+        });
+      }
+      addToast(`${lignesGmao.length} lignes importées depuis la GMAO.`, "success");
+    } catch (err) {
+      const msg = err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? "Erreur inconnue";
+      addToast(`Erreur import GMAO : ${msg}`, "error");
+    } finally {
+      setGmaoLoading(false);
+    }
+  }
+
   async function handleUpdateLignePrix(ligneId) {
     const prix = parseFloat(editLignePrix);
     if (isNaN(prix) || prix < 0) return addToast("Prix invalide.", "error");
@@ -324,6 +367,13 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
               Charger X3
             </button>
           )}
+          {canEdit && poste === "MTL" && x3Config?.chantier_code && (
+            <button onClick={handleGmaoImport} disabled={gmaoLoading}
+              className="inline-flex items-center gap-1 text-xs font-medium bg-violet-600 text-white px-2.5 py-1 rounded-lg hover:bg-violet-700 disabled:opacity-60">
+              {gmaoLoading ? <Loader2 size={11} className="animate-spin" /> : <FileText size={11} />}
+              Charger GMAO
+            </button>
+          )}
           {canEdit && !cfg.gmao && poste !== "MTX" && poste !== "GASOIL" && statutBloc !== "prix_valides" && (
             <button onClick={() => { setShowForm(s => !s); setForm(LIGNE_INIT); }}
               className={`text-xs font-medium hover:underline ${c.btn}`}>
@@ -355,9 +405,9 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
       {poste === "MTX" && <BtDocumentsBloc x3Config={x3Config} />}
 
       {/* GMAO notice */}
-      {cfg.gmao && lignes.length === 0 && (
+      {cfg.gmao && lignes.length === 0 && canEdit && (
         <div className="px-5 py-6 text-center text-sm text-violet-400 bg-violet-50/40">
-          En attente des données GMAO — les lignes MTL sont importées automatiquement.
+          Cliquez sur <strong>Charger GMAO</strong> pour importer les heures engins de cette période.
         </div>
       )}
 
