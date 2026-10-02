@@ -1,11 +1,152 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
-  ArrowLeft, ChevronRight, Save, Loader2, Plus, X, Trash2,
+  ArrowLeft, ChevronRight, ChevronDown, Save, Loader2, Plus, X, Trash2,
   CheckCircle2, XCircle, Search, FileText, Fuel, FileDown, Sheet,
 } from "lucide-react";
+
+// ─── MoisSelect : sélection "25 Mois YYYY" ──────────────────────
+const MOIS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+
+function buildMoisOptions() {
+  const year = new Date().getFullYear();
+  return Array.from({ length: 12 }, (_, i) => {
+    const monthIdx = i; // 0..11
+    const key = `${year}-${String(monthIdx + 1).padStart(2, "0")}`;
+    const label = `25 ${MOIS_FR[monthIdx]} ${year}`;
+    return { key, label, year, monthIdx };
+  });
+}
+
+// Pour une clé "YYYY-MM" (représente le 25 de ce mois), calcule :
+// periode_debut = 26 du mois précédent, periode_fin = 25 du mois
+function computePeriodeFromMois(moisKey) {
+  if (!moisKey) return { periode_debut: "", periode_fin: "" };
+  const [y, m] = moisKey.split("-").map(Number);
+  // mois précédent
+  const prevMonth = m === 1 ? 12 : m - 1;
+  const prevYear  = m === 1 ? y - 1 : y;
+  const pad = n => String(n).padStart(2, "0");
+  return {
+    periode_debut: `${prevYear}-${pad(prevMonth)}-26`,
+    periode_fin:   `${y}-${pad(m)}-25`,
+  };
+}
+
+function MoisSelect({ value, onChange, options }) {
+  const [open, setOpen]     = useState(false);
+  const [search, setSearch] = useState("");
+  const ref                 = useRef(null);
+
+  const selected = options.find(o => o.key === value);
+  const filtered = options.filter(o => !search || o.label.toLowerCase().includes(search.toLowerCase()));
+
+  useEffect(() => {
+    function onClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  function pick(k) { onChange(k); setOpen(false); setSearch(""); }
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
+        <span className={selected ? "text-gray-800 truncate" : "text-gray-400"}>
+          {selected ? selected.label : "— Sélectionner un mois —"}
+        </span>
+        <ChevronDown size={14} className={`ml-2 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute z-[999] mt-1 left-0 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+          <div className="p-2 border-b border-gray-100">
+            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
+              <Search size={13} className="text-gray-400 shrink-0" />
+              <input autoFocus type="text" placeholder="Rechercher un mois..." value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400" />
+              {search && <button type="button" onClick={() => setSearch("")}><X size={12} className="text-gray-400 hover:text-gray-600" /></button>}
+            </div>
+          </div>
+          <ul className="max-h-60 overflow-y-auto py-1">
+            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-gray-400 text-center">Aucun résultat</li>}
+            {filtered.map(o => (
+              <li key={o.key} onClick={() => pick(o.key)}
+                className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] transition-colors ${value === o.key ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
+                {o.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ContratSelect : sélection avec search ──────────────────────
+function ContratSelect({ value, onChange, contrats }) {
+  const [open, setOpen]     = useState(false);
+  const [search, setSearch] = useState("");
+  const ref                 = useRef(null);
+
+  const actifs   = contrats.filter(c => c.statut === "actif");
+  const selected = actifs.find(c => String(c.id) === String(value));
+  const filtered = actifs.filter(c => {
+    if (!search) return true;
+    const txt = `${c.code} ${c.soustraitant?.raison_sociale ?? ""} ${c.objet ?? ""}`.toLowerCase();
+    return txt.includes(search.toLowerCase());
+  });
+
+  useEffect(() => {
+    function onClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, []);
+
+  function pick(id) { onChange(id); setOpen(false); setSearch(""); }
+
+  function render(c) {
+    return `${c.code} · ${c.soustraitant?.raison_sociale ?? "?"} · ${c.objet ?? ""}`;
+  }
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
+        <span className={selected ? "text-gray-800 truncate text-left" : "text-gray-400"}>
+          {selected ? render(selected) : "— Sélectionner un contrat actif —"}
+        </span>
+        <ChevronDown size={14} className={`ml-2 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute z-[999] mt-1 left-0 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+          <div className="p-2 border-b border-gray-100">
+            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
+              <Search size={13} className="text-gray-400 shrink-0" />
+              <input autoFocus type="text" placeholder="Rechercher (code, STT, objet)..." value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400" />
+              {search && <button type="button" onClick={() => setSearch("")}><X size={12} className="text-gray-400 hover:text-gray-600" /></button>}
+            </div>
+          </div>
+          <ul className="max-h-60 overflow-y-auto py-1">
+            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-gray-400 text-center">Aucun contrat actif</li>}
+            {filtered.map(c => (
+              <li key={c.id} onClick={() => pick(String(c.id))}
+                className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] transition-colors ${String(value) === String(c.id) ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
+                {render(c)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import {
@@ -633,6 +774,8 @@ export default function EtatCessionFormPage() {
     Object.keys(POSTE_CONFIG).filter(p => !(p === "RH" && isDCG));
 
   const [form, setForm]           = useState({ contrat_id: searchParams.get("contrat_id") ?? "", periode_debut: "", periode_fin: "", observations: "" });
+  const [selectedMois, setSelectedMois] = useState("");
+  const moisOptions = buildMoisOptions();
   const [pendingStatut, setPendingStatut] = useState(null);
   const [motifRejet,    setMotifRejet]    = useState("");
 
@@ -886,28 +1029,26 @@ export default function EtatCessionFormPage() {
         <form onSubmit={handleSave} className="space-y-5">
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-gray-700">Contrat</h3>
-            <select value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)} className={inputCls}>
-              <option value="">— Sélectionner un contrat actif —</option>
-              {contrats.filter(c => c.statut === "actif").map(c => (
-                <option key={c.id} value={c.id}>{c.code} · {c.soustraitant?.raison_sociale ?? "?"} · {c.objet}</option>
-              ))}
-            </select>
+            <ContratSelect value={form.contrat_id} onChange={v => set("contrat_id", v)} contrats={contrats} />
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-gray-700">Période de travaux</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Date début *</label>
-                <input type="date" value={form.periode_debut}
-                  onChange={e => { const v = e.target.value; setForm(f => ({ ...f, periode_debut: v, periode_fin: f.periode_fin < v ? "" : f.periode_fin })); }}
-                  className={inputCls} />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Date fin *</label>
-                <input type="date" value={form.periode_fin} min={form.periode_debut || undefined}
-                  onChange={e => set("periode_fin", e.target.value)} disabled={!form.periode_debut}
-                  className={inputCls} />
-              </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Mois *</label>
+              <MoisSelect
+                value={selectedMois}
+                onChange={key => {
+                  setSelectedMois(key);
+                  const { periode_debut, periode_fin } = computePeriodeFromMois(key);
+                  setForm(f => ({ ...f, periode_debut, periode_fin }));
+                }}
+                options={moisOptions}
+              />
+              {form.periode_debut && form.periode_fin && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Période : <span className="font-medium text-gray-700">{fmtDate(form.periode_debut)}</span> → <span className="font-medium text-gray-700">{fmtDate(form.periode_fin)}</span>
+                </p>
+              )}
             </div>
           </div>
           <div className="bg-white border border-gray-200 rounded-xl p-6">

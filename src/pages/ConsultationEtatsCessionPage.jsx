@@ -231,6 +231,20 @@ export default function ConsultationEtatsCessionPage() {
     } finally { setPdfLoading(false); }
   }
 
+  async function handlePdfRecapArticles() {
+    setPdfLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (applied.chantier_id) params.set("chantier_id", applied.chantier_id);
+      if (applied.statut_ec)   params.set("statut", applied.statut_ec);
+      if (applied.date_debut)  params.set("date_debut", applied.date_debut);
+      if (applied.date_fin)    params.set("date_fin",   applied.date_fin);
+      const resp = await fetch(`${API_BASE}/pdf/recap-articles?${params}`, { headers: getAuthHeader() });
+      const blob = await resp.blob();
+      window.open(URL.createObjectURL(blob), "_blank");
+    } finally { setPdfLoading(false); }
+  }
+
   async function handleExcel() {
     const params = new URLSearchParams();
     if (applied.chantier_id)     params.set("chantier_id", applied.chantier_id);
@@ -270,6 +284,10 @@ export default function ConsultationEtatsCessionPage() {
             <button onClick={handlePdfRecap} disabled={pdfLoading || lignes.length === 0}
               className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-40">
               <FileDown size={14} /> PDF récap
+            </button>
+            <button onClick={handlePdfRecapArticles} disabled={pdfLoading || lignes.length === 0}
+              className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-40">
+              <FileDown size={14} /> PDF récap articles
             </button>
             <button onClick={handleExcel}
               className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50">
