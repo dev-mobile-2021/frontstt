@@ -5,6 +5,7 @@ import {
   ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle,
   Hash, FileText, Info, FilePlus, CheckCircle, Trash2, Plus, X, Paperclip,
   Upload, Download, File, Circle, Clock, CheckCircle2, XCircle, Search, Archive,
+  Pencil, ChevronDown,
 } from "lucide-react";
 import { useContrat, useSaveContrat, useContratStatut, useContratCircuit, useSoumettreContrat, useValiderContrat, useRejeterContrat, useDeleteContrat } from "../hooks/useContrats";
 import { useChantiersPaginated } from "../hooks/useChantiers";
@@ -18,6 +19,15 @@ import { useContratBaremes, useAddContratBareme, useUpdateContratBaremePrix, use
 import { useParametresPaginated } from "../hooks/useParametres";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { usePiecesJointes, useUploadPieceJointe, useDeletePieceJointe } from "../hooks/usePiecesJointes";
+import {
+  useDqe,
+  useSaveRubrique as useSaveRubriqueDqe,
+  useDeleteRubrique as useDeleteRubriqueDqe,
+  useSavePoste as useSavePosteDqe,
+  useDeletePoste as useDeletePosteDqe,
+  useSaveLigneDqe,
+  useDeleteLigneDqe,
+} from "../hooks/useDqe";
 import { pieceJointeService } from "../services/pieceJointeService";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
@@ -1865,6 +1875,501 @@ function AttachementsTab({ contratId, chantierId, isNew }) {
   );
 }
 
+// ─── DQE Tab ──────────────────────────────────────────────────────
+function fmtMontantDqe(v) {
+  const n = Number(v) || 0;
+  return n.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+function fmtQte(v) {
+  const n = Number(v) || 0;
+  return n.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+}
+
+function DqeTab({ contratId, contrat }) {
+  const readonly = contrat?.statut === "cloture" || contrat?.statut === "resilie";
+  const { data, isLoading } = useDqe(contratId);
+  const saveRubrique   = useSaveRubriqueDqe(contratId);
+  const deleteRubrique = useDeleteRubriqueDqe(contratId);
+  const savePoste      = useSavePosteDqe(contratId);
+  const deletePoste    = useDeletePosteDqe(contratId);
+  const saveLigne      = useSaveLigneDqe(contratId);
+  const deleteLigne    = useDeleteLigneDqe(contratId);
+
+  const rubriques = data?.data || [];
+  const total     = data?.total ?? 0;
+
+  // Formulaires inline
+  const [addingRubrique, setAddingRubrique] = useState(false);
+  const [rubForm, setRubForm] = useState({ designation: "", code: "" });
+  const [editRubId, setEditRubId] = useState(null);
+  const [editRubForm, setEditRubForm] = useState({ designation: "", code: "" });
+
+  const [addingPosteFor, setAddingPosteFor] = useState(null);  // rubriqueId
+  const [posteForm, setPosteForm] = useState({ designation: "" });
+  const [editPosteId, setEditPosteId] = useState(null);
+  const [editPosteForm, setEditPosteForm] = useState({ designation: "" });
+
+  const [addingLigneFor, setAddingLigneFor] = useState(null);  // posteId
+  const [ligneForm, setLigneForm] = useState({ designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" });
+  const [editLigneId, setEditLigneId] = useState(null);
+  const [editLigneForm, setEditLigneForm] = useState({ designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" });
+
+  // Collapse state
+  const [collapsedRub, setCollapsedRub] = useState({});
+  const [collapsedPoste, setCollapsedPoste] = useState({});
+  const toggleRub   = (id) => setCollapsedRub(s => ({ ...s, [id]: !s[id] }));
+  const togglePoste = (id) => setCollapsedPoste(s => ({ ...s, [id]: !s[id] }));
+
+  // Confirm delete
+  const [confirmDel, setConfirmDel] = useState(null); // { type, id, label }
+
+  const resetAddRub = () => { setAddingRubrique(false); setRubForm({ designation: "", code: "" }); };
+  const resetAddPoste = () => { setAddingPosteFor(null); setPosteForm({ designation: "" }); };
+  const resetAddLigne = () => { setAddingLigneFor(null); setLigneForm({ designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" }); };
+
+  const submitAddRub = async () => {
+    if (!rubForm.designation.trim()) return;
+    await saveRubrique.mutateAsync({ designation: rubForm.designation.trim(), code: rubForm.code.trim() || null });
+    resetAddRub();
+  };
+  const submitEditRub = async (id) => {
+    if (!editRubForm.designation.trim()) return;
+    await saveRubrique.mutateAsync({ id, designation: editRubForm.designation.trim(), code: editRubForm.code?.trim() || null });
+    setEditRubId(null);
+  };
+  const submitAddPoste = async (rubriqueId) => {
+    if (!posteForm.designation.trim()) return;
+    await savePoste.mutateAsync({ rubriqueId, data: { designation: posteForm.designation.trim() } });
+    resetAddPoste();
+  };
+  const submitEditPoste = async (id) => {
+    if (!editPosteForm.designation.trim()) return;
+    await savePoste.mutateAsync({ rubriqueId: 0, data: { id, designation: editPosteForm.designation.trim() } });
+    setEditPosteId(null);
+  };
+  const submitAddLigne = async (posteId) => {
+    if (!ligneForm.designation.trim()) return;
+    await saveLigne.mutateAsync({
+      posteId,
+      data: {
+        designation: ligneForm.designation.trim(),
+        unite: ligneForm.unite.trim() || null,
+        quantite_prevue: Number(ligneForm.quantite_prevue) || 0,
+        prix_unitaire: Number(ligneForm.prix_unitaire) || 0,
+      },
+    });
+    resetAddLigne();
+  };
+  const submitEditLigne = async (id) => {
+    if (!editLigneForm.designation.trim()) return;
+    await saveLigne.mutateAsync({
+      posteId: 0,
+      data: {
+        id,
+        designation: editLigneForm.designation.trim(),
+        unite: editLigneForm.unite?.trim() || null,
+        quantite_prevue: Number(editLigneForm.quantite_prevue) || 0,
+        prix_unitaire: Number(editLigneForm.prix_unitaire) || 0,
+      },
+    });
+    setEditLigneId(null);
+  };
+
+  const doDelete = async () => {
+    if (!confirmDel) return;
+    if (confirmDel.type === "rubrique") await deleteRubrique.mutateAsync(confirmDel.id);
+    else if (confirmDel.type === "poste") await deletePoste.mutateAsync(confirmDel.id);
+    else if (confirmDel.type === "ligne") await deleteLigne.mutateAsync(confirmDel.id);
+    setConfirmDel(null);
+  };
+
+  const liveLigneMontant = (Number(ligneForm.quantite_prevue) || 0) * (Number(ligneForm.prix_unitaire) || 0);
+  const liveEditLigneMontant = (Number(editLigneForm.quantite_prevue) || 0) * (Number(editLigneForm.prix_unitaire) || 0);
+
+  if (isLoading) {
+    return <div className="text-sm text-gray-500 py-10 text-center">Chargement du DQE…</div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header actions + Total */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        {!readonly ? (
+          <button
+            onClick={() => setAddingRubrique(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#076a34] transition-colors"
+          >
+            <Plus size={14} /> Ajouter une rubrique
+          </button>
+        ) : (
+          <div className="text-xs text-gray-500 italic">Contrat {contrat?.statut} — lecture seule</div>
+        )}
+
+        <div className="text-right">
+          <div className="text-[11px] uppercase tracking-wide text-gray-500">Total DQE</div>
+          <div className="text-xl font-bold text-[#087F3E]">{fmtMontantDqe(total)} FCFA</div>
+        </div>
+      </div>
+
+      {/* Formulaire ajout rubrique inline */}
+      {addingRubrique && (
+        <div className="rounded-xl border border-[#087F3E]/30 bg-[#087F3E]/5 p-3 flex items-end gap-2 flex-wrap">
+          <div className="flex-1 min-w-[180px]">
+            <label className="block text-[11px] text-gray-600 mb-1">Code (optionnel)</label>
+            <input
+              value={rubForm.code}
+              onChange={e => setRubForm(s => ({ ...s, code: e.target.value }))}
+              className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm"
+              placeholder="RA-01"
+              maxLength={20}
+            />
+          </div>
+          <div className="flex-[3] min-w-[260px]">
+            <label className="block text-[11px] text-gray-600 mb-1">Désignation *</label>
+            <input
+              autoFocus
+              value={rubForm.designation}
+              onChange={e => setRubForm(s => ({ ...s, designation: e.target.value }))}
+              className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm"
+              placeholder="TERRASSEMENTS"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={submitAddRub}
+              disabled={saveRubrique.isPending || !rubForm.designation.trim()}
+              className="px-3 py-1.5 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#076a34] disabled:opacity-50 inline-flex items-center gap-1"
+            >
+              {saveRubrique.isPending && <Loader2 size={13} className="animate-spin" />} OK
+            </button>
+            <button onClick={resetAddRub} className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Liste des rubriques */}
+      {rubriques.length === 0 && !addingRubrique && (
+        <div className="text-center py-10 text-sm text-gray-400">
+          Aucune rubrique DQE. {!readonly && "Cliquez sur « Ajouter une rubrique » pour commencer."}
+        </div>
+      )}
+
+      {rubriques.map((rub) => {
+        const rubMontant = (rub.postes || []).reduce(
+          (s, p) => s + (p.lignes || []).reduce((ss, l) => ss + (Number(l.montant) || 0), 0),
+          0
+        );
+        const isRubCollapsed = !!collapsedRub[rub.id];
+
+        return (
+          <div key={rub.id} className="rounded-xl border border-gray-200 overflow-hidden">
+            {/* Header rubrique */}
+            <div className="bg-[#087F3E]/8 border-l-4 border-[#087F3E] px-3 py-2 flex items-center gap-2">
+              <button onClick={() => toggleRub(rub.id)} className="text-[#087F3E] hover:bg-[#087F3E]/10 rounded p-0.5">
+                {isRubCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+              </button>
+
+              {editRubId === rub.id ? (
+                <div className="flex-1 flex items-center gap-2 flex-wrap">
+                  <input
+                    value={editRubForm.code || ""}
+                    onChange={e => setEditRubForm(s => ({ ...s, code: e.target.value }))}
+                    className="px-2 py-1 border border-gray-200 rounded text-xs w-24"
+                    placeholder="Code"
+                    maxLength={20}
+                  />
+                  <input
+                    autoFocus
+                    value={editRubForm.designation}
+                    onChange={e => setEditRubForm(s => ({ ...s, designation: e.target.value }))}
+                    className="flex-1 min-w-[200px] px-2 py-1 border border-gray-200 rounded text-sm"
+                  />
+                  <button onClick={() => submitEditRub(rub.id)} className="px-2 py-1 rounded bg-[#087F3E] text-white text-xs hover:bg-[#076a34]">OK</button>
+                  <button onClick={() => setEditRubId(null)} className="px-2 py-1 rounded border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">Annuler</button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex-1 font-semibold text-[#087F3E] text-sm">
+                    {rub.code && <span className="text-xs text-gray-500 font-mono mr-2">{rub.code}</span>}
+                    RA : {rub.designation}
+                  </div>
+                  <div className="text-sm font-bold text-[#087F3E]">{fmtMontantDqe(rubMontant)} FCFA</div>
+                  {!readonly && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => { setEditRubId(rub.id); setEditRubForm({ designation: rub.designation, code: rub.code || "" }); }}
+                        className="p-1 rounded hover:bg-white/60 text-gray-600" title="Modifier"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        onClick={() => setConfirmDel({ type: "rubrique", id: rub.id, label: rub.designation })}
+                        className="p-1 rounded hover:bg-red-50 text-red-500" title="Supprimer"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Postes */}
+            {!isRubCollapsed && (
+              <div className="divide-y divide-gray-100">
+                {(rub.postes || []).map((poste) => {
+                  const posteMontant = (poste.lignes || []).reduce((s, l) => s + (Number(l.montant) || 0), 0);
+                  const isPosteCollapsed = !!collapsedPoste[poste.id];
+
+                  return (
+                    <div key={poste.id}>
+                      {/* Header poste */}
+                      <div className="bg-gray-50 px-3 py-2 flex items-center gap-2 pl-6">
+                        <button onClick={() => togglePoste(poste.id)} className="text-gray-600 hover:bg-gray-200 rounded p-0.5">
+                          {isPosteCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                        </button>
+
+                        {editPosteId === poste.id ? (
+                          <div className="flex-1 flex items-center gap-2">
+                            <input
+                              autoFocus
+                              value={editPosteForm.designation}
+                              onChange={e => setEditPosteForm({ designation: e.target.value })}
+                              className="flex-1 px-2 py-1 border border-gray-200 rounded text-sm"
+                            />
+                            <button onClick={() => submitEditPoste(poste.id)} className="px-2 py-1 rounded bg-[#087F3E] text-white text-xs hover:bg-[#076a34]">OK</button>
+                            <button onClick={() => setEditPosteId(null)} className="px-2 py-1 rounded border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">Annuler</button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex-1 font-medium text-gray-700 text-sm">Poste : {poste.designation}</div>
+                            {!readonly && (
+                              <button
+                                onClick={() => setAddingLigneFor(poste.id)}
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded border border-[#087F3E] text-[#087F3E] text-xs hover:bg-[#087F3E]/10"
+                              >
+                                <Plus size={11} /> Ligne
+                              </button>
+                            )}
+                            <div className="text-sm font-semibold text-gray-700">{fmtMontantDqe(posteMontant)} FCFA</div>
+                            {!readonly && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => { setEditPosteId(poste.id); setEditPosteForm({ designation: poste.designation }); }}
+                                  className="p-1 rounded hover:bg-gray-200 text-gray-600" title="Modifier"
+                                >
+                                  <Pencil size={12} />
+                                </button>
+                                <button
+                                  onClick={() => setConfirmDel({ type: "poste", id: poste.id, label: poste.designation })}
+                                  className="p-1 rounded hover:bg-red-50 text-red-500" title="Supprimer"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+
+                      {/* Lignes */}
+                      {!isPosteCollapsed && (
+                        <div className="pl-10 pr-3 py-2 bg-white">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className="text-gray-500 border-b border-gray-100">
+                                <th className="text-left font-medium py-1">Désignation</th>
+                                <th className="text-left font-medium py-1 w-16">U</th>
+                                <th className="text-right font-medium py-1 w-24">Qté prévue</th>
+                                <th className="text-right font-medium py-1 w-28">PU</th>
+                                <th className="text-right font-medium py-1 w-32">Montant</th>
+                                {!readonly && <th className="w-16"></th>}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {(poste.lignes || []).length === 0 && (
+                                <tr><td colSpan={readonly ? 5 : 6} className="text-center text-gray-400 italic py-2">Aucune ligne</td></tr>
+                              )}
+                              {(poste.lignes || []).map((ligne) => (
+                                editLigneId === ligne.id ? (
+                                  <tr key={ligne.id} className="bg-amber-50/40">
+                                    <td className="py-1 pr-2">
+                                      <input autoFocus value={editLigneForm.designation}
+                                        onChange={e => setEditLigneForm(s => ({ ...s, designation: e.target.value }))}
+                                        className="w-full px-2 py-1 border border-gray-200 rounded text-xs" />
+                                    </td>
+                                    <td className="pr-2">
+                                      <input value={editLigneForm.unite || ""}
+                                        onChange={e => setEditLigneForm(s => ({ ...s, unite: e.target.value }))}
+                                        className="w-full px-2 py-1 border border-gray-200 rounded text-xs" maxLength={20} />
+                                    </td>
+                                    <td className="pr-2">
+                                      <input type="number" step="0.001" value={editLigneForm.quantite_prevue}
+                                        onChange={e => setEditLigneForm(s => ({ ...s, quantite_prevue: e.target.value }))}
+                                        className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                    </td>
+                                    <td className="pr-2">
+                                      <input type="number" step="0.01" value={editLigneForm.prix_unitaire}
+                                        onChange={e => setEditLigneForm(s => ({ ...s, prix_unitaire: e.target.value }))}
+                                        className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                    </td>
+                                    <td className="text-right pr-2 font-semibold">{fmtMontantDqe(liveEditLigneMontant)}</td>
+                                    <td>
+                                      <div className="flex items-center gap-1 justify-end">
+                                        <button onClick={() => submitEditLigne(ligne.id)} className="px-1.5 py-0.5 rounded bg-[#087F3E] text-white text-[10px]">OK</button>
+                                        <button onClick={() => setEditLigneId(null)} className="px-1.5 py-0.5 rounded border border-gray-200 text-[10px] text-gray-600">X</button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ) : (
+                                  <tr key={ligne.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                                    <td className="py-1 pr-2">{ligne.designation}</td>
+                                    <td className="pr-2">{ligne.unite || "—"}</td>
+                                    <td className="text-right pr-2">{fmtQte(ligne.quantite_prevue)}</td>
+                                    <td className="text-right pr-2">{fmtMontantDqe(ligne.prix_unitaire)}</td>
+                                    <td className="text-right pr-2 font-medium">{fmtMontantDqe(ligne.montant)}</td>
+                                    {!readonly && (
+                                      <td>
+                                        <div className="flex items-center gap-1 justify-end">
+                                          <button
+                                            onClick={() => { setEditLigneId(ligne.id); setEditLigneForm({ designation: ligne.designation, unite: ligne.unite || "", quantite_prevue: ligne.quantite_prevue, prix_unitaire: ligne.prix_unitaire }); }}
+                                            className="p-0.5 rounded hover:bg-gray-200 text-gray-600" title="Modifier"
+                                          >
+                                            <Pencil size={11} />
+                                          </button>
+                                          <button
+                                            onClick={() => setConfirmDel({ type: "ligne", id: ligne.id, label: ligne.designation })}
+                                            className="p-0.5 rounded hover:bg-red-50 text-red-500" title="Supprimer"
+                                          >
+                                            <Trash2 size={11} />
+                                          </button>
+                                        </div>
+                                      </td>
+                                    )}
+                                  </tr>
+                                )
+                              ))}
+
+                              {/* Formulaire ajout ligne inline */}
+                              {addingLigneFor === poste.id && !readonly && (
+                                <tr className="bg-[#087F3E]/5">
+                                  <td className="py-1 pr-2">
+                                    <input autoFocus value={ligneForm.designation}
+                                      onChange={e => setLigneForm(s => ({ ...s, designation: e.target.value }))}
+                                      placeholder="Désignation *"
+                                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs" />
+                                  </td>
+                                  <td className="pr-2">
+                                    <input value={ligneForm.unite}
+                                      onChange={e => setLigneForm(s => ({ ...s, unite: e.target.value }))}
+                                      placeholder="U"
+                                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs" maxLength={20} />
+                                  </td>
+                                  <td className="pr-2">
+                                    <input type="number" step="0.001" value={ligneForm.quantite_prevue}
+                                      onChange={e => setLigneForm(s => ({ ...s, quantite_prevue: e.target.value }))}
+                                      placeholder="0"
+                                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                  </td>
+                                  <td className="pr-2">
+                                    <input type="number" step="0.01" value={ligneForm.prix_unitaire}
+                                      onChange={e => setLigneForm(s => ({ ...s, prix_unitaire: e.target.value }))}
+                                      placeholder="0"
+                                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                  </td>
+                                  <td className="text-right pr-2 font-semibold text-[#087F3E]">{fmtMontantDqe(liveLigneMontant)}</td>
+                                  <td>
+                                    <div className="flex items-center gap-1 justify-end">
+                                      <button
+                                        disabled={saveLigne.isPending || !ligneForm.designation.trim()}
+                                        onClick={() => submitAddLigne(poste.id)}
+                                        className="px-1.5 py-0.5 rounded bg-[#087F3E] text-white text-[10px] disabled:opacity-50"
+                                      >OK</button>
+                                      <button onClick={resetAddLigne} className="px-1.5 py-0.5 rounded border border-gray-200 text-[10px] text-gray-600">X</button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* Ajouter poste inline */}
+                {!readonly && (
+                  <div className="bg-white px-3 py-2 pl-6">
+                    {addingPosteFor === rub.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          autoFocus
+                          value={posteForm.designation}
+                          onChange={e => setPosteForm({ designation: e.target.value })}
+                          placeholder="Désignation du poste"
+                          className="flex-1 px-2 py-1.5 border border-gray-200 rounded text-sm"
+                        />
+                        <button
+                          disabled={savePoste.isPending || !posteForm.designation.trim()}
+                          onClick={() => submitAddPoste(rub.id)}
+                          className="px-3 py-1.5 rounded bg-[#087F3E] text-white text-xs font-medium hover:bg-[#076a34] disabled:opacity-50"
+                        >OK</button>
+                        <button onClick={resetAddPoste} className="px-3 py-1.5 rounded border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">Annuler</button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setAddingPosteFor(rub.id)}
+                        className="inline-flex items-center gap-1 text-xs text-[#087F3E] hover:underline"
+                      >
+                        <Plus size={12} /> Ajouter un poste
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {/* Confirm delete modal */}
+      {confirmDel && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+                <Trash2 size={18} className="text-red-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900">Supprimer {confirmDel.type}</p>
+                <p className="text-xs text-gray-500">{confirmDel.label}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">
+              {confirmDel.type === "rubrique" && "La rubrique et tous ses postes/lignes seront supprimés."}
+              {confirmDel.type === "poste" && "Le poste et toutes ses lignes seront supprimés."}
+              {confirmDel.type === "ligne" && "La ligne sera supprimée."}
+            </p>
+            <div className="flex gap-3 pt-1">
+              <button onClick={() => setConfirmDel(null)}
+                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">
+                Annuler
+              </button>
+              <button onClick={doDelete}
+                className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600">
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page ────────────────────────────────────────────────────────
 export default function ContratFormPage() {
   const { id }    = useParams();
@@ -2026,6 +2531,7 @@ export default function ContratFormPage() {
     { id: "avenants",      label: nbAv > 0 ? `Avenants (${nbAv})` : "Avenants", icon: FilePlus },
     { id: "bareme",        label: lignes.length > 0 ? `Barème de cessions (${lignes.length})` : "Barème de cessions", icon: FileText },
     { id: "cessions",      label: "Cessions",              icon: FileText },
+    { id: "dqe",           label: "DQE",                   icon: FileText },
     { id: "attachements",  label: "Attachements",          icon: Paperclip },
     { id: "decomptes",     label: nbDec > 0 ? `Décomptes (${nbDec})` : "Décomptes", icon: FileText },
     { id: "pieces",        label: "Pièces jointes",        icon: Upload },
@@ -2385,6 +2891,11 @@ export default function ContratFormPage() {
           {/* Tab: Pièces jointes */}
           {activeTab === "pieces" && (
             <PiecesJointesTab contratId={id} isNew={isNew} />
+          )}
+
+          {/* Tab: DQE */}
+          {activeTab === "dqe" && (
+            <DqeTab contratId={contrat.id} contrat={contrat} />
           )}
 
           {/* Tab: Bons de commande */}
