@@ -1733,7 +1733,7 @@ function AttachementsTab({ contratId, chantierId, isNew }) {
   const { addToast } = useToast();
   const { attachements, addAttachement } = useAttachements();
   const contratIdInt = contratId ? parseInt(contratId, 10) : null;
-  const { data: contratBaremesData } = useContratBaremes(contratIdInt);
+  const { data: dqeData } = useDqe(contratIdInt);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ periode_debut: "", periode_fin: "" });
   const [loading, setLoading] = useState(false);
@@ -1765,18 +1765,27 @@ function AttachementsTab({ contratId, chantierId, isNew }) {
     }
     setLoading(true);
     try {
-      const contratBaremes = contratBaremesData ?? [];
-      const lignesCSE = contratBaremes.map(cb => ({
-        id: `dqe-${cb.bareme_id}`,
-        source: "DQE",
-        refDQE: cb.bareme?.code ?? "",
-        designation: cb.bareme?.designation ?? "",
-        unite: cb.bareme?.unite ?? "",
-        quantitePrevueDQE: 0,
-        prixUnitaireHT: parseFloat(cb.prix_contrat ?? 0),
-        quantiteRealisee: 0,
-        montant: 0,
-      }));
+      const rubriques = dqeData?.data ?? [];
+      const lignesCSE = [];
+      for (const rubrique of rubriques) {
+        for (const poste of rubrique.postes ?? []) {
+          for (const ligne of poste.lignes ?? []) {
+            lignesCSE.push({
+              id: `dqe-ligne-${ligne.id}`,
+              source: "DQE",
+              refDQE: rubrique.code ? String(rubrique.code) : `R${rubrique.id}`,
+              rubriqueDesignation: rubrique.designation,
+              posteDesignation: poste.designation,
+              designation: ligne.designation,
+              unite: ligne.unite ?? "",
+              quantitePrevueDQE: parseFloat(ligne.quantite_prevue ?? 0),
+              prixUnitaireHT: parseFloat(ligne.prix_unitaire ?? 0),
+              quantiteRealisee: 0,
+              montant: 0,
+            });
+          }
+        }
+      }
       const nouveau = await addAttachement({
         contratId: String(contratId),
         chantierId: chantierId ? String(chantierId) : null,
@@ -1794,8 +1803,16 @@ function AttachementsTab({ contratId, chantierId, isNew }) {
     }
   }
 
+  const dqeEmpty = !dqeData?.data?.length || dqeData.data.every(r => !r.postes?.length || r.postes.every(p => !p.lignes?.length));
+
   return (
     <div className="space-y-4">
+      {dqeEmpty && (
+        <div className="flex items-center gap-2.5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">
+          <AlertTriangle size={14} className="flex-shrink-0 text-amber-500" />
+          <span>Le DQE de ce contrat est vide. Renseignez les rubriques/postes/lignes dans l'onglet DQE avant d'initier un attachement.</span>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">{contratAtts.length} dossier{contratAtts.length !== 1 ? "s" : ""}</p>
         {!showForm && (

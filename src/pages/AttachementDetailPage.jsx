@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Save, Send, Plus, Trash2, Upload, FileText,
@@ -284,40 +284,78 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
   const dqeLignes = lignes.filter(l => l.source === "DQE");
   const libreLignes = lignes.filter(l => l.source === "Libre");
 
+  // Group DQE lignes by rubrique then poste
+  const groups = [];
+  for (const l of dqeLignes) {
+    const rubKey = l.rubriqueDesignation ?? l.refDQE ?? "—";
+    const posteKey = l.posteDesignation ?? "—";
+    let rub = groups.find(g => g.rubrique === rubKey);
+    if (!rub) { rub = { rubrique: rubKey, refDQE: l.refDQE, postes: [] }; groups.push(rub); }
+    let poste = rub.postes.find(p => p.poste === posteKey);
+    if (!poste) { poste = { poste: posteKey, lignes: [] }; rub.postes.push(poste); }
+    poste.lignes.push(l);
+  }
+
+  const colCount = editable ? 8 : 7;
+
   return (
     <>
-      {dqeLignes.map(l => (
-        <tr key={l.id} className="border-b border-gray-100 hover:bg-blue-50/20 transition-colors">
-          <td className="px-3 py-2.5">
-            <span className="text-xs font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">{l.refDQE}</span>
-          </td>
-          <td className="px-3 py-2.5">
-            <span className="text-gray-800 text-sm">{l.designation}</span>
-            {isDTMode && l.modifiedByDT && (
-              <span className="ml-2 text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-medium">Modifié DT</span>
-            )}
-          </td>
-          <td className="px-2 py-2.5 text-center text-gray-500 text-xs">{l.unite}</td>
-          <td className="px-2 py-2.5 text-right tabular-nums text-gray-400 text-xs">{l.quantitePrevueDQE}</td>
-          <td className="px-2 py-2.5 text-right">
-            {editable ? (
-              <input
-                type="number" min={0} step={l.unite === "ff" ? 0.01 : 1}
-                value={l.quantiteRealisee}
-                onChange={e => onQteChange(l.id, e.target.value)}
-                className={`w-20 text-right px-2 py-1.5 rounded-lg border text-sm font-medium focus:outline-none focus:ring-2 tabular-nums
-                  ${isDTMode
-                    ? "border-orange-200 bg-orange-50 text-orange-800 focus:ring-orange-300"
-                    : "border-blue-200 bg-blue-50 text-blue-800 focus:ring-blue-300"}`}
-              />
-            ) : (
-              <span className="tabular-nums font-medium text-gray-800 text-sm">{l.quantiteRealisee}</span>
-            )}
-          </td>
-          <td className="px-2 py-2.5 text-right tabular-nums text-gray-500 text-xs">{num(l.prixUnitaireHT)}</td>
-          <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-gray-900 text-sm">{num(l.montant)}</td>
-          {editable && <td />}
-        </tr>
+      {groups.map(group => (
+        <React.Fragment key={group.rubrique}>
+          {/* Rubrique header */}
+          <tr className="bg-[#087F3E]/8 border-b border-[#087F3E]/20">
+            <td colSpan={colCount} className="px-3 py-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#087F3E]">
+                {group.refDQE && <span className="font-mono bg-[#087F3E]/10 px-1 rounded mr-1.5">{group.refDQE}</span>}
+                {group.rubrique}
+              </span>
+            </td>
+          </tr>
+          {group.postes.map(posteGroup => (
+            <React.Fragment key={posteGroup.poste}>
+              {/* Poste sub-header */}
+              <tr className="bg-gray-50/80 border-b border-gray-100">
+                <td className="pl-5 pr-3 py-1" />
+                <td colSpan={colCount - 1} className="px-1 py-1">
+                  <span className="text-[11px] font-semibold text-gray-600 italic">{posteGroup.poste}</span>
+                </td>
+              </tr>
+              {posteGroup.lignes.map(l => (
+                <tr key={l.id} className="border-b border-gray-100 hover:bg-blue-50/20 transition-colors">
+                  <td className="pl-6 pr-3 py-2.5">
+                    <span className="text-[10px] text-gray-400">↳</span>
+                  </td>
+                  <td className="px-3 py-2.5">
+                    <span className="text-gray-800 text-sm">{l.designation}</span>
+                    {isDTMode && l.modifiedByDT && (
+                      <span className="ml-2 text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-medium">Modifié DT</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-2.5 text-center text-gray-500 text-xs">{l.unite}</td>
+                  <td className="px-2 py-2.5 text-right tabular-nums text-gray-400 text-xs">{l.quantitePrevueDQE}</td>
+                  <td className="px-2 py-2.5 text-right">
+                    {editable ? (
+                      <input
+                        type="number" min={0} step={l.unite === "ff" ? 0.01 : 1}
+                        value={l.quantiteRealisee}
+                        onChange={e => onQteChange(l.id, e.target.value)}
+                        className={`w-20 text-right px-2 py-1.5 rounded-lg border text-sm font-medium focus:outline-none focus:ring-2 tabular-nums
+                          ${isDTMode
+                            ? "border-orange-200 bg-orange-50 text-orange-800 focus:ring-orange-300"
+                            : "border-blue-200 bg-blue-50 text-blue-800 focus:ring-blue-300"}`}
+                      />
+                    ) : (
+                      <span className="tabular-nums font-medium text-gray-800 text-sm">{l.quantiteRealisee}</span>
+                    )}
+                  </td>
+                  <td className="px-2 py-2.5 text-right tabular-nums text-gray-500 text-xs">{num(l.prixUnitaireHT)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-gray-900 text-sm">{num(l.montant)}</td>
+                  {editable && <td />}
+                </tr>
+              ))}
+            </React.Fragment>
+          ))}
+        </React.Fragment>
       ))}
       {libreLignes.map(l => (
         <tr key={l.id} className="border-b border-amber-100 bg-amber-50/60 hover:bg-amber-50 transition-colors">
