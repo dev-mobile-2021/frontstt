@@ -2164,7 +2164,7 @@ function DqeTab({ contratId, contrat }) {
                             <div className="flex-1 font-medium text-gray-700 text-sm">Poste : {poste.designation}</div>
                             {!readonly && (
                               <button
-                                onClick={() => setAddingLigneFor(poste.id)}
+                                onClick={() => { setAddingLigneFor(poste.id); setCollapsedPoste(s => ({ ...s, [poste.id]: false })); }}
                                 className="inline-flex items-center gap-1 px-2 py-1 rounded border border-[#087F3E] text-[#087F3E] text-xs hover:bg-[#087F3E]/10"
                               >
                                 <Plus size={11} /> Ligne
@@ -2543,18 +2543,21 @@ export default function ContratFormPage() {
   const nbDec          = decomptesList.length;
 
   const tabs = [
-    { id: "info",          label: "Informations",          icon: Info },
-    { id: "parametrage",   label: "Paramétrage financier", icon: Hash },
-    { id: "avenants",      label: nbAv > 0 ? `Avenants (${nbAv})` : "Avenants", icon: FilePlus },
-    { id: "bareme",        label: lignes.length > 0 ? `Barème de cessions (${lignes.length})` : "Barème de cessions", icon: FileText },
-    { id: "cessions",      label: "Cessions",              icon: FileText },
-    { id: "dqe",           label: "DQE",                   icon: FileText },
-    { id: "attachements",  label: "Attachements",          icon: Paperclip },
-    { id: "decomptes",     label: nbDec > 0 ? `Décomptes (${nbDec})` : "Décomptes", icon: FileText },
-    { id: "pieces",        label: "Pièces jointes",        icon: Upload },
-    { id: "circuit",       label: "Circuit de validation", icon: CheckCircle },
-    { id: "bonscommande",  label: bcsList.length > 0 ? `Bons de commande (${bcsList.length})` : "Bons de commande", icon: FileText },
-    { id: "factures",      label: "Factures",              icon: Hash },
+    // — Contrat —
+    { id: "info",         label: "Infos",           icon: Info },
+    { id: "parametrage",  label: "Paramétrage",      icon: Hash },
+    { id: "avenants",     label: nbAv > 0 ? `Avenants (${nbAv})` : "Avenants", icon: FilePlus },
+    { id: "circuit",      label: "Circuit",          icon: CheckCircle },
+    // — Exécution —
+    { id: "bareme",       label: lignes.length > 0 ? `Barème (${lignes.length})` : "Barème", icon: FileText },
+    { id: "dqe",          label: "DQE",              icon: FileText },
+    { id: "attachements", label: "Attachements",     icon: Paperclip },
+    { id: "cessions",     label: "Cessions",         icon: FileText },
+    { id: "decomptes",    label: nbDec > 0 ? `Décomptes (${nbDec})` : "Décomptes", icon: FileText },
+    // — Financier —
+    { id: "bonscommande", label: bcsList.length > 0 ? `BC (${bcsList.length})` : "BC", icon: FileText },
+    { id: "factures",     label: "Factures",         icon: Hash },
+    { id: "pieces",       label: "PJ",               icon: Upload },
   ];
 
   return (
