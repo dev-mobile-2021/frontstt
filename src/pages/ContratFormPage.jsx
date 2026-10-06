@@ -1773,7 +1773,7 @@ function AttachementsTab({ contratId, chantierId, isNew }) {
             lignesCSE.push({
               id: `dqe-ligne-${ligne.id}`,
               source: "DQE",
-              refDQE: rubrique.code ? String(rubrique.code) : `R${rubrique.id}`,
+              refDQE: ligne.code || (rubrique.code ? String(rubrique.code) : `R${rubrique.id}`),
               rubriqueDesignation: rubrique.designation,
               posteDesignation: poste.designation,
               designation: ligne.designation,
@@ -2197,6 +2197,7 @@ function DqeTab({ contratId, contrat }) {
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="text-gray-500 border-b border-gray-100">
+                                <th className="text-left font-medium py-1 w-10">Réf</th>
                                 <th className="text-left font-medium py-1">Désignation</th>
                                 <th className="text-left font-medium py-1 w-16">U</th>
                                 <th className="text-right font-medium py-1 w-24">Qté prévue</th>
@@ -2207,7 +2208,7 @@ function DqeTab({ contratId, contrat }) {
                             </thead>
                             <tbody>
                               {(poste.lignes || []).length === 0 && (
-                                <tr><td colSpan={readonly ? 5 : 6} className="text-center text-gray-400 italic py-2">Aucune ligne</td></tr>
+                                <tr><td colSpan={readonly ? 6 : 7} className="text-center text-gray-400 italic py-2">Aucune ligne</td></tr>
                               )}
                               {(poste.lignes || []).map((ligne) => (
                                 editLigneId === ligne.id ? (
@@ -2242,6 +2243,12 @@ function DqeTab({ contratId, contrat }) {
                                   </tr>
                                 ) : (
                                   <tr key={ligne.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                                    <td className="py-1 pr-2">
+                                      {ligne.code
+                                        ? <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{ligne.code}</span>
+                                        : <span className="text-gray-300">—</span>
+                                      }
+                                    </td>
                                     <td className="py-1 pr-2">{ligne.designation}</td>
                                     <td className="pr-2">{ligne.unite || "—"}</td>
                                     <td className="text-right pr-2">{fmtQte(ligne.quantite_prevue)}</td>
