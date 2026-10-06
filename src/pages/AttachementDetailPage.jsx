@@ -404,11 +404,12 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
 }
 
 // ─── Vue CT ──────────────────────────────────────────────────────────────────
-function VueCT({ att, updateAttachement, currentUser, readOnly }) {
+function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, readOnly }) {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [lignes, setLignes] = useState(() => att.voletCSE.lignes.map(l => ({ ...l })));
   const [savedFlag, setSavedFlag] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const total = useMemo(() => lignes.reduce((s, l) => s + (l.montant || 0), 0), [lignes]);
 
   useEffect(() => { setLignes(att.voletCSE.lignes.map(l => ({ ...l }))); }, [att.id]);
@@ -435,11 +436,22 @@ function VueCT({ att, updateAttachement, currentUser, readOnly }) {
     setSavedFlag(true); setTimeout(() => setSavedFlag(false), 2500);
     addToast("Dossier enregistré.", "success");
   }
-  function handleSoumettre() {
-    const msg = { id:`msg-${Date.now()}`, auteur:currentUser?.nom ?? "CT", roleId:"CT", date:today(), message:`Dossier soumis au DT le ${new Date().toLocaleDateString("fr-FR")} — Total CSE : ${num(total)} FCFA.`, type:"action" };
-    updateAttachement(att.id, a => ({ ...a, statut:"Soumis au DT", voletCSE:{ ...a.voletCSE, lignes, totalValorise:total }, discussion:[...(a.discussion ?? []), msg] }));
-    addToast("Dossier soumis au DT.", "success");
-    navigate("/attachements");
+  async function handleSoumettre() {
+    setSubmitting(true);
+    try {
+      // Sauvegarder les lignes d'abord
+      await new Promise(resolve => {
+        updateAttachement(att.id, a => ({ ...a, voletCSE: { ...a.voletCSE, lignes, totalValorise: total } }));
+        setTimeout(resolve, 300);
+      });
+      await soumettreAttachement(att.id);
+      addToast("Dossier soumis au DT.", "success");
+      navigate("/attachements");
+    } catch {
+      addToast("Erreur lors de la soumission.", "error");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -455,8 +467,9 @@ function VueCT({ att, updateAttachement, currentUser, readOnly }) {
               {savedFlag ? <CheckCircle size={13} className="text-green-500" /> : <Save size={13} />}
               {savedFlag ? "Enregistré" : "Enregistrer"}
             </button>
-            <button onClick={handleSoumettre} disabled={total === 0} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] disabled:opacity-40">
-              <Send size={13} /> Soumettre au DT
+            <button onClick={handleSoumettre} disabled={total === 0 || submitting} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] disabled:opacity-40">
+              {submitting ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={13} />}
+              Soumettre au DT
             </button>
           </div>
         )}
@@ -503,7 +516,7 @@ function VueCT({ att, updateAttachement, currentUser, readOnly }) {
 }
 
 // ─── Vue DT ──────────────────────────────────────────────────────────────────
-function VueDT({ att, updateAttachement, currentUser, editable }) {
+function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachement, currentUser, editable }) {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [lignes, setLignes] = useState(() => att.voletCSE.lignes.map(l => ({ ...l })));
@@ -550,19 +563,25 @@ function VueDT({ att, updateAttachement, currentUser, editable }) {
     addToast("Modifications DT enregistrées.", "success");
   }
 
-  function handleRenvoyer() {
+  async function handleRenvoyer() {
     if (!commentaireRejet.trim()) { addToast("Commentaire obligatoire pour renvoyer.", "error"); return; }
-    const msg = addMsg(`Dossier renvoyé au CT. Motif : ${commentaireRejet.trim()}`);
-    updateAttachement(att.id, a => ({ ...a, statut:"En cours", voletCSE:{ ...a.voletCSE, lignes, totalValorise:total }, discussion:[...(a.discussion ?? []), msg] }));
-    addToast("Dossier renvoyé au CT.", "info");
-    navigate("/attachements");
+    try {
+      updateAttachement(att.id, a => ({ ...a, voletCSE: { ...a.voletCSE, lignes, totalValorise: total } }));
+      await new Promise(r => setTimeout(r, 300));
+      await rejeterAttachement(att.id, commentaireRejet.trim());
+      addToast("Dossier renvoyé au CT.", "info");
+      navigate("/attachements");
+    } catch { addToast("Erreur lors du renvoi.", "error"); }
   }
 
-  function handleSoumettreAuDacc() {
-    const msg = addMsg(`Dossier soumis au DACC le ${new Date().toLocaleDateString("fr-FR")} — Total CSE validé : ${num(total)} FCFA.`);
-    updateAttachement(att.id, a => ({ ...a, statut:"Soumis au DACC", voletCSE:{ ...a.voletCSE, lignes, totalValorise:total }, discussion:[...(a.discussion ?? []), msg] }));
-    addToast("Dossier soumis au DACC.", "success");
-    navigate("/attachements");
+  async function handleSoumettreAuDacc() {
+    try {
+      updateAttachement(att.id, a => ({ ...a, voletCSE: { ...a.voletCSE, lignes, totalValorise: total } }));
+      await new Promise(r => setTimeout(r, 300));
+      await soumettreAttachement(att.id);
+      addToast("Dossier soumis au DACC.", "success");
+      navigate("/attachements");
+    } catch { addToast("Erreur lors de la soumission.", "error"); }
   }
 
   return (
@@ -672,7 +691,7 @@ function VueDT({ att, updateAttachement, currentUser, editable }) {
 }
 
 // ─── Vue DACC ────────────────────────────────────────────────────────────────
-function VueDacc({ att, updateAttachement, currentUser }) {
+function VueDacc({ att, updateAttachement, validerAttachement, rejeterAttachement, currentUser }) {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [showRejet, setShowRejet] = useState(false);
@@ -693,29 +712,21 @@ function VueDacc({ att, updateAttachement, currentUser }) {
     return { id:`msg-${Date.now()}`, auteur:currentUser?.nom ?? "DACC", roleId:"DACC", date:today(), message, type };
   }
 
-  function handleValider() {
-    const msg = addMsg(`Dossier validé par le DACC. Montant final : ${num(total)} FCFA.`);
-    updateAttachement(att.id, a => ({
-      ...a,
-      statut: "Validé",
-      visaDacc: { par: currentUser?.nom ?? "DACC", date: today() },
-      montantFinal: total,
-      discussion: [...(a.discussion ?? []), msg],
-    }));
-    addToast("Dossier validé — le Poste A du décompte est mis à jour.", "success");
-    navigate("/attachements");
+  async function handleValider() {
+    try {
+      await validerAttachement(att.id, `Dossier validé par le DACC. Montant final : ${num(total)} FCFA.`);
+      addToast("Dossier validé — le Poste A du décompte est mis à jour.", "success");
+      navigate("/attachements");
+    } catch { addToast("Erreur lors de la validation.", "error"); }
   }
 
-  function handleRejeter() {
+  async function handleRejeter() {
     if (!motifRejet.trim()) { addToast("Commentaire de rejet obligatoire.", "error"); return; }
-    const msg = addMsg(`Dossier rejeté par le DACC. Motif : ${motifRejet.trim()}`);
-    updateAttachement(att.id, a => ({
-      ...a,
-      statut: "Rejeté",
-      discussion: [...(a.discussion ?? []), msg],
-    }));
-    addToast("Dossier rejeté.", "info");
-    navigate("/attachements");
+    try {
+      await rejeterAttachement(att.id, motifRejet.trim());
+      addToast("Dossier rejeté.", "info");
+      navigate("/attachements");
+    } catch { addToast("Erreur lors du rejet.", "error"); }
   }
 
   const isReadOnly = att.statut === "Validé";
@@ -831,7 +842,7 @@ function VueDacc({ att, updateAttachement, currentUser }) {
 export default function AttachementDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { attachements, updateAttachement } = useAttachements();
+  const { attachements, updateAttachement, soumettreAttachement, validerAttachement, rejeterAttachement } = useAttachements();
   const { currentUser } = useUser();
   const att = attachements.find(a => a.id === id);
 
@@ -913,13 +924,13 @@ export default function AttachementDetailPage() {
 
       {/* Contenu principal */}
       {isDACCView ? (
-        <VueDacc att={att} updateAttachement={updateAttachement} currentUser={currentUser} />
+        <VueDacc att={att} updateAttachement={updateAttachement} validerAttachement={validerAttachement} rejeterAttachement={rejeterAttachement} currentUser={currentUser} />
       ) : isDTView ? (
-        <VueDT att={att} updateAttachement={updateAttachement} currentUser={currentUser} editable={isDTEditable} />
+        <VueDT att={att} updateAttachement={updateAttachement} soumettreAttachement={soumettreAttachement} rejeterAttachement={rejeterAttachement} currentUser={currentUser} editable={isDTEditable} />
       ) : (
         <div className="flex gap-4 items-start">
           <div className="flex-[3] min-w-0">
-            <VueCT att={att} updateAttachement={updateAttachement} currentUser={currentUser} readOnly={!isCTEditable} />
+            <VueCT att={att} updateAttachement={updateAttachement} soumettreAttachement={soumettreAttachement} currentUser={currentUser} readOnly={!isCTEditable} />
           </div>
           <div className="w-72 flex-shrink-0">
             <ZoneSTT att={att} canEdit={isCTEditable} updateAttachement={updateAttachement} currentUser={currentUser} compact />

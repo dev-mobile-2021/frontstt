@@ -6,7 +6,6 @@ const FIELDS = `
   statut montant_final payload created_at updated_at
 `;
 
-// Map DB record → the shape the frontend pages expect (camelCase, flat)
 function normalize(r) {
   let payload = r.payload;
   if (typeof payload === "string") {
@@ -15,7 +14,6 @@ function normalize(r) {
   payload = payload || {};
 
   return {
-    // Use code as "id" so existing navigate(`/attachements/${att.id}`) works with string keys
     id:           r.code,
     code:         r.code,
     _dbId:        r.id,
@@ -29,15 +27,14 @@ function normalize(r) {
   };
 }
 
-// Map frontend object → API payload
 function denormalize(att) {
   const { id, code, _dbId, contratId, chantierId, periodeDebut, periodeFin, statut, montantFinal, ...rest } = att;
-  const contratIdInt = contratId ? parseInt(contratId, 10) : null;
+  const contratIdInt  = contratId  ? parseInt(contratId,  10) : null;
   const chantierIdInt = chantierId ? parseInt(chantierId, 10) : null;
 
   return {
     code:          code || id,
-    contrat_id:    Number.isFinite(contratIdInt) ? contratIdInt : null,
+    contrat_id:    Number.isFinite(contratIdInt)  ? contratIdInt  : null,
     chantier_id:   Number.isFinite(chantierIdInt) ? chantierIdInt : null,
     periode_debut: periodeDebut,
     periode_fin:   periodeFin,
@@ -68,6 +65,28 @@ export const attachementService = {
 
   async delete(code) {
     const { data } = await http.delete(`/attachement/delete/${code}`);
+    return data;
+  },
+
+  // ── Workflow ──────────────────────────────────────────────────────────────
+
+  async soumettre(code) {
+    const { data } = await http.post("/attachement/soumettre", { code });
+    return data;
+  },
+
+  async valider(code, commentaire = "") {
+    const { data } = await http.post("/attachement/valider", { code, commentaire });
+    return data;
+  },
+
+  async rejeter(code, commentaire) {
+    const { data } = await http.post("/attachement/rejeter", { code, commentaire });
+    return data;
+  },
+
+  async changerStatut(code, statut) {
+    const { data } = await http.post("/attachement/statut", { code, statut });
     return data;
   },
 };

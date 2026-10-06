@@ -6,8 +6,6 @@ let seq = 100;
 function nextCode() { return `ATT-${new Date().getFullYear()}-${String(seq++).padStart(3, "0")}`; }
 function today() { return new Date().toISOString().slice(0, 10); }
 
-// Drop-in replacement for useAttachements() from AttachementsContext.
-// Provides the same { attachements, addAttachement, updateAttachement, ... } API.
 export function useAttachements() {
   const [attachements, setAttachements] = useState([]);
   const qc = useQueryClient();
@@ -15,55 +13,81 @@ export function useAttachements() {
   const { data: remote = [], isSuccess } = useQuery({
     queryKey: ["attachements_all"],
     queryFn: () => attachementService.list(),
-    staleTime: 60 * 1000,
+    staleTime: 30 * 1000,
   });
 
-  // Sync remote → local whenever the query refreshes
   useEffect(() => {
     if (isSuccess) setAttachements(remote);
   }, [isSuccess, remote]);
 
+  const refresh = useCallback(() =>
+    qc.invalidateQueries({ queryKey: ["attachements_all"] }),
+  [qc]);
+
+  // ── Créer un attachement ─────────────────────────────────────────────────
   const addAttachement = useCallback(async (data) => {
-    const code = nextCode();
-    const id   = code;
-    const auteurNom = data.initiePar?.nom ?? data.auteurCT?.nom ?? "CT";
+    const code     = nextCode();
+    const auteurNom = data.initiePar?.nom ?? "CT";
     const nouveau = {
-      id, code,
-      contratId:   data.contratId,
-      chantierId:  data.chantierId,
+      id: code, code,
+      contratId:    data.contratId,
+      chantierId:   data.chantierId,
       periodeDebut: data.periodeDebut,
       periodeFin:   data.periodeFin,
-      statut: "Ouvert",
-      initiePar: data.initiePar ?? { nom: data.auteurCT?.nom, roleId: "CT" },
+      statut:       "Ouvert",
+      initiePar:    data.initiePar ?? { nom: auteurNom, roleId: "CT" },
       dateCreation: today(),
       voletCSE: { lignes: data.lignesCSE ?? [], totalValorise: 0 },
       voletSTT: { statut: "Vide", fichiers: [] },
       visaDT: null, visaDacc: null, montantFinal: null,
       discussion: [
-        { id: `msg-init-${id}`, auteur: auteurNom, roleId: data.initiePar?.roleId ?? "CT", date: today(), message: "Dossier créé et ouvert pour saisie.", type: "action" },
+        { id: `msg-init-${code}`, auteur: auteurNom, roleId: data.initiePar?.roleId ?? "CT", date: today(), message: "Dossier créé et ouvert pour saisie.", type: "action" },
       ],
     };
-
     setAttachements(prev => [...prev, nouveau]);
     await attachementService.save(nouveau);
-    await qc.invalidateQueries({ queryKey: ["attachements_all"] });
+    await refresh();
     return nouveau;
-  }, [qc]);
+  }, [refresh]);
 
+  // ── Mettre à jour le payload (lignes CSE, STT, discussion) ───────────────
   const updateAttachement = useCallback((id, updater) => {
     setAttachements(prev =>
       prev.map(a => {
         if (a.id !== id) return a;
         const updated = typeof updater === "function" ? updater(a) : { ...a, ...updater };
-        attachementService.save(updated).then(() =>
-          qc.invalidateQueries({ queryKey: ["attachements_all"] })
-        );
+        attachementService.save(updated).then(refresh);
         return updated;
       })
     );
-  }, [qc]);
+  }, [refresh]);
 
-  // ── Helpers (same signatures as old context) ──────────────────────
+  // ── Workflow : soumettre ─────────────────────────────────────────────────
+  const soumettreAttachement = useCallback(async (id) => {
+    const att = attachements.find(a => a.id === id);
+    if (!att) return;
+    await attachementService.save(att);          // flush payload avant
+    await attachementService.soumettre(att.code);
+    await refresh();
+  }, [attachements, refresh]);
+
+  // ── Workflow : valider ───────────────────────────────────────────────────
+  const validerAttachement = useCallback(async (id, commentaire = "") => {
+    const att = attachements.find(a => a.id === id);
+    if (!att) return;
+    await attachementService.valider(att.code, commentaire);
+    await refresh();
+  }, [attachements, refresh]);
+
+  // ── Workflow : rejeter ───────────────────────────────────────────────────
+  const rejeterAttachement = useCallback(async (id, commentaire) => {
+    const att = attachements.find(a => a.id === id);
+    if (!att) return;
+    await attachementService.rejeter(att.code, commentaire);
+    await refresh();
+  }, [attachements, refresh]);
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
   const getAttachementForPeriode = useCallback((contratId, periodeDebut, periodeFin) =>
     attachements.find(a =>
       a.contratId === contratId &&
@@ -98,6 +122,9 @@ export function useAttachements() {
     attachements,
     addAttachement,
     updateAttachement,
+    soumettreAttachement,
+    validerAttachement,
+    rejeterAttachement,
     getAttachementForPeriode,
     getAttachementForPeriodeRange,
     getAttachementsForContrat,
