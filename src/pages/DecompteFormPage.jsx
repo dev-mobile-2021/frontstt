@@ -1,59 +1,70 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import {
-  ArrowLeft, ChevronRight, Save, Loader2, CheckCircle2, XCircle,
-  FileDown, Circle, Clock, Upload, Download, File, Trash2, Plus, X,
+  ArrowLeft, Save, Send, ChevronRight, FileDown, Info, CheckCircle2,
+  Clock, XCircle, Circle, RotateCcw, AlertTriangle, Plus, Trash2,
 } from "lucide-react";
-
-import { useDecompte, useSaveDecompte, useValiderDecompte, useRejeterDecompte, usePayerDecompte, useDecompteCircuit, useDecomptesPaginated } from "../hooks/useDecomptes";
-import { useSaveReleve } from "../hooks/useReleves";
-import { useParametresPaginated } from "../hooks/useParametres";
-import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
-import { usePiecesJointes, useUploadPieceJointe, useDeletePieceJointe } from "../hooks/usePiecesJointes";
-import { pieceJointeService } from "../services/pieceJointeService";
+import { useDecompte, useSaveDecompte, useValiderDecompte, useRejeterDecompte, usePayerDecompte, useDecompteCircuit } from "../hooks/useDecomptes";
+import { useContratsPaginated } from "../hooks/useContrats";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
-import PageHeader from "../components/PageHeader";
-import StatusBadge from "../components/StatusBadge";
-import MoneyDisplay from "../components/MoneyDisplay";
-import Tabs from "../components/Tabs";
-import { SkeletonCard } from "../components/Skeleton";
+import http from "../services/http";
 
-const fmtDate  = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
-const fmtMois  = d => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
-const fmtNum   = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
+// ─── Helpers ────────────────────────────────────────────────────────────────
+const num  = v => new Intl.NumberFormat("fr-FR").format(Math.round(Math.abs(v ?? 0)));
+const fmtD = d => d ? new Date(d + "T00:00").toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" }) : "—";
+const fmtM = d => d ? new Date(d + "T00:00").toLocaleDateString("fr-FR", { month:"long", year:"numeric" }) : "—";
 
-// ─── Circuit stepper ─────────────────────────────────────────────
+const TYPE_LABELS = {
+  provisoire:               "Provisoire (mensuel)",
+  final:                    "Final",
+  restitution_rg_partielle: "Restitution RG partielle",
+  restitution_rg_totale:    "Restitution RG totale",
+  definitif_general:        "Décompte général et définitif",
+};
+
+const STATUT_COLORS = {
+  brouillon:    "bg-gray-100 text-gray-600 border-gray-200",
+  soumis:       "bg-blue-100 text-blue-700 border-blue-200",
+  rejete:       "bg-red-100 text-red-700 border-red-200",
+  paye:         "bg-emerald-100 text-emerald-700 border-emerald-200",
+};
+
+function statutColor(statut) {
+  return STATUT_COLORS[statut] || "bg-purple-100 text-purple-700 border-purple-200";
+}
+
+// ─── Circuit Stepper ─────────────────────────────────────────────────────────
 function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre }) {
-  const [showRejet, setShowRejet] = useState(false);
-  const [motifRejet, setMotifRejet] = useState("");
+  const [showRejet, setShowRejet]   = useState(false);
+  const [motif, setMotif]           = useState("");
   const { currentUser } = useUser();
 
   const statut      = decompte?.statut ?? "brouillon";
   const validations = decompte?.validations ?? [];
-  const etapesSorted = [...circuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
-  const lastStep     = etapesSorted[etapesSorted.length - 1];
+  const etapes      = [...circuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+  const lastEtape   = etapes[etapes.length - 1];
 
   const steps = [
     { statut: "brouillon", label: "Création", profil: null },
-    ...(etapesSorted.length > 0
-      ? [{ statut: etapesSorted[0].statut_avant, label: "Soumis", profil: null }]
-      : [{ statut: "soumis", label: "Soumis", profil: null }]),
-    ...etapesSorted.map(e => ({ statut: e.statut_apres, label: e.profil_code.toUpperCase(), profil: e.profil_code, etape: e })),
+    ...(etapes.length > 0 ? [{ statut: etapes[0].statut_avant, label: "Soumis", profil: null }] : []),
+    ...etapes.map(e => ({ statut: e.statut_apres, label: e.profil_code?.toUpperCase(), profil: e.profil_code, etape: e })),
     { statut: "paye", label: "Payé", profil: null },
   ];
 
-  const currentIdx   = steps.findIndex(s => s.statut === statut);
-  const isAfterLast  = !!(lastStep && statut === lastStep.statut_apres);
-  const currentEtape = etapesSorted.find(e => e.statut_avant === statut);
-  const isTerminal   = statut === "paye" || statut === "rejete";
+  const currentIdx    = steps.findIndex(s => s.statut === statut);
+  const currentEtape  = etapes.find(e => e.statut_avant === statut);
+  const isAfterLast   = !!(lastEtape && statut === lastEtape.statut_apres);
+  const isTerminal    = statut === "paye" || statut === "rejete";
 
-  const userRole    = currentUser?.role?.designation?.toLowerCase() ?? "";
-  const isAdmin     = userRole === "admin";
+  const userRole   = currentUser?.role?.designation?.toLowerCase() ?? "";
+  const isAdmin    = userRole === "admin";
   const canValidate = isAdmin || !currentEtape || userRole === currentEtape.profil_code?.toLowerCase();
 
-  const findVal  = (profil) => validations.find(v => v.profil_code === profil && v.action === "valide");
-  const soumisVal = validations.find(v => v.action === "soumis");
+  const findVal = profil => validations.find(v => v.profil_code === profil && v.action === "valide");
+
+  const nbEtapesDone = steps.filter((s, i) => i < currentIdx && s.profil).length;
+  const nbEtapesTotal = steps.filter(s => s.profil).length;
 
   return (
     <div className="space-y-5">
@@ -61,9 +72,7 @@ function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSo
         <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
           <XCircle size={16} /> Rejeté
           {decompte?.motif_rejet && (
-            <span className="ml-2 text-xs font-normal text-red-700 bg-red-50 border border-red-200 rounded px-2 py-0.5">
-              {decompte.motif_rejet}
-            </span>
+            <span className="ml-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-0.5">{decompte.motif_rejet}</span>
           )}
         </div>
       ) : (
@@ -71,28 +80,22 @@ function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSo
           {steps.map((step, idx) => {
             const done    = idx < currentIdx;
             const current = idx === currentIdx;
-            const val     = step.profil ? findVal(step.profil)
-                          : step.statut === "soumis" ? soumisVal : null;
+            const val     = step.profil ? findVal(step.profil) : null;
             return (
-              <div key={step.statut} className="flex-1 flex flex-col items-center">
+              <div key={step.statut + idx} className="flex-1 flex flex-col items-center">
                 <div className="flex items-center w-full">
                   <div className={`flex-1 h-0.5 ${idx === 0 ? "opacity-0" : done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-colors
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-colors text-xs
                     ${done ? "bg-[#087F3E] border-[#087F3E] text-white" : current ? "bg-white border-[#087F3E] text-[#087F3E]" : "bg-white border-gray-200 text-gray-300"}`}>
-                    {done ? <CheckCircle2 size={16} /> : current ? <Clock size={14} /> : <Circle size={14} />}
+                    {done ? <CheckCircle2 size={13} /> : current ? <Clock size={11} /> : <Circle size={11} />}
                   </div>
                   <div className={`flex-1 h-0.5 ${idx === steps.length - 1 ? "opacity-0" : done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
                 </div>
-                <div className="mt-2 text-center px-1 w-full">
-                  <p className={`text-xs font-semibold ${done ? "text-[#087F3E]" : current ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
-                  {val ? (
-                    <>
-                      <p className="text-[10px] text-[#087F3E] mt-0.5">{fmtDate(val.validated_at)}</p>
-                      {val.user && <p className="text-[10px] text-gray-500 truncate">{val.user.prenom} {val.user.nom}</p>}
-                    </>
-                  ) : current && step.profil ? (
-                    <p className="text-[10px] text-amber-500 mt-0.5">En attente</p>
-                  ) : null}
+                <div className="mt-1.5 text-center px-0.5 w-full">
+                  <p className={`text-[10px] font-semibold ${done ? "text-[#087F3E]" : current ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
+                  {val && <p className="text-[10px] text-[#087F3E]">{fmtD(val.validated_at?.slice(0,10))}</p>}
+                  {val?.user && <p className="text-[10px] text-gray-400 truncate">{val.user.prenom} {val.user.nom}</p>}
+                  {current && step.profil && !val && <p className="text-[10px] text-amber-500">En attente</p>}
                 </div>
               </div>
             );
@@ -100,727 +103,753 @@ function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSo
         </div>
       )}
 
+      <div className="text-xs text-gray-400 text-right">Étape {Math.max(nbEtapesDone, 0)}/{nbEtapesTotal}</div>
+
       {!isTerminal && (
         <div className="border-t border-gray-100 pt-4 space-y-3">
           {statut === "brouillon" && (
-            <button onClick={onSoumettre} className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors">
+            <button onClick={onSoumettre} className="w-full px-4 py-2.5 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-medium">
               Soumettre au circuit
             </button>
           )}
           {statut !== "brouillon" && !isAfterLast && (
             <>
-              <p className="text-xs text-gray-500">
-                En attente de validation par <strong className="text-gray-700">{currentEtape?.profil_code?.toUpperCase() ?? "un validateur"}</strong>
-              </p>
-              {!canValidate && (
-                <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                  Vous n'avez pas le profil requis pour valider cette étape.
-                </p>
-              )}
+              <div className="text-xs text-gray-500 flex items-center gap-1.5">
+                <Clock size={11} className="text-amber-400" />
+                En attente de validation par <strong className="text-gray-800">{currentEtape?.profil_code?.toUpperCase() ?? "—"}</strong>
+              </div>
               {canValidate && !showRejet && (
-                <div className="flex gap-3">
-                  <button onClick={onValider} className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors">
-                    Valider — {currentEtape?.profil_code?.toUpperCase() ?? ""}
+                <div className="flex gap-2">
+                  <button onClick={onValider} className="flex-1 px-3 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C]">
+                    Valider — {currentEtape?.profil_code?.toUpperCase()}
                   </button>
-                  <button onClick={() => setShowRejet(true)} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors">
+                  <button onClick={() => setShowRejet(true)} className="px-3 py-2 text-red-600 border border-red-200 rounded-lg text-sm hover:bg-red-50">
                     Rejeter
                   </button>
                 </div>
               )}
               {canValidate && showRejet && (
-                <div className="flex gap-2 flex-wrap">
-                  <input autoFocus placeholder="Motif du rejet (obligatoire)…" value={motifRejet}
-                    onChange={e => setMotifRejet(e.target.value)}
-                    className="flex-1 min-w-[240px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 outline-none" />
-                  <button onClick={() => { onRejeter(motifRejet); setShowRejet(false); setMotifRejet(""); }}
-                    disabled={!motifRejet.trim()}
-                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50">
-                    Confirmer
-                  </button>
-                  <button onClick={() => { setShowRejet(false); setMotifRejet(""); }}
-                    className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm border border-gray-200 rounded-lg">
-                    Annuler
-                  </button>
+                <div className="space-y-2">
+                  <input autoFocus placeholder="Motif du rejet (obligatoire)…" value={motif}
+                    onChange={e => setMotif(e.target.value)}
+                    className="w-full border border-red-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-200 outline-none" />
+                  <div className="flex gap-2">
+                    <button onClick={() => { onRejeter(motif); setShowRejet(false); setMotif(""); }}
+                      disabled={!motif.trim()}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+                      Confirmer le rejet
+                    </button>
+                    <button onClick={() => { setShowRejet(false); setMotif(""); }}
+                      className="px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm">
+                      Annuler
+                    </button>
+                  </div>
                 </div>
               )}
             </>
           )}
           {isAfterLast && (
-            <button onClick={onPayer} className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-sm font-medium transition-colors">
+            <button onClick={onPayer} className="w-full px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-medium hover:bg-violet-700">
               Marquer comme payé
             </button>
           )}
         </div>
       )}
       {statut === "paye" && (
-        <div className="border-t border-gray-100 pt-4">
-          <p className="text-sm text-[#087F3E] font-medium">✓ Décompte payé</p>
+        <div className="border-t border-gray-100 pt-3">
+          <p className="text-sm text-[#087F3E] font-medium flex items-center gap-1.5"><CheckCircle2 size={14} /> Décompte payé</p>
         </div>
       )}
     </div>
   );
 }
 
-// ─── Poste row dans le tableau Structure ─────────────────────────
-function PosteRow({ code, label, type, moisM, extra }) {
-  const isInfo   = type === "info";
-  const isMinus  = type === "minus";
-  const isTotal  = type === "total";
+// ─── Panneau droite — Informations ──────────────────────────────────────────
+function InfoPanel({ decompte, circuit }) {
+  const d = decompte;
+  const contrat       = d.contrat;
+  const montantActuel = contrat?.montant_actuel ?? 0;
+  const sit           = d.situation;
 
-  const valColor = isInfo ? "text-gray-500" : isMinus && moisM < 0 ? "text-red-600" : isMinus ? "text-red-600" : isTotal ? "text-[#087F3E] font-bold" : "text-gray-800 font-semibold";
+  const etapes = [...circuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+  const lastStatut = etapes[etapes.length - 1]?.statut_apres;
+  const nbEtapesDone = (d.validations ?? []).filter(v => v.action === "valide").length;
+
+  const pctPaye = montantActuel > 0 ? Math.min(100, (sit?.montant_paye ?? 0) / montantActuel * 100) : 0;
+  const pctAppr = montantActuel > 0 ? Math.min(100, (sit?.montant_approuve ?? 0) / montantActuel * 100) : 0;
+  const pctEnVal = montantActuel > 0 ? Math.min(100, (sit?.montant_en_validation ?? 0) / montantActuel * 100) : 0;
+
+  const payload = d.payload ?? {};
+  const postes  = payload.postes ?? {};
 
   return (
-    <tr className={`border-b border-gray-50 ${isTotal ? "bg-[#E8F5EE]/40 border-[#087F3E]/20" : "hover:bg-gray-50/60"}`}>
-      <td className={`px-4 py-2.5 text-xs font-bold w-10 ${isTotal ? "text-[#087F3E]" : "text-gray-400"}`}>{code}</td>
-      <td className="px-3 py-2.5 text-sm text-gray-700 flex-1">
-        <div className="flex items-center gap-2">
-          {isMinus && <span className="w-4 h-4 rounded bg-red-100 text-red-500 text-[10px] flex items-center justify-center font-bold flex-shrink-0">−</span>}
-          {isInfo  && <span className="w-4 h-4 rounded bg-blue-100 text-blue-500 text-[10px] flex items-center justify-center font-bold flex-shrink-0">i</span>}
-          {type === "plus" && <span className="w-4 h-4 rounded bg-green-100 text-green-600 text-[10px] flex items-center justify-center font-bold flex-shrink-0">+</span>}
-          <span className={isTotal ? "font-semibold text-gray-900" : ""}>{label}</span>
+    <div className="space-y-4">
+      {/* Infos clés */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
+        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Informations</h3>
+        <div className="space-y-2 text-sm">
+          <div><p className="text-xs text-gray-400">Code</p><p className="font-mono font-semibold text-gray-900">{d.code}</p></div>
+          <div><p className="text-xs text-gray-400">Type</p><p className="text-gray-700">{TYPE_LABELS[d.type] ?? d.type}</p></div>
+          <div><p className="text-xs text-gray-400">Période</p><p className="text-gray-700">{fmtD(d.date_debut)} → {fmtD(d.date_fin)}</p></div>
+          <div><p className="text-xs text-gray-400">Étape validation</p>
+            <p className="text-gray-700">{nbEtapesDone}/{etapes.length} {lastStatut && d.statut === lastStatut ? "(approuvé)" : ""}</p>
+          </div>
         </div>
-        {extra && <p className="text-[10px] text-gray-400 mt-0.5 ml-6">{extra}</p>}
+        <div className="border-t border-gray-100 pt-3 space-y-1.5">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Montants clés</p>
+          <div className="flex justify-between text-sm"><span className="text-gray-500">Travaux exécutés</span><span className="font-semibold">{num(postes.A?.cumulM ?? d.montant_brut)} FCFA</span></div>
+          <div className="flex justify-between text-sm"><span className="text-gray-500">RG + AD</span><span className="text-red-600">−{num((postes.D?.cumulM ?? 0) + (postes.C?.cumulM ?? 0))} FCFA</span></div>
+          {sit?.montant_en_validation > 0 && (
+            <div className="flex justify-between text-sm"><span className="text-gray-500">Cessions</span><span className="text-gray-600">{num(postes.G?.cumulM ?? 0)} FCFA</span></div>
+          )}
+          <div className="flex justify-between text-sm font-bold border-t pt-2 mt-1"><span>Net TTC</span><span className="text-[#087F3E]">{num(d.montant_ttc)} FCFA</span></div>
+        </div>
+      </div>
+
+      {/* Marché */}
+      {contrat && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Marché</h3>
+          <div className="space-y-1.5 text-sm">
+            <div className="flex justify-between"><span className="text-gray-500">Montant initial</span><span>{num(contrat.montant_initial)} FCFA</span></div>
+            {(contrat.avenants ?? []).map((a, i) => (
+              <div key={i} className="flex justify-between text-violet-600 text-xs">
+                <span>{a.code}</span><span>{a.montant >= 0 ? "+" : ""}{num(a.montant)} FCFA</span>
+              </div>
+            ))}
+            <div className="flex justify-between font-semibold border-t pt-1.5 text-[#087F3E]">
+              <span>Montant actualisé</span><span>{num(montantActuel)} FCFA</span>
+            </div>
+            {sit && <div className="flex justify-between text-sm"><span className="text-gray-500">Solde du bon de commande</span><span className="font-medium">{num(sit.solde_bc)} FCFA</span></div>}
+          </div>
+          <Link to={`/contrats/${d.contrat_id}`} className="text-xs text-[#087F3E] hover:underline">Voir le contrat {contrat.code} →</Link>
+        </div>
+      )}
+
+      {/* Situation financière */}
+      {sit && montantActuel > 0 && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Situation financière</h3>
+          <div className="text-xs text-gray-500 mb-1">{num(montantActuel)} FCFA · {sit.pct_realise ?? 0}% réalisé</div>
+          <div className="h-3 rounded-full bg-gray-100 overflow-hidden flex">
+            <div className="bg-emerald-500 transition-all" style={{ width: `${pctPaye}%` }} title={`Payé : ${num(sit.montant_paye)} FCFA`} />
+            <div className="bg-blue-400 transition-all" style={{ width: `${pctAppr}%` }} title={`Approuvé : ${num(sit.montant_approuve)} FCFA`} />
+            <div className="bg-amber-300 transition-all" style={{ width: `${pctEnVal}%` }} title={`En validation : ${num(sit.montant_en_validation)} FCFA`} />
+          </div>
+          <div className="flex gap-3 text-xs flex-wrap">
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />Payé</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block" />Approuvé</span>
+            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-300 inline-block" />En validation</span>
+          </div>
+          <div className="space-y-1 text-sm pt-1 border-t border-gray-100">
+            <div className="flex justify-between"><span className="text-gray-500">Payé</span><span className="font-medium text-emerald-700">{num(sit.montant_paye)} FCFA</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">Approuvé (à payer)</span><span className="font-medium text-blue-700">{num(sit.montant_approuve)} FCFA</span></div>
+            <div className="flex justify-between"><span className="text-gray-500">En cours de validation</span><span className="font-medium text-amber-700">{num(sit.montant_en_validation)} FCFA</span></div>
+            <div className="flex justify-between font-semibold border-t pt-1 mt-1"><span>Solde restant</span><span>{num(sit.solde_bc)} FCFA</span></div>
+          </div>
+        </div>
+      )}
+
+      {/* Retenues cumulées */}
+      {sit && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Retenues cumulées</h3>
+          <div className="space-y-3">
+            <div>
+              <div className="flex justify-between text-sm mb-0.5">
+                <span className="text-gray-500">Retenue de garantie (5%)</span>
+                <span className="font-semibold">{num(sit.retenue_cumulee)} FCFA</span>
+              </div>
+              {montantActuel > 0 && <p className="text-[10px] text-gray-400">{((sit.retenue_cumulee / montantActuel) * 100).toFixed(1)}% du marché actualisé</p>}
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-0.5">
+                <span className="text-gray-500">Avance démarrage (15%)</span>
+                <span className="font-semibold">{num(sit.avance_cumulee)} FCFA</span>
+              </div>
+              {montantActuel > 0 && <p className="text-[10px] text-gray-400">{((sit.avance_cumulee / montantActuel) * 100).toFixed(1)}% du marché actualisé</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stats décomptes */}
+      {sit && (
+        <div className="bg-white border border-gray-200 rounded-2xl p-5">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Décomptes</h3>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            {[
+              { label: "Total", val: sit.total },
+              { label: "Payés", val: sit.payes, color: "text-emerald-700" },
+              { label: "En validation", val: sit.en_validation, color: "text-amber-700" },
+              { label: "Brouillons", val: sit.brouillons, color: "text-gray-500" },
+            ].map(({ label, val, color }) => (
+              <div key={label} className="flex justify-between border-b border-gray-50 pb-1">
+                <span className="text-gray-500">{label}</span>
+                <span className={`font-semibold ${color ?? "text-gray-800"}`}>{val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Ligne de poste ──────────────────────────────────────────────────────────
+function PosteLigne({ code, type, label, taux, cumulM1, mensuelM, cumulM, editable, onChange, extra, extra2 }) {
+  const isInfo  = type === "info";
+  const isMinus = type === "minus";
+
+  const badge = {
+    "plus":  <span className="w-4 h-4 rounded bg-green-100 text-green-600 text-[9px] flex items-center justify-center font-bold flex-shrink-0">+</span>,
+    "minus": <span className="w-4 h-4 rounded bg-red-100 text-red-500 text-[9px] flex items-center justify-center font-bold flex-shrink-0">−</span>,
+    "info":  <span className="w-4 h-4 rounded bg-blue-100 text-blue-500 text-[9px] flex items-center justify-center font-bold flex-shrink-0">i</span>,
+  }[type] ?? null;
+
+  const valColor = isInfo ? "text-gray-400 italic" : isMinus ? "text-red-600" : "text-gray-800 font-medium";
+
+  return (
+    <tr className="border-b border-gray-50 hover:bg-gray-50/60 group">
+      <td className="px-4 py-2.5 w-12">
+        <span className="text-xs font-bold text-gray-400">{code}</span>
       </td>
-      <td className="px-4 py-2.5 text-right text-xs text-gray-300 w-28">—</td>
-      <td className={`px-4 py-2.5 text-right text-sm w-36 ${valColor}`}>
-        {moisM === 0 ? "0" : moisM ? fmtNum(Math.abs(moisM)) : "—"}
+      <td className="px-2 py-2.5">
+        <div className="flex items-start gap-2">
+          {badge}
+          <div>
+            <span className="text-sm text-gray-800">{label}</span>
+            {taux && <span className="ml-2 text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{taux}%</span>}
+            {extra  && <p className="text-[10px] text-gray-400 mt-0.5">{extra}</p>}
+            {extra2 && <p className="text-[10px] text-gray-400">{extra2}</p>}
+          </div>
+        </div>
       </td>
-      <td className={`px-4 py-2.5 text-right text-sm w-36 ${valColor}`}>
-        {moisM === 0 ? "0" : moisM ? fmtNum(Math.abs(moisM)) : "—"}
+      <td className="px-3 py-2.5 text-right text-xs text-gray-300 w-32 tabular-nums">
+        {cumulM1 != null && cumulM1 !== 0 ? num(cumulM1) : "—"}
+      </td>
+      <td className="px-3 py-2.5 text-right text-sm w-32 tabular-nums text-gray-500 italic">
+        {mensuelM != null ? (isMinus ? (mensuelM !== 0 ? num(mensuelM) : "0") : (mensuelM !== 0 ? num(mensuelM) : "0")) : "—"}
+      </td>
+      <td className={`px-4 py-2.5 text-right text-sm w-36 tabular-nums ${valColor}`}>
+        {editable && !isInfo ? (
+          <input
+            type="number" min={0} value={cumulM ?? 0}
+            onChange={e => onChange && onChange(parseFloat(e.target.value) || 0)}
+            className="w-full text-right px-2 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 tabular-nums"
+          />
+        ) : (
+          cumulM != null ? (cumulM === 0 ? "0" : num(cumulM)) : "—"
+        )}
       </td>
     </tr>
   );
 }
 
-// ─── Onglet Structure ─────────────────────────────────────────────
-function StructureTab({ decompte, canEdit, form, setForm, onSave, savePending, parametresData, eCessionsData }) {
-  const d = decompte;
-  const isNew = !d;
+// ─── Onglet Structure ────────────────────────────────────────────────────────
+function StructureTab({ decompte, canEdit, onSave, saving }) {
+  const d       = decompte;
+  const payload = d.payload ?? {};
+  const prev    = d.precedent?.postes ?? {};
 
-  // Computed (live in edit mode, from model in view mode)
-  const brut      = isNew ? 0 : parseFloat(d.montant_brut ?? 0);
-  const rg        = isNew ? 0 : parseFloat(d.montant_retenue_garantie ?? 0);
-  const avances   = isNew ? 0 : parseFloat(d.montant_avances_deduites ?? 0);
-  const penalites = isNew ? 0 : parseFloat(d.montant_penalites ?? 0);
-  const ht        = isNew ? 0 : parseFloat(d.montant_ht ?? 0);
-  const tva       = isNew ? 0 : parseFloat(d.montant_tva ?? 0);
-  const ttc       = isNew ? 0 : parseFloat(d.montant_ttc ?? 0);
+  const [mode, setMode]     = useState(payload.mode ?? "cumulatif");
+  const [postes, setPostes] = useState(() => {
+    const p = payload.postes ?? {};
+    return {
+      E: p.E?.cumulM ?? 0,
+      H: p.H?.cumulM ?? 0,
+      J: p.J?.cumulM ?? 0,
+      L: p.L?.cumulM ?? 0,
+      F: p.F?.cumulM ?? 0,
+    };
+  });
 
-  // Période from état de cession
-  const ec = d?.etat_cession;
-  const periode = ec?.periode_debut && ec?.periode_fin
-    ? `${fmtMois(ec.periode_debut)} → ${fmtMois(ec.periode_fin)}`
-    : "—";
+  useEffect(() => {
+    const p = (decompte.payload?.postes) ?? {};
+    setPostes({ E: p.E?.cumulM ?? 0, H: p.H?.cumulM ?? 0, J: p.J?.cumulM ?? 0, L: p.L?.cumulM ?? 0, F: p.F?.cumulM ?? 0 });
+  }, [decompte.id]);
 
-  // Contrat financier data
-  const contrat        = d?.contrat;
-  const montantInitial = parseFloat(contrat?.montant_initial ?? 0);
-  const montantActuel  = parseFloat(contrat?.montant_actuel ?? montantInitial);
-  const avenants       = contrat?.avenants ?? [];
-  const avenValides    = avenants.filter(a => a.statut === "valide");
-  const totalAvenants  = avenValides.reduce((s, a) => s + parseFloat(a.montant ?? 0), 0);
+  const p = payload.postes ?? {};
 
-  if (canEdit) {
-    // Edit form (brouillon)
-    const ecList = eCessionsData?.data ?? [];
-    const selEC  = ecList.find(e => String(e.id) === String(form.etat_cession_id));
-    const echeancePast = form.date_echeance && form.date_echeance < new Date().toISOString().slice(0, 10);
+  // Computed cumuls M-1
+  const cM1 = code => prev[code]?.cumulM ?? 0;
 
-    return (
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2 space-y-5">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Paramètres du décompte</h3>
+  // Poste A
+  const cumulA   = p.A?.cumulM ?? d.montant_brut ?? 0;
+  const mensuelA = cumulA - cM1("A");
 
-          {!d && (
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">État de cession *</label>
-              <select value={form.etat_cession_id} onChange={e => setForm(f => ({ ...f, etat_cession_id: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white">
-                <option value="">— Sélectionner un état de cession validé —</option>
-                {ecList.map(ec => (
-                  <option key={ec.id} value={ec.id}>{ec.code} · {fmtNum(ec.montant_total)} FCFA</option>
-                ))}
-              </select>
-              {selEC && (
-                <div className="mt-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-2 text-xs text-gray-600">
-                  Montant brut : <span className="font-semibold">{fmtNum(selEC.montant_total)} FCFA</span>
-                </div>
-              )}
-            </div>
-          )}
+  // Poste C (avances = tauxAD% × A)
+  const tauxAD   = p.C?.tauxAD ?? 15;
+  const cumulC   = p.C?.cumulM ?? Math.round(cumulA * tauxAD / 100);
+  const mensuelC = cumulC - cM1("C");
 
-          {d?.etat_cession && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-              <p className="text-xs text-gray-400">État de cession</p>
-              <p className="text-sm font-semibold text-gray-800">{d.etat_cession.code}</p>
-            </div>
-          )}
+  // Poste D (RG = tauxRG% × A) — négatif
+  const tauxRG   = p.D?.tauxRG ?? (d.taux_retenue_garantie ?? 5);
+  const cumulD   = p.D?.cumulM ?? Math.round(cumulA * tauxRG / 100);
+  const mensuelD = cumulD - cM1("D");
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Taux RG (%)</label>
-              <input type="number" value={form.taux_retenue_garantie} onChange={e => setForm(f => ({ ...f, taux_retenue_garantie: e.target.value }))}
-                min={0} step={0.5} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Taux TVA (%)</label>
-              <input type="number" value={form.taux_tva} onChange={e => setForm(f => ({ ...f, taux_tva: e.target.value }))}
-                min={0} step={0.5} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Avances déduites (FCFA)</label>
-              <input type="number" value={form.montant_avances_deduites} onChange={e => setForm(f => ({ ...f, montant_avances_deduites: e.target.value }))}
-                min={0} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Pénalités (FCFA)</label>
-              <input type="number" value={form.montant_penalites} onChange={e => setForm(f => ({ ...f, montant_penalites: e.target.value }))}
-                min={0} className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Date d'échéance</label>
-              <input type="date" value={form.date_echeance} onChange={e => setForm(f => ({ ...f, date_echeance: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
-              {echeancePast && <p className="text-xs text-amber-600 mt-1">⚠ Date dans le passé.</p>}
-            </div>
-          </div>
+  // Postes saisissables
+  const mensuelE = postes.E - cM1("E");
+  const cumulG   = p.G?.cumulM ?? 0;
+  const mensuelH = postes.H - cM1("H");
+  const cumulI   = p.I?.cumulM ?? 0;
+  const mensuelJ = postes.J - cM1("J");
+  const cumulK   = p.K?.cumulM ?? 0;
+  const mensuelL = postes.L - cM1("L");
 
-          <div className="space-y-1.5">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Observations</label>
-            <textarea rows={3} value={form.observations} onChange={e => setForm(f => ({ ...f, observations: e.target.value }))}
-              placeholder="Notes ou observations…"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none resize-none" />
-          </div>
+  // Net HT
+  const netHt  = mensuelA - mensuelC - mensuelD + mensuelE - mensuelH - mensuelJ + mensuelL - postes.F;
+  const tva    = Math.round(netHt * (d.taux_tva ?? 18) / 100);
+  const netTtc = netHt + tva;
 
-          <div className="flex justify-end">
-            <button onClick={onSave} disabled={savePending}
-              className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60 transition-colors">
-              {savePending ? <><Loader2 size={15} className="animate-spin" /> Enregistrement…</> : <><Save size={15} /> Enregistrer</>}
-            </button>
-          </div>
-        </div>
+  function handleSet(code, val) { setPostes(prev => ({ ...prev, [code]: val })); }
 
-        {/* Récap rapide */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-2 h-fit">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Récapitulatif financier</h3>
-          {d ? (
-            <>
-              <div className="flex justify-between text-sm"><span className="text-gray-500">Montant brut</span><span className="font-medium">{fmtNum(brut)} FCFA</span></div>
-              <div className="flex justify-between text-sm"><span className="text-gray-500">Retenue garantie ({d.taux_retenue_garantie}%)</span><span className="text-red-600">−{fmtNum(rg)} FCFA</span></div>
-              <div className="flex justify-between text-sm"><span className="text-gray-500">Avances déduites</span><span className="text-red-600">−{fmtNum(avances)} FCFA</span></div>
-              <div className="flex justify-between text-sm"><span className="text-gray-500">Pénalités</span><span className="text-red-600">−{fmtNum(penalites)} FCFA</span></div>
-              <div className="flex justify-between text-sm border-t pt-2 mt-2 font-semibold"><span className="text-[#087F3E]">Net HT</span><span className="text-[#087F3E]">{fmtNum(ht)} FCFA</span></div>
-              <div className="flex justify-between text-sm"><span className="text-gray-500">TVA ({d.taux_tva}%)</span><span>{fmtNum(tva)} FCFA</span></div>
-              <div className="flex justify-between text-sm font-bold border-t pt-2 mt-2"><span>Net TTC</span><span>{fmtNum(ttc)} FCFA</span></div>
-            </>
-          ) : (
-            <p className="text-xs text-gray-400">Sélectionnez un état de cession.</p>
-          )}
-        </div>
-      </div>
-    );
+  function buildPayload() {
+    return {
+      mode,
+      postes: {
+        E: { cumulM: postes.E },
+        H: { cumulM: postes.H },
+        J: { cumulM: postes.J },
+        L: { cumulM: postes.L },
+        F: { cumulM: postes.F },
+      },
+    };
   }
 
-  // View mode — tableau postes
+  const attachementCode = p.A?.attachementCode;
+  const nbCessions = (p.G?.cessionsIds ?? []).length;
+
   return (
-    <div className="grid grid-cols-3 gap-6">
-      {/* Left: tableau postes */}
-      <div className="col-span-2 space-y-4">
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div className="flex gap-5 items-start">
+      {/* Tableau principal */}
+      <div className="flex-[3] min-w-0 space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-gray-400">Mode : {mode === "cumulatif" ? "Saisie cumulative" : "Saisie mensuelle"}</p>
+          {canEdit && (
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 text-xs">
+              <button onClick={() => setMode("cumulatif")} className={`px-3 py-1.5 rounded-md font-medium transition-colors ${mode === "cumulatif" ? "bg-white shadow text-gray-900" : "text-gray-500"}`}>Saisie cumulative</button>
+              <button onClick={() => setMode("mensuel")} className={`px-3 py-1.5 rounded-md font-medium transition-colors ${mode === "mensuel" ? "bg-white shadow text-gray-900" : "text-gray-500"}`}>Saisie mensuelle</button>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide w-10">Poste</th>
-                <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wide">Désignation</th>
-                <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-400 uppercase tracking-wide w-28">Cumul M-1</th>
-                <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-400 uppercase tracking-wide w-36">Mois M</th>
-                <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-400 uppercase tracking-wide w-36">Cumul M</th>
+                <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-12">Poste</th>
+                <th className="px-2 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Désignation</th>
+                <th className="px-3 py-3 text-right text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-32">Cumul(M-1)</th>
+                <th className="px-3 py-3 text-right text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-32">Mois(M)</th>
+                <th className="px-4 py-3 text-right text-[10px] font-semibold text-blue-500 uppercase tracking-wide w-36">
+                  Cumul(M){canEdit ? " ↑ saisie" : ""}
+                </th>
               </tr>
             </thead>
             <tbody>
-              <PosteRow code="A" type="plus"  label="Travaux exécutés"               moisM={brut} />
-              <PosteRow code="C" type="info"  label={`Avance démarrage (${d.taux_retenue_garantie ?? 15}%)`} moisM={avances} extra="Remboursement sur avance de démarrage" />
-              <PosteRow code="D" type="minus" label={`Retenue de garantie (${d.taux_retenue_garantie}%)`} moisM={-rg} />
-              <PosteRow code="E" type="plus"  label="Restitution RG"                 moisM={0} />
-              <PosteRow code="G" type="info"  label="Cessions matériaux (info)"      moisM={0} extra="État de cession" />
-              <PosteRow code="H" type="minus" label="Remboursement cessions matériaux" moisM={0} extra={`Montant cédé sur la période : 0 FCFA · Déjà remboursé : 0 FCFA`} />
-              <PosteRow code="I" type="info"  label="Cessions matériel (info)"       moisM={0} extra="État de cession" />
-              <PosteRow code="J" type="minus" label="Remboursement cessions matériel" moisM={0} extra={`Montant cédé sur la période : 0 FCFA · Déjà remboursé : 0 FCFA`} />
-              <PosteRow code="K" type="info"  label="Cessions ressources humaines (info)" moisM={0} extra="État de cession" />
-              <PosteRow code="L" type="minus" label="Remboursement RH"               moisM={0} extra={`Montant cédé sur la période : 0 FCFA · Déjà remboursé : 0 FCFA`} />
+              <PosteLigne code="A" type="plus" label="Travaux exécutés"
+                extra={attachementCode ? `Dossier ${attachementCode}` : "Aucun attachement — initier depuis le contrat"}
+                cumulM1={cM1("A")} mensuelM={mensuelA} cumulM={cumulA} editable={false} />
+
+              <PosteLigne code="C" type="info" label="Avances démarrage (info)" taux={tauxAD}
+                cumulM1={cM1("C")} mensuelM={mensuelC} cumulM={cumulC} editable={false} />
+
+              <PosteLigne code="D" type="minus" label="Retenue de garantie" taux={tauxRG}
+                cumulM1={cM1("D")} mensuelM={mensuelD} cumulM={cumulD} editable={false} />
+
+              <PosteLigne code="E" type="plus" label="Restitution RG"
+                cumulM1={cM1("E")} mensuelM={mensuelE} cumulM={postes.E}
+                editable={canEdit} onChange={v => handleSet("E", v)} />
+
+              <PosteLigne code="G" type="info" label="Cessions matériaux (info)"
+                extra="état de cession" extra2={nbCessions > 0 ? `${nbCessions} état(s) consommé(s)` : undefined}
+                cumulM1={cM1("G")} mensuelM={cumulG - cM1("G")} cumulM={cumulG} editable={false} />
+
+              <PosteLigne code="H" type="minus" label="Remboursement cessions matériaux"
+                extra={`Montant cédé sur la période : ${num(cumulG)} FCFA`}
+                extra2={`Déjà remboursé (décomptes antérieurs) : ${num(cM1("H"))} FCFA`}
+                cumulM1={cM1("H")} mensuelM={mensuelH} cumulM={postes.H}
+                editable={canEdit} onChange={v => handleSet("H", v)} />
+
+              <PosteLigne code="I" type="info" label="Cessions matériel (info)"
+                extra="état de cession"
+                cumulM1={cM1("I")} mensuelM={cumulI - cM1("I")} cumulM={cumulI} editable={false} />
+
+              <PosteLigne code="J" type="minus" label="Remboursement cessions matériel"
+                extra={`Montant cédé sur la période : ${num(cumulI)} FCFA`}
+                extra2={`Déjà remboursé (décomptes antérieurs) : ${num(cM1("J"))} FCFA`}
+                cumulM1={cM1("J")} mensuelM={mensuelJ} cumulM={postes.J}
+                editable={canEdit} onChange={v => handleSet("J", v)} />
+
+              <PosteLigne code="K" type="info" label="Cessions ressources humaines (info)"
+                extra="état de cession"
+                cumulM1={cM1("K")} mensuelM={cumulK - cM1("K")} cumulM={cumulK} editable={false} />
+
+              <PosteLigne code="L" type="minus" label="Remboursement RH"
+                extra={`Montant cédé sur la période : ${num(cumulK)} FCFA`}
+                extra2={`Déjà remboursé (décomptes antérieurs) : ${num(cM1("L"))} FCFA`}
+                cumulM1={cM1("L")} mensuelM={mensuelL} cumulM={postes.L}
+                editable={canEdit} onChange={v => handleSet("L", v)} />
             </tbody>
           </table>
+
+          {/* Totaux */}
+          <div className="border-t-2 border-gray-200 px-4 py-3 space-y-1.5">
+            <div className="flex justify-between text-sm">
+              <span className="font-semibold text-gray-700">NET À RÉGLER (HT)</span>
+              <span className={`font-bold tabular-nums ${netHt < 0 ? "text-red-600" : "text-gray-900"}`}>{netHt < 0 ? "−" : ""}{num(netHt)} FCFA</span>
+            </div>
+            <div className="flex justify-between text-sm text-gray-500">
+              <span>TVA ({d.taux_tva ?? 18}%)</span>
+              <span className="tabular-nums">{num(tva)} FCFA</span>
+            </div>
+            <div className="flex justify-between text-base font-bold border-t border-gray-100 pt-2">
+              <span className="text-gray-900">NET TTC À PAYER</span>
+              <span className={`tabular-nums ${netHt < 0 ? "text-red-600" : "text-[#087F3E]"}`}>{netHt < 0 ? "−" : ""}{num(netTtc)} FCFA</span>
+            </div>
+          </div>
         </div>
 
-        {/* Barre totaux */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
+        {netHt < 0 && (
+          <div className="flex items-center gap-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-xl text-orange-800 text-sm">
+            <AlertTriangle size={14} className="flex-shrink-0" />
+            Net HT négatif — les cessions dépassent les travaux certifiés. Une alerte est émise vers le DCG et la DGA.
+          </div>
+        )}
+
+        {/* Cards résumé */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-5">
           <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
             {[
-              { label: "Travaux exécutés", value: brut, color: "text-gray-900" },
-              { label: "Retenue de garantie", value: -rg, color: "text-red-600" },
-              { label: "Remb. avance démarrage", value: -avances, color: "text-red-600" },
-              { label: "Remboursement MTX", value: 0, color: "text-gray-500" },
-              { label: "Net HT", value: ht, color: "text-[#087F3E] font-bold" },
-              { label: `TVA ${d.taux_tva}%`, value: tva, color: "text-gray-600" },
+              { label: "Travaux exécutés",     value: mensuelA,  color: "text-gray-900" },
+              { label: "Retenue de garantie",  value: -mensuelD, color: "text-red-600" },
+              { label: "Remb. avance démarrage", value: -mensuelC, color: "text-red-600" },
+              { label: "Remboursement MTX",    value: -mensuelH, color: "text-red-600" },
+              { label: "Net HT",               value: netHt,     color: netHt < 0 ? "text-red-600 font-bold" : "text-[#087F3E] font-bold" },
+              { label: `TVA ${d.taux_tva ?? 18}%`, value: tva, color: "text-gray-600" },
             ].map(item => (
               <div key={item.label} className="text-center">
-                <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">{item.label}</p>
-                <p className={`text-sm ${item.color}`}>{fmtNum(Math.abs(item.value))} FCFA</p>
+                <p className="text-[9px] text-gray-400 uppercase tracking-wide mb-1 leading-tight">{item.label}</p>
+                <p className={`text-sm ${item.color}`}>{item.value < 0 ? "−" : ""}{num(item.value)}<span className="text-[9px] text-gray-400 ml-0.5">FCFA</span></p>
               </div>
             ))}
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100 text-center">
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Net TTC à payer · TVA {d.taux_tva}% incluse</p>
-            <p className="text-2xl font-bold text-gray-900">{fmtNum(ttc)} FCFA</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Right: Informations */}
-      <div className="space-y-4">
-        {/* Infos clés */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Informations</h3>
-          <div className="space-y-2 text-sm">
-            <div><p className="text-xs text-gray-400">Code</p><p className="font-mono font-semibold text-gray-900">{d.code}</p></div>
-            <div><p className="text-xs text-gray-400">Période</p><p className="text-gray-700">{periode}</p></div>
-            {d.date_echeance && <div><p className="text-xs text-gray-400">Échéance</p><p className="text-gray-700">{fmtDate(d.date_echeance)}</p></div>}
-          </div>
-          <div className="border-t border-gray-100 pt-3 space-y-2">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Montants clés</p>
-            <div className="flex justify-between text-sm"><span className="text-gray-500">Travaux exécutés</span><span className="font-semibold">{fmtNum(brut)} FCFA</span></div>
-            <div className="flex justify-between text-sm"><span className="text-gray-500">RG + Avance</span><span className="text-red-600">−{fmtNum(rg + avances)} FCFA</span></div>
-            <div className="flex justify-between text-sm font-bold border-t pt-2 mt-1"><span>Net TTC</span><span className="text-[#087F3E]">{fmtNum(ttc)} FCFA</span></div>
+            <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Net TTC à régler · TVA {d.taux_tva ?? 18}% incluse</p>
+            <p className={`text-2xl font-bold ${netHt < 0 ? "text-red-600" : "text-gray-900"}`}>{netHt < 0 ? "−" : ""}{num(netTtc)} FCFA</p>
           </div>
         </div>
 
-        {/* Marché */}
-        {contrat && (
-          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-            <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Marché</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-500">Montant initial</span><span>{fmtNum(montantInitial)} FCFA</span></div>
-              {avenValides.map((a, i) => (
-                <div key={a.id} className="flex justify-between text-violet-700">
-                  <span>AVN-{String(i + 1).padStart(2, "0")}</span>
-                  <span>{parseFloat(a.montant) >= 0 ? "+" : ""}{fmtNum(parseFloat(a.montant))} FCFA</span>
-                </div>
-              ))}
-              <div className="flex justify-between font-semibold border-t pt-2"><span className="text-[#087F3E]">Montant actualisé</span><span className="text-[#087F3E]">{fmtNum(montantActuel)} FCFA</span></div>
-            </div>
-            <Link to={`/contrats/${d.contrat_id}`} className="text-xs text-[#087F3E] hover:underline">
-              Voir le contrat {contrat.code} →
-            </Link>
+        {canEdit && (
+          <div className="flex justify-end">
+            <button onClick={() => onSave(buildPayload())} disabled={saving}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
+              {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={14} />}
+              Enregistrer le brouillon
+            </button>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
 
-        {/* Retenues cumulées */}
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Retenues cumulées</h3>
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-500">Retenue de garantie ({d.taux_retenue_garantie}%)</span>
-                <span className="font-semibold">{fmtNum(rg)} FCFA</span>
-              </div>
-              <p className="text-[10px] text-gray-400">{montantActuel > 0 ? ((rg / montantActuel) * 100).toFixed(1) : 0}% du marché actualisé</p>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-500">Avance démarrage</span>
-                <span className="font-semibold">{fmtNum(avances)} FCFA</span>
-              </div>
-              <p className="text-[10px] text-gray-400">{montantActuel > 0 ? ((avances / montantActuel) * 100).toFixed(1) : 0}% du marché actualisé</p>
-            </div>
+// ─── Formulaire nouveau décompte ─────────────────────────────────────────────
+function NouveauForm({ onSave, saving }) {
+  const { data: contratsData } = useContratsPaginated({ count: 100 });
+  const contrats = contratsData?.data ?? [];
+
+  const [form, setForm] = useState({
+    contrat_id: "",
+    type:       "provisoire",
+    date_debut: "",
+    date_fin:   "",
+  });
+
+  function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
+
+  return (
+    <div className="max-w-xl space-y-5">
+      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Informations générales</h3>
+
+      <div className="space-y-4">
+        <div>
+          <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-1.5">Contrat *</label>
+          <select value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)}
+            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white">
+            <option value="">— Sélectionner un contrat —</option>
+            {contrats.map(c => (
+              <option key={c.id} value={c.id}>{c.code} — {c.objet ?? c.soustraitant?.raison_sociale ?? ""}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-1.5">Type de décompte *</label>
+          <select value={form.type} onChange={e => set("type", e.target.value)}
+            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white">
+            {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
+        </div>
+
+        <div className="p-3 bg-gray-50 rounded-xl">
+          <p className="text-xs text-gray-400 mb-0.5">Mode de renseignement</p>
+          <p className="text-sm font-medium text-gray-700">Saisie manuelle</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-1.5">Date de début *</label>
+            <input type="date" value={form.date_debut} onChange={e => set("date_debut", e.target.value)}
+              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+          </div>
+          <div>
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-1.5">Date de fin *</label>
+            <input type="date" value={form.date_fin} onChange={e => set("date_fin", e.target.value)}
+              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
           </div>
         </div>
       </div>
+
+      <button onClick={() => onSave(form)} disabled={!form.contrat_id || !form.date_debut || !form.date_fin || saving}
+        className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50">
+        {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={14} />}
+        Enregistrer le brouillon
+      </button>
     </div>
   );
 }
 
-// ─── Onglet Cessions ─────────────────────────────────────────────
-function CessionsDecTab({ contratId }) {
-  const { data, isLoading } = useEtatsCessionPaginated({ contrat_id: contratId ? parseInt(contratId) : null, count: 50 });
-  const cessions = data?.data ?? [];
-
-  if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
-  if (cessions.length === 0) return (
-    <div className="text-center py-12 text-gray-400 text-sm">
-      <p>Aucun état de cession pour ce contrat.</p>
-      <Link to={`/etats-cession/nouveau?contrat_id=${contratId}`} className="mt-2 inline-block text-xs text-[#087F3E] hover:underline">
-        Créer un état de cession →
-      </Link>
-    </div>
-  );
-
-  return (
-    <div className="space-y-3">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-gray-100">
-            {["Code", "Période", "Montant total", "Statut", ""].map(h => (
-              <th key={h} className="text-left text-xs uppercase tracking-wide font-medium text-gray-400 pb-2 pr-3">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-50">
-          {cessions.map(ec => (
-            <tr key={ec.id} className="hover:bg-gray-50">
-              <td className="py-2.5 pr-3 font-mono text-xs font-semibold text-gray-900">{ec.code}</td>
-              <td className="py-2.5 pr-3 text-gray-500 text-xs">
-                {ec.periode_debut && ec.periode_fin ? `${fmtMois(ec.periode_debut)} → ${fmtMois(ec.periode_fin)}` : "—"}
-              </td>
-              <td className="py-2.5 pr-3 font-semibold text-gray-800">{fmtNum(ec.montant_total)} FCFA</td>
-              <td className="py-2.5 pr-3"><StatusBadge statut={ec.statut} /></td>
-              <td className="py-2.5 text-right">
-                <Link to={`/etats-cession/${ec.id}`} className="text-xs text-[#087F3E] hover:underline">Voir</Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ─── Onglet Pièces jointes ───────────────────────────────────────
-const CATEGORIES_PJ = [
-  { value: "contrat",    label: "Contrat" },
-  { value: "avenant",   label: "Avenant" },
-  { value: "decompte",  label: "Décompte" },
-  { value: "facture",   label: "Facture" },
-  { value: "autre",     label: "Autre" },
-];
-
-function PiecesDecTab({ contratId }) {
-  const { addToast }  = useToast();
-  const [categorie, setCategorie]   = useState("decompte");
-  const [filterCat, setFilterCat]   = useState("all");
-  const [dragging, setDragging]     = useState(false);
-  const [confirmDel, setConfirmDel] = useState(null);
-
-  const { data: pieces = [], isLoading } = usePiecesJointes(contratId);
-  const uploadMut = useUploadPieceJointe();
-  const deleteMut = useDeletePieceJointe();
-
-  const filtered = filterCat === "all" ? pieces : pieces.filter(p => p.categorie === filterCat);
-  const counts   = CATEGORIES_PJ.reduce((acc, c) => { acc[c.value] = pieces.filter(p => p.categorie === c.value).length; return acc; }, {});
-
-  async function handleFiles(files) {
-    for (const f of Array.from(files)) {
-      try {
-        await uploadMut.mutateAsync({ contrat_id: contratId, categorie, fichier: f });
-      } catch (err) {
-        addToast(err.response?.data?.message ?? `Erreur upload ${f.name}`, "error");
-      }
-    }
-    addToast("Fichier(s) ajouté(s).", "success");
-  }
-
-  async function handleDelete(pj) {
-    try {
-      await deleteMut.mutateAsync(pj.id);
-      setConfirmDel(null);
-    } catch (err) {
-      addToast("Erreur suppression.", "error");
-    }
-  }
-
-  async function handleDownload(pj) {
-    const token = localStorage.getItem("stt_token");
-    const resp  = await fetch(pieceJointeService.downloadUrl(pj.id), { headers: { Authorization: `Bearer ${token}` } });
-    const blob  = await resp.blob();
-    const a     = document.createElement("a");
-    a.href      = URL.createObjectURL(blob);
-    a.download  = pj.nom_original;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  }
-
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-[200px_1fr] gap-4">
-        <div className="space-y-1.5">
-          <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Catégorie</label>
-          <select value={categorie} onChange={e => setCategorie(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none">
-            {CATEGORIES_PJ.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
-        </div>
-        <div onDragOver={e => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
-          className={`border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 py-6 cursor-pointer transition-colors
-            ${dragging ? "border-[#087F3E] bg-[#E8F5EE]/60" : "border-gray-200 hover:border-[#087F3E]/50 hover:bg-gray-50"}`}
-          onClick={() => document.getElementById("pj-dec-input").click()}>
-          <Upload size={20} className="text-gray-400" />
-          <p className="text-sm text-gray-500">Glissez-déposez ou <span className="text-[#087F3E] font-medium">cliquez</span></p>
-          <p className="text-xs text-gray-400">PDF, DOCX, XLSX, JPG, PNG — max 10 MB</p>
-          <input id="pj-dec-input" type="file" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-            className="hidden" onChange={e => handleFiles(e.target.files)} />
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1 border-b border-gray-100">
-        {[{ value: "all", label: "Toutes", count: pieces.length }, ...CATEGORIES_PJ.map(c => ({ ...c, count: counts[c.value] }))].map(t => (
-          <button key={t.value} onClick={() => setFilterCat(t.value)}
-            className={`px-3 py-2 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-px
-              ${filterCat === t.value ? "border-[#087F3E] text-[#087F3E]" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
-            {t.label}
-            {t.count > 0 && <span className="ml-1 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{t.count}</span>}
-          </button>
-        ))}
-      </div>
-
-      {isLoading ? (
-        <p className="text-sm text-gray-400 text-center py-6">Chargement…</p>
-      ) : filtered.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">Aucun fichier dans cette catégorie.</p>
-      ) : (
-        <div className="space-y-2">
-          {filtered.map(pj => (
-            <div key={pj.id} className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 hover:border-gray-200 transition-colors">
-              <File size={18} className="text-gray-400 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">{pj.nom_original}</p>
-                <p className="text-xs text-gray-400">{pj.taille_fmt} · {pj.created_at}</p>
-              </div>
-              <span className="text-[10px] bg-white border border-gray-200 text-gray-500 px-2 py-0.5 rounded-full shrink-0">
-                {CATEGORIES_PJ.find(c => c.value === pj.categorie)?.label ?? pj.categorie}
-              </span>
-              <button onClick={() => handleDownload(pj)} className="p-1.5 text-gray-400 hover:text-[#087F3E]"><Download size={15} /></button>
-              {confirmDel === pj.id ? (
-                <span className="inline-flex items-center gap-2 text-xs">
-                  <span className="text-red-600">Supprimer ?</span>
-                  <button onClick={() => handleDelete(pj)} className="text-red-600 font-medium">Oui</button>
-                  <button onClick={() => setConfirmDel(null)} className="text-gray-400">Non</button>
-                </span>
-              ) : (
-                <button onClick={() => setConfirmDel(pj.id)} className="p-1.5 text-gray-300 hover:text-red-500"><Trash2 size={15} /></button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Page principale ─────────────────────────────────────────────
+// ─── Page principale ─────────────────────────────────────────────────────────
 export default function DecompteFormPage() {
-  const { id }     = useParams();
-  const navigate   = useNavigate();
-  const [params]   = useSearchParams();
-  const isNew      = !id || id === "nouveau";
+  const { id }       = useParams();
+  const navigate     = useNavigate();
   const { addToast } = useToast();
+  const isNew        = !id || id === "nouveau";
 
   const [activeTab, setActiveTab] = useState("structure");
-  const [form, setForm] = useState({
-    etat_cession_id:          params.get("etat_cession_id") ?? "",
-    taux_retenue_garantie:    5,
-    montant_avances_deduites: 0,
-    montant_penalites:        0,
-    taux_tva:                 18,
-    date_echeance:            "",
-    observations:             "",
-  });
 
   const { data: decompte, isLoading, isError } = useDecompte(!isNew ? id : null);
-  const { data: circuit = [] }   = useDecompteCircuit();
-  const { data: parametresData } = useParametresPaginated({ count: 100 });
-  const { data: eCessionsData }  = useEtatsCessionPaginated({ statut: "valide", count: 200 });
+  const { data: circuit = [] } = useDecompteCircuit();
+
   const saveMut    = useSaveDecompte();
   const validerMut = useValiderDecompte();
   const rejeterMut = useRejeterDecompte();
   const payerMut   = usePayerDecompte();
-  const releveMut  = useSaveReleve();
 
-  useEffect(() => {
-    if (decompte) {
-      const findParam = (cle, fallback) => {
-        const p = parametresData?.data?.find(p => p.cle === cle);
-        return p ? parseFloat(p.valeur) : fallback;
-      };
-      setForm({
-        etat_cession_id:          decompte.etat_cession_id ?? "",
-        taux_retenue_garantie:    decompte.taux_retenue_garantie ?? findParam("taux_retenue_garantie", 5),
-        montant_avances_deduites: decompte.montant_avances_deduites ?? 0,
-        montant_penalites:        decompte.montant_penalites ?? 0,
-        taux_tva:                 decompte.taux_tva ?? findParam("taux_tva", 18),
-        date_echeance:            decompte.date_echeance?.slice(0, 10) ?? "",
-        observations:             decompte.observations ?? "",
-      });
-    }
-  }, [decompte, parametresData]);
+  const canEdit = isNew || decompte?.statut === "brouillon";
+  const d       = decompte;
 
-  useEffect(() => {
-    if (!isNew || !parametresData?.data) return;
-    const findParam = (cle, fallback) => {
-      const p = parametresData.data.find(p => p.cle === cle);
-      return p ? parseFloat(p.valeur) : fallback;
-    };
-    setForm(f => ({
-      ...f,
-      taux_retenue_garantie: findParam("taux_retenue_garantie", f.taux_retenue_garantie),
-      taux_tva:              findParam("taux_tva", f.taux_tva),
-    }));
-  }, [parametresData]); // eslint-disable-line
-
-  async function handleSave() {
-    if (!form.etat_cession_id) { addToast("L'état de cession est requis.", "error"); return; }
-    const payload = {
-      etat_cession_id:          parseInt(form.etat_cession_id, 10),
-      taux_retenue_garantie:    parseFloat(form.taux_retenue_garantie),
-      montant_avances_deduites: parseFloat(form.montant_avances_deduites) || 0,
-      montant_penalites:        parseFloat(form.montant_penalites) || 0,
-      taux_tva:                 parseFloat(form.taux_tva),
-      date_echeance:            form.date_echeance || null,
-      observations:             form.observations  || null,
-    };
-    if (!isNew) payload.id = parseInt(id, 10);
+  async function handleCreate(form) {
     try {
-      const res = await saveMut.mutateAsync(payload);
-      addToast(isNew ? "Décompte créé." : "Décompte mis à jour.", "success");
-      if (isNew && res?.data?.id) navigate(`/decomptes/${res.data.id}`, { replace: true });
+      const res = await saveMut.mutateAsync({
+        contrat_id: parseInt(form.contrat_id, 10),
+        type:       form.type,
+        date_debut: form.date_debut,
+        date_fin:   form.date_fin,
+      });
+      addToast("Décompte créé.", "success");
+      if (res?.data?.id) navigate(`/decomptes/${res.data.id}`, { replace: true });
     } catch (err) {
-      addToast(err.response?.data?.errors?.[0] ?? "Erreur lors de la sauvegarde.", "error");
+      addToast(err.response?.data?.error ?? err.response?.data?.message ?? "Erreur lors de la création.", "error");
+    }
+  }
+
+  async function handleSavePayload(payload) {
+    try {
+      await saveMut.mutateAsync({ id: parseInt(id, 10), payload });
+      addToast("Brouillon enregistré.", "success");
+    } catch (err) {
+      addToast(err.response?.data?.error ?? "Erreur.", "error");
     }
   }
 
   async function handleValider() {
-    try { await validerMut.mutateAsync(parseInt(id, 10)); addToast("Décompte avancé.", "success"); }
-    catch (err) { addToast(err.response?.data?.errors?.[0] ?? "Erreur.", "error"); }
+    try {
+      await validerMut.mutateAsync(parseInt(id, 10));
+      addToast("Décompte avancé dans le circuit.", "success");
+    } catch (err) {
+      addToast(err.response?.data?.error ?? "Erreur.", "error");
+    }
   }
+
   async function handleRejeter(motif) {
-    try { await rejeterMut.mutateAsync({ id: parseInt(id, 10), motif }); addToast("Décompte rejeté.", "success"); }
-    catch (err) { addToast(err.response?.data?.errors?.[0] ?? "Erreur.", "error"); }
+    try {
+      await rejeterMut.mutateAsync({ id: parseInt(id, 10), motif });
+      addToast("Décompte rejeté.", "info");
+    } catch (err) {
+      addToast(err.response?.data?.error ?? "Erreur.", "error");
+    }
   }
+
   async function handlePayer() {
-    try { await payerMut.mutateAsync(parseInt(id, 10)); addToast("Décompte marqué payé.", "success"); }
-    catch (err) { addToast(err.response?.data?.errors?.[0] ?? "Erreur.", "error"); }
+    try {
+      await payerMut.mutateAsync(parseInt(id, 10));
+      addToast("Décompte marqué payé.", "success");
+    } catch (err) {
+      addToast(err.response?.data?.error ?? "Erreur.", "error");
+    }
   }
 
-  if (!isNew && isLoading) return <div className="space-y-4">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>;
-  if (!isNew && (isError || !decompte)) return (
-    <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-      <p className="text-lg font-semibold">Décompte introuvable</p>
-      <button onClick={() => navigate("/decomptes")} className="mt-4 text-sm text-[#087F3E] hover:underline">Retour</button>
-    </div>
-  );
+  async function handlePdf() {
+    const token = localStorage.getItem("stt_token");
+    const resp  = await fetch(`${import.meta.env.VITE_API_BASE}/api/pdf/decompte/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+    const blob  = await resp.blob();
+    const url   = URL.createObjectURL(blob);
+    window.open(url, "_blank");
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
 
-  const canEdit = isNew || decompte?.statut === "brouillon";
-  const d = decompte;
+  if (!isNew && isLoading) {
+    return (
+      <div className="max-w-6xl mx-auto space-y-4">
+        {[1,2,3].map(i => <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />)}
+      </div>
+    );
+  }
+  if (!isNew && (isError || !d)) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+        <p className="font-medium">Décompte introuvable</p>
+        <button onClick={() => navigate("/decomptes")} className="mt-4 text-sm text-[#087F3E] hover:underline">Retour</button>
+      </div>
+    );
+  }
 
-  const nbPJ = 0; // would need separate fetch
-
-  const tabs = isNew ? [] : [
+  const tabs = [
     { id: "structure", label: "Structure" },
-    { id: "cessions",  label: "Cessions" },
-    { id: "workflow",  label: "Workflow & Circuit" },
+    { id: "cessions",  label: `Cessions (${(d?.payload?.postes?.G?.cessionsIds ?? []).length})` },
+    { id: "workflow",  label: `Workflow & Discussion (${(d?.validations ?? []).length})` },
     { id: "pieces",    label: "Pièces jointes" },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-7xl mx-auto space-y-5">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500">
-        <button onClick={() => navigate("/decomptes")} className="hover:text-[#087F3E] flex items-center gap-1 transition-colors">
+        <button onClick={() => navigate("/decomptes")} className="hover:text-[#087F3E] flex items-center gap-1">
           <ArrowLeft size={14} /> Décomptes
         </button>
         <ChevronRight size={14} />
-        <span className="text-gray-900 font-medium">{isNew ? "Nouveau décompte" : d.code}</span>
+        {!isNew && d && (
+          <>
+            <button className="hover:text-[#087F3E] truncate max-w-[160px]">{d.code}</button>
+          </>
+        )}
+        {isNew && <span className="text-gray-900 font-medium">Nouveau décompte</span>}
       </div>
 
-      <PageHeader
-        title={isNew ? "Nouveau décompte" : d.code}
-        subtitle={isNew ? "Remplir les paramètres du décompte" :
-          [d.contrat?.code, d.contrat?.soustraitant?.raison_sociale].filter(Boolean).join(" · ")}
-        action={!isNew && (
-          <div className="flex items-center gap-2">
-            <StatusBadge statut={d.statut} />
-            <button onClick={async () => {
-              const token = localStorage.getItem("stt_token");
-              const resp = await fetch(`${import.meta.env.VITE_API_BASE}/api/pdf/decompte/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-              const blob = await resp.blob();
-              const url = URL.createObjectURL(blob);
-              window.open(url, "_blank");
-              setTimeout(() => URL.revokeObjectURL(url), 60000);
-            }} className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+      {/* Header */}
+      {isNew ? (
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Nouveau décompte</h1>
+        </div>
+      ) : d && (
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-xl font-bold text-gray-900">{d.code}</h1>
+              <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${statutColor(d.statut)}`}>
+                {d.statut === "paye" ? "Payé" : d.statut === "brouillon" ? "Brouillon" : d.statut === "rejete" ? "Rejeté" : "En validation"}
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Contrat {d.contrat?.code} — {d.contrat?.objet ?? ""} · {fmtD(d.date_debut)} → {fmtD(d.date_fin)}
+              {d.contrat?.soustraitant?.raison_sociale && <span className="ml-2">{d.contrat.soustraitant.raison_sociale}</span>}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">Mode : Saisie manuelle</p>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Bandeau statut en validation */}
+            {d.statut !== "brouillon" && d.statut !== "paye" && d.statut !== "rejete" && (() => {
+              const etapes = [...circuit].sort((a, b) => a.ordre - b.ordre);
+              const cur = etapes.find(e => e.statut_avant === d.statut);
+              return cur ? (
+                <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">
+                  <Clock size={12} /> En attente de validation par <strong>{cur.profil_code.toUpperCase()}</strong>
+                </div>
+              ) : null;
+            })()}
+            <button onClick={handlePdf}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
               <FileDown size={14} /> PDF
             </button>
           </div>
-        )}
-      />
+        </div>
+      )}
 
-      {/* Nouveau décompte : form direct sans tabs */}
+      {/* Nouveau décompte — form simple */}
       {isNew ? (
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-2 bg-white border border-gray-200 rounded-xl p-6">
-            <StructureTab
-              decompte={null}
-              canEdit={true}
-              form={form}
-              setForm={setForm}
-              onSave={handleSave}
-              savePending={saveMut.isPending}
-              parametresData={parametresData}
-              eCessionsData={eCessionsData}
-            />
+        <div className="bg-white border border-gray-200 rounded-2xl p-6">
+          <div className="grid grid-cols-[1fr_auto] gap-6">
+            <NouveauForm onSave={handleCreate} saving={saveMut.isPending} />
+            {/* Tabs vides pour respecter la maquette */}
+            <div className="w-56" />
+          </div>
+          {/* Tabs factices */}
+          <div className="mt-6 border-t border-gray-100 pt-4">
+            <div className="flex gap-1 border-b border-gray-100">
+              {["Structure", "Cessions 0", "Workflow & Discussion 0", "Pièces jointes 0"].map(t => (
+                <span key={t} className="px-3 py-2 text-xs text-gray-400 border-b-2 border-transparent">{t}</span>
+              ))}
+            </div>
+            <div className="py-8 text-center text-sm text-gray-400">
+              Enregistrer d'abord le brouillon pour accéder aux onglets.
+            </div>
           </div>
         </div>
-      ) : (
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-          <Tabs items={tabs} activeTab={activeTab} onChange={setActiveTab} />
-          <div className="p-6">
-            {activeTab === "structure" && (
-              <StructureTab
-                decompte={d}
-                canEdit={canEdit}
-                form={form}
-                setForm={setForm}
-                onSave={handleSave}
-                savePending={saveMut.isPending}
-                parametresData={parametresData}
-                eCessionsData={eCessionsData}
-              />
-            )}
-
-            {activeTab === "cessions" && (
-              <CessionsDecTab contratId={d.contrat_id} />
-            )}
-
-            {activeTab === "workflow" && (
-              <div className="max-w-2xl space-y-5">
-                <CircuitStepper
-                  decompte={d}
-                  circuit={circuit}
-                  onValider={handleValider}
-                  onRejeter={handleRejeter}
-                  onPayer={handlePayer}
-                  onSoumettre={handleValider}
-                />
-                {d.statut === "paye" && (
-                  <button onClick={async () => {
-                    try {
-                      const res = await releveMut.mutateAsync({ contrat_id: parseInt(d.contrat_id, 10), decompte_id: parseInt(id, 10) });
-                      addToast("Relevé de compte généré.", "success");
-                      if (res?.data?.id) navigate(`/releves/${res.data.id}`);
-                    } catch (err) {
-                      addToast(err.response?.data?.errors?.[0] ?? "Erreur génération relevé.", "error");
-                    }
-                  }} disabled={releveMut.isPending}
-                    className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-                    {releveMut.isPending ? <Loader2 size={14} className="animate-spin inline mr-1" /> : null}
-                    Générer un relevé
+      ) : d && (
+        <div className="flex gap-5 items-start">
+          {/* Contenu principal */}
+          <div className="flex-1 min-w-0">
+            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+              {/* Tabs */}
+              <div className="flex border-b border-gray-200 px-2 pt-1">
+                {tabs.map(t => (
+                  <button key={t.id} onClick={() => setActiveTab(t.id)}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${activeTab === t.id ? "border-[#087F3E] text-[#087F3E]" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+                    {t.label}
                   </button>
+                ))}
+              </div>
+
+              <div className="p-5">
+                {activeTab === "structure" && (
+                  <StructureTab decompte={d} canEdit={canEdit} onSave={handleSavePayload} saving={saveMut.isPending} />
+                )}
+
+                {activeTab === "cessions" && (
+                  <div className="text-sm text-gray-500 py-6 text-center">
+                    {(d.payload?.postes?.G?.cessionsIds ?? []).length === 0
+                      ? "Aucun état de cession consommé pour cette période."
+                      : `${d.payload.postes.G.cessionsIds.length} état(s) de cession consommé(s).`}
+                  </div>
+                )}
+
+                {activeTab === "workflow" && (
+                  <div className="max-w-xl">
+                    <CircuitStepper
+                      decompte={d}
+                      circuit={circuit}
+                      onValider={handleValider}
+                      onRejeter={handleRejeter}
+                      onPayer={handlePayer}
+                      onSoumettre={handleValider}
+                    />
+                  </div>
+                )}
+
+                {activeTab === "pieces" && (
+                  <div className="text-sm text-gray-400 text-center py-8">Pièces jointes — à venir.</div>
                 )}
               </div>
-            )}
+            </div>
+          </div>
 
-            {activeTab === "pieces" && (
-              <PiecesDecTab contratId={d.contrat_id} />
-            )}
+          {/* Panneau droite */}
+          <div className="w-72 flex-shrink-0">
+            <InfoPanel decompte={d} circuit={circuit} />
           </div>
         </div>
       )}
