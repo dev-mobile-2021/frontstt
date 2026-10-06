@@ -439,16 +439,16 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
   async function handleSoumettre() {
     setSubmitting(true);
     try {
-      // Sauvegarder les lignes d'abord
       await new Promise(resolve => {
         updateAttachement(att.id, a => ({ ...a, voletCSE: { ...a.voletCSE, lignes, totalValorise: total } }));
         setTimeout(resolve, 300);
       });
       await soumettreAttachement(att.id);
-      addToast("Dossier soumis au DT.", "success");
+      addToast(att.statut === "Rejeté" ? "Dossier resoumis au DT avec succès." : "Dossier soumis au DT.", "success");
       navigate("/attachements");
-    } catch {
-      addToast("Erreur lors de la soumission.", "error");
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message;
+      addToast(msg ? `Erreur : ${msg}` : "Erreur lors de la soumission. Réessayez.", "error");
     } finally {
       setSubmitting(false);
     }
@@ -469,7 +469,7 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
             </button>
             <button onClick={handleSoumettre} disabled={total === 0 || submitting} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] disabled:opacity-40">
               {submitting ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={13} />}
-              Soumettre au DT
+              {att.statut === "Rejeté" ? "Resoumettre au DT" : "Soumettre au DT"}
             </button>
           </div>
         )}
@@ -569,9 +569,12 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
       updateAttachement(att.id, a => ({ ...a, voletCSE: { ...a.voletCSE, lignes, totalValorise: total } }));
       await new Promise(r => setTimeout(r, 300));
       await rejeterAttachement(att.id, commentaireRejet.trim());
-      addToast("Dossier renvoyé au CT.", "info");
+      addToast("Dossier renvoyé au CT pour correction.", "info");
       navigate("/attachements");
-    } catch { addToast("Erreur lors du renvoi.", "error"); }
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message;
+      addToast(msg ? `Erreur : ${msg}` : "Erreur lors du renvoi. Réessayez.", "error");
+    }
   }
 
   async function handleSoumettreAuDacc() {
@@ -579,9 +582,12 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
       updateAttachement(att.id, a => ({ ...a, voletCSE: { ...a.voletCSE, lignes, totalValorise: total } }));
       await new Promise(r => setTimeout(r, 300));
       await soumettreAttachement(att.id);
-      addToast("Dossier soumis au DACC.", "success");
+      addToast("Dossier transmis au DACC pour validation.", "success");
       navigate("/attachements");
-    } catch { addToast("Erreur lors de la soumission.", "error"); }
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message;
+      addToast(msg ? `Erreur : ${msg}` : "Erreur lors de la soumission. Réessayez.", "error");
+    }
   }
 
   return (
@@ -715,18 +721,24 @@ function VueDacc({ att, updateAttachement, validerAttachement, rejeterAttachemen
   async function handleValider() {
     try {
       await validerAttachement(att.id, `Dossier validé par le DACC. Montant final : ${num(total)} FCFA.`);
-      addToast("Dossier validé — le Poste A du décompte est mis à jour.", "success");
+      addToast(`Dossier validé — montant final ${num(total)} FCFA enregistré.`, "success");
       navigate("/attachements");
-    } catch { addToast("Erreur lors de la validation.", "error"); }
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message;
+      addToast(msg ? `Erreur : ${msg}` : "Erreur lors de la validation. Réessayez.", "error");
+    }
   }
 
   async function handleRejeter() {
     if (!motifRejet.trim()) { addToast("Commentaire de rejet obligatoire.", "error"); return; }
     try {
       await rejeterAttachement(att.id, motifRejet.trim());
-      addToast("Dossier rejeté.", "info");
+      addToast("Dossier rejeté et renvoyé au CT.", "info");
       navigate("/attachements");
-    } catch { addToast("Erreur lors du rejet.", "error"); }
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message;
+      addToast(msg ? `Erreur : ${msg}` : "Erreur lors du rejet. Réessayez.", "error");
+    }
   }
 
   const isReadOnly = att.statut === "Validé";
@@ -843,7 +855,7 @@ export default function AttachementDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { attachements, updateAttachement, soumettreAttachement, validerAttachement, rejeterAttachement } = useAttachements();
-  const { currentUser } = useUser();
+  const { currentUser, hasRole } = useUser();
   const att = attachements.find(a => a.id === id);
 
   if (!att) {
@@ -856,12 +868,37 @@ export default function AttachementDetailPage() {
     );
   }
 
-  // Déterminer la vue selon le statut (indépendant du rôle pour la démo)
-  const isCTEditable = att.statut === "Ouvert" || att.statut === "En cours";
-  const isDTView     = att.statut === "Soumis au DT" || att.statut === "En rapprochement";
+  // Rôle utilisateur courant
+  const roleCode = currentUser?.role?.designation ?? "";
+  const isCT    = roleCode === "CT"   || roleCode === "Admin";
+  const isDT    = roleCode === "DT"   || roleCode === "Admin";
+  const isDACC  = roleCode === "DACC" || roleCode === "Admin";
+
+  // Vue active selon rôle + statut
+  const isCTEditable = isCT   && (att.statut === "Ouvert" || att.statut === "En cours" || att.statut === "Rejeté");
+  const isDTView     = isDT   && (att.statut === "Soumis au DT"   || att.statut === "En rapprochement");
   const isDTEditable = isDTView;
-  const isDACCView   = att.statut === "Soumis au DACC" || att.statut === "Validé";
+  const isDACCView   = isDACC && (att.statut === "Soumis au DACC" || att.statut === "Validé");
+
+  // Accès en lecture seule : chaque rôle peut voir les dossiers dans d'autres étapes
+  const canView = isCTEditable || isDTView || isDACCView
+    || (isCT   && ["Soumis au DT","Soumis au DACC","Validé","Rejeté"].includes(att.statut))
+    || (isDT   && ["Validé","Soumis au DACC"].includes(att.statut))
+    || roleCode === "Admin";
   const statutColor = STATUT_COLORS[att.statut] || "bg-gray-100 text-gray-600 border-gray-200";
+
+  if (!canView) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+        <AlertCircle size={40} className="mb-3 opacity-60 text-amber-400" />
+        <p className="font-medium text-gray-700">Accès non autorisé</p>
+        <p className="text-sm text-gray-400 mt-1">
+          Ce dossier est en statut « {att.statut} » et n'est pas accessible avec votre rôle ({roleCode || "inconnu"}).
+        </p>
+        <button onClick={() => navigate("/attachements")} className="mt-4 text-sm text-blue-500 hover:underline">← Retour à la liste</button>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-5">
@@ -910,13 +947,15 @@ export default function AttachementDetailPage() {
         </div>
       )}
       {att.statut === "Rejeté" && (() => {
-        const motif = [...(att.discussion ?? [])].reverse().find(m => m.roleId === "DACC" && m.type === "action");
+        const motif = [...(att.discussion ?? [])].reverse().find(m => m.type === "rejet" || (m.type === "action" && m.message?.toLowerCase().includes("rejet")));
+        const rejectedBy = motif?.roleId ?? "—";
         return (
           <div className="bg-red-50 border border-red-200 rounded-2xl px-5 py-4 flex items-start gap-3">
             <AlertCircle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
             <div>
-              <p className="text-sm font-semibold text-red-800">Dossier rejeté par le DACC</p>
-              {motif && <p className="text-xs text-red-700 mt-0.5">{motif.message}</p>}
+              <p className="text-sm font-semibold text-red-800">Dossier renvoyé{rejectedBy !== "—" ? ` par le ${rejectedBy}` : ""} — corrections requises</p>
+              {motif && <p className="text-xs text-red-700 mt-0.5">{motif.commentaire ?? motif.message}</p>}
+              {isCT && <p className="text-xs text-red-600 font-medium mt-1">Vous pouvez modifier le dossier et le resoumettre.</p>}
             </div>
           </div>
         );
@@ -928,6 +967,7 @@ export default function AttachementDetailPage() {
       ) : isDTView ? (
         <VueDT att={att} updateAttachement={updateAttachement} soumettreAttachement={soumettreAttachement} rejeterAttachement={rejeterAttachement} currentUser={currentUser} editable={isDTEditable} />
       ) : (
+        /* Vue CT — éditable si isCTEditable, lecture seule sinon (ex. DT qui consulte un dossier Ouvert) */
         <div className="flex gap-4 items-start">
           <div className="flex-[3] min-w-0">
             <VueCT att={att} updateAttachement={updateAttachement} soumettreAttachement={soumettreAttachement} currentUser={currentUser} readOnly={!isCTEditable} />
