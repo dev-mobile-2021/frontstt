@@ -1728,7 +1728,32 @@ const STATUT_COLORS_ATT = {
   "Rejeté":           "bg-red-100 text-red-700",
 };
 
-function AttachementsTab({ contratId, chantierId, isNew }) {
+function nextPeriode(contratAtts, dateDebut) {
+  // Tri par periodeFin croissant pour trouver le dernier
+  const sorted = [...contratAtts].sort((a, b) => (a.periodeFin ?? "").localeCompare(b.periodeFin ?? ""));
+  const last = sorted[sorted.length - 1];
+
+  let debut, fin;
+  if (!last) {
+    // Premier attachement : commence à la date de démarrage du contrat
+    debut = dateDebut ? dateDebut.slice(0, 10) : new Date().toISOString().slice(0, 10);
+  } else {
+    // Lendemain du dernier periodeFin
+    const d = new Date(last.periodeFin + "T00:00");
+    d.setDate(d.getDate() + 1);
+    debut = d.toISOString().slice(0, 10);
+  }
+
+  // Fin = 25 du mois de début (ou mois suivant si on est déjà après le 25)
+  const d = new Date(debut + "T00:00");
+  const finDate = new Date(d.getFullYear(), d.getMonth(), 25);
+  if (finDate <= d) finDate.setMonth(finDate.getMonth() + 1);
+  fin = finDate.toISOString().slice(0, 10);
+
+  return { periode_debut: debut, periode_fin: fin };
+}
+
+function AttachementsTab({ contratId, chantierId, isNew, contrat }) {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { attachements, addAttachement } = useAttachements();
@@ -1742,6 +1767,12 @@ function AttachementsTab({ contratId, chantierId, isNew }) {
   const contratAtts = attachements
     .filter(a => a.contratId === String(contratId))
     .sort((a, b) => (b.periodeDebut ?? "").localeCompare(a.periodeDebut ?? ""));
+
+  function handleShowForm() {
+    const suggestion = nextPeriode(contratAtts, contrat?.date_debut);
+    setForm(suggestion);
+    setShowForm(true);
+  }
 
   if (isNew) return (
     <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer les attachements.</p>
@@ -1816,7 +1847,7 @@ function AttachementsTab({ contratId, chantierId, isNew }) {
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">{contratAtts.length} dossier{contratAtts.length !== 1 ? "s" : ""}</p>
         {!showForm && (
-          <button onClick={() => setShowForm(true)} className="flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors">
+          <button onClick={handleShowForm} className="flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors">
             <Plus size={12} /> Initier un attachement
           </button>
         )}
@@ -1824,7 +1855,10 @@ function AttachementsTab({ contratId, chantierId, isNew }) {
 
       {showForm && (
         <div className="bg-[#E8F5EE]/60 border border-[#087F3E]/30 rounded-xl p-4 space-y-3">
-          <p className="text-sm font-semibold text-gray-800">Nouvel attachement</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-800">Nouvel attachement</p>
+            <span className="text-[10px] text-[#087F3E] bg-[#087F3E]/10 px-2 py-0.5 rounded-full">Période suggérée automatiquement</span>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-xs text-gray-500 font-medium">Début de période</label>
@@ -2912,7 +2946,7 @@ export default function ContratFormPage() {
 
           {/* Tab: Attachements */}
           {activeTab === "attachements" && (
-            <AttachementsTab contratId={id} chantierId={contrat?.chantier_id} isNew={isNew} />
+            <AttachementsTab contratId={id} chantierId={contrat?.chantier_id} isNew={isNew} contrat={contrat} />
           )}
 
           {/* Tab: Pièces jointes */}
