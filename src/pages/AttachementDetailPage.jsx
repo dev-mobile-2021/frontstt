@@ -917,10 +917,14 @@ export default function AttachementDetailPage() {
       ) : isDTView ? (
         <VueDT att={att} updateAttachement={updateAttachement} currentUser={currentUser} editable={isDTEditable} />
       ) : (
-        <>
-          <VueCT att={att} updateAttachement={updateAttachement} currentUser={currentUser} readOnly={!isCTEditable} />
-          <ZoneSTT att={att} canEdit={isCTEditable} updateAttachement={updateAttachement} currentUser={currentUser} />
-        </>
+        <div className="flex gap-4 items-start">
+          <div className="flex-[3] min-w-0">
+            <VueCT att={att} updateAttachement={updateAttachement} currentUser={currentUser} readOnly={!isCTEditable} />
+          </div>
+          <div className="w-72 flex-shrink-0">
+            <ZoneSTT att={att} canEdit={isCTEditable} updateAttachement={updateAttachement} currentUser={currentUser} compact />
+          </div>
+        </div>
       )}
 
       {/* Fil de discussion — toujours visible */}
