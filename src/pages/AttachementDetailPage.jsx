@@ -3,8 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Save, Send, Plus, Trash2, Upload, FileText,
   X, Eye, AlertCircle, CheckCircle, Clock, Info, MessageCircle,
-  RotateCcw, ChevronDown, ChevronUp, Edit3,
+  RotateCcw, ChevronDown, ChevronUp, Edit3, Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { useAttachements } from "../hooks/useAttachements";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
@@ -147,84 +148,284 @@ function STTDocumentModal({ fichier, att, onClose }) {
 // ─── Zone STT ───────────────────────────────────────────────────────────────
 function ZoneSTT({ att, canEdit, updateAttachement, currentUser, compact }) {
   const { addToast } = useToast();
-  const [uploading, setUploading] = useState(false);
-  const [previewFichier, setPreviewFichier] = useState(null);
-  const inputRef = useRef(null);
-  const fichiers = att.voletSTT.fichiers;
+  const [importing, setImporting] = useState(false);
+  const importRef = useRef(null);
 
-  function handleUpload(file) {
-    if (!file) return;
-    setUploading(true);
-    setTimeout(() => {
-      const nouveau = { id:`f${Date.now()}`, nom:file.name, type:file.name.split(".").pop().toLowerCase(), dateUpload:today(), uploadePar:currentUser?.nom ?? "—", apercu:"simulé" };
-      updateAttachement(att.id, a => ({ ...a, voletSTT: { statut:"Chargé", fichiers:[...a.voletSTT.fichiers, nouveau] } }));
-      setUploading(false);
-      addToast(`Devis "${file.name}" chargé.`, "success");
-    }, 1100);
+  const lignesSTT  = att.voletSTT?.lignesSTT ?? [];
+  const totalSTT   = lignesSTT.reduce((s, l) => s + (l.montantSTT || 0), 0);
+  const hasSTT     = lignesSTT.length > 0;
+  const statutSTT  = hasSTT ? "Chargé" : "Vide";
+
+  // ── Générer le modèle Excel ──────────────────────────────────────────────
+  function handleTelechargerModele() {
+    const lignes = att.voletCSE?.lignes ?? [];
+    const wb = XLSX.utils.book_new();
+
+    // Feuille principale
+    const rows = [];
+
+    // En-tête document
+    rows.push(["MODÈLE DEVIS SOUS-TRAITANT — À REMPLIR ET RÉIMPORTER"]);
+    rows.push([]);
+    rows.push(["Attachement", att.code,         "", "Période", `${fmtPeriode(att.periodeDebut)} → ${fmtPeriode(att.periodeFin)}`]);
+    rows.push(["Contrat",     att.contratId,     "", "Chantier", att.chantierId ?? "—"]);
+    rows.push(["Initié par",  att.initiePar?.nom ?? "—"]);
+    rows.push([]);
+    rows.push(["⚠ Ne modifier que la colonne F (Quantité STT). Ne pas changer les autres colonnes."]);
+    rows.push([]);
+
+    // En-têtes tableau
+    rows.push(["ID_LIGNE", "Réf DQE", "Désignation", "Unité", "Qté DQE (constat CT)", "Qté STT ← SAISIR ICI", "PU HT (FCFA)", "Montant STT (calculé)"]);
+
+    // Lignes DQE
+    for (const l of lignes) {
+      rows.push([
+        l.id,
+        l.code ?? l.refDQE ?? "",
+        l.designation,
+        l.unite,
+        l.quantiteRealisee,
+        "",                    // colonne STT vide → à remplir
+        l.prixUnitaireHT,
+        "",                    // montant calculé automatiquement par Excel
+      ]);
+    }
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+
+    // Largeurs colonnes
+    ws["!cols"] = [
+      { wch: 20 }, // ID_LIGNE (caché)
+      { wch: 10 }, // Réf
+      { wch: 45 }, // Désignation
+      { wch: 8  }, // Unité
+      { wch: 18 }, // Qté DQE
+      { wch: 20 }, // Qté STT ← saisie
+      { wch: 18 }, // PU HT
+      { wch: 20 }, // Montant
+    ];
+
+    // Formule montant STT = F × G (à partir de la ligne de données)
+    const dataStart = 10; // ligne 10 (index 9) = première ligne de données
+    for (let i = 0; i < lignes.length; i++) {
+      const rowIdx = dataStart + i;
+      const cellF  = XLSX.utils.encode_cell({ r: rowIdx - 1, c: 5 }); // Qté STT
+      const cellG  = XLSX.utils.encode_cell({ r: rowIdx - 1, c: 6 }); // PU HT
+      const cellH  = XLSX.utils.encode_cell({ r: rowIdx - 1, c: 7 }); // Montant
+      ws[cellH] = { t: "n", f: `${cellF}*${cellG}` };
+    }
+
+    XLSX.utils.book_append_sheet(wb, ws, "Devis STT");
+    XLSX.writeFile(wb, `Modele_DevisSTT_${att.code}.xlsx`);
+    addToast("Modèle Excel téléchargé. Remplissez la colonne « Qté STT » puis réimportez.", "info");
   }
-  function handleDelete(fichId) {
-    updateAttachement(att.id, a => {
-      const reste = a.voletSTT.fichiers.filter(f => f.id !== fichId);
-      return { ...a, voletSTT: { statut: reste.length > 0 ? "Chargé" : "Vide", fichiers: reste } };
-    });
+
+  // ── Importer le fichier rempli ───────────────────────────────────────────
+  function handleImport(file) {
+    if (!file) return;
+    setImporting(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const wb     = XLSX.read(e.target.result, { type: "array" });
+        const ws     = wb.Sheets[wb.SheetNames[0]];
+        const rows   = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+        // Cherche la ligne d'en-têtes (contient "ID_LIGNE")
+        const headerIdx = rows.findIndex(r => r[0] === "ID_LIGNE");
+        if (headerIdx === -1) {
+          addToast("Format invalide — utilisez le modèle téléchargé.", "error");
+          setImporting(false);
+          return;
+        }
+
+        const lignesOriginales = att.voletCSE?.lignes ?? [];
+        const lignesSTTMaj = [];
+        let nbRemplies = 0;
+
+        for (let i = headerIdx + 1; i < rows.length; i++) {
+          const row      = rows[i];
+          const idLigne  = String(row[0] ?? "").trim();
+          const qteSTT   = parseFloat(row[5]) || 0;
+          const puHT     = parseFloat(row[6]) || 0;
+
+          if (!idLigne) continue;
+
+          const ligneRef = lignesOriginales.find(l => l.id === idLigne);
+          if (!ligneRef) continue;
+
+          const montantSTT = Math.round(qteSTT * puHT);
+          lignesSTTMaj.push({
+            id:             idLigne,
+            refDQE:         ligneRef.code ?? ligneRef.refDQE ?? "",
+            designation:    ligneRef.designation,
+            unite:          ligneRef.unite,
+            quantiteRealiseeCSE: ligneRef.quantiteRealisee,
+            quantiteSTT:    qteSTT,
+            prixUnitaireHT: puHT,
+            montantSTT,
+          });
+          if (qteSTT > 0) nbRemplies++;
+        }
+
+        if (lignesSTTMaj.length === 0) {
+          addToast("Aucune ligne reconnue — vérifiez le fichier.", "error");
+          setImporting(false);
+          return;
+        }
+
+        const totalSTTCalc = lignesSTTMaj.reduce((s, l) => s + l.montantSTT, 0);
+
+        updateAttachement(att.id, a => ({
+          ...a,
+          voletSTT: {
+            ...a.voletSTT,
+            statut:    "Chargé",
+            lignesSTT: lignesSTTMaj,
+            totalSTT:  totalSTTCalc,
+            importedAt: today(),
+            importedBy: currentUser?.nom ?? "—",
+            nomFichier: file.name,
+          },
+        }));
+
+        addToast(`Devis STT importé — ${nbRemplies} ligne(s) renseignée(s), total ${new Intl.NumberFormat("fr-FR").format(totalSTTCalc)} FCFA.`, "success");
+      } catch {
+        addToast("Erreur de lecture du fichier Excel.", "error");
+      } finally {
+        setImporting(false);
+        if (importRef.current) importRef.current.value = "";
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function handleSupprimerSTT() {
+    updateAttachement(att.id, a => ({
+      ...a,
+      voletSTT: { statut: "Vide", lignesSTT: [], totalSTT: 0, fichiers: [] },
+    }));
+    addToast("Données STT supprimées.", "info");
   }
 
   return (
-    <div className={`bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col ${compact ? "" : ""}`}>
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden flex flex-col">
+      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
         <div>
           <h3 className={`font-semibold text-gray-800 ${compact ? "text-sm" : ""}`}>Volet STT</h3>
           {!compact && <p className="text-xs text-gray-500 mt-0.5">Devis sous-traitant</p>}
         </div>
-        <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${att.voletSTT.statut === "Chargé" ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}`}>
-          {att.voletSTT.statut}
+        <span className={`text-xs font-medium px-2.5 py-1 rounded-full border ${statutSTT === "Chargé" ? "bg-green-50 text-green-700 border-green-200" : "bg-gray-100 text-gray-500 border-gray-200"}`}>
+          {statutSTT}
         </span>
       </div>
+
       <div className="p-4 flex-1 space-y-3">
-        {fichiers.length > 0 && (
+        {/* Bouton télécharger modèle — toujours visible */}
+        <button
+          onClick={handleTelechargerModele}
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border border-[#087F3E]/40 text-[#087F3E] rounded-xl text-xs font-medium hover:bg-[#087F3E]/5 transition-colors">
+          <Download size={13} /> Télécharger le modèle Excel
+        </button>
+
+        {/* Zone import */}
+        {canEdit && (
+          <>
+            <input
+              ref={importRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="sr-only"
+              onChange={e => handleImport(e.target.files?.[0])}
+            />
+            <button
+              onClick={() => importRef.current?.click()}
+              disabled={importing}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-xs font-medium hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/30 transition-colors disabled:opacity-60">
+              {importing
+                ? <><div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" /> Lecture en cours…</>
+                : <><Upload size={13} /> Importer le modèle rempli (.xlsx)</>}
+            </button>
+          </>
+        )}
+
+        {/* Résultat import */}
+        {hasSTT && (
           <div className="space-y-2">
-            {fichiers.map(f => (
-              <div key={f.id} className="flex items-center gap-2.5 px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-200 group">
-                <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center flex-shrink-0">
-                  <FileText size={13} className="text-red-600" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-gray-800 truncate">{f.nom}</p>
-                  <p className="text-[10px] text-gray-400">{fmtDate(f.dateUpload)} · {f.uploadePar}</p>
-                </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {f.apercu === "simulé" && (
-                    <button onClick={() => setPreviewFichier(f)} title="Aperçu" className="p-1 rounded hover:bg-blue-50 text-blue-500">
-                      <Eye size={13} />
-                    </button>
-                  )}
-                  {canEdit && (
-                    <button onClick={() => handleDelete(f.id)} className="p-1 rounded hover:bg-red-50 text-red-400">
-                      <Trash2 size={13} />
-                    </button>
-                  )}
-                </div>
+            {/* Info import */}
+            <div className="flex items-center justify-between px-3 py-2 bg-green-50 border border-green-200 rounded-xl">
+              <div>
+                <p className="text-xs font-medium text-green-800">{att.voletSTT.nomFichier ?? "Devis STT importé"}</p>
+                <p className="text-[10px] text-green-600 mt-0.5">
+                  {att.voletSTT.importedAt && `Importé le ${fmtDate(att.voletSTT.importedAt)}`}
+                  {att.voletSTT.importedBy && ` par ${att.voletSTT.importedBy}`}
+                </p>
               </div>
-            ))}
+              {canEdit && (
+                <button onClick={handleSupprimerSTT} className="p-1 text-red-400 hover:text-red-600 flex-shrink-0">
+                  <Trash2 size={13} />
+                </button>
+              )}
+            </div>
+
+            {/* Tableau comparatif CT vs STT (compact) */}
+            <div className="border border-gray-100 rounded-xl overflow-hidden">
+              <div className="bg-gray-50 px-3 py-1.5 flex justify-between text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
+                <span>Ligne</span>
+                <span className="flex gap-4">
+                  <span className="w-16 text-right text-blue-500">Qté CT</span>
+                  <span className="w-16 text-right text-orange-500">Qté STT</span>
+                  <span className="w-20 text-right">Montant</span>
+                </span>
+              </div>
+              <div className="divide-y divide-gray-50 max-h-48 overflow-y-auto">
+                {lignesSTT.map(l => {
+                  const diff = l.quantiteSTT - l.quantiteRealiseeCSE;
+                  return (
+                    <div key={l.id} className="px-3 py-2 flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-700 truncate">{l.designation}</p>
+                        <p className="text-[10px] text-gray-400">{l.refDQE} · {l.unite}</p>
+                      </div>
+                      <div className="flex items-center gap-4 flex-shrink-0 text-xs tabular-nums">
+                        <span className="w-16 text-right text-blue-600">{l.quantiteRealiseeCSE}</span>
+                        <span className={`w-16 text-right font-medium ${diff > 0 ? "text-red-600" : diff < 0 ? "text-green-600" : "text-gray-700"}`}>
+                          {l.quantiteSTT}
+                          {diff !== 0 && <span className="ml-1 text-[9px]">{diff > 0 ? "▲" : "▼"}</span>}
+                        </span>
+                        <span className="w-20 text-right text-gray-600">{new Intl.NumberFormat("fr-FR").format(l.montantSTT)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="px-3 py-2 border-t border-gray-200 bg-gray-50 flex justify-between text-xs font-bold">
+                <span className="text-gray-700">Total STT</span>
+                <span className="text-[#087F3E] tabular-nums">{new Intl.NumberFormat("fr-FR").format(totalSTT)} FCFA</span>
+              </div>
+            </div>
+
+            {/* Écart CT vs STT */}
+            {(() => {
+              const totalCSE = att.voletCSE?.totalValorise ?? 0;
+              const ecart = totalSTT - totalCSE;
+              if (ecart === 0) return null;
+              return (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs ${ecart > 0 ? "bg-red-50 border border-red-200 text-red-700" : "bg-green-50 border border-green-200 text-green-700"}`}>
+                  <Info size={11} />
+                  Écart STT/CSE : {ecart > 0 ? "+" : ""}{new Intl.NumberFormat("fr-FR").format(ecart)} FCFA
+                  {ecart > 0 ? " — STT supérieur au constat CT" : " — STT inférieur au constat CT"}
+                </div>
+              );
+            })()}
           </div>
         )}
-        <input ref={inputRef} type="file" accept=".pdf,.xlsx,.xls,.doc,.docx" className="sr-only" onChange={e => handleUpload(e.target.files?.[0])} />
-        {canEdit ? (
-          fichiers.length === 0 ? (
-            <button onClick={() => inputRef.current?.click()} disabled={uploading} className="w-full flex flex-col items-center justify-center gap-1.5 py-6 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-green-400 hover:text-green-600 hover:bg-green-50/30 transition-colors group disabled:opacity-60">
-              {uploading ? <div className="w-5 h-5 border-2 border-green-400 border-t-transparent rounded-full animate-spin" /> : <Upload size={18} className="group-hover:scale-110 transition-transform" />}
-              <span className="text-xs font-medium">{uploading ? "Chargement…" : "Charger le devis STT"}</span>
-            </button>
-          ) : (
-            <button onClick={() => inputRef.current?.click()} disabled={uploading} className="flex items-center gap-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg px-3 py-2 hover:bg-gray-50">
-              <Plus size={12} />{uploading ? "Chargement…" : "Ajouter un document"}
-            </button>
-          )
-        ) : fichiers.length === 0 ? (
-          <p className="text-xs text-gray-400 italic text-center py-4">Aucun document STT chargé</p>
-        ) : null}
+
+        {!hasSTT && !canEdit && (
+          <p className="text-xs text-gray-400 italic text-center py-4">Aucun devis STT chargé</p>
+        )}
       </div>
-      {previewFichier && <STTDocumentModal fichier={previewFichier} att={att} onClose={() => setPreviewFichier(null)} />}
     </div>
   );
 }
