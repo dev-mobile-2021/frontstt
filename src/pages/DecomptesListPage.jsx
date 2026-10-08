@@ -18,15 +18,32 @@ import { SkeletonTable } from "../components/Skeleton";
 import { formatMontantCourt } from "../utils/formatters";
 
 const STATUTS = [
-  { value: "brouillon",   label: "Brouillon" },
-  { value: "soumis",      label: "Soumis" },
-  { value: "valide_ct",   label: "Validé CT" },
-  { value: "valide_cp",   label: "Validé CP" },
-  { value: "valide_daf",  label: "Validé DAF" },
-  { value: "valide_dg",   label: "Validé DG" },
-  { value: "paye",        label: "Payé" },
-  { value: "rejete",      label: "Rejeté" },
+  { value: "brouillon",    label: "Brouillon" },
+  { value: "soumis",       label: "Soumis" },
+  { value: "valide_dacc",  label: "Validé DACC" },
+  { value: "valide_dexa",  label: "Validé DEXA" },
+  { value: "valide_dcg",   label: "Validé DCG" },
+  { value: "valide_dga",   label: "Validé DGA" },
+  { value: "valide_dg",    label: "Validé DG" },
+  { value: "paye",         label: "Payé" },
+  { value: "rejete",       label: "Rejeté" },
 ];
+
+const TYPES = [
+  { value: "provisoire",               label: "Provisoire" },
+  { value: "final",                    label: "Final" },
+  { value: "restitution_rg_partielle", label: "Restitution RG partielle" },
+  { value: "restitution_rg_totale",    label: "Restitution RG totale" },
+  { value: "definitif_general",        label: "Définitif général" },
+];
+
+const TYPE_BADGE = {
+  provisoire:               "bg-blue-50 text-blue-700",
+  final:                    "bg-purple-50 text-purple-700",
+  restitution_rg_partielle: "bg-amber-50 text-amber-700",
+  restitution_rg_totale:    "bg-orange-50 text-orange-700",
+  definitif_general:        "bg-gray-100 text-gray-600",
+};
 
 const STATUTS_INSTANCE = ["soumis", "valide_dacc", "valide_dex", "valide_dga", "valide_dg", "valide_ct", "valide_cp", "valide_daf"];
 
@@ -72,6 +89,8 @@ export default function DecomptesListPage() {
   const [showStats,    setShowStats]  = useState(true);
   const [search,       setSearch]     = useState("");
   const [statut,       setStatut]     = useState("");
+  const [typeFilter,   setTypeFilter] = useState("");
+  const [sttFilter,    setSttFilter]  = useState("");
   const [contratFilter,setContratFilter] = useState("");
   const [page,         setPage]       = useState(1);
   const [debounced,    setDebounced]  = useState("");
@@ -84,7 +103,7 @@ export default function DecomptesListPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const filters = { code: debounced || undefined, statut: statut || undefined, contrat_id: contratFilter ? parseInt(contratFilter) : undefined, page, count: 15 };
+  const filters = { code: debounced || undefined, statut: statut || undefined, type: typeFilter || undefined, contrat_id: contratFilter ? parseInt(contratFilter) : undefined, page, count: 15 };
 
   const { data: circuitData = [] } = useDecompteCircuit();
 
@@ -100,16 +119,31 @@ export default function DecomptesListPage() {
   }
 
   const { data, isLoading, isError } = useDecomptesPaginated(filters);
-  const rows       = data?.data ?? [];
   const meta       = data?.metadata ?? {};
   const totalPages = meta.last_page ?? 1;
-  const hasFilter  = search || statut || contratFilter;
+  const hasFilter  = search || statut || typeFilter || sttFilter || contratFilter;
 
   const { data: allData }  = useDecomptesPaginated({ count: 200 });
   const allDecomptes        = allData?.data ?? [];
 
-  const { data: contratsData } = useContratsPaginated({ count: 100, statut: "actif" });
+  const { data: contratsData } = useContratsPaginated({ count: 100 });
   const contrats = contratsData?.data ?? [];
+
+  // Liste unique des sous-traitants depuis les contrats
+  const sttList = useMemo(() => {
+    const seen = new Set();
+    return contrats
+      .filter(c => c.soustraitant?.raison_sociale && !seen.has(c.soustraitant_id) && seen.add(c.soustraitant_id))
+      .map(c => ({ id: c.soustraitant_id, nom: c.soustraitant.raison_sociale }))
+      .sort((a, b) => a.nom.localeCompare(b.nom));
+  }, [contrats]);
+
+  // Filtrage client-side par sous-traitant (le backend ne filtre pas par STT directement)
+  const rows = useMemo(() => {
+    const base = data?.data ?? [];
+    if (!sttFilter) return base;
+    return base.filter(d => String(d.contrat?.soustraitant_id ?? d.contrat?.soustraitant?.id) === sttFilter);
+  }, [data, sttFilter]);
 
   const contratIdInt = form.contrat_id ? parseInt(form.contrat_id) : undefined;
   const { data: ecData } = useEtatsCessionPaginated(
@@ -161,7 +195,7 @@ export default function DecomptesListPage() {
     }
   }, [etatsCession, showModal, form.contrat_id]);
 
-  function reset()    { setSearch(""); setStatut(""); setContratFilter(""); setPage(1); }
+  function reset()    { setSearch(""); setStatut(""); setTypeFilter(""); setSttFilter(""); setContratFilter(""); setPage(1); }
   function set(k, v)  { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
   function openModal(){ setForm(INIT); setErrors({}); setShowModal(true); }
 
@@ -305,22 +339,32 @@ export default function DecomptesListPage() {
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1 min-w-[200px]">
+          <div className="relative flex-1 min-w-[180px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
-              placeholder="Rechercher par code décompte…"
+              placeholder="Rechercher par code…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
             />
           </div>
+          <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+            <option value="">Tous les types</option>
+            {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
           <select value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
+          <select value={sttFilter} onChange={e => { setSttFilter(e.target.value); setPage(1); }}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[180px]">
+            <option value="">Tous les STT</option>
+            {sttList.map(s => <option key={s.id} value={String(s.id)}>{s.nom}</option>)}
+          </select>
           <select value={contratFilter} onChange={e => { setContratFilter(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[220px]">
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[200px]">
             <option value="">Tous les contrats</option>
             {contrats.map(c => <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale}</option>)}
           </select>
@@ -347,7 +391,7 @@ export default function DecomptesListPage() {
           <table className="w-full min-w-[800px]">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50 border-b border-gray-200">
-                {["Code", "Contrat / STT", "Période", "Net HT", "TTC", "Statut", "Circuit"].map(h => (
+                {["Code", "Type", "Contrat / STT", "Période", "Net HT", "TTC", "Statut", "Circuit"].map(h => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -365,13 +409,20 @@ export default function DecomptesListPage() {
                   className="hover:bg-gray-50 even:bg-gray-50/40 group cursor-pointer transition-colors">
                   <td className="px-4 py-3.5"><span className="font-mono text-sm font-semibold text-gray-900">{d.code}</span></td>
                   <td className="px-4 py-3.5">
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${TYPE_BADGE[d.type] ?? "bg-gray-100 text-gray-500"}`}>
+                      {TYPES.find(t => t.value === d.type)?.label ?? d.type ?? "—"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3.5">
                     <p className="text-sm font-mono text-gray-700">{d.contrat?.code ?? "—"}</p>
                     <p className="text-xs text-gray-400 truncate max-w-[140px]">{d.contrat?.soustraitant?.raison_sociale}</p>
                   </td>
                   <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
-                    {d.etat_cession?.periode_debut && d.etat_cession?.periode_fin
-                      ? `${new Date(d.etat_cession.periode_debut).toLocaleDateString("fr-FR", { day:"2-digit", month:"short" })} — ${new Date(d.etat_cession.periode_fin).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" })}`
-                      : "—"}
+                    {d.date_debut && d.date_fin
+                      ? `${new Date(d.date_debut).toLocaleDateString("fr-FR", { day:"2-digit", month:"short" })} — ${new Date(d.date_fin).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" })}`
+                      : d.etat_cession?.periode_debut
+                        ? `${new Date(d.etat_cession.periode_debut).toLocaleDateString("fr-FR", { day:"2-digit", month:"short" })} — ${new Date(d.etat_cession.periode_fin).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" })}`
+                        : "—"}
                   </td>
                   <td className="px-4 py-3.5"><MoneyDisplay amount={d.montant_ht ?? 0} variant="small" className="text-[#087F3E]" /></td>
                   <td className="px-4 py-3.5"><MoneyDisplay amount={d.montant_ttc ?? 0} variant="small" className="font-semibold text-gray-800" /></td>
