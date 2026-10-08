@@ -297,7 +297,7 @@ function InfoPanel({ decompte, circuit }) {
 }
 
 // ─── Ligne de poste ──────────────────────────────────────────────────────────
-function PosteLigne({ code, type, label, taux, cumulM1, mensuelM, cumulM, editable, onChange, extra, extra2 }) {
+function PosteLigne({ code, type, label, taux, cumulM1, mensuelM, cumulM, editable, onChange, extra, extra2, children }) {
   const isInfo  = type === "info";
   const isMinus = type === "minus";
 
@@ -310,37 +310,61 @@ function PosteLigne({ code, type, label, taux, cumulM1, mensuelM, cumulM, editab
   const valColor = isInfo ? "text-gray-400 italic" : isMinus ? "text-red-600" : "text-gray-800 font-medium";
 
   return (
-    <tr className="border-b border-gray-50 hover:bg-gray-50/60 group">
-      <td className="px-4 py-2.5 w-12">
-        <span className="text-xs font-bold text-gray-400">{code}</span>
-      </td>
-      <td className="px-2 py-2.5">
-        <div className="flex items-start gap-2">
-          {badge}
-          <div>
-            <span className="text-sm text-gray-800">{label}</span>
-            {taux && <span className="ml-2 text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{taux}%</span>}
-            {extra  && <p className="text-[10px] text-gray-400 mt-0.5">{extra}</p>}
-            {extra2 && <p className="text-[10px] text-gray-400">{extra2}</p>}
+    <>
+      <tr className="border-b border-gray-50 hover:bg-gray-50/60 group">
+        <td className="px-4 py-2.5 w-12">
+          <span className="text-xs font-bold text-gray-400">{code}</span>
+        </td>
+        <td className="px-2 py-2.5">
+          <div className="flex items-start gap-2">
+            {badge}
+            <div>
+              <span className="text-sm text-gray-800">{label}</span>
+              {taux && <span className="ml-2 text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{taux}%</span>}
+              {extra  && <p className="text-[10px] text-gray-400 mt-0.5">{extra}</p>}
+              {extra2 && <p className="text-[10px] text-gray-400">{extra2}</p>}
+            </div>
           </div>
-        </div>
+        </td>
+        <td className="px-3 py-2.5 text-right text-xs text-gray-300 w-32 tabular-nums">
+          {cumulM1 != null && cumulM1 !== 0 ? num(cumulM1) : "—"}
+        </td>
+        <td className="px-3 py-2.5 text-right text-sm w-32 tabular-nums text-gray-500 italic">
+          {mensuelM != null ? (mensuelM !== 0 ? num(mensuelM) : "0") : "—"}
+        </td>
+        <td className={`px-4 py-2.5 text-right text-sm w-36 tabular-nums ${valColor}`}>
+          {editable && !isInfo ? (
+            <input
+              type="number" min={0} value={cumulM ?? 0}
+              onChange={e => onChange && onChange(parseFloat(e.target.value) || 0)}
+              className="w-full text-right px-2 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 tabular-nums"
+            />
+          ) : (
+            cumulM != null ? (cumulM === 0 ? "0" : num(cumulM)) : "—"
+          )}
+        </td>
+      </tr>
+      {children}
+    </>
+  );
+}
+
+// Sous-ligne de détail (indentée, lecture seule)
+function SousLigne({ label, cumulM1, mensuelM, cumulM, highlight }) {
+  return (
+    <tr className="bg-gray-50/70 border-b border-gray-50">
+      <td className="px-4 py-1.5 w-12" />
+      <td className="px-2 py-1.5 pl-8">
+        <span className="text-[11px] text-gray-500">└ {label}</span>
       </td>
-      <td className="px-3 py-2.5 text-right text-xs text-gray-300 w-32 tabular-nums">
+      <td className="px-3 py-1.5 text-right text-[11px] text-gray-400 tabular-nums">
         {cumulM1 != null && cumulM1 !== 0 ? num(cumulM1) : "—"}
       </td>
-      <td className="px-3 py-2.5 text-right text-sm w-32 tabular-nums text-gray-500 italic">
-        {mensuelM != null ? (isMinus ? (mensuelM !== 0 ? num(mensuelM) : "0") : (mensuelM !== 0 ? num(mensuelM) : "0")) : "—"}
+      <td className="px-3 py-1.5 text-right text-[11px] text-gray-400 tabular-nums">
+        {mensuelM != null && mensuelM !== 0 ? num(mensuelM) : "—"}
       </td>
-      <td className={`px-4 py-2.5 text-right text-sm w-36 tabular-nums ${valColor}`}>
-        {editable && !isInfo ? (
-          <input
-            type="number" min={0} value={cumulM ?? 0}
-            onChange={e => onChange && onChange(parseFloat(e.target.value) || 0)}
-            className="w-full text-right px-2 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 tabular-nums"
-          />
-        ) : (
-          cumulM != null ? (cumulM === 0 ? "0" : num(cumulM)) : "—"
-        )}
+      <td className={`px-4 py-1.5 text-right text-[11px] tabular-nums ${highlight ? "text-amber-600 font-semibold" : "text-gray-400"}`}>
+        {cumulM != null && cumulM !== 0 ? `⚡${num(cumulM)}` : "0"}
       </td>
     </tr>
   );
@@ -356,17 +380,29 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
   const [postes, setPostes] = useState(() => {
     const p = payload.postes ?? {};
     return {
-      E: p.E?.cumulM ?? 0,
-      H: p.H?.cumulM ?? 0,
-      J: p.J?.cumulM ?? 0,
-      L: p.L?.cumulM ?? 0,
-      F: p.F?.cumulM ?? 0,
+      B:  p.B?.cumulM  ?? 0,
+      B2: p.B2?.cumulM ?? 0,
+      E:  p.E?.cumulM  ?? 0,
+      H:  p.H?.cumulM  ?? 0,
+      J:  p.J?.cumulM  ?? 0,
+      L:  p.L?.cumulM  ?? 0,
+      F:  p.F?.cumulM  ?? 0,
+      M:  p.M?.cumulM  ?? 0,
     };
   });
 
   useEffect(() => {
     const p = (decompte.payload?.postes) ?? {};
-    setPostes({ E: p.E?.cumulM ?? 0, H: p.H?.cumulM ?? 0, J: p.J?.cumulM ?? 0, L: p.L?.cumulM ?? 0, F: p.F?.cumulM ?? 0 });
+    setPostes({
+      B:  p.B?.cumulM  ?? 0,
+      B2: p.B2?.cumulM ?? 0,
+      E:  p.E?.cumulM  ?? 0,
+      H:  p.H?.cumulM  ?? 0,
+      J:  p.J?.cumulM  ?? 0,
+      L:  p.L?.cumulM  ?? 0,
+      F:  p.F?.cumulM  ?? 0,
+      M:  p.M?.cumulM  ?? 0,
+    });
   }, [decompte.id]);
 
   const p = payload.postes ?? {};
@@ -389,16 +425,23 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
   const mensuelD = cumulD - cM1("D");
 
   // Postes saisissables
-  const mensuelE = postes.E - cM1("E");
-  const cumulG   = p.G?.cumulM ?? 0;
-  const mensuelH = postes.H - cM1("H");
-  const cumulI   = p.I?.cumulM ?? 0;
-  const mensuelJ = postes.J - cM1("J");
-  const cumulK   = p.K?.cumulM ?? 0;
-  const mensuelL = postes.L - cM1("L");
+  const mensuelB  = postes.B  - cM1("B");
+  const mensuelB2 = postes.B2 - cM1("B2");
+  const mensuelE  = postes.E  - cM1("E");
+  const cumulG    = p.G?.cumulM ?? 0;
+  const mensuelH  = postes.H  - cM1("H");
+  const cumulI    = p.I?.cumulM ?? 0;
+  const mensuelJ  = postes.J  - cM1("J");
+  const cumulK    = p.K?.cumulM ?? 0;
+  const mensuelL  = postes.L  - cM1("L");
+  const mensuelM  = postes.M  - cM1("M");
 
-  // Net HT
-  const netHt  = mensuelA - mensuelC - mensuelD + mensuelE - mensuelH - mensuelJ + mensuelL - postes.F;
+  // Détail Poste C (avances)
+  const remboursementMensuelC = mensuelC; // même valeur, remboursé proportionnellement
+  const restantARemboursC     = Math.max(0, cumulC - cumulC); // = 0 quand remboursement = avance
+
+  // Net HT = A + B + B2 − C − D + E − H − J + L − M − F
+  const netHt  = mensuelA + mensuelB + mensuelB2 - mensuelC - mensuelD + mensuelE - mensuelH - mensuelJ + mensuelL - mensuelM - postes.F;
   const tva    = Math.round(netHt * (d.taux_tva ?? 18) / 100);
   const netTtc = netHt + tva;
 
@@ -408,11 +451,14 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
     return {
       mode,
       postes: {
-        E: { cumulM: postes.E },
-        H: { cumulM: postes.H },
-        J: { cumulM: postes.J },
-        L: { cumulM: postes.L },
-        F: { cumulM: postes.F },
+        B:  { cumulM: postes.B  },
+        B2: { cumulM: postes.B2 },
+        E:  { cumulM: postes.E  },
+        H:  { cumulM: postes.H  },
+        J:  { cumulM: postes.J  },
+        L:  { cumulM: postes.L  },
+        F:  { cumulM: postes.F  },
+        M:  { cumulM: postes.M  },
       },
     };
   }
@@ -452,8 +498,24 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
                 extra={attachementCode ? `Dossier ${attachementCode}` : "Aucun attachement — initier depuis le contrat"}
                 cumulM1={cM1("A")} mensuelM={mensuelA} cumulM={cumulA} editable={false} />
 
+              <PosteLigne code="B" type="plus" label="Révisions de prix"
+                cumulM1={cM1("B")} mensuelM={mensuelB} cumulM={postes.B}
+                editable={canEdit} onChange={v => handleSet("B", v)} />
+
+              <PosteLigne code="B2" type="plus" label="Sommes à faire valoir"
+                cumulM1={cM1("B2")} mensuelM={mensuelB2} cumulM={postes.B2}
+                editable={canEdit} onChange={v => handleSet("B2", v)} />
+
               <PosteLigne code="C" type="info" label="Avances démarrage (info)" taux={tauxAD}
-                cumulM1={cM1("C")} mensuelM={mensuelC} cumulM={cumulC} editable={false} />
+                cumulM1={cM1("C")} mensuelM={mensuelC} cumulM={cumulC} editable={false}>
+                <SousLigne label="Montant avance M"      cumulM1={null}       mensuelM={cumulC * tauxAD / 100 || mensuelC} cumulM={null} />
+                <SousLigne label="Cumul avances M-1"     cumulM1={cM1("C")}   mensuelM={null}    cumulM={null} />
+                <SousLigne label="Cumul avances M"       cumulM1={null}       mensuelM={null}    cumulM={cumulC} highlight />
+                <SousLigne label="Remboursement mensuel" cumulM1={cM1("C")}   mensuelM={mensuelC} cumulM={cumulC} />
+                <SousLigne label="Cumul remb. M-1"       cumulM1={cM1("C")}   mensuelM={null}    cumulM={null} />
+                <SousLigne label="Cumul remb. M"         cumulM1={null}       mensuelM={null}    cumulM={cumulC} highlight />
+                <SousLigne label="Restant à rembourser"  cumulM1={null}       mensuelM={null}    cumulM={0} />
+              </PosteLigne>
 
               <PosteLigne code="D" type="minus" label="Retenue de garantie" taux={tauxRG}
                 cumulM1={cM1("D")} mensuelM={mensuelD} cumulM={cumulD} editable={false} />
@@ -470,7 +532,7 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
                 extra={`Montant cédé sur la période : ${num(cumulG)} FCFA`}
                 extra2={`Déjà remboursé (décomptes antérieurs) : ${num(cM1("H"))} FCFA`}
                 cumulM1={cM1("H")} mensuelM={mensuelH} cumulM={postes.H}
-                editable={canEdit} onChange={v => handleSet("H", v)} />
+                editable={canEdit} onChange={v => handleSet("H", Math.min(v, cumulG))} />
 
               <PosteLigne code="I" type="info" label="Cessions matériel (info)"
                 extra="état de cession"
@@ -480,7 +542,7 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
                 extra={`Montant cédé sur la période : ${num(cumulI)} FCFA`}
                 extra2={`Déjà remboursé (décomptes antérieurs) : ${num(cM1("J"))} FCFA`}
                 cumulM1={cM1("J")} mensuelM={mensuelJ} cumulM={postes.J}
-                editable={canEdit} onChange={v => handleSet("J", v)} />
+                editable={canEdit} onChange={v => handleSet("J", Math.min(v, cumulI))} />
 
               <PosteLigne code="K" type="info" label="Cessions ressources humaines (info)"
                 extra="état de cession"
@@ -490,7 +552,11 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
                 extra={`Montant cédé sur la période : ${num(cumulK)} FCFA`}
                 extra2={`Déjà remboursé (décomptes antérieurs) : ${num(cM1("L"))} FCFA`}
                 cumulM1={cM1("L")} mensuelM={mensuelL} cumulM={postes.L}
-                editable={canEdit} onChange={v => handleSet("L", v)} />
+                editable={canEdit} onChange={v => handleSet("L", Math.min(v, cumulK))} />
+
+              <PosteLigne code="M" type="minus" label="Autres retenues"
+                cumulM1={cM1("M")} mensuelM={mensuelM} cumulM={postes.M}
+                editable={canEdit} onChange={v => handleSet("M", v)} />
             </tbody>
           </table>
 
@@ -522,13 +588,18 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
         <div className="bg-white border border-gray-200 rounded-2xl p-5">
           <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
             {[
-              { label: "Travaux exécutés",     value: mensuelA,  color: "text-gray-900" },
-              { label: "Retenue de garantie",  value: -mensuelD, color: "text-red-600" },
-              { label: "Remb. avance démarrage", value: -mensuelC, color: "text-red-600" },
-              { label: "Remboursement MTX",    value: -mensuelH, color: "text-red-600" },
-              { label: "Net HT",               value: netHt,     color: netHt < 0 ? "text-red-600 font-bold" : "text-[#087F3E] font-bold" },
-              { label: `TVA ${d.taux_tva ?? 18}%`, value: tva, color: "text-gray-600" },
-            ].map(item => (
+              { label: "Travaux exécutés",       value: mensuelA,  color: "text-gray-900" },
+              { label: "Révisions de prix",       value: mensuelB,  color: "text-green-700" },
+              { label: "Sommes à faire valoir",   value: mensuelB2, color: "text-green-700" },
+              { label: "Retenue de garantie",     value: -mensuelD, color: "text-red-600" },
+              { label: "Remb. avance démarrage",  value: -mensuelC, color: "text-red-600" },
+              { label: "Remboursement MTX",       value: -mensuelH, color: "text-red-600" },
+              { label: "Remboursement MTL",       value: -mensuelJ, color: "text-red-600" },
+              { label: "Remboursement RH",        value: -mensuelL, color: "text-red-600" },
+              { label: "Autres retenues",         value: -mensuelM, color: "text-red-600" },
+              { label: "Net HT",                  value: netHt,     color: netHt < 0 ? "text-red-600 font-bold" : "text-[#087F3E] font-bold" },
+              { label: `TVA ${d.taux_tva ?? 18}%`, value: tva,     color: "text-gray-600" },
+            ].filter(item => item.value !== 0).map(item => (
               <div key={item.label} className="text-center">
                 <p className="text-[9px] text-gray-400 uppercase tracking-wide mb-1 leading-tight">{item.label}</p>
                 <p className={`text-sm ${item.color}`}>{item.value < 0 ? "−" : ""}{num(item.value)}<span className="text-[9px] text-gray-400 ml-0.5">FCFA</span></p>
