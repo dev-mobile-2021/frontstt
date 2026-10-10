@@ -5,6 +5,7 @@ import { useRelevesPaginated } from "../hooks/useReleves";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import { formatDate } from "../utils/formatters";
+import SearchSelect from "../components/SearchSelect";
 
 const STATUTS = [
   { value: "genere",   label: "Généré" },
@@ -54,14 +55,14 @@ export default function RelevesListPage() {
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
             />
           </div>
-          <select
+          <SearchSelect
             value={statut}
             onChange={e => { setStatut(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30"
           >
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
+          </SearchSelect>
           {hasFilter && (
             <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
               <RotateCcw size={13} /> Réinitialiser

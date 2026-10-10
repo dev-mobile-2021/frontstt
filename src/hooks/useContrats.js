@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { contratService } from "../services/contratService";
 
+/** Un contrat ou un avenant modifié change le « STT engagé » des chantiers : on rafraîchit aussi leurs caches. */
+function invalidateContrats(qc) {
+  qc.invalidateQueries({ queryKey: ["contrats"] });
+  qc.invalidateQueries({ queryKey: ["chantiers"] });
+  qc.invalidateQueries({ queryKey: ["chantier"] });
+}
+
 export function useContratsPaginated(filters = {}) {
   return useQuery({
     queryKey: ["contrats", filters],
@@ -21,7 +28,7 @@ export function useSaveContrat() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload) => contratService.save(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["contrats"] }),
+    onSuccess: () => invalidateContrats(qc),
   });
 }
 
@@ -30,7 +37,7 @@ export function useContratStatut() {
   return useMutation({
     mutationFn: ({ id, statut, motif }) => contratService.setStatut(id, statut, motif),
     onSuccess: (_data, { id }) => {
-      qc.invalidateQueries({ queryKey: ["contrats"] });
+      invalidateContrats(qc);
       qc.invalidateQueries({ queryKey: ["contrat", String(id)] });
     },
   });
@@ -40,7 +47,7 @@ export function useDeleteContrat() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id) => contratService.delete(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["contrats"] }),
+    onSuccess: () => invalidateContrats(qc),
   });
 }
 
@@ -57,7 +64,7 @@ export function useSoumettreContrat() {
   return useMutation({
     mutationFn: (id) => contratService.soumettre(id),
     onSuccess: (_data, id) => {
-      qc.invalidateQueries({ queryKey: ["contrats"] });
+      invalidateContrats(qc);
       qc.invalidateQueries({ queryKey: ["contrat", String(id)] });
     },
   });
@@ -68,7 +75,7 @@ export function useValiderContrat() {
   return useMutation({
     mutationFn: (id) => contratService.valider(id),
     onSuccess: (_data, id) => {
-      qc.invalidateQueries({ queryKey: ["contrats"] });
+      invalidateContrats(qc);
       qc.invalidateQueries({ queryKey: ["contrat", String(id)] });
     },
   });
@@ -79,7 +86,7 @@ export function useRejeterContrat() {
   return useMutation({
     mutationFn: ({ id, motif }) => contratService.rejeter(id, motif),
     onSuccess: (_data, { id }) => {
-      qc.invalidateQueries({ queryKey: ["contrats"] });
+      invalidateContrats(qc);
       qc.invalidateQueries({ queryKey: ["contrat", String(id)] });
     },
   });

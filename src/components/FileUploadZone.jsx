@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { UploadCloud } from "lucide-react";
+import SearchSelect from "./SearchSelect";
 
 const CATEGORIES = [
   "Offre initiale", "Comparatif offres", "Rapport de rapprochement",
@@ -32,7 +33,7 @@ export default function FileUploadZone({ onUpload }) {
         <label className="text-xs uppercase tracking-wide font-medium text-gray-500 whitespace-nowrap">
           Catégorie
         </label>
-        <select
+        <SearchSelect
           value={categorie}
           onChange={(e) => setCategorie(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none transition-all duration-200"
@@ -41,7 +42,7 @@ export default function FileUploadZone({ onUpload }) {
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
-        </select>
+        </SearchSelect>
       </div>
 
       {/* Drop zone */}

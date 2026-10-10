@@ -6,6 +6,7 @@ const FIELDS = `
   date_debut date_fin_prevue chef_projet conducteur_travaux
   budget_personnel budget_materiel budget_fournitures
   budget_sous_traitance budget_divers budget_total
+  stt_engage stt_engage_initial stt_engage_avenants
   code_x3 synced_at created_at updated_at
   contrats { id code statut montant_actuel soustraitant { id raison_sociale } }
 `;

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, Phone, Mail, MapPin, Building2, Hash,
   AlertTriangle, Globe, FileText, Calendar, ExternalLink,
-  Pencil, X, Save, Loader2, Trash2, ShieldOff, ShieldCheck,
+  X, Save, Loader2, Trash2, ShieldOff, ShieldCheck,
 } from "lucide-react";
 import { useSousTraitant, useSaveSousTraitant, useSousTraitantStatut, useDeleteSousTraitant } from "../hooks/useSousTraitants";
 import { useContratsPaginated } from "../hooks/useContrats";
@@ -14,6 +14,7 @@ import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
 import Tabs from "../components/Tabs";
 import { SkeletonCard } from "../components/Skeleton";
+import SearchSelect from "../components/SearchSelect";
 
 const FORMES = ["SARL", "SA", "SUARL", "GIE", "Entreprise individuelle", "Autre"];
 
@@ -31,8 +32,8 @@ function Field({ label, required, error, children }) {
   );
 }
 
-function InfoRow({ icon: Icon, label, value, href }) {
-  if (!value) return null;
+function InfoRow({ icon: Icon, label, value, href, always }) {
+  if (!value && !always) return null;
   return (
     <div className="flex items-start gap-3 py-2.5 border-b border-gray-100 last:border-0">
       <Icon size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
@@ -41,7 +42,7 @@ function InfoRow({ icon: Icon, label, value, href }) {
         {href ? (
           <a href={href} className="text-sm text-[#087F3E] hover:underline mt-0.5 block truncate">{value}</a>
         ) : (
-          <p className="text-sm text-gray-800 font-medium mt-0.5">{value}</p>
+          <p className={`text-sm mt-0.5 ${value ? "text-gray-800 font-medium" : "text-gray-300"}`}>{value || "—"}</p>
         )}
       </div>
     </div>
@@ -279,12 +280,6 @@ export default function SousTraitantFormPage() {
         action={
           <div className="flex items-center gap-2 flex-wrap">
             <StatusBadge statut={stt.statut} />
-            {!isEditing && (
-              <button onClick={() => setIsEditing(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                <Pencil size={13} /> Modifier
-              </button>
-            )}
             {isBlackliste ? (
               <button onClick={handleReactiver} disabled={statutMut.isPending}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-green-300 text-green-700 rounded-lg hover:bg-green-50 transition-colors disabled:opacity-60">
@@ -348,6 +343,13 @@ export default function SousTraitantFormPage() {
                 <InfoRow icon={Phone}  label="Tél."     value={stt.telephone} href={stt.telephone ? `tel:${stt.telephone}` : null} />
                 <InfoRow icon={Mail}   label="Email"    value={stt.email}    href={stt.email ? `mailto:${stt.email}` : null} />
                 <InfoRow icon={Globe}  label="Site web" value={stt.site_web} href={stt.site_web} />
+
+                <div className="pt-3 mt-3 border-t border-gray-100 space-y-3">
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Données Sage X3</p>
+                  <InfoRow icon={Hash} label="Abrégé"       value={stt.abrege} always />
+                  <InfoRow icon={Hash} label="Devise"       value={stt.devise} always />
+                  <InfoRow icon={Hash} label="NINEA (X3)"   value={stt.ninea_x3} always />
+                </div>
               </Section>
 
               <Section title="Représentant / Contact principal">
@@ -375,15 +377,17 @@ export default function SousTraitantFormPage() {
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Identité légale</p>
                 <Field label="Raison sociale" required error={errors.raison_sociale}>
                   <input value={form.raison_sociale ?? ""} onChange={e => set("raison_sociale", e.target.value)}
-                    className={`${INPUT} ${errors.raison_sociale ? "border-red-400" : ""}`}
+                    readOnly={!!stt.code_x3} title={stt.code_x3 ? "Géré par Sage X3" : undefined}
+                    className={`${INPUT} ${errors.raison_sociale ? "border-red-400" : ""} ${stt.code_x3 ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
                     placeholder="Nom de l'entreprise" />
+                  {stt.code_x3 && <p className="text-[11px] text-gray-400 mt-1">Géré par Sage X3 — non modifiable ici.</p>}
                 </Field>
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Forme juridique">
-                    <select value={form.forme_juridique ?? ""} onChange={e => set("forme_juridique", e.target.value)} className={INPUT}>
+                    <SearchSelect value={form.forme_juridique ?? ""} onChange={e => set("forme_juridique", e.target.value)} className={INPUT}>
                       <option value="">— Sélectionner —</option>
                       {FORMES.map(f => <option key={f} value={f}>{f}</option>)}
-                    </select>
+                    </SearchSelect>
                   </Field>
                   <Field label="Spécialités">
                     <input value={form.specialites ?? ""} onChange={e => set("specialites", e.target.value)}
@@ -401,8 +405,8 @@ export default function SousTraitantFormPage() {
                   </Field>
                 </div>
                 <Field label="Code X3">
-                  <input value={form.code_x3 ?? ""} onChange={e => set("code_x3", e.target.value)}
-                    className={INPUT} placeholder="Code X3 (optionnel)" />
+                  <input value={form.code_x3 ?? ""} readOnly
+                    className={`${INPUT} bg-gray-50 text-gray-500 cursor-not-allowed`} placeholder="Code X3" />
                 </Field>
               </div>
 

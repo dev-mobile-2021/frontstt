@@ -11,6 +11,7 @@ import { useChantiersPaginated } from "../hooks/useChantiers";
 import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
+import SearchSelect from "../components/SearchSelect";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
 
@@ -316,16 +317,16 @@ export default function ConsultationEtatsCessionPage() {
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Sous-traitant</label>
-            <select value={filters.soustraitant_id} onChange={e => set("soustraitant_id", e.target.value)} className={inputCls}>
+            <SearchSelect value={filters.soustraitant_id} onChange={e => set("soustraitant_id", e.target.value)} className={inputCls}>
               <option value="">Tous</option>
               {soustraitants.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
-            </select>
+            </SearchSelect>
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Statut EC</label>
-            <select value={filters.statut_ec} onChange={e => set("statut_ec", e.target.value)} className={inputCls}>
+            <SearchSelect value={filters.statut_ec} onChange={e => set("statut_ec", e.target.value)} className={inputCls}>
               {STATUT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            </SearchSelect>
           </div>
         </div>
 
@@ -341,9 +342,9 @@ export default function ConsultationEtatsCessionPage() {
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Poste</label>
-            <select value={filters.poste} onChange={e => set("poste", e.target.value)} className={inputCls}>
+            <SearchSelect value={filters.poste} onChange={e => set("poste", e.target.value)} className={inputCls}>
               {POSTE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+            </SearchSelect>
           </div>
           <div className="space-y-1">
             <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Code article</label>

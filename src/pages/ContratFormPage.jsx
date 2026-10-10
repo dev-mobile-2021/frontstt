@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import ConfirmModal from "../components/ConfirmModal";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
-  ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle,
+  ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle, RefreshCw,
   Hash, FileText, Info, FilePlus, CheckCircle, Trash2, Plus, X, Paperclip,
   Upload, Download, File, Circle, Clock, CheckCircle2, XCircle, Search, Archive,
   Pencil, ChevronDown,
@@ -13,7 +13,7 @@ import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useDecomptesPaginated } from "../hooks/useDecomptes";
 import { useAvenantsByContrat, useSaveAvenant, useValiderAvenant, useDeleteAvenant } from "../hooks/useAvenants";
 import { useAttachements } from "../hooks/useAttachements";
-import { useBonCommandesByContrat, useSaveBonCommande, useSaveBonCommandeLigne, useDeleteBonCommandeLigne, useBonCommandeStatut, useDeleteBonCommande } from "../hooks/useBonCommandes";
+import { useBonCommandesByContrat, useRechercheBonsCommandeX3, useLierBonsCommande, useDelierBonCommande } from "../hooks/useBonCommandes";
 import { useBaremesPaginated } from "../hooks/useBaremes";
 import { useContratBaremes, useAddContratBareme, useUpdateContratBaremePrix, useValiderContratBaremePrix, useRemoveContratBareme } from "../hooks/useContratBaremes";
 import { useParametresPaginated } from "../hooks/useParametres";
@@ -36,7 +36,11 @@ import StatusBadge from "../components/StatusBadge";
 import Tabs from "../components/Tabs";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonCard } from "../components/Skeleton";
-import { formatMontantCourt, formatDate } from "../utils/formatters";
+import { formatMontant, formatMontantCourt, formatDate } from "../utils/formatters";
+import SearchSelect from "../components/SearchSelect";
+import SousTraitantSelect from "../components/SousTraitantSelect";
+import ArchiveContratDialog from "../components/ArchiveContratDialog";
+import { useArticlesX3 } from "../hooks/useArticlesX3";
 
 // ─── Workflow transitions ────────────────────────────────────────
 const TRANSITIONS = {
@@ -338,6 +342,15 @@ function BaremeCessionsTab({ contratId, isNew }) {
   const { data: lignes = [], isLoading } = useContratBaremes(contratIdInt);
   const { data: refData } = useBaremesPaginated({ statut: "actif", count: 500 });
   const refArticles = refData?.data ?? [];
+  // Articles Sage X3 (classes cessionnables : matériaux, produits pétroliers, basalte…) pour le bloc MTX
+  const [qX3, setQX3] = useState("");
+  useEffect(() => {
+    const t = setTimeout(() => setQX3(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+  const { data: articlesX3 = [], isLoading: loadingX3 } = useArticlesX3({
+    search: qX3, classe: "MTX,BAS,PRP", limit: 40, enabled: showModal === "mtx",
+  });
   const { data: parametresData } = useParametresPaginated();
   const unitesParam = parametresData?.bareme?.find(p => p.cle === "unites_bareme");
   const UNITES = unitesParam ? unitesParam.valeur.split(",").map(u => u.trim()) : UNITES_DEFAULT;
@@ -372,6 +385,23 @@ function BaremeCessionsTab({ contratId, isNew }) {
     } catch (err) {
       if (err.response?.status === 409) return addToast("Cet article est déjà dans le barème.", "error");
       addToast("Erreur lors de l'ajout.", "error");
+    }
+  }
+
+  async function handleAddX3(article) {
+    const key = article.code_article;
+    const prixStr = prixInput[key] ?? "";
+    const prix = parseFloat(prixStr);
+    if (!prixStr || isNaN(prix) || prix <= 0) return addToast("Saisissez un prix unitaire valide.", "error");
+    const unite = uniteInput[key] ?? article.unite ?? null;
+    try {
+      await addMut.mutateAsync({ code_article: key, prix_contrat: prix, unite: unite || null });
+      setPrixInput(p => { const n = { ...p }; delete n[key]; return n; });
+      setUniteInput(p => { const n = { ...p }; delete n[key]; return n; });
+      addToast("Article Sage X3 ajouté au barème.", "success");
+    } catch (err) {
+      if (err.response?.status === 409) return addToast("Cet article est déjà dans le barème.", "error");
+      addToast(err?.response?.data?.errors?.[0] ?? "Erreur lors de l'ajout.", "error");
     }
   }
 
@@ -484,15 +514,15 @@ function BaremeCessionsTab({ contratId, isNew }) {
                   {/* Sélectionner depuis le référentiel */}
                   <button
                     onClick={() => { setShowModal(showModal === key ? null : key); setSearch(""); }}
-                    disabled={dispos.length === 0}
+                    disabled={key !== "mtx" && dispos.length === 0}
                     className={`text-xs px-3 py-1 rounded-lg font-medium transition-colors
-                      ${dispos.length === 0
+                      ${key !== "mtx" && dispos.length === 0
                         ? "opacity-30 cursor-not-allowed bg-white border border-gray-200 text-gray-400"
                         : showModal === key
                           ? `bg-gray-100 border ${border} ${color}`
                           : `bg-white border ${border} ${color} hover:bg-white/70`}`}
                   >
-                    {showModal === key ? "✕ Fermer" : "+ Sélectionner depuis le référentiel"}
+                    {showModal === key ? "✕ Fermer" : key === "mtx" ? "+ Sélectionner depuis Sage X3" : "+ Sélectionner depuis le référentiel"}
                   </button>
                 </div>
               </div>
@@ -504,35 +534,49 @@ function BaremeCessionsTab({ contratId, isNew }) {
                     <div className="relative">
                       <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                       <input value={search} onChange={e => setSearch(e.target.value)}
-                        placeholder="Rechercher un article…" autoFocus
+                        placeholder={key === "mtx" ? "Rechercher un article Sage X3 (code ou désignation)…" : "Rechercher un article…"} autoFocus
                         className="w-full pl-8 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
                     </div>
                   </div>
                   <div className="divide-y divide-gray-100 max-h-64 overflow-y-auto">
-                    {dispos.filter(b => !search || b.designation.toLowerCase().includes(search.toLowerCase())).length === 0 ? (
-                      <p className="text-sm text-gray-400 text-center py-6">Tous les articles sont déjà ajoutés.</p>
-                    ) : dispos.filter(b => !search || b.designation.toLowerCase().includes(search.toLowerCase())).map(b => (
-                      <div key={b.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-800 truncate">{b.designation}</p>
-                          <p className="text-xs text-gray-400">{b.code}</p>
+                    {(() => {
+                      const dejaCodes = new Set(lignes.flatMap(l => [l.bareme?.code, l.bareme?.code_article].filter(Boolean)));
+                      const rows = key === "mtx"
+                        ? articlesX3
+                            .filter(a => !dejaCodes.has(a.code_article))
+                            .map(a => ({ id: a.code_article, designation: a.designation, code: `${a.code_article} · ${a.classe}`, unite: a.unite, x3: true, article: a }))
+                        : dispos
+                            .filter(b => !search || b.designation.toLowerCase().includes(search.toLowerCase()))
+                            .map(b => ({ id: b.id, designation: b.designation, code: b.code, unite: b.unite, x3: false }));
+                      if (key === "mtx" && loadingX3) return <p className="text-sm text-gray-400 text-center py-6">Recherche dans Sage X3…</p>;
+                      if (rows.length === 0) return (
+                        <p className="text-sm text-gray-400 text-center py-6">
+                          {key === "mtx" ? "Aucun article Sage X3 trouvé (ou déjà ajoutés). Synchronisez les articles dans Paramétrage." : "Tous les articles sont déjà ajoutés."}
+                        </p>
+                      );
+                      return rows.map(b => (
+                        <div key={b.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-800 truncate">{b.designation}</p>
+                            <p className="text-xs text-gray-400">{b.code}</p>
+                          </div>
+                          <SearchSelect
+                            value={uniteInput[b.id] ?? b.unite ?? ""}
+                            onChange={e => setUniteInput(p => ({ ...p, [b.id]: e.target.value }))}
+                            className="w-24 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white">
+                            {[...new Set([b.unite, ...UNITES].filter(Boolean))].map(u => <option key={u} value={u}>{u}</option>)}
+                          </SearchSelect>
+                          <input type="number" min="0" step="any" placeholder="Prix (FCFA) *"
+                            value={prixInput[b.id] ?? ""}
+                            onChange={e => setPrixInput(p => ({ ...p, [b.id]: e.target.value }))}
+                            className="w-32 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                          <button onClick={() => b.x3 ? handleAddX3(b.article) : handleAdd(b.id)} disabled={addMut.isPending}
+                            className="text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors disabled:opacity-50 shrink-0">
+                            + Ajouter
+                          </button>
                         </div>
-                        <select
-                          value={uniteInput[b.id] ?? b.unite ?? ""}
-                          onChange={e => setUniteInput(p => ({ ...p, [b.id]: e.target.value }))}
-                          className="w-24 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white">
-                          {UNITES.map(u => <option key={u} value={u}>{u}</option>)}
-                        </select>
-                        <input type="number" min="0" step="any" placeholder="Prix (FCFA) *"
-                          value={prixInput[b.id] ?? ""}
-                          onChange={e => setPrixInput(p => ({ ...p, [b.id]: e.target.value }))}
-                          className="w-32 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none" />
-                        <button onClick={() => handleAdd(b.id)} disabled={addMut.isPending}
-                          className="text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors disabled:opacity-50 shrink-0">
-                          + Ajouter
-                        </button>
-                      </div>
-                    ))}
+                      ));
+                    })()}
                   </div>
                 </div>
               )}
@@ -958,13 +1002,13 @@ function PiecesJointesTab({ contratId, isNew }) {
       <div className="grid grid-cols-[200px_1fr] gap-4">
         <div className="space-y-1.5">
           <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Catégorie</label>
-          <select
+          <SearchSelect
             value={categorie}
             onChange={e => setCategorie(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
           >
             {CATEGORIES_PJ.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-          </select>
+          </SearchSelect>
         </div>
         <div
           onDragOver={e => { e.preventDefault(); setDragging(true); }}
@@ -1153,7 +1197,7 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
             {avenants.filter(a => a.statut === "valide").length} avenant(s) validé(s)
           </span>
           <span className="text-violet-900 font-bold">
-            Impact sur montant actuel : {formatMontantCourt(totalValide)}
+            Impact sur montant actuel : {formatMontant(totalValide)}
           </span>
         </div>
       )}
@@ -1180,8 +1224,8 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
               <tr key={a.id} className="hover:bg-gray-50 transition-colors">
                 <td className="py-2.5 pr-3 font-mono text-xs font-medium text-gray-900">{a.code}</td>
                 <td className="py-2.5 pr-3 text-gray-700 max-w-[200px] truncate">{a.objet}</td>
-                <td className={`py-2.5 pr-3 font-semibold ${a.statut === "valide" ? "text-violet-700" : "text-gray-700"}`}>
-                  {formatMontantCourt(parseFloat(a.montant ?? 0))}
+                <td className={`py-2.5 pr-3 font-semibold whitespace-nowrap ${a.statut === "valide" ? "text-violet-700" : "text-gray-700"}`}>
+                  {formatMontant(parseFloat(a.montant ?? 0))}
                 </td>
                 <td className="py-2.5 pr-3 text-gray-500 text-xs">
                   {a.date_signature ? formatDate(a.date_signature) : "—"}
@@ -1325,394 +1369,208 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
   );
 }
 
-// ─── Sub-tab: Bons de commande ──────────────────────────────────
-const BC_STATUT_COLORS = {
-  brouillon:   "bg-gray-100 text-gray-600",
-  valide:      "bg-blue-100 text-blue-700",
-  envoye:      "bg-violet-100 text-violet-700",
-  receptionne: "bg-green-100 text-green-700",
-  cloture:     "bg-gray-200 text-gray-500",
-  annule:      "bg-red-100 text-red-600",
-};
-const BC_STATUT_LABELS = {
-  brouillon:   "Brouillon",
-  valide:      "Validé",
-  envoye:      "Envoyé",
-  receptionne: "Réceptionné",
-  cloture:     "Clôturé",
-  annule:      "Annulé",
-};
-const BC_TRANSITIONS = {
-  brouillon:   [{ statut: "valide", label: "Valider" }, { statut: "annule", label: "Annuler" }],
-  valide:      [{ statut: "envoye", label: "Envoyer" }, { statut: "annule", label: "Annuler" }],
-  envoye:      [{ statut: "receptionne", label: "Réceptionner" }, { statut: "annule", label: "Annuler" }],
-  receptionne: [{ statut: "cloture", label: "Clôturer" }],
-  cloture:     [],
-  annule:      [],
-};
-
-const BC_INIT = { objet: "", date_emission: "", date_livraison_prevue: "", observations: "" };
-const LIGNE_INIT = { designation: "", unite: "", quantite: "", prix_unitaire: "" };
-
+// ─── Sub-tab: Bons de commande (Sage X3) ─────────────────────────
+// Les BC ne sont jamais créés dans STT : on interroge X3 avec le chantier et le
+// sous-traitant du contrat, puis on sélectionne le(s) BC à lier.
 function BonCommandeTab({ contratId, isNew }) {
   const { addToast } = useToast();
-  const [showCreate, setShowCreate]     = useState(false);
-  const [showLigne, setShowLigne]       = useState(null); // bc id
-  const [bcForm, setBcForm]             = useState(BC_INIT);
-  const [ligneForm, setLigneForm]       = useState(LIGNE_INIT);
-  const [confirmDel, setConfirmDel]     = useState(null);
-  const [confirmDelBC, setConfirmDelBC] = useState(null);
-  const [motifAnnul, setMotifAnnul]     = useState("");
-  const [pendingTransit, setPendingTransit] = useState(null); // { bc, statut }
+  const [resultats, setResultats] = useState(null);   // null = pas de recherche lancée
+  const [selection, setSelection] = useState([]);
+  const [confirmDelier, setConfirmDelier] = useState(null);
 
   const { data: bcs = [], isLoading } = useBonCommandesByContrat(!isNew ? contratId : null);
-  const saveMut        = useSaveBonCommande();
-  const saveLigneMut   = useSaveBonCommandeLigne();
-  const delLigneMut    = useDeleteBonCommandeLigne();
-  const statutMut      = useBonCommandeStatut();
-  const deleteMut      = useDeleteBonCommande();
+  const rechercheMut = useRechercheBonsCommandeX3();
+  const lierMut      = useLierBonsCommande(contratId);
+  const delierMut    = useDelierBonCommande();
 
   const fmt = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
+  const apiError = e => e?.response?.data?.errors?.[0] ?? e?.response?.data?.message ?? "Erreur lors de l'appel à Sage X3.";
 
-  async function handleCreateBC(e) {
-    e.preventDefault();
+  const totalHT  = bcs.reduce((s, b) => s + (b.montant_ht ?? 0), 0);
+  const totalTTC = bcs.reduce((s, b) => s + (b.montant_ttc ?? 0), 0);
+
+  async function handleRechercher() {
     try {
-      await saveMut.mutateAsync({ contrat_id: parseInt(contratId, 10), ...bcForm });
-      addToast("Bon de commande créé.", "success");
-      setShowCreate(false);
-      setBcForm(BC_INIT);
-    } catch (err) {
-      addToast(err.response?.data?.message ?? "Erreur.", "error");
+      const data = await rechercheMut.mutateAsync(parseInt(contratId, 10));
+      setResultats(data);
+      setSelection(data.filter(r => r.lie_a_ce_contrat).map(r => r.numero));
+      if (data.length === 0) addToast("Aucun bon de commande trouvé dans Sage X3 pour ce chantier et ce sous-traitant.", "info");
+    } catch (e) {
+      setResultats(null);
+      addToast(apiError(e), "error");
     }
   }
 
-  async function handleAddLigne(bcId, e) {
-    e.preventDefault();
+  function toggle(numero) {
+    setSelection(sel => sel.includes(numero) ? sel.filter(n => n !== numero) : [...sel, numero]);
+  }
+
+  async function handleLier() {
+    const aLier = selection.filter(n => !bcs.some(b => b.numero === n));
+    if (aLier.length === 0) { addToast("Aucun nouveau bon de commande sélectionné.", "info"); return; }
     try {
-      await saveLigneMut.mutateAsync({
-        bon_commande_id: bcId,
-        designation:   ligneForm.designation,
-        unite:         ligneForm.unite,
-        quantite:      parseFloat(ligneForm.quantite),
-        prix_unitaire: parseFloat(ligneForm.prix_unitaire),
-      });
-      addToast("Ligne ajoutée.", "success");
-      setShowLigne(null);
-      setLigneForm(LIGNE_INIT);
-    } catch (err) {
-      addToast(err.response?.data?.message ?? "Erreur.", "error");
+      await lierMut.mutateAsync(aLier);
+      addToast(`${aLier.length} bon(s) de commande lié(s) au contrat.`, "success");
+      setResultats(null);
+      setSelection([]);
+    } catch (e) {
+      addToast(apiError(e), "error");
     }
   }
 
-  async function handleDelLigne(ligneId) {
+  async function handleDelier(id) {
     try {
-      await delLigneMut.mutateAsync(ligneId);
-      setConfirmDel(null);
-      addToast("Ligne supprimée.", "success");
-    } catch (err) {
-      addToast(err.response?.data?.message ?? "Erreur.", "error");
+      await delierMut.mutateAsync(id);
+      addToast("Bon de commande détaché du contrat.", "success");
+    } catch (e) {
+      addToast(apiError(e), "error");
     }
+    setConfirmDelier(null);
   }
 
-  async function handleStatut() {
-    if (!pendingTransit) return;
-    try {
-      await statutMut.mutateAsync({ id: pendingTransit.bc.id, statut: pendingTransit.statut, motif: motifAnnul || undefined });
-      addToast("Statut mis à jour.", "success");
-      setPendingTransit(null);
-      setMotifAnnul("");
-    } catch (err) {
-      addToast(err.response?.data?.message ?? "Erreur.", "error");
-    }
+  if (isNew) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-6 text-sm text-gray-500">
+        Enregistrez d'abord le contrat : les bons de commande Sage X3 sont ensuite recherchés avec son chantier et son sous-traitant.
+      </div>
+    );
   }
-
-  async function handleDeleteBC(bcId) {
-    try {
-      await deleteMut.mutateAsync(bcId);
-      setConfirmDelBC(null);
-      addToast("Bon de commande supprimé.", "success");
-    } catch (err) {
-      addToast(err.response?.data?.message ?? "Erreur.", "error");
-    }
-  }
-
-  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer les bons de commande.</p>;
-  if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-end">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800">Bons de commande Sage X3</h3>
+          <p className="text-xs text-gray-400">Récupérés depuis X3 avec le chantier et le sous-traitant du contrat, non modifiables dans STT.</p>
+        </div>
         <button
-          onClick={() => setShowCreate(true)}
-          className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors"
+          onClick={handleRechercher}
+          disabled={rechercheMut.isPending}
+          className="inline-flex items-center gap-2 text-[#087F3E] border border-[#087F3E]/40 px-3.5 py-2 rounded-lg text-sm font-medium hover:bg-[#E8F5EE] disabled:opacity-60 transition-colors"
         >
-          <Plus size={13} /> Nouveau bon de commande
+          {rechercheMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+          {rechercheMut.isPending ? "Recherche…" : "Récupérer les BC depuis Sage X3"}
         </button>
       </div>
 
-      {bcs.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-10">Aucun bon de commande pour ce contrat.</p>
-      ) : (
-        <div className="space-y-6">
-          {bcs.map(bc => {
-            const lignes      = bc.lignes ?? [];
-            const totalLignes = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
-            const transitions = BC_TRANSITIONS[bc.statut] ?? [];
+      {/* Résultats de la recherche X3 */}
+      {resultats && resultats.length > 0 && (
+        <div className="bg-white rounded-xl border border-[#087F3E]/30 overflow-hidden">
+          <div className="px-4 py-2.5 bg-[#E8F5EE] text-xs text-[#065A2C] font-medium flex items-center justify-between">
+            <span>{resultats.length} bon(s) de commande trouvé(s) dans Sage X3 — cochez ceux à lier au contrat</span>
+            <button onClick={() => setResultats(null)} className="text-gray-500 hover:text-gray-700">Fermer</button>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-xs text-gray-500 uppercase">
+                <th className="px-3 py-2 w-10"></th>
+                <th className="text-left px-3 py-2">N° BC</th>
+                <th className="text-left px-3 py-2">Date</th>
+                <th className="text-right px-3 py-2">Montant HT</th>
+                <th className="text-right px-3 py-2">Montant TTC</th>
+                <th className="text-left px-3 py-2">Devise</th>
+                <th className="text-left px-3 py-2">Statut X3</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {resultats.map(r => {
+                const dejaLie = r.lie_a_ce_contrat;
+                const bloque  = r.lie_a_autre_contrat;
+                return (
+                  <tr key={r.numero} className={bloque ? "opacity-50" : "hover:bg-gray-50"}>
+                    <td className="px-3 py-2 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selection.includes(r.numero)}
+                        disabled={dejaLie || bloque}
+                        onChange={() => toggle(r.numero)}
+                      />
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs">
+                      {r.numero}
+                      {dejaLie && <span className="ml-2 text-[10px] text-[#065A2C] bg-[#E8F5EE] px-1.5 py-0.5 rounded">Déjà lié</span>}
+                      {bloque && <span className="ml-2 text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">Lié à un autre contrat</span>}
+                    </td>
+                    <td className="px-3 py-2 text-gray-600">{r.date_commande ? new Date(r.date_commande).toLocaleDateString("fr-FR") : "—"}</td>
+                    <td className="px-3 py-2 text-right font-medium">{fmt(r.montant_ht)}</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{fmt(r.montant_ttc)}</td>
+                    <td className="px-3 py-2 text-gray-500">{r.devise ?? "—"}</td>
+                    <td className="px-3 py-2 text-gray-500 text-xs">{r.statut_x3 ?? "—"} · clôt. {r.cloture_x3 ?? "—"} · récep. {r.receptionne_x3 ?? "—"}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-end gap-3">
+            <button onClick={() => setResultats(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+            <button
+              onClick={handleLier}
+              disabled={lierMut.isPending}
+              className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60"
+            >
+              {lierMut.isPending ? <><Loader2 size={14} className="animate-spin" /> Enregistrement…</> : "Lier au contrat"}
+            </button>
+          </div>
+        </div>
+      )}
 
-            return (
-              <div key={bc.id} className="border border-gray-200 rounded-2xl overflow-hidden">
-                {/* Header BC */}
-                <div className="flex items-center justify-between px-5 py-4 bg-gray-50 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-sm font-semibold text-gray-900">{bc.code}</span>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${BC_STATUT_COLORS[bc.statut]}`}>
-                      {BC_STATUT_LABELS[bc.statut]}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {transitions.map(t => (
-                      <button
-                        key={t.statut}
-                        onClick={() => { setPendingTransit({ bc, statut: t.statut }); setMotifAnnul(""); }}
-                        className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors border
-                          ${t.statut === "annule" ? "border-red-300 text-red-600 hover:bg-red-50" : "border-[#087F3E]/40 text-[#087F3E] hover:bg-[#E8F5EE]"}`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                    {bc.statut === "brouillon" && (
-                      confirmDelBC === bc.id ? (
-                        <span className="inline-flex items-center gap-2 text-xs">
-                          <span className="text-red-600">Supprimer ?</span>
-                          <button onClick={() => handleDeleteBC(bc.id)} className="text-red-600 font-medium hover:text-red-800">Oui</button>
-                          <button onClick={() => setConfirmDelBC(null)} className="text-gray-400 hover:text-gray-600">Non</button>
-                        </span>
-                      ) : (
-                        <button onClick={() => setConfirmDelBC(bc.id)} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={14} /></button>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                {/* BC details */}
-                <div className="px-5 py-4 space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Objet</p>
-                      <p className="text-sm text-gray-800 font-medium">{bc.objet || "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Date d'émission</p>
-                      <p className="text-sm text-gray-700">{bc.date_emission ? new Date(bc.date_emission).toLocaleDateString("fr-FR") : "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Livraison prévue</p>
-                      <p className="text-sm text-gray-700">{bc.date_livraison_prevue ? new Date(bc.date_livraison_prevue).toLocaleDateString("fr-FR") : "—"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Montant total</p>
-                      <p className="text-sm font-bold text-[#087F3E]">{fmt(bc.montant_total)} FCFA</p>
-                    </div>
-                  </div>
-
-                  {/* Lignes */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Lignes du BC ({lignes.length})</p>
-                      {bc.statut === "brouillon" && (
-                        <button
-                          onClick={() => { setShowLigne(bc.id); setLigneForm(LIGNE_INIT); }}
-                          className="text-xs text-[#087F3E] hover:underline"
-                        >
-                          + Ajouter une ligne
-                        </button>
-                      )}
-                    </div>
-
-                    {lignes.length === 0 ? (
-                      <p className="text-xs text-gray-400 py-3 text-center">Aucune ligne. Ajoutez des lignes pour définir le montant.</p>
+      {/* BC liés au contrat */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {isLoading ? (
+          <div className="p-6 text-center text-sm text-gray-400">Chargement…</div>
+        ) : bcs.length === 0 ? (
+          <div className="p-8 text-center text-sm text-gray-400">
+            Aucun bon de commande lié à ce contrat. Utilisez « Récupérer les BC depuis Sage X3 ».
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
+                <th className="text-left px-4 py-2.5">N° BC</th>
+                <th className="text-left px-4 py-2.5">Date</th>
+                <th className="text-right px-4 py-2.5">Montant HT</th>
+                <th className="text-right px-4 py-2.5">TVA</th>
+                <th className="text-right px-4 py-2.5">Montant TTC</th>
+                <th className="text-left px-4 py-2.5">Devise</th>
+                <th className="text-left px-4 py-2.5">Statut X3</th>
+                <th className="px-4 py-2.5 w-24"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {bcs.map(b => (
+                <tr key={b.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-2.5 font-mono text-xs">{b.numero}</td>
+                  <td className="px-4 py-2.5 text-gray-600">{b.date_commande ? new Date(b.date_commande).toLocaleDateString("fr-FR") : "—"}</td>
+                  <td className="px-4 py-2.5 text-right font-semibold">{fmt(b.montant_ht)}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-500">{fmt(b.montant_tva)}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-700">{fmt(b.montant_ttc)}</td>
+                  <td className="px-4 py-2.5 text-gray-500">{b.devise ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-gray-500 text-xs">{b.statut_x3 ?? "—"} · clôt. {b.cloture_x3 ?? "—"} · récep. {b.receptionne_x3 ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    {confirmDelier === b.id ? (
+                      <span className="inline-flex items-center gap-2 text-xs">
+                        <button onClick={() => handleDelier(b.id)} disabled={delierMut.isPending} className="text-red-600 font-medium">Détacher</button>
+                        <button onClick={() => setConfirmDelier(null)} className="text-gray-400">Non</button>
+                      </span>
                     ) : (
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-gray-100">
-                            <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-400 pb-2 pr-3">Désignation</th>
-                            <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-400 pb-2 pr-2">Unité</th>
-                            <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-400 pb-2 pr-2">Qté</th>
-                            <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-400 pb-2 pr-2">P.U.</th>
-                            <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-400 pb-2">Montant</th>
-                            {bc.statut === "brouillon" && <th className="pb-2"></th>}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-50">
-                          {lignes.map(l => (
-                            <tr key={l.id} className="hover:bg-gray-50">
-                              <td className="py-2 pr-3 text-gray-800">{l.designation}</td>
-                              <td className="py-2 pr-2 text-gray-500 text-xs">{l.unite || "—"}</td>
-                              <td className="py-2 pr-2 text-right text-gray-700">{l.quantite}</td>
-                              <td className="py-2 pr-2 text-right text-gray-600 text-xs">{fmt(l.prix_unitaire)}</td>
-                              <td className="py-2 text-right font-semibold text-gray-800">{fmt(l.montant)} FCFA</td>
-                              {bc.statut === "brouillon" && (
-                                <td className="py-2 pl-2 text-right">
-                                  {confirmDel === l.id ? (
-                                    <span className="inline-flex items-center gap-1 text-xs">
-                                      <button onClick={() => handleDelLigne(l.id)} className="text-red-600 font-medium">Oui</button>
-                                      <button onClick={() => setConfirmDel(null)} className="text-gray-400">Non</button>
-                                    </span>
-                                  ) : (
-                                    <button onClick={() => setConfirmDel(l.id)} className="text-gray-300 hover:text-red-500"><Trash2 size={13} /></button>
-                                  )}
-                                </td>
-                              )}
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr className="border-t border-gray-200">
-                            <td colSpan={bc.statut === "brouillon" ? 4 : 4} className="pt-2 text-xs text-gray-400 font-medium uppercase tracking-wide">Total</td>
-                            <td className="pt-2 text-right font-bold text-[#087F3E]">{fmt(totalLignes)} FCFA</td>
-                            {bc.statut === "brouillon" && <td></td>}
-                          </tr>
-                        </tfoot>
-                      </table>
+                      <button onClick={() => setConfirmDelier(b.id)} className="text-xs text-gray-400 hover:text-red-500">Détacher</button>
                     )}
-                  </div>
-
-                  {bc.observations && (
-                    <p className="text-xs text-gray-500 italic border-t border-gray-100 pt-3">{bc.observations}</p>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Modal: Create BC */}
-      {showCreate && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setShowCreate(false); setBcForm(BC_INIT); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-gray-900">Nouveau bon de commande</h3>
-              <button onClick={() => { setShowCreate(false); setBcForm(BC_INIT); }} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
-            </div>
-            <form onSubmit={handleCreateBC} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Objet *</label>
-                <input
-                  type="text"
-                  value={bcForm.objet}
-                  onChange={e => setBcForm(f => ({ ...f, objet: e.target.value }))}
-                  placeholder="Objet du bon de commande…"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
-                  required autoFocus
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Date d'émission</label>
-                  <input type="date" value={bcForm.date_emission} onChange={e => setBcForm(f => ({ ...f, date_emission: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Livraison prévue</label>
-                  <input type="date" value={bcForm.date_livraison_prevue} onChange={e => setBcForm(f => ({ ...f, date_livraison_prevue: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Observations</label>
-                <textarea value={bcForm.observations} onChange={e => setBcForm(f => ({ ...f, observations: e.target.value }))}
-                  rows={2} placeholder="Observations éventuelles…"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none resize-none" />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => { setShowCreate(false); setBcForm(BC_INIT); }} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
-                <button type="submit" disabled={saveMut.isPending}
-                  className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60">
-                  {saveMut.isPending ? <><Loader2 size={14} className="animate-spin" /> Création…</> : <><Plus size={14} /> Créer</>}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Add ligne */}
-      {showLigne !== null && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setShowLigne(null); setLigneForm(LIGNE_INIT); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-gray-900">Ajouter une ligne</h3>
-              <button onClick={() => { setShowLigne(null); setLigneForm(LIGNE_INIT); }} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
-            </div>
-            <form onSubmit={e => handleAddLigne(showLigne, e)} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Désignation *</label>
-                <input type="text" value={ligneForm.designation} onChange={e => setLigneForm(f => ({ ...f, designation: e.target.value }))}
-                  placeholder="Description de la prestation…" autoFocus required
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Unité</label>
-                  <input type="text" value={ligneForm.unite} onChange={e => setLigneForm(f => ({ ...f, unite: e.target.value }))}
-                    placeholder="m², ml, u…"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Quantité *</label>
-                  <input type="number" value={ligneForm.quantite} onChange={e => setLigneForm(f => ({ ...f, quantite: e.target.value }))}
-                    placeholder="0" required min="0" step="any"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Prix unitaire *</label>
-                  <input type="number" value={ligneForm.prix_unitaire} onChange={e => setLigneForm(f => ({ ...f, prix_unitaire: e.target.value }))}
-                    placeholder="0" required min="0" step="any"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
-                </div>
-              </div>
-              {ligneForm.quantite && ligneForm.prix_unitaire && (
-                <p className="text-xs text-[#087F3E] font-medium">
-                  Montant : {fmt(parseFloat(ligneForm.quantite) * parseFloat(ligneForm.prix_unitaire))} FCFA
-                </p>
-              )}
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => { setShowLigne(null); setLigneForm(LIGNE_INIT); }} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
-                <button type="submit" disabled={saveLigneMut.isPending}
-                  className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60">
-                  {saveLigneMut.isPending ? <><Loader2 size={14} className="animate-spin" /> Ajout…</> : <><Plus size={14} /> Ajouter</>}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Transition statut */}
-      {pendingTransit && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPendingTransit(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-semibold text-gray-900 mb-4">
-              {BC_STATUT_LABELS[pendingTransit.statut]} le BC {pendingTransit.bc.code} ?
-            </h3>
-            {pendingTransit.statut === "annule" && (
-              <div className="mb-4 space-y-1.5">
-                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Motif d'annulation *</label>
-                <textarea value={motifAnnul} onChange={e => setMotifAnnul(e.target.value)} rows={2}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none resize-none" />
-              </div>
-            )}
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setPendingTransit(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
-              <button onClick={handleStatut} disabled={statutMut.isPending || (pendingTransit.statut === "annule" && !motifAnnul)}
-                className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
-                {statutMut.isPending ? <><Loader2 size={14} className="animate-spin" /> …</> : "Confirmer"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-50 border-t border-gray-200 font-semibold text-sm">
+                <td className="px-4 py-2.5" colSpan={2}>Total ({bcs.length} BC)</td>
+                <td className="px-4 py-2.5 text-right text-[#065A2C]">{fmt(totalHT)}</td>
+                <td className="px-4 py-2.5"></td>
+                <td className="px-4 py-2.5 text-right">{fmt(totalTTC)}</td>
+                <td colSpan={3}></td>
+              </tr>
+            </tfoot>
+          </table>
+        )}
+      </div>
     </div>
   );
 }
@@ -2455,11 +2313,11 @@ export default function ContratFormPage() {
   // ── Remote data ─────────────────────────────────────────────
   const { data: contrat, isLoading, isError } = useContrat(!isNew ? id : null);
   const { data: chantiersData }   = useChantiersPaginated({ count: 100 });
-  const { data: sttData }         = useSousTraitantsPaginated({ count: 100 });
+  const { data: sttData }         = useSousTraitantsPaginated({ count: 500 });
   const contratIdInt = !isNew && id ? parseInt(id, 10) : null;
   const { data: decomptesData }   = useDecomptesPaginated({ contrat_id: contratIdInt, count: 100 });
   const { data: avenantsList = [] } = useAvenantsByContrat(contratIdInt);
-  const { data: bcsList = [] }      = useBonCommandesByContrat(contratIdInt);
+  const { data: bcsList = [], isSuccess: bcsLoaded } = useBonCommandesByContrat(contratIdInt);
   const { data: lignes = [] }       = useContratBaremes(contratIdInt);
 
   const chantiersList = chantiersData?.data ?? [];
@@ -2509,13 +2367,12 @@ export default function ContratFormPage() {
 
   // ── Save ────────────────────────────────────────────────────
   async function handleSave() {
-    if (!form.objet.trim() || !form.chantier_id || !form.soustraitant_id || !form.montant_initial) {
+    if (!form.objet.trim() || !form.chantier_id || !form.soustraitant_id) {
       addToast("Veuillez remplir les champs obligatoires.", "error");
       return;
     }
     const payload = {
       ...form,
-      montant_initial: parseFloat(form.montant_initial),
       chantier_id:     parseInt(form.chantier_id, 10),
       soustraitant_id: parseInt(form.soustraitant_id, 10),
     };
@@ -2635,6 +2492,12 @@ export default function ContratFormPage() {
         const pct            = montantActuel > 0 ? Math.round((cumulPaye / montantActuel) * 100) : 0;
         const actualisé      = avenantsList.some(a => a.statut === "valide");
         const nbAvenants     = avenantsList.length;
+        const fmtFull        = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0)) + " FCFA";
+        const montantInitialHT = parseFloat(contrat.montant_initial ?? 0);
+        const avenantsValides  = avenantsList.filter(a => a.statut === "valide");
+        const avenantsAttente  = avenantsList.filter(a => a.statut !== "valide");
+        const montantAvenants  = avenantsValides.reduce((s, a) => s + parseFloat(a.montant ?? 0), 0);
+        const montantAttente   = avenantsAttente.reduce((s, a) => s + parseFloat(a.montant ?? 0), 0);
 
         return (
           <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
@@ -2649,7 +2512,7 @@ export default function ContratFormPage() {
                 <StatusBadge statut={contrat.statut} />
               </div>
               <div className="flex gap-2 flex-wrap">
-                {["brouillon", "soumis"].includes(contrat.statut) && (
+                {["brouillon", "soumis", "resilie", "cloture"].includes(contrat.statut) && (
                   <button onClick={() => setConfirmArchContrat(true)}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors">
                     <Archive size={13} /> Archiver
@@ -2689,17 +2552,54 @@ export default function ContratFormPage() {
               </div>
             </div>
 
-            {/* Row 2 : KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-1 border-t border-gray-100">
-              {/* Montant HT */}
+            {/* Avertissement : aucun BC lié */}
+            {bcsLoaded && bcsList.length === 0 && !["resilie", "archive"].includes(contrat.statut) && (
+              <div className="flex items-center justify-between gap-3 flex-wrap bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                <p className="flex items-center gap-2 text-sm text-amber-800">
+                  <AlertTriangle size={15} className="flex-shrink-0" />
+                  <span>
+                    <strong>Aucun bon de commande Sage X3 lié.</strong> Le montant du contrat est calculé à partir des BC : il reste à 0 tant qu'aucun BC n'est lié.
+                  </span>
+                </p>
+                <button onClick={() => setActiveTab("bonscommande")}
+                  className="px-3 py-1.5 text-sm font-medium text-amber-900 border border-amber-300 rounded-lg bg-white hover:bg-amber-100 transition-colors">
+                  Récupérer les BC
+                </button>
+              </div>
+            )}
+
+            {/* Row 2 : montants du marché */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 border-t border-gray-100">
               <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Montant HT</p>
-                <p className="text-lg font-bold text-gray-900">{formatMontantCourt(montantActuel)}</p>
-                {actualisé && (
-                  <span className="text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded font-medium">actualisé</span>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Montant HT (marché initial)</p>
+                <p className="text-xl font-bold text-gray-900">{fmtFull(montantInitialHT)}</p>
+                {bcsList.length > 0 && (
+                  <p className="text-xs text-gray-400 mt-0.5">Somme des {bcsList.length} BC Sage X3 liés (HT)</p>
                 )}
               </div>
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+                  Montant avenant{avenantsValides.length > 1 ? "s" : ""}
+                </p>
+                <p className={`text-xl font-bold ${montantAvenants > 0 ? "text-violet-700" : "text-gray-400"}`}>
+                  {montantAvenants > 0 ? "+ " : ""}{fmtFull(montantAvenants)}
+                </p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {avenantsValides.length} validé{avenantsValides.length > 1 ? "s" : ""}
+                  {avenantsAttente.length > 0 && <> · {avenantsAttente.length} en attente ({fmtFull(montantAttente)}, non compté)</>}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Montant HT actualisé</p>
+                <p className="text-xl font-bold text-[#087F3E]">{fmtFull(montantActuel)}</p>
+                {actualisé && (
+                  <span className="text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded font-medium">initial + avenants validés</span>
+                )}
+              </div>
+            </div>
 
+            {/* Row 3 : suivi */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-gray-100">
               {/* Décomptes */}
               <div>
                 <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Décomptes</p>
@@ -2817,14 +2717,14 @@ export default function ContratFormPage() {
                       placeholder="Ex: Forfait, BPU, dépenses contrôlées…"
                     />
                   </Field>
-                  <Field label="Montant initial HT (FCFA)" required>
-                    <Input
-                      type="number"
-                      value={form.montant_initial}
-                      onChange={v => setForm(f => ({ ...f, montant_initial: v }))}
-                      placeholder="Ex: 150000000"
-                    />
-                  </Field>
+                  {!isNew && (
+                    <Field label="Montant HT (calculé)">
+                      <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-2.5 text-sm text-gray-700">
+                        {new Intl.NumberFormat("fr-FR").format(Math.round(parseFloat(contrat?.montant_initial ?? 0)))} FCFA
+                      </div>
+                      <p className="text-[11px] text-gray-400 mt-1">Somme des BC Sage X3 liés. Non modifiable.</p>
+                    </Field>
+                  )}
                 </div>
               </div>
 
@@ -2833,16 +2733,16 @@ export default function ContratFormPage() {
                 <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Parties</h3>
                 <div className="grid grid-cols-2 gap-5">
                   <Field label="Chantier" required>
-                    <select
+                    <SearchSelect
                       value={form.chantier_id}
-                      onChange={e => setForm(f => ({ ...f, chantier_id: e.target.value }))}
+                      onChange={e => setForm(f => ({ ...f, chantier_id: e.target.value, soustraitant_id: isNew ? "" : f.soustraitant_id }))}
                       className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
                     >
                       <option value="">Sélectionner un chantier…</option>
                       {chantiersList.map(c => (
                         <option key={c.id} value={c.id}>{c.code} — {c.designation}</option>
                       ))}
-                    </select>
+                    </SearchSelect>
                     {!isNew && contrat?.chantier_id && (
                       <Link to={`/chantiers/${contrat.chantier_id}`} className="mt-1 inline-block text-xs text-[#087F3E] hover:underline">
                         Voir le chantier →
@@ -2850,16 +2750,13 @@ export default function ContratFormPage() {
                     )}
                   </Field>
                   <Field label="Sous-traitant" required>
-                    <select
+                    <SousTraitantSelect
+                      chantierId={form.chantier_id}
                       value={form.soustraitant_id}
                       onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
                       className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
-                    >
-                      <option value="">Sélectionner un sous-traitant…</option>
-                      {sttList.map(s => (
-                        <option key={s.id} value={s.id}>{s.raison_sociale}</option>
-                      ))}
-                    </select>
+                      placeholderOption="Sélectionner un sous-traitant…"
+                    />
                     {sttSelected?.statut === "suspendu" && (
                       <div className="mt-2 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
                         <AlertTriangle size={12} /> Ce sous-traitant est actuellement suspendu.
@@ -3015,31 +2912,17 @@ export default function ContratFormPage() {
 
       {/* ── Modal archivage contrat ── */}
       {confirmArchContrat && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                <Archive size={18} className="text-slate-500" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">Archiver le contrat</p>
-                <p className="text-xs text-gray-500 font-mono">{contrat?.code}</p>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600">Le contrat sera archivé et ne pourra plus être modifié.</p>
-            <div className="flex gap-3 pt-1">
-              <button onClick={() => setConfirmArchContrat(false)}
-                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                Annuler
-              </button>
-              <button onClick={handleArchiveContrat} disabled={statutMut.isPending}
-                className="flex-1 py-2 rounded-lg bg-slate-600 text-white text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                {statutMut.isPending && <Loader2 size={13} className="animate-spin" />}
-                Archiver
-              </button>
-            </div>
-          </div>
-        </div>
+        <ArchiveContratDialog
+          contrat={{
+            code: contrat?.code,
+            statut: contrat?.statut,
+            nbBc: bcsList.length,
+            nbAvenants: avenantsList.length,
+          }}
+          pending={statutMut.isPending}
+          onCancel={() => setConfirmArchContrat(false)}
+          onConfirm={handleArchiveContrat}
+        />
       )}
     </div>
   );

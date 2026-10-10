@@ -16,6 +16,7 @@ import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonTable } from "../components/Skeleton";
 import { formatMontantCourt } from "../utils/formatters";
+import SearchSelect from "../components/SearchSelect";
 
 const STATUTS = [
   { value: "brouillon",    label: "Brouillon" },
@@ -348,26 +349,26 @@ export default function DecomptesListPage() {
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
             />
           </div>
-          <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
+          <SearchSelect value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
             <option value="">Tous les types</option>
             {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-          <select value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
+          </SearchSelect>
+          <SearchSelect value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-          <select value={sttFilter} onChange={e => { setSttFilter(e.target.value); setPage(1); }}
+          </SearchSelect>
+          <SearchSelect value={sttFilter} onChange={e => { setSttFilter(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[180px]">
             <option value="">Tous les STT</option>
             {sttList.map(s => <option key={s.id} value={String(s.id)}>{s.nom}</option>)}
-          </select>
-          <select value={contratFilter} onChange={e => { setContratFilter(e.target.value); setPage(1); }}
+          </SearchSelect>
+          <SearchSelect value={contratFilter} onChange={e => { setContratFilter(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[200px]">
             <option value="">Tous les contrats</option>
             {contrats.map(c => <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale}</option>)}
-          </select>
+          </SearchSelect>
           {hasFilter && (
             <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
               <RotateCcw size={13} /> Réinitialiser
@@ -474,7 +475,7 @@ export default function DecomptesListPage() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <Field label="Contrat" required>
-                <select value={form.contrat_id} onChange={e => { set("contrat_id", e.target.value); set("etat_cession_id", ""); }}
+                <SearchSelect value={form.contrat_id} onChange={e => { set("contrat_id", e.target.value); set("etat_cession_id", ""); }}
                   className={`${INPUT} ${errors.contrat_id ? "border-red-400" : ""}`}>
                   <option value="">— Sélectionner un contrat —</option>
                   {contrats.map(c => (
@@ -482,13 +483,13 @@ export default function DecomptesListPage() {
                       {c.code} — {c.soustraitant?.raison_sociale ?? "?"} / {c.chantier?.designation ?? "?"}
                     </option>
                   ))}
-                </select>
+                </SearchSelect>
                 {errors.contrat_id && <p className="text-xs text-red-500 mt-1">{errors.contrat_id}</p>}
               </Field>
 
               {form.contrat_id && (
                 <Field label="État de cession" required>
-                  <select value={form.etat_cession_id} onChange={e => set("etat_cession_id", e.target.value)}
+                  <SearchSelect value={form.etat_cession_id} onChange={e => set("etat_cession_id", e.target.value)}
                     className={`${INPUT} ${errors.etat_cession_id ? "border-red-400" : ""}`}>
                     <option value="">— Sélectionner un état de cession —</option>
                     {etatsCession.map(ec => (
@@ -496,7 +497,7 @@ export default function DecomptesListPage() {
                         {ec.code ?? `EC-${ec.id}`} — {ec.periode_debut ?? ""} → {ec.periode_fin ?? ""}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                   {errors.etat_cession_id && <p className="text-xs text-red-500 mt-1">{errors.etat_cession_id}</p>}
                   {etatsCession.length === 0 && (
                     <p className="text-xs text-amber-600 mt-1">

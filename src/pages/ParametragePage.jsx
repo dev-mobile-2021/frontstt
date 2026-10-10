@@ -16,6 +16,10 @@ import { useParametresPaginated, useUpdateParametre } from "../hooks/useParametr
 import { useUsersPaginated, useSaveUser, useDeleteUser } from "../hooks/useUsers";
 import { useRolesPaginated, useSaveRole, useDeleteRole } from "../hooks/useRoles";
 import { useBaremesPaginated, useSaveBareme, useDeleteBareme } from "../hooks/useBaremes";
+import SyncBadge from "../components/SyncBadge";
+import ArticleX3Select from "../components/ArticleX3Select";
+import { useArticlesX3 } from "../hooks/useArticlesX3";
+import SearchSelect from "../components/SearchSelect";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function Spinner() {
@@ -157,13 +161,13 @@ function TabCircuit() {
       {/* Module selector */}
       <div className="flex items-center gap-3">
         <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Module :</label>
-        <select
+        <SearchSelect
           value={selectedModule}
           onChange={e => { setSelectedModule(e.target.value); setShowForm(false); setEditId(null); }}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
         >
           {MODULES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-        </select>
+        </SearchSelect>
       </div>
 
       {/* Info banner */}
@@ -194,7 +198,7 @@ function TabCircuit() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {isLoading && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center"><Spinner /></td></tr>
+              <tr><td colSpan={9} className="px-4 py-6 text-center"><Spinner /></td></tr>
             )}
             {!isLoading && sortedEtapes.length === 0 && (
               <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-400 text-sm">Aucune étape configurée</td></tr>
@@ -292,7 +296,7 @@ function TabCircuit() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">Statut avant</label>
-                  <select
+                  <SearchSelect
                     value={form.statut_avant}
                     onChange={e => setForm(f => ({ ...f, statut_avant: e.target.value }))}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
@@ -301,11 +305,11 @@ function TabCircuit() {
                     {(MODULE_STATUTS[selectedModule] ?? []).map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">Statut après</label>
-                  <select
+                  <SearchSelect
                     value={form.statut_apres}
                     onChange={e => setForm(f => ({ ...f, statut_apres: e.target.value }))}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
@@ -314,11 +318,11 @@ function TabCircuit() {
                     {(MODULE_STATUTS[selectedModule] ?? []).map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">Rôle lié</label>
-                  <select
+                  <SearchSelect
                     value={form.role_id}
                     onChange={e => setForm(f => ({ ...f, role_id: e.target.value }))}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
@@ -327,7 +331,7 @@ function TabCircuit() {
                     {roles.map(r => (
                       <option key={r.id} value={r.id}>{r.designation}</option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="flex items-center gap-2 self-end pb-2">
                   <input
@@ -619,14 +623,14 @@ function TabUtilisateurs() {
                 ))}
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">Rôle</label>
-                  <select
+                  <SearchSelect
                     value={form.role_id}
                     onChange={e => setForm(f => ({ ...f, role_id: e.target.value }))}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
                   >
                     <option value="">— Choisir un rôle —</option>
                     {roles.map(r => <option key={r.id} value={r.id}>{r.designation}</option>)}
-                  </select>
+                  </SearchSelect>
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
@@ -803,7 +807,7 @@ function TypeBadge({ type }) {
   );
 }
 
-const EMPTY_BAREME = { type: "rh", categorie: "", designation: "", unite: "", prix_unitaire: "" };
+const EMPTY_BAREME = { type: "rh", categorie: "", designation: "", unite: "", prix_unitaire: "", code_article: "" };
 
 function TabBaremes() {
   const { addToast } = useToast();
@@ -825,14 +829,14 @@ function TabBaremes() {
   function openNew() { setEditBareme(null); setForm(EMPTY_BAREME); setShowForm(true); }
   function openEdit(b) {
     setEditBareme(b);
-    setForm({ type: b.type ?? "rh", categorie: b.categorie ?? "", designation: b.designation ?? "", unite: b.unite ?? "", prix_unitaire: b.prix_unitaire ?? "" });
+    setForm({ type: b.type ?? "rh", categorie: b.categorie ?? "", designation: b.designation ?? "", unite: b.unite ?? "", prix_unitaire: b.prix_unitaire ?? "", code_article: b.code_article ?? "" });
     setShowForm(true);
   }
   function cancelForm() { setShowForm(false); setEditBareme(null); }
 
   async function handleSave() {
     try {
-      const payload = { ...form, prix_unitaire: parseFloat(form.prix_unitaire) || 0 };
+      const payload = { ...form, prix_unitaire: parseFloat(form.prix_unitaire) || 0, code_article: form.code_article || null };
       if (editBareme) payload.id = editBareme.id;
       await saveMut.mutateAsync(payload);
       addToast(editBareme ? "Barème mis à jour." : "Barème créé.", "success");
@@ -862,7 +866,7 @@ function TabBaremes() {
           onChange={e => setSearch(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] w-52"
         />
-        <select
+        <SearchSelect
           value={filters.type ?? ""}
           onChange={e => setFilters(f => ({ ...f, type: e.target.value || undefined }))}
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
@@ -871,8 +875,9 @@ function TabBaremes() {
           <option value="rh">RH</option>
           <option value="mtx">MTX</option>
           <option value="mtl">MTL</option>
-        </select>
-        <select
+          <option value="gasoil">Gasoil</option>
+        </SearchSelect>
+        <SearchSelect
           value={filters.statut ?? ""}
           onChange={e => setFilters(f => ({ ...f, statut: e.target.value || undefined }))}
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
@@ -880,7 +885,7 @@ function TabBaremes() {
           <option value="">Tous les statuts</option>
           <option value="actif">Actif</option>
           <option value="inactif">Inactif</option>
-        </select>
+        </SearchSelect>
         <div className="ml-auto">
           <button onClick={openNew} className="flex items-center gap-1.5 text-xs text-[#087F3E] font-medium border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors">
             <Plus size={12} /> Nouveau barème
@@ -892,7 +897,7 @@ function TabBaremes() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              {["Code", "Type", "Catégorie", "Désignation", "Unité", "Prix unitaire", "Statut", "Actions"].map(h => (
+              {["Code", "Type", "Catégorie", "Désignation", "Article X3", "Unité", "Prix unitaire", "Statut", "Actions"].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
@@ -902,7 +907,7 @@ function TabBaremes() {
               <tr><td colSpan={8} className="px-4 py-6 text-center"><Spinner /></td></tr>
             )}
             {!isLoading && baremes.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-400 text-sm">Aucun barème trouvé</td></tr>
+              <tr><td colSpan={9} className="px-4 py-6 text-center text-gray-400 text-sm">Aucun barème trouvé</td></tr>
             )}
             {baremes.map(b => (
               <tr key={b.id} className="hover:bg-gray-50">
@@ -910,6 +915,7 @@ function TabBaremes() {
                 <td className="px-4 py-2.5"><TypeBadge type={b.type} /></td>
                 <td className="px-4 py-2.5 text-gray-600 text-xs">{b.categorie ?? "—"}</td>
                 <td className="px-4 py-2.5 font-medium text-gray-900">{b.designation}</td>
+                <td className="px-4 py-2.5 font-mono text-xs text-gray-500">{b.code_article ?? "—"}</td>
                 <td className="px-4 py-2.5 text-gray-500">{b.unite ?? "—"}</td>
                 <td className="px-4 py-2.5 font-mono text-sm text-gray-800">{b.prix_unitaire != null ? Number(b.prix_unitaire).toLocaleString("fr-FR") : "—"}</td>
                 <td className="px-4 py-2.5">
@@ -947,10 +953,19 @@ function TabBaremes() {
               <button onClick={cancelForm} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
             <div className="p-6 space-y-4">
+              <div>
+                <label className="text-xs font-medium text-gray-500 block mb-1">Article Sage X3 <span className="text-gray-400 font-normal">(optionnel — pré-remplit désignation, unité et catégorie)</span></label>
+                <ArticleX3Select
+                  value={form.code_article}
+                  onSelect={(a) => setForm(f => a
+                    ? { ...f, code_article: a.code_article, designation: a.designation ?? f.designation, unite: a.unite ?? f.unite, categorie: f.categorie || a.classe || "" }
+                    : { ...f, code_article: "" })}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">Type</label>
-                  <select
+                  <SearchSelect
                     value={form.type}
                     onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
@@ -958,7 +973,8 @@ function TabBaremes() {
                     <option value="rh">RH</option>
                     <option value="mtx">MTX</option>
                     <option value="mtl">MTL</option>
-                  </select>
+                    <option value="gasoil">Gasoil</option>
+                  </SearchSelect>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">Catégorie</label>
@@ -1016,6 +1032,75 @@ function TabBaremes() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+
+// ─── Tab Articles Sage X3 ────────────────────────────────────────────────────
+const CLASSES_X3 = ["TCE", "EHA", "MTX", "PVC", "BAS", "PRP"];
+
+function TabArticlesX3() {
+  const [search, setSearch] = useState("");
+  const [debounced, setDebounced] = useState("");
+  const [classe, setClasse] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(search.trim()), 300);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  const { data: articles = [], isLoading } = useArticlesX3({ search: debounced, classe, limit: 200 });
+
+  return (
+    <div className="space-y-5 pt-4">
+      <SyncBadge module="articles" label="Articles" invalidate={["articles-x3"]} />
+
+      <div className="flex flex-wrap gap-3 items-center">
+        <input
+          placeholder="Code ou désignation…"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] w-64"
+        />
+        <SearchSelect
+          value={classe}
+          onChange={e => setClasse(e.target.value)}
+          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+        >
+          <option value="">Toutes les classes</option>
+          {CLASSES_X3.map(c => <option key={c} value={c}>{c}</option>)}
+        </SearchSelect>
+        <span className="text-xs text-gray-400 ml-auto">
+          {isLoading ? "Chargement…" : `${articles.length} article${articles.length > 1 ? "s" : ""} affiché${articles.length > 1 ? "s" : ""} (200 max — affinez la recherche)`}
+        </span>
+      </div>
+
+      <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              {["Code article", "Désignation", "Classe", "Unité"].map(h => (
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {isLoading && <tr><td colSpan={4} className="px-4 py-6 text-center"><Spinner /></td></tr>}
+            {!isLoading && articles.length === 0 && (
+              <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400 text-sm">Aucun article. Lancez une synchronisation depuis Sage X3.</td></tr>
+            )}
+            {articles.map(a => (
+              <tr key={a.code_article} className="hover:bg-gray-50">
+                <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{a.code_article}</td>
+                <td className="px-4 py-2.5 text-gray-900">{a.designation}</td>
+                <td className="px-4 py-2.5 text-xs text-gray-500">{a.classe ?? "—"}</td>
+                <td className="px-4 py-2.5 text-gray-500">{a.unite ?? "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -1330,6 +1415,7 @@ const TAB_ITEMS = [
   { id: "utilisateurs", label: "Utilisateurs",  icon: Users },
   { id: "roles",        label: "Rôles",         icon: Shield },
   { id: "baremes",      label: "Barèmes",       icon: Tags },
+  { id: "articles",     label: "Articles X3",   icon: FolderOpen },
   { id: "mtx",          label: "Fichiers MTX",      icon: Upload },
   { id: "bt",           label: "Bons de Transfert", icon: FileText },
 ];
@@ -1351,6 +1437,7 @@ export default function ParametragePage() {
           {activeTab === "utilisateurs" && <TabUtilisateurs />}
           {activeTab === "roles"        && <TabRoles />}
           {activeTab === "baremes"      && <TabBaremes />}
+          {activeTab === "articles"     && <TabArticlesX3 />}
           {activeTab === "mtx"          && <TabMtxUpload />}
           {activeTab === "bt"           && <TabBtDocuments />}
         </div>

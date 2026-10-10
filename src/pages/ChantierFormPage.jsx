@@ -2,8 +2,9 @@ import { useState, Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, ChevronDown, Calendar, MapPin, FileText, Hash,
-  ExternalLink, RefreshCw, Info, Users, Wrench, Package, Truck, Layers, Building2,
+  ExternalLink, RefreshCw, Info, Users, Wrench, Package, Truck, Layers, Building2, Loader2,
 } from "lucide-react";
+import { useSynchroniserChantier } from "../hooks/useX3Sync";
 import { useChantier } from "../hooks/useChantiers";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useDecomptesPaginated } from "../hooks/useDecomptes";
@@ -13,6 +14,7 @@ import StatusBadge from "../components/StatusBadge";
 import Tabs from "../components/Tabs";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonCard } from "../components/Skeleton";
+import SearchSelect from "../components/SearchSelect";
 
 const fmt = n => n == null ? "—" : new Intl.NumberFormat("fr-FR").format(Math.round(n)) + " FCFA";
 const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
@@ -90,10 +92,10 @@ function TabContrats({ chantierId }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <select value={statut} onChange={e => setStatut(e.target.value)}
+        <SearchSelect value={statut} onChange={e => setStatut(e.target.value)}
           className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]">
           {STATUT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        </SearchSelect>
         <span className="text-xs text-gray-400">{contrats.length} contrat(s)</span>
       </div>
 
@@ -223,6 +225,21 @@ export default function ChantierFormPage() {
   const { id }   = useParams();
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const syncMut = useSynchroniserChantier(id);
+
+  async function handleSync() {
+    try {
+      const { bilan } = await syncMut.mutateAsync();
+      addToast(
+        bilan?.mis_a_jour
+          ? "Chantier mis à jour depuis Sage X3."
+          : "Chantier synchronisé avec Sage X3 : aucune modification.",
+        "success"
+      );
+    } catch (err) {
+      addToast(`Sage X3 : ${err?.response?.data?.errors?.[0] ?? err?.message ?? "synchronisation impossible."}`, "error");
+    }
+  }
   const [activeTab, setActiveTab] = useState("contrats");
 
   const { data: chantier, isLoading, isError } = useChantier(id);
@@ -247,7 +264,8 @@ export default function ChantierFormPage() {
     ? Math.round((new Date(chantier.date_fin_prevue) - new Date(chantier.date_debut)) / 86400000)
     : null;
 
-  const sttEngage   = contrats.reduce((s, c) => s + (c.montant_actuel ?? 0), 0);
+  // STT engagé : contrats actifs (montant HT + avenants validés), calculé côté serveur
+  const sttEngage   = chantier.stt_engage ?? 0;
   const budgetTotal = chantier.budget_total ?? 0;
   const sttPct      = budgetTotal > 0 ? Math.round((sttEngage / budgetTotal) * 100) : 0;
 
@@ -288,14 +306,16 @@ export default function ChantierFormPage() {
       <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-5 py-3">
         <Info size={14} className="text-gray-400 flex-shrink-0" />
         <p className="text-xs text-gray-500 flex-1">
-          Référentiel synchronisé depuis Sage X3 Projets
+          Référentiel synchronisé depuis Sage X3{chantier.code_x3 ? <> · Code X3 : <span className="font-mono font-semibold text-gray-700">{chantier.code_x3}</span></> : null}
           {chantier.synced_at ? (
             <> · Dernière synchronisation : {new Date(chantier.synced_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</>
           ) : null}
         </p>
-        <button onClick={() => addToast("Synchronisation Sage X3 non disponible en mode démo.", "info")}
-          className="inline-flex items-center gap-1.5 text-xs text-[#087F3E] border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors font-medium">
-          <RefreshCw size={12} /> Synchroniser depuis Sage X3
+        <button onClick={handleSync} disabled={syncMut.isPending || !chantier.code_x3}
+          title={chantier.code_x3 ? undefined : "Ce chantier n'a pas de code Sage X3"}
+          className="inline-flex items-center gap-1.5 text-xs text-[#087F3E] border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors font-medium disabled:opacity-60">
+          {syncMut.isPending ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+          {syncMut.isPending ? "Synchronisation…" : "Synchroniser depuis Sage X3"}
         </button>
       </div>
 
@@ -356,7 +376,7 @@ export default function ChantierFormPage() {
       <div className="grid grid-cols-5 gap-4">
         {[
           { label: "Budget total",           value: fmt(budgetTotal),        sub: null,                     highlight: false },
-          { label: "STT engagé (calculé)",   value: fmt(sttEngage),          sub: `${sttPct}% du budget`,   highlight: true  },
+          { label: "STT engagé",   value: fmt(sttEngage),          sub: `Contrats ${fmt(chantier.stt_engage_initial)} + avenants ${fmt(chantier.stt_engage_avenants)} · ${sttPct}% du budget`,   highlight: true  },
           { label: "En cours de validation", value: "—",                     sub: "décomptes soumis",        highlight: false },
           { label: "Avancement physique",    value: "—",                     sub: "données X3",             highlight: false },
           { label: "Contrats sous-trait.",   value: String(contrats.length), sub: null,                     highlight: false },

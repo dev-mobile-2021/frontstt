@@ -9,6 +9,7 @@ import { useContratsPaginated } from "../hooks/useContrats";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import http from "../services/http";
+import SearchSelect from "../components/SearchSelect";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const num  = v => new Intl.NumberFormat("fr-FR").format(Math.round(Math.abs(v ?? 0)));
@@ -647,21 +648,21 @@ function NouveauForm({ onSave, saving }) {
       <div className="space-y-4">
         <div>
           <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-1.5">Contrat *</label>
-          <select value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)}
+          <SearchSelect value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white">
             <option value="">— Sélectionner un contrat —</option>
             {contrats.map(c => (
               <option key={c.id} value={c.id}>{c.code} — {c.objet ?? c.soustraitant?.raison_sociale ?? ""}</option>
             ))}
-          </select>
+          </SearchSelect>
         </div>
 
         <div>
           <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-1.5">Type de décompte *</label>
-          <select value={form.type} onChange={e => set("type", e.target.value)}
+          <SearchSelect value={form.type} onChange={e => set("type", e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white">
             {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </select>
+          </SearchSelect>
         </div>
 
         <div className="p-3 bg-gray-50 rounded-xl">

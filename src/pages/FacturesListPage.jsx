@@ -12,6 +12,7 @@ import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonTable } from "../components/Skeleton";
 import { useToast } from "../context/ToastContext";
+import SearchSelect from "../components/SearchSelect";
 
 const TYPES = [
   { value: "fac_ava", label: "Avance de démarrage" },
@@ -196,12 +197,12 @@ export default function FacturesListPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-600">Type *</label>
-                  <select value={form.type} onChange={e => setForm(f => ({ ...FORM_INIT, type: e.target.value, date_facture: f.date_facture }))}
+                  <SearchSelect value={form.type} onChange={e => setForm(f => ({ ...FORM_INIT, type: e.target.value, date_facture: f.date_facture }))}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
                     <option value="fac_stt">Facture Sous-traitant</option>
                     <option value="fac_cse">Facture CSE</option>
                     <option value="fac_ava">Avance de démarrage</option>
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-600">Date facture *</label>
@@ -213,7 +214,7 @@ export default function FacturesListPage() {
               {(form.type === "fac_stt" || form.type === "fac_cse") && (
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-600">Décompte lié *</label>
-                  <select value={form.decompte_id} onChange={e => {
+                  <SearchSelect value={form.decompte_id} onChange={e => {
                     const dec = decompteOptions.find(d => d.id === parseInt(e.target.value));
                     setForm(f => ({
                       ...f,
@@ -230,28 +231,28 @@ export default function FacturesListPage() {
                     {decompteOptions.map(d => (
                       <option key={d.id} value={d.id}>{d.code} — {d.contrat?.soustraitant?.raison_sociale ?? "?"}</option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
               )}
 
               {form.type === "fac_ava" && (<>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-600">Contrat *</label>
-                  <select value={form.contrat_id} onChange={e => setForm(f => ({ ...f, contrat_id: e.target.value }))}
+                  <SearchSelect value={form.contrat_id} onChange={e => setForm(f => ({ ...f, contrat_id: e.target.value }))}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
                     <option value="">— Sélectionner un contrat —</option>
                     {contratOptions.map(c => (
                       <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale ?? "?"}</option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-gray-600">Sous-traitant bénéficiaire *</label>
-                  <select value={form.soustraitant_id} onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
+                  <SearchSelect value={form.soustraitant_id} onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none">
                     <option value="">— Sélectionner un sous-traitant —</option>
                     {sttOptions.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
-                  </select>
+                  </SearchSelect>
                 </div>
               </>)}
 
@@ -312,21 +313,21 @@ export default function FacturesListPage() {
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
             />
           </div>
-          <select value={type} onChange={e => { setType(e.target.value); setPage(1); }}
+          <SearchSelect value={type} onChange={e => { setType(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
             <option value="">Tous les types</option>
             {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-          <select value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
+          </SearchSelect>
+          <SearchSelect value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-          <select value={sttFilter} onChange={e => { setSttFilter(e.target.value); setPage(1); }}
+          </SearchSelect>
+          <SearchSelect value={sttFilter} onChange={e => { setSttFilter(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
             <option value="">Tous les sous-traitants</option>
             {sttOptions.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
-          </select>
+          </SearchSelect>
           {hasFilter && (
             <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
               <RotateCcw size={13} /> Réinitialiser

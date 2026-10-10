@@ -1,51 +1,34 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { bonCommandeService } from "../services/bonCommandeService";
+import { x3Service } from "../services/x3Service";
 
-export function useBonCommandesByContrat(contrat_id) {
+/** BC Sage X3 liés à un contrat. */
+export function useBonCommandesByContrat(contratId) {
   return useQuery({
-    queryKey: ["bons_commande", { contrat_id }],
-    queryFn: () => bonCommandeService.list({ contrat_id, count: 50 }),
-    enabled: !!contrat_id,
-    select: (d) => d?.data ?? [],
+    queryKey: ["bons_commande", { contrat_id: contratId }],
+    queryFn: () => x3Service.bonsCommandeContrat(contratId),
+    enabled: !!contratId,
   });
 }
 
-export function useSaveBonCommande() {
+/** Recherche à la demande dans X3 (chantier + sous-traitant du contrat). */
+export function useRechercheBonsCommandeX3() {
+  return useMutation({
+    mutationFn: (contratId) => x3Service.rechercherBonsCommande(contratId),
+  });
+}
+
+export function useLierBonsCommande(contratId) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload) => bonCommandeService.save(payload),
+    mutationFn: (numeros) => x3Service.lierBonsCommande(contratId, numeros),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["bons_commande"] }),
   });
 }
 
-export function useSaveBonCommandeLigne() {
+export function useDelierBonCommande() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (payload) => bonCommandeService.saveLigne(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["bons_commande"] }),
-  });
-}
-
-export function useDeleteBonCommandeLigne() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id) => bonCommandeService.deleteLigne(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["bons_commande"] }),
-  });
-}
-
-export function useBonCommandeStatut() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, statut, motif }) => bonCommandeService.setStatut(id, statut, motif),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["bons_commande"] }),
-  });
-}
-
-export function useDeleteBonCommande() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id) => bonCommandeService.delete(id),
+    mutationFn: (id) => x3Service.delierBonCommande(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["bons_commande"] }),
   });
 }

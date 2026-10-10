@@ -15,6 +15,7 @@ import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonTable } from "../components/Skeleton";
 import { formatMontantCourt } from "../utils/formatters";
+import SearchSelect from "../components/SearchSelect";
 
 const STATUTS = [
   { value: "brouillon", label: "Brouillon" },
@@ -205,16 +206,16 @@ export default function EtatsCessionListPage() {
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
           </div>
-          <select value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
+          <SearchSelect value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-          <select value={contratFilter} onChange={e => { setContratFilter(e.target.value); setPage(1); }}
+          </SearchSelect>
+          <SearchSelect value={contratFilter} onChange={e => { setContratFilter(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[240px]">
             <option value="">Tous les contrats</option>
             {contrats.map(c => <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale}</option>)}
-          </select>
+          </SearchSelect>
           {hasFilter && (
             <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
               <RotateCcw size={13} /> Réinitialiser
@@ -347,13 +348,13 @@ export default function EtatsCessionListPage() {
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <Field label="Contrat" required>
-                <select value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)}
+                <SearchSelect value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)}
                   className={`${INPUT} ${errors.contrat_id ? "border-red-400" : ""}`}>
                   <option value="">— Sélectionner un contrat actif —</option>
                   {contrats.filter(c => c.statut === "actif").map(c => (
                     <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale ?? "?"}</option>
                   ))}
-                </select>
+                </SearchSelect>
                 {errors.contrat_id && <p className="text-xs text-red-500 mt-1">{errors.contrat_id}</p>}
               </Field>
               <div className="grid grid-cols-2 gap-3">

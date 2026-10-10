@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Fragment } from "react";
 import {
   Search, RotateCcw, ChevronLeft, ChevronRight, Plus, Eye, X, Loader2,
-  FileText, FileSpreadsheet, ChevronDown, ChevronRight as ChevronRightIcon, Trash2, Archive,
+  FileText, FileSpreadsheet, ChevronDown, ChevronRight as ChevronRightIcon, Trash2, Archive, AlertTriangle, Pencil, FilePlus,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
@@ -16,6 +16,10 @@ import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonTable } from "../components/Skeleton";
 import { formatMontantCourt, formatDate } from "../utils/formatters";
+import SearchSelect from "../components/SearchSelect";
+import SousTraitantSelect from "../components/SousTraitantSelect";
+import ActionsMenu from "../components/ActionsMenu";
+import ArchiveContratDialog from "../components/ArchiveContratDialog";
 
 const STATUTS = [
   { value: "brouillon", label: "Brouillon" },
@@ -65,8 +69,10 @@ export default function ContratsListPage() {
   const statutMut    = useContratStatut();
 
   const [search,       setSearch]       = useState("");
-  const [statut,       setStatut]       = useState("");
-  const [sttFilter,    setSttFilter]    = useState("");
+  // Filtres initialisés depuis l'URL (liens depuis la liste des sous-traitants)
+  const [searchParams] = useSearchParams();
+  const [statut,       setStatut]       = useState(searchParams.get("statut") ?? "");
+  const [sttFilter,    setSttFilter]    = useState(searchParams.get("soustraitant_id") ?? "");
   const [page,         setPage]         = useState(1);
   const [debounced,    setDebounced]    = useState("");
   const [expanded,       setExpanded]       = useState({});
@@ -91,7 +97,7 @@ export default function ContratsListPage() {
   const { data: chantiersData } = useChantiersPaginated({ count: 100 });
   const chantiers = chantiersData?.data ?? [];
 
-  const { data: sttData } = useSousTraitantsPaginated({ count: 100, statut: "actif" });
+  const { data: sttData } = useSousTraitantsPaginated({ count: 500 });
   const sousTraitants = sttData?.data ?? [];
 
   function reset()    { setSearch(""); setStatut(""); setSttFilter(""); setPage(1); }
@@ -142,7 +148,6 @@ export default function ContratsListPage() {
     if (!form.chantier_id)           errs.chantier_id      = "Requis";
     if (!form.soustraitant_id)       errs.soustraitant_id  = "Requis";
     if (!form.objet.trim())          errs.objet            = "Requis";
-    if (!form.montant_initial)       errs.montant_initial  = "Requis";
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
     try {
@@ -151,7 +156,6 @@ export default function ContratsListPage() {
         soustraitant_id: parseInt(form.soustraitant_id),
         objet:           form.objet.trim(),
         type_contrat:    form.type_contrat  || null,
-        montant_initial: parseFloat(form.montant_initial),
         date_debut:      form.date_debut      || null,
         date_fin_prevue: form.date_fin_prevue || null,
         statut: "brouillon",
@@ -190,16 +194,17 @@ export default function ContratsListPage() {
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
             />
           </div>
-          <select value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
+          <SearchSelect value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
             <option value="">Tous les statuts</option>
+            {statut.includes(",") && <option value={statut}>Actifs, terminés, clôturés</option>}
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </select>
-          <select value={sttFilter} onChange={e => { setSttFilter(e.target.value); setPage(1); }}
+          </SearchSelect>
+          <SearchSelect value={sttFilter} onChange={e => { setSttFilter(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[200px]">
             <option value="">Tous les sous-traitants</option>
             {sousTraitants.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
-          </select>
+          </SearchSelect>
           {hasFilter && (
             <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
               <RotateCcw size={13} /> Réinitialiser
@@ -231,9 +236,9 @@ export default function ContratsListPage() {
           <table className="w-full min-w-[960px]">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50 border-b border-gray-200">
-                {["Code", "Chantier", "Sous-traitant", "Objet", "Montant actualisé", "Validation", "Réalisé", "À réaliser", "Projets avenants"].map(h => (
+                {["Code", "Chantier", "Sous-traitant", "Objet", "Montant actualisé", "Validation", "Réalisé", "À réaliser", "Projets avenants", "Actions"].map(h => (
                   <th key={h} className={`text-xs uppercase tracking-wide font-medium text-gray-500 px-4 py-3.5
-                    ${["Montant actualisé","Réalisé","À réaliser"].includes(h) ? "text-right" : "text-left"}`}>
+                    ${["Montant actualisé","Réalisé","À réaliser"].includes(h) ? "text-right" : h === "Actions" ? "text-center sticky right-0 bg-gray-50 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]" : "text-left"}`}>
                     {h}
                   </th>
                 ))}
@@ -242,7 +247,7 @@ export default function ContratsListPage() {
             <tbody className="divide-y divide-gray-100">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="py-16 text-center">
+                  <td colSpan={10} className="py-16 text-center">
                     <FileText size={28} className="mx-auto mb-2 text-gray-300" />
                     <p className="text-sm text-gray-400">Aucun contrat ne correspond aux filtres.</p>
                   </td>
@@ -279,6 +284,12 @@ export default function ContratsListPage() {
                         {isModified && (
                           <p className="text-xs text-gray-400 mt-0.5">init. {formatMontantCourt(parseFloat(c.montant_initial ?? 0))}</p>
                         )}
+                        {c.nb_bons_commande === 0 && !["resilie", "archive"].includes(c.statut) && (
+                          <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded"
+                            title="Aucun bon de commande Sage X3 lié : le montant du contrat est à 0">
+                            <AlertTriangle size={10} /> Aucun BC lié
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3.5"><StatusBadge statut={c.statut} /></td>
                       <td className="px-4 py-3.5 text-right">
@@ -312,23 +323,22 @@ export default function ContratsListPage() {
                               </span>
                             </>
                           ) : <span className="text-xs text-gray-300 ml-5">—</span>}
-                          {["brouillon", "soumis"].includes(c.statut) && (
-                            <button title="Archiver" onClick={() => setConfirmArchive(c)}
-                              className="p-1 rounded text-gray-300 hover:text-slate-500 transition-colors opacity-0 group-hover:opacity-100">
-                              <Archive size={14} />
-                            </button>
-                          )}
-                          {["brouillon", "soumis"].includes(c.statut) && (
-                            <button title="Supprimer" onClick={() => setConfirmDelete(c)}
-                              className="p-1 rounded text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                          <Link to={`/contrats/${c.id}`}
-                            className="ml-auto p-1 rounded text-gray-300 hover:text-[#087F3E] transition-colors opacity-0 group-hover:opacity-100">
-                            <Eye size={14} />
-                          </Link>
                         </div>
+                      </td>
+                      <td className="px-4 py-3.5 text-center sticky right-0 bg-white group-hover:bg-gray-50 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]" onClick={e => e.stopPropagation()}>
+                        <ActionsMenu items={[
+                          { label: "Consulter", icon: Eye, to: `/contrats/${c.id}` },
+                          { label: "Modifier", icon: Pencil, to: `/contrats/${c.id}` },
+                          { label: "Créer un décompte", icon: FilePlus, to: `/decomptes/nouveau?contrat_id=${c.id}`,
+                            disabled: c.statut !== "actif", hint: "Réservé aux contrats actifs" },
+                          { divider: true },
+                          { label: "Archiver", icon: Archive, onClick: () => setConfirmArchive(c),
+                            disabled: !["brouillon", "soumis", "resilie", "cloture"].includes(c.statut),
+                            hint: "Résiliez ou clôturez d'abord le contrat" },
+                          { label: "Supprimer", icon: Trash2, danger: true, onClick: () => setConfirmDelete(c),
+                            disabled: !["brouillon", "soumis"].includes(c.statut),
+                            hint: "Seul un brouillon peut être supprimé" },
+                        ]} />
                       </td>
                     </tr>
 
@@ -352,7 +362,7 @@ export default function ContratsListPage() {
                             {a.statut}
                           </span>
                         </td>
-                        <td className="px-4 py-2" colSpan={3}>
+                        <td className="px-4 py-2" colSpan={4}>
                           {a.date_signature && <span className="text-xs text-gray-400">{formatDate(a.date_signature)}</span>}
                         </td>
                       </tr>
@@ -398,20 +408,21 @@ export default function ContratsListPage() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <Field label="Chantier" required>
-                <select value={form.chantier_id} onChange={e => set("chantier_id", e.target.value)}
+                <SearchSelect value={form.chantier_id} onChange={e => { set("chantier_id", e.target.value); set("soustraitant_id", ""); }}
                   className={`${INPUT} ${errors.chantier_id ? "border-red-400" : ""}`}>
                   <option value="">— Sélectionner un chantier —</option>
                   {chantiers.map(c => <option key={c.id} value={c.id}>{c.designation} ({c.code})</option>)}
-                </select>
+                </SearchSelect>
                 {errors.chantier_id && <p className="text-xs text-red-500 mt-1">{errors.chantier_id}</p>}
               </Field>
 
               <Field label="Sous-traitant" required>
-                <select value={form.soustraitant_id} onChange={e => set("soustraitant_id", e.target.value)}
-                  className={`${INPUT} ${errors.soustraitant_id ? "border-red-400" : ""}`}>
-                  <option value="">— Sélectionner un sous-traitant —</option>
-                  {sousTraitants.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
-                </select>
+                <SousTraitantSelect
+                  chantierId={form.chantier_id}
+                  value={form.soustraitant_id}
+                  onChange={e => set("soustraitant_id", e.target.value)}
+                  className={`${INPUT} ${errors.soustraitant_id ? "border-red-400" : ""}`}
+                />
                 {errors.soustraitant_id && <p className="text-xs text-red-500 mt-1">{errors.soustraitant_id}</p>}
               </Field>
 
@@ -424,15 +435,10 @@ export default function ContratsListPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Type de contrat">
-                  <select value={form.type_contrat} onChange={e => set("type_contrat", e.target.value)} className={INPUT}>
+                  <SearchSelect value={form.type_contrat} onChange={e => set("type_contrat", e.target.value)} className={INPUT}>
                     <option value="">— Type —</option>
                     {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                  </select>
-                </Field>
-                <Field label="Montant initial HT (FCFA)" required>
-                  <input type="number" min="0" value={form.montant_initial} onChange={e => set("montant_initial", e.target.value)}
-                    className={`${INPUT} ${errors.montant_initial ? "border-red-400" : ""}`} placeholder="0" />
-                  {errors.montant_initial && <p className="text-xs text-red-500 mt-1">{errors.montant_initial}</p>}
+                  </SearchSelect>
                 </Field>
               </div>
 
@@ -492,31 +498,17 @@ export default function ContratsListPage() {
 
       {/* ── Confirmation archivage ── */}
       {confirmArchive && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-                <Archive size={18} className="text-slate-500" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">Archiver le contrat</p>
-                <p className="text-xs text-gray-500 font-mono">{confirmArchive.code}</p>
-              </div>
-            </div>
-            <p className="text-sm text-gray-600">Le contrat sera archivé et ne pourra plus être modifié.</p>
-            <div className="flex gap-3 pt-1">
-              <button onClick={() => setConfirmArchive(null)}
-                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                Annuler
-              </button>
-              <button onClick={() => handleArchive(confirmArchive.id)} disabled={statutMut.isPending}
-                className="flex-1 py-2 rounded-lg bg-slate-600 text-white text-sm font-medium hover:bg-slate-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                {statutMut.isPending && <Loader2 size={13} className="animate-spin" />}
-                Archiver
-              </button>
-            </div>
-          </div>
-        </div>
+        <ArchiveContratDialog
+          contrat={{
+            code: confirmArchive.code,
+            statut: confirmArchive.statut,
+            nbBc: confirmArchive.nb_bons_commande ?? 0,
+            nbAvenants: (confirmArchive.avenants ?? []).length,
+          }}
+          pending={statutMut.isPending}
+          onCancel={() => setConfirmArchive(null)}
+          onConfirm={() => handleArchive(confirmArchive.id)}
+        />
       )}
     </div>
   );

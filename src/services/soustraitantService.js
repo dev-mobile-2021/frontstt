@@ -6,19 +6,21 @@ const FIELDS = `
   adresse ville telephone email site_web
   contact_nom contact_telephone contact_email
   specialites statut motif_blacklist
-  code_x3 synced_at created_at updated_at
+  code_x3 abrege devise ninea_x3 synced_at created_at updated_at
+  nb_contrats nb_contrats_en_cours total_ht_contrats total_ht_avenants total_contrats_avenants
+  total_decomptes_payes total_decomptes_en_attente total_decomptes_en_cours
 `;
 
 export const soustraitantService = {
-  async list({ page = 1, count = 15, raison_sociale, statut } = {}) {
+  async list({ page = 1, count = 15, raison_sociale, statut, chantier_id } = {}) {
     const data = await gql(
-      `query ListSTT($page: Int, $count: Int, $raison_sociale: String, $statut: String) {
-        soustraitantsPaginated(page: $page, count: $count, raison_sociale: $raison_sociale, statut: $statut) {
+      `query ListSTT($page: Int, $count: Int, $raison_sociale: String, $statut: String, $chantier_id: Int) {
+        soustraitantsPaginated(page: $page, count: $count, raison_sociale: $raison_sociale, statut: $statut, chantier_id: $chantier_id) {
           data { ${FIELDS} }
           metadata { total current_page per_page last_page }
         }
       }`,
-      { page, count, raison_sociale: raison_sociale || null, statut: statut || null }
+      { page, count, raison_sociale: raison_sociale || null, statut: statut || null, chantier_id: chantier_id ? parseInt(chantier_id, 10) : null }
     );
     return data.soustraitantsPaginated;
   },

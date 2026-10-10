@@ -2,7 +2,7 @@ import http from "./http";
 import { gql } from "./gql";
 
 const FIELDS = `
-  id code type categorie designation unite prix_unitaire description statut
+  id code code_article type categorie designation unite prix_unitaire description statut
   created_by updated_by created_at updated_at
 `;
 

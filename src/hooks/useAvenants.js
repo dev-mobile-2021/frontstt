@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { avenantService } from "../services/avenantService";
 
+/** Un contrat ou un avenant modifié change le « STT engagé » des chantiers : on rafraîchit aussi leurs caches. */
+function invalidateContrats(qc) {
+  qc.invalidateQueries({ queryKey: ["contrats"] });
+  qc.invalidateQueries({ queryKey: ["chantiers"] });
+  qc.invalidateQueries({ queryKey: ["chantier"] });
+}
+
 export function useAvenantsByContrat(contratId) {
   return useQuery({
     queryKey: ["avenants", contratId],
@@ -17,7 +24,7 @@ export function useSaveAvenant() {
       qc.invalidateQueries({ queryKey: ["avenants", String(vars.contrat_id)] });
       qc.invalidateQueries({ queryKey: ["avenants", vars.contrat_id] });
       qc.invalidateQueries({ queryKey: ["contrat"] });
-      qc.invalidateQueries({ queryKey: ["contrats"] });
+      invalidateContrats(qc);
     },
   });
 }
@@ -29,7 +36,7 @@ export function useValiderAvenant() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["avenants"] });
       qc.invalidateQueries({ queryKey: ["contrat"] });
-      qc.invalidateQueries({ queryKey: ["contrats"] });
+      invalidateContrats(qc);
     },
   });
 }
@@ -41,7 +48,7 @@ export function useDeleteAvenant() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["avenants"] });
       qc.invalidateQueries({ queryKey: ["contrat"] });
-      qc.invalidateQueries({ queryKey: ["contrats"] });
+      invalidateContrats(qc);
     },
   });
 }

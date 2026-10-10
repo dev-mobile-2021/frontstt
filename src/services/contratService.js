@@ -4,7 +4,7 @@ import { gql } from "./gql";
 const LIST_FIELDS = `
   id code objet type_contrat
   chantier_id soustraitant_id
-  montant_initial montant_actuel montant_realise
+  montant_initial montant_actuel montant_realise nb_bons_commande
   date_debut date_fin_prevue
   statut
   chantier { id code designation }

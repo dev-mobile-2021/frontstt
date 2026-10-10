@@ -10,6 +10,7 @@ import { useToast } from "../context/ToastContext";
 import { formatDate } from "../utils/formatters";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
+import SearchSelect from "../components/SearchSelect";
 
 const fmtNum  = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
 const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
@@ -345,10 +346,10 @@ export default function ReleveDetailPage() {
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Ligne contestée</label>
-                  <select value={ligneContestee} onChange={e => setLigneContestee(e.target.value)}
+                  <SearchSelect value={ligneContestee} onChange={e => setLigneContestee(e.target.value)}
                     className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300">
                     {LIGNES_CONTEST.map(l => <option key={l} value={l}>{l}</option>)}
-                  </select>
+                  </SearchSelect>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Motif de contestation *</label>

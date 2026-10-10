@@ -11,6 +11,7 @@ import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useDecomptesPaginated } from "../hooks/useDecomptes";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
+import SearchSelect from "../components/SearchSelect";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
 const STATUTS_CIRCUIT = ["soumis", "valide_dacc", "valide_dex", "valide_dga", "valide_dg"];
@@ -149,14 +150,14 @@ function FilterPanel({ filterKeys, filters, onChange }) {
           <div>
             <label className="block text-xs text-gray-500 mb-1">Chantier</label>
             <div className="relative">
-              <select
+              <SearchSelect
                 value={filters.chantier_id}
                 onChange={e => onChange({ chantier_id: e.target.value })}
                 className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-white min-w-[180px] focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
               >
                 <option value="">Tous les chantiers</option>
                 {chantiers.map(c => <option key={c.id} value={c.id}>{c.designation}</option>)}
-              </select>
+              </SearchSelect>
               <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
@@ -166,14 +167,14 @@ function FilterPanel({ filterKeys, filters, onChange }) {
           <div>
             <label className="block text-xs text-gray-500 mb-1">Sous-traitant</label>
             <div className="relative">
-              <select
+              <SearchSelect
                 value={filters.soustraitant_id}
                 onChange={e => onChange({ soustraitant_id: e.target.value })}
                 className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-white min-w-[180px] focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
               >
                 <option value="">Tous les sous-traitants</option>
                 {stts.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
-              </select>
+              </SearchSelect>
               <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
@@ -236,14 +237,14 @@ function FilterPanel({ filterKeys, filters, onChange }) {
           <div>
             <label className="block text-xs text-gray-500 mb-1">Étape de validation</label>
             <div className="relative">
-              <select
+              <SearchSelect
                 value={filters.statut_circuit}
                 onChange={e => onChange({ statut_circuit: e.target.value })}
                 className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-white min-w-[220px] focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
               >
                 <option value="">Toutes les étapes</option>
                 {STATUT_CIRCUIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              </SearchSelect>
               <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
             </div>
           </div>
@@ -267,7 +268,7 @@ function RamNote() {
     <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-start gap-3">
       <Info size={15} className="text-amber-600 mt-0.5 flex-shrink-0" />
       <p className="text-xs text-amber-700">
-        Vue simplifiée — le détail par famille RAM (RH / Matériaux / Matériel) est disponible dans l'export Excel.
+        Le STT engagé est la somme, par chantier, du montant HT et des avenants validés des contrats actifs. Les BC X3 n'ayant pas de lignes, le détail par famille RAM n'est pas disponible.
       </p>
     </div>
   );
@@ -290,25 +291,21 @@ function TableFoot({ cols, totals }) {
 // ─── R1 : Budget par chantier ─────────────────────────────────────────────────
 function ViewR1({ filters }) {
   const { data: dCh, isLoading: lCh } = useChantiersPaginated({ count: 500 });
-  const { data: dCo, isLoading: lCo } = useContratsPaginated({ count: 5000 });
   const chantiers = dCh?.data ?? [];
-  const contrats  = dCo?.data ?? [];
 
   const rows = useMemo(() => chantiers
     .filter(ch => !filters.chantier_id || ch.id == filters.chantier_id)
     .map(ch => {
       const budget = parseFloat(ch.budget_sous_traitance ?? 0);
-      const engage = contrats
-        .filter(c => c.chantier_id === ch.id && c.statut !== "annule")
-        .reduce((s, c) => s + parseFloat(c.montant_actuel ?? c.montant_initial ?? 0), 0);
+      const engage = parseFloat(ch.stt_engage ?? 0); // contrats actifs : montant HT + avenants validés
       const pct = budget > 0 ? Math.round(engage / budget * 100) : 0;
       return { id: ch.id, nom: ch.designation, budget, engage, reste: budget - engage, pct };
     })
     .filter(r => r.budget > 0)
     .sort((a, b) => b.budget - a.budget),
-  [chantiers, contrats, filters]);
+  [chantiers, filters]);
 
-  if (lCh || lCo) return <LoadingState />;
+  if (lCh) return <LoadingState />;
 
   const totB = rows.reduce((s, r) => s + r.budget, 0);
   const totE = rows.reduce((s, r) => s + r.engage, 0);
@@ -320,7 +317,7 @@ function ViewR1({ filters }) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              {["Chantier", "Budget STT", "Engagé (contrats)", "Reste", "% Engagé"].map(h => (
+              {["Chantier", "Budget STT", "STT engagé", "Reste", "% Engagé"].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
