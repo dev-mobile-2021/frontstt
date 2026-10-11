@@ -28,7 +28,10 @@ export function useSaveContrat() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload) => contratService.save(payload),
-    onSuccess: () => invalidateContrats(qc),
+    onSuccess: (_data, payload) => {
+      invalidateContrats(qc);
+      if (payload?.id) qc.invalidateQueries({ queryKey: ["contrat", String(payload.id)] });
+    },
   });
 }
 
