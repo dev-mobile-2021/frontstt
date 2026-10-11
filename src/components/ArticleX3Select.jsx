@@ -6,7 +6,7 @@ import { useArticlesX3 } from "../hooks/useArticlesX3";
  * Sélecteur d'article du référentiel Sage X3.
  * value : code_article sélectionné ; onSelect(article | null).
  */
-export default function ArticleX3Select({ value, onSelect, placeholder = "Rechercher un article X3 (code ou désignation)…" }) {
+export default function ArticleX3Select({ value, onSelect, classe = "", placeholder = "Rechercher un article X3 (code ou désignation)…" }) {
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
   const [open, setOpen] = useState(false);
@@ -16,7 +16,7 @@ export default function ArticleX3Select({ value, onSelect, placeholder = "Recher
     return () => clearTimeout(t);
   }, [search]);
 
-  const { data: articles = [], isLoading } = useArticlesX3({ search: debounced, limit: 15, enabled: open && debounced.length >= 2 });
+  const { data: articles = [], isLoading } = useArticlesX3({ search: debounced, classe, limit: 15, enabled: open && debounced.length >= 2 });
 
   if (value) {
     return (

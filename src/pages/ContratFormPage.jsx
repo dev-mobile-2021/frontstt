@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle, RefreshCw,
   Hash, FileText, Info, FilePlus, CheckCircle, Trash2, Plus, X, Paperclip,
-  Upload, Download, File, Circle, Clock, CheckCircle2, XCircle, Search, Archive,
+  Upload, Download, File, Circle, Clock, CheckCircle2, XCircle, Archive,
   Pencil, ChevronDown,
 } from "lucide-react";
 import { useContrat, useSaveContrat, useContratStatut, useContratCircuit, useSoumettreContrat, useValiderContrat, useRejeterContrat, useDeleteContrat } from "../hooks/useContrats";
@@ -14,9 +14,6 @@ import { useDecomptesPaginated } from "../hooks/useDecomptes";
 import { useAvenantsByContrat, useSaveAvenant, useValiderAvenant, useDeleteAvenant } from "../hooks/useAvenants";
 import { useAttachements } from "../hooks/useAttachements";
 import { useBonCommandesByContrat, useRechercheBonsCommandeX3, useLierBonsCommande, useDelierBonCommande } from "../hooks/useBonCommandes";
-import { useBaremesPaginated } from "../hooks/useBaremes";
-import { useContratBaremes, useAddContratBareme, useUpdateContratBaremePrix, useValiderContratBaremePrix, useRemoveContratBareme } from "../hooks/useContratBaremes";
-import { useParametresPaginated } from "../hooks/useParametres";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { usePiecesJointes, useUploadPieceJointe, useDeletePieceJointe } from "../hooks/usePiecesJointes";
 import {
@@ -40,7 +37,11 @@ import { formatMontant, formatMontantCourt, formatDate } from "../utils/formatte
 import SearchSelect from "../components/SearchSelect";
 import SousTraitantSelect from "../components/SousTraitantSelect";
 import ArchiveContratDialog from "../components/ArchiveContratDialog";
-import { useArticlesX3 } from "../hooks/useArticlesX3";
+import BaremePrixTable from "../components/BaremePrixTable";
+import ImportBaremeDialog from "../components/ImportBaremeDialog";
+import { telechargerModeleBareme } from "../utils/baremeModele";
+import { baremeHierarchieService } from "../services/baremeHierarchieService";
+import { useBaremeContrat, useBaremeContratActions, useRefreshBareme } from "../hooks/useBaremeHierarchie";
 
 // ─── Workflow transitions ────────────────────────────────────────
 const TRANSITIONS = {
@@ -318,368 +319,87 @@ function ParametrageFinancierTab({ contrat, avenants }) {
   );
 }
 
-// ─── Sub-tab: Barème de cessions ────────────────────────────────
-const UNITES_DEFAULT = ["LITRE", "SAC", "TONNE", "BARRE", "KILO", "M3", "ML", "M2", "U", "H", "JOUR", "MOIS"];
-
-const POSTE_TYPES = [
-  { key: "mtx", label: "MTX — Matériaux",          color: "text-blue-700",   bg: "bg-blue-50",   border: "border-blue-200", types: ["mtx", "gasoil"] },
-  { key: "rh",  label: "RH — Ressources humaines",  color: "text-green-700",  bg: "bg-green-50",  border: "border-green-200", types: ["rh"] },
-  // MTL masqué — API GMAO non disponible
-];
-
-function BaremeCessionsTab({ contratId, isNew }) {
+// ─── Sub-tab: Barème du contrat ─────────────────────────────────
+// Hérite du barème du chantier (lui-même hérité du barème général). Seuls les écarts sont saisis.
+// Brouillon : prix vivants. Activation : prix figés (photo).
+function BaremeCessionsTab({ contratId, isNew, statut }) {
   const { addToast } = useToast();
-  const [showModal, setShowModal]   = useState(null); // null | 'mtx' | 'mtl' | 'rh'
-  const [editingId, setEditingId]   = useState(null);
-  const [editPrix, setEditPrix]     = useState("");
-  const [confirmDel, setConfirmDel] = useState(null);
-  const [search, setSearch]         = useState("");
-  const [importing, setImporting]   = useState(null);
-  const [prixInput, setPrixInput]   = useState({}); // { [baremeId]: string }
-  const [uniteInput, setUniteInput] = useState({}); // { [baremeId]: string }
+  const { data, isLoading } = useBaremeContrat(isNew ? null : contratId);
+  const { setPrix, reset, valider } = useBaremeContratActions(contratId);
+  const [busyId, setBusyId] = useState(null);
+  const [showImport, setShowImport] = useState(false);
+  const refreshBareme = useRefreshBareme();
 
-  const contratIdInt = contratId ? parseInt(contratId, 10) : null;
-  const { data: lignes = [], isLoading } = useContratBaremes(contratIdInt);
-  const { data: refData } = useBaremesPaginated({ statut: "actif", count: 500 });
-  const refArticles = refData?.data ?? [];
-  // Articles Sage X3 (classes cessionnables : matériaux, produits pétroliers, basalte…) pour le bloc MTX
-  const [qX3, setQX3] = useState("");
-  useEffect(() => {
-    const t = setTimeout(() => setQX3(search.trim()), 300);
-    return () => clearTimeout(t);
-  }, [search]);
-  const { data: articlesX3 = [], isLoading: loadingX3 } = useArticlesX3({
-    search: qX3, classe: "MTX,BAS,PRP", limit: 40, enabled: showModal === "mtx",
-  });
-  const { data: parametresData } = useParametresPaginated();
-  const unitesParam = parametresData?.bareme?.find(p => p.cle === "unites_bareme");
-  const UNITES = unitesParam ? unitesParam.valeur.split(",").map(u => u.trim()) : UNITES_DEFAULT;
+  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer son barème.</p>;
+  if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
 
-  const addMut     = useAddContratBareme(contratIdInt);
-  const updateMut  = useUpdateContratBaremePrix(contratIdInt);
-  const validerMut = useValiderContratBaremePrix(contratIdInt);
-  const removeMut  = useRemoveContratBareme(contratIdInt);
+  const err = e => e?.response?.data?.errors?.[0] ?? "Erreur.";
+  const lignes = data?.lignes ?? [];
+  const fige = !!data?.fige;
+  const bloque = ["resilie", "archive", "cloture"].includes(statut);
 
-  const fmt = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
-
-  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer le barème de cessions.</p>;
-
-  // Articles du référentiel pas encore ajoutés pour ce bloc
-  function getDisponibles(key) {
-    const poste = POSTE_TYPES.find(p => p.key === key);
-    const types = poste?.types ?? [key];
-    const dejaPris = new Set(lignes.map(l => l.bareme_id));
-    return refArticles.filter(b => types.includes(b.type) && !dejaPris.has(b.id));
-  }
-
-  async function handleAdd(baremeId) {
-    const prixStr = prixInput[baremeId] ?? "";
-    const prix = parseFloat(prixStr);
-    if (!prixStr || isNaN(prix) || prix <= 0) return addToast("Saisissez un prix unitaire valide.", "error");
-    const unite = uniteInput[baremeId] ?? null;
-    try {
-      await addMut.mutateAsync({ bareme_id: baremeId, prix_contrat: prix, unite: unite || null });
-      setPrixInput(p => { const n = { ...p }; delete n[baremeId]; return n; });
-      setUniteInput(p => { const n = { ...p }; delete n[baremeId]; return n; });
-      addToast("Article ajouté au barème.", "success");
-    } catch (err) {
-      if (err.response?.status === 409) return addToast("Cet article est déjà dans le barème.", "error");
-      addToast("Erreur lors de l'ajout.", "error");
-    }
-  }
-
-  async function handleAddX3(article) {
-    const key = article.code_article;
-    const prixStr = prixInput[key] ?? "";
-    const prix = parseFloat(prixStr);
-    if (!prixStr || isNaN(prix) || prix <= 0) return addToast("Saisissez un prix unitaire valide.", "error");
-    const unite = uniteInput[key] ?? article.unite ?? null;
-    try {
-      await addMut.mutateAsync({ code_article: key, prix_contrat: prix, unite: unite || null });
-      setPrixInput(p => { const n = { ...p }; delete n[key]; return n; });
-      setUniteInput(p => { const n = { ...p }; delete n[key]; return n; });
-      addToast("Article Sage X3 ajouté au barème.", "success");
-    } catch (err) {
-      if (err.response?.status === 409) return addToast("Cet article est déjà dans le barème.", "error");
-      addToast(err?.response?.data?.errors?.[0] ?? "Erreur lors de l'ajout.", "error");
-    }
-  }
-
-  async function handleSavePrix(cb) {
-    const val = parseFloat(editPrix);
-    if (isNaN(val) || val < 0) return addToast("Prix invalide.", "error");
-    try {
-      await updateMut.mutateAsync({ id: cb.id, prix_contrat: val });
-      setEditingId(null);
-      addToast("Prix mis à jour.", "success");
-    } catch { addToast("Erreur.", "error"); }
-  }
-
-  async function handleValider(id) {
-    try {
-      await validerMut.mutateAsync(id);
-      addToast("Prix validé.", "success");
-    } catch { addToast("Erreur.", "error"); }
-  }
-
-  async function handleRemove(id) {
-    try {
-      await removeMut.mutateAsync(id);
-      setConfirmDel(null);
-      addToast("Article retiré.", "success");
-    } catch { addToast("Erreur.", "error"); }
-  }
-
-  function handleDownloadTemplate(type) {
-    const { label } = POSTE_TYPES.find(p => p.key === type);
-    const rows = [
-      ["Code article", "Désignation", "Unité", "Prix contrat (FCFA)"],
-      ["EX001", "Exemple article", "m3", "15000"],
-    ];
-    const csv = rows.map(r => r.map(c => `"${c}"`).join(";")).join("\n");
-    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = `modele_bareme_${type}.csv`; a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  async function handleImportCSV(type, file) {
-    setImporting(type);
-    try {
-      const text = await file.text();
-      const lines = text.split(/\r?\n/).filter(Boolean);
-      // Ignore header
-      const dataLines = lines.slice(1);
-      let added = 0, skipped = 0;
-      for (const line of dataLines) {
-        const cols = line.split(/[;,]/).map(c => c.replace(/^"|"$/g, "").trim());
-        const [codeArticle, , , prixStr] = cols;
-        if (!codeArticle) continue;
-        // Cherche dans le référentiel par code
-        const bareme = refArticles.find(b => b.type === type &&
-          b.code?.toLowerCase() === codeArticle.toLowerCase());
-        if (!bareme) { skipped++; continue; }
-        const dejaPris = lignes.some(l => l.bareme_id === bareme.id);
-        if (dejaPris) { skipped++; continue; }
-        const prix = prixStr ? parseFloat(prixStr.replace(/\s/g, "")) : null;
-        await addMut.mutateAsync({ bareme_id: bareme.id, prix_contrat: isNaN(prix) ? null : prix });
-        added++;
-      }
-      addToast(`Import terminé — ${added} ajouté${added > 1 ? "s" : ""}, ${skipped} ignoré${skipped > 1 ? "s" : ""}.`, "success");
-    } catch {
-      addToast("Erreur lors de l'import du fichier.", "error");
-    } finally {
-      setImporting(null);
-    }
+  async function run(id, fn, okMsg) {
+    setBusyId(id);
+    try { await fn(); if (okMsg) addToast(okMsg, "success"); }
+    catch (e) { addToast(err(e), "error"); }
+    finally { setBusyId(null); }
   }
 
   return (
-    <div className="space-y-2">
-      <p className="text-xs text-gray-500 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-        Ce barème définit les articles MTX, MTL et RH que ce contrat peut céder au sous-traitant, avec leur prix contractuel.
-        Un prix différent du référentiel passe en attente de validation DACC.
-      </p>
-
-      {isLoading ? (
-        <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>
+    <div className="space-y-3">
+      {fige ? (
+        <p className="text-xs text-violet-800 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">
+          <strong>Prix figés à l'activation du contrat.</strong> Les évolutions du barème général ou du chantier ne les modifient plus.
+          Toute modification passe par une validation du DACC.
+        </p>
       ) : (
-        POSTE_TYPES.map(({ key, label, color, bg, border, types }) => {
-          const items = lignes.filter(l => (types ?? [key]).includes(l.bareme?.type));
-          const dispos = getDisponibles(key);
-          return (
-            <div key={key} className={`border rounded-xl overflow-hidden ${border}`}>
-              {/* Header bloc */}
-              <div className={`px-4 py-2.5 flex items-center justify-between gap-2 ${bg}`}>
-                <span className={`text-xs font-bold uppercase tracking-wide ${color}`}>
-                  {label} <span className="font-normal opacity-70">({items.length})</span>
-                </span>
-                <div className="flex items-center gap-2">
-                  {/* Télécharger le modèle */}
-                  <button onClick={() => handleDownloadTemplate(key)}
-                    className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium bg-white border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors">
-                    <Download size={11} /> Modèle
-                  </button>
-                  {/* Importer CSV */}
-                  <label className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg font-medium cursor-pointer transition-colors
-                    ${importing === key ? "opacity-60 cursor-not-allowed bg-white border border-gray-200 text-gray-400" : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
-                    {importing === key
-                      ? <Loader2 size={11} className="animate-spin" />
-                      : <Upload size={11} />}
-                    Importer
-                    <input type="file" accept=".csv" className="hidden"
-                      disabled={importing === key}
-                      onChange={e => { if (e.target.files[0]) handleImportCSV(key, e.target.files[0]); e.target.value = ""; }} />
-                  </label>
-                  {/* Sélectionner depuis le référentiel */}
-                  <button
-                    onClick={() => { setShowModal(showModal === key ? null : key); setSearch(""); }}
-                    disabled={key !== "mtx" && dispos.length === 0}
-                    className={`text-xs px-3 py-1 rounded-lg font-medium transition-colors
-                      ${key !== "mtx" && dispos.length === 0
-                        ? "opacity-30 cursor-not-allowed bg-white border border-gray-200 text-gray-400"
-                        : showModal === key
-                          ? `bg-gray-100 border ${border} ${color}`
-                          : `bg-white border ${border} ${color} hover:bg-white/70`}`}
-                  >
-                    {showModal === key ? "✕ Fermer" : key === "mtx" ? "+ Sélectionner depuis Sage X3" : "+ Sélectionner depuis le référentiel"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Zone inline référentiel — au-dessus du tableau */}
-              {showModal === key && (
-                <div className={`border border-dashed ${border} rounded-xl mx-1 mb-3 bg-white`}>
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <div className="relative">
-                      <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                      <input value={search} onChange={e => setSearch(e.target.value)}
-                        placeholder={key === "mtx" ? "Rechercher un article Sage X3 (code ou désignation)…" : "Rechercher un article…"} autoFocus
-                        className="w-full pl-8 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
-                    </div>
-                  </div>
-                  <div className="divide-y divide-gray-100 max-h-64 overflow-y-auto">
-                    {(() => {
-                      const dejaCodes = new Set(lignes.flatMap(l => [l.bareme?.code, l.bareme?.code_article].filter(Boolean)));
-                      const rows = key === "mtx"
-                        ? articlesX3
-                            .filter(a => !dejaCodes.has(a.code_article))
-                            .map(a => ({ id: a.code_article, designation: a.designation, code: `${a.code_article} · ${a.classe}`, unite: a.unite, x3: true, article: a }))
-                        : dispos
-                            .filter(b => !search || b.designation.toLowerCase().includes(search.toLowerCase()))
-                            .map(b => ({ id: b.id, designation: b.designation, code: b.code, unite: b.unite, x3: false }));
-                      if (key === "mtx" && loadingX3) return <p className="text-sm text-gray-400 text-center py-6">Recherche dans Sage X3…</p>;
-                      if (rows.length === 0) return (
-                        <p className="text-sm text-gray-400 text-center py-6">
-                          {key === "mtx" ? "Aucun article Sage X3 trouvé (ou déjà ajoutés). Synchronisez les articles dans Paramétrage." : "Tous les articles sont déjà ajoutés."}
-                        </p>
-                      );
-                      return rows.map(b => (
-                        <div key={b.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 transition-colors">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-800 truncate">{b.designation}</p>
-                            <p className="text-xs text-gray-400">{b.code}</p>
-                          </div>
-                          <SearchSelect
-                            value={uniteInput[b.id] ?? b.unite ?? ""}
-                            onChange={e => setUniteInput(p => ({ ...p, [b.id]: e.target.value }))}
-                            className="w-24 border border-gray-300 rounded-lg px-2 py-1.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white">
-                            {[...new Set([b.unite, ...UNITES].filter(Boolean))].map(u => <option key={u} value={u}>{u}</option>)}
-                          </SearchSelect>
-                          <input type="number" min="0" step="any" placeholder="Prix (FCFA) *"
-                            value={prixInput[b.id] ?? ""}
-                            onChange={e => setPrixInput(p => ({ ...p, [b.id]: e.target.value }))}
-                            className="w-32 border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none" />
-                          <button onClick={() => b.x3 ? handleAddX3(b.article) : handleAdd(b.id)} disabled={addMut.isPending}
-                            className="text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors disabled:opacity-50 shrink-0">
-                            + Ajouter
-                          </button>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </div>
-              )}
-
-              {/* Table */}
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-100">
-                    <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Désignation</th>
-                    <th className="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Unité</th>
-                    <th className="text-right px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Prix contrat</th>
-                    <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</th>
-                    <th className="px-4 py-2"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {items.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-4 py-6 text-center text-xs text-gray-400">
-                        Aucun article — cliquez "Sélectionner depuis le référentiel".
-                      </td>
-                    </tr>
-                  ) : items.map(cb => {
-                    const prixCtt = cb.prix_contrat != null ? parseFloat(cb.prix_contrat) : 0;
-                    const isEditing = editingId === cb.id;
-                    return (
-                      <tr key={cb.id} className="hover:bg-gray-50/60">
-                        <td className="px-4 py-3 text-sm text-gray-800">{cb.bareme?.designation ?? "—"}</td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{cb.unite ?? cb.bareme?.unite ?? "—"}</td>
-                        <td className="px-4 py-3 text-right">
-                          {isEditing ? (
-                            <div className="flex items-center justify-end gap-2">
-                              <input
-                                type="number" min="0" step="any"
-                                value={editPrix}
-                                onChange={e => setEditPrix(e.target.value)}
-                                className="w-28 border border-gray-300 rounded-lg px-2 py-1 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none"
-                                autoFocus
-                              />
-                              <button onClick={() => handleSavePrix(cb)}
-                                className="text-xs text-white bg-[#087F3E] px-2 py-1 rounded-lg hover:bg-[#065A2C]">OK</button>
-                              <button onClick={() => setEditingId(null)}
-                                className="text-xs text-gray-500 px-2 py-1 rounded-lg border border-gray-200 hover:bg-gray-50">✕</button>
-                            </div>
-                          ) : (
-                            <button onClick={() => { setEditingId(cb.id); setEditPrix(String(prixCtt)); }}
-                              className="text-sm font-semibold text-gray-800 hover:text-[#087F3E] tabular-nums transition-colors">
-                              {fmt(prixCtt)} FCFA
-                            </button>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          {cb.statut_prix === "en_attente" ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">En attente DACC</span>
-                              <button onClick={() => handleValider(cb.id)}
-                                className="text-xs text-[#087F3E] hover:underline font-medium">Valider</button>
-                            </div>
-                          ) : (
-                            <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Prix validé</span>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button onClick={() => setConfirmDel(cb.id)}
-                            className="text-gray-300 hover:text-red-500 transition-colors">
-                            <Trash2 size={14} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          );
-        })
+        <p className="text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+          <strong>Prix vivants.</strong> Ce contrat suit le barème de son chantier (hérité du barème général) : seuls les écarts sont à saisir.
+          Les prix seront figés à l'activation, qui est impossible tant qu'un écart attend la validation DACC.
+        </p>
       )}
-
-      {/* Modal confirmation suppression barème */}
-      {confirmDel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-red-50 rounded-xl"><Trash2 size={18} className="text-red-500" /></div>
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">Retirer cet article ?</p>
-                <p className="text-xs text-gray-400 mt-0.5">Cette action est irréversible.</p>
-              </div>
-            </div>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setConfirmDel(null)}
-                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
-                Annuler
-              </button>
-              <button onClick={() => handleRemove(confirmDel)} disabled={removeMut.isPending}
-                className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-60 inline-flex items-center gap-1.5">
-                {removeMut.isPending && <Loader2 size={13} className="animate-spin" />}
-                Retirer
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="flex justify-end gap-2">
+        <button onClick={() => telechargerModeleBareme(
+            lignes.map(l => ({ code: l.code, designation: l.designation, unite: l.unite, prix: l.prix_effectif, prix_chantier: l.prix_herite,
+              provenance: l.source === "contrat" ? "Écart du contrat" : "Barème chantier" })),
+            "bareme_contrat", [["Prix du chantier", "prix_chantier"], ["Provenance", "provenance"]])}
+          title="Fichier Excel (CodeArticle, Désignation, Unité, Prix unitaire) pré-rempli avec les prix appliqués au contrat"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-700 font-medium border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">
+          <Download size={14} /> Exporter en Excel
+        </button>
+        {!bloque && (
+          <button onClick={() => setShowImport(true)}
+            className="inline-flex items-center gap-1.5 text-sm text-[#087F3E] font-medium border border-[#087F3E]/40 px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE]">
+            <Upload size={14} /> Importer un fichier
+          </button>
+        )}
+      </div>
+      {showImport && (
+        <ImportBaremeDialog
+          titre="Importer le barème du contrat"
+          description="Modifiez les prix dans le fichier Excel exporté puis réimportez-le : seules les lignes dont le prix a changé sont prises en compte (écarts). Un prix égal à l'hérité du chantier rétablit l'héritage ; après activation, chaque changement est un écart à valider par le DACC. Sans code article, l'article est retrouvé par sa désignation."
+          lignesModele={lignes.map(l => ({ code: l.code, designation: l.designation, unite: l.unite, prix: l.prix_effectif }))}
+          nomModele="bareme_contrat"
+          onAnalyser={({ lignes: l }) => baremeHierarchieService.importContrat(contratId, { lignes: l, appliquer: false })}
+          onAppliquer={async ({ lignes: l }) => {
+            const r = await baremeHierarchieService.importContrat(contratId, { lignes: l, appliquer: true });
+            refreshBareme();
+            return r;
+          }}
+          onClose={() => setShowImport(false)}
+        />
       )}
+      <BaremePrixTable
+        rows={lignes}
+        level="contrat"
+        canValidate={!!data?.peut_valider}
+        disabled={bloque}
+        busyId={busyId}
+        onSave={(r, prix) => run(r.bareme_id, () => setPrix.mutateAsync({ baremeId: r.bareme_id, prix }), "Prix enregistré.")}
+        onReset={(r) => run(r.bareme_id, () => reset.mutateAsync(r.bareme_id), "Prix hérité rétabli.")}
+        onValider={(r) => run(r.bareme_id, () => valider.mutateAsync(r.contrat_bareme_id), "Prix validé.")}
+      />
+      <p className="text-[11px] text-gray-400">Ressources humaines et matériel (GMAO) : en attente, non gérés dans le barème.</p>
     </div>
   );
 }
@@ -2318,7 +2038,6 @@ export default function ContratFormPage() {
   const { data: decomptesData }   = useDecomptesPaginated({ contrat_id: contratIdInt, count: 100 });
   const { data: avenantsList = [] } = useAvenantsByContrat(contratIdInt);
   const { data: bcsList = [], isSuccess: bcsLoaded } = useBonCommandesByContrat(contratIdInt);
-  const { data: lignes = [] }       = useContratBaremes(contratIdInt);
 
   const chantiersList = chantiersData?.data ?? [];
   const sttList       = sttData?.data?.filter(s => s.statut !== "blackliste") ?? [];
@@ -2447,7 +2166,7 @@ export default function ContratFormPage() {
     { id: "avenants",     label: nbAv > 0 ? `Avenants (${nbAv})` : "Avenants", icon: FilePlus },
     { id: "circuit",      label: "Circuit",          icon: CheckCircle },
     // — Exécution —
-    { id: "bareme",       label: lignes.length > 0 ? `Barème (${lignes.length})` : "Barème", icon: FileText },
+    { id: "bareme",       label: "Barème", icon: FileText },
     { id: "dqe",          label: "DQE",              icon: FileText },
     { id: "attachements", label: "Attachements",     icon: Paperclip },
     { id: "cessions",     label: "Cessions",         icon: FileText },
@@ -2828,7 +2547,7 @@ export default function ContratFormPage() {
 
           {/* Tab: Barème de cessions */}
           {activeTab === "bareme" && (
-            <BaremeCessionsTab contratId={id} isNew={isNew} />
+            <BaremeCessionsTab contratId={id} isNew={isNew} statut={contrat?.statut} />
           )}
 
           {/* Tab: Cessions */}

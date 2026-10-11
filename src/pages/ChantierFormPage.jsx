@@ -2,9 +2,14 @@ import { useState, Fragment } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, ChevronDown, Calendar, MapPin, FileText, Hash,
-  ExternalLink, RefreshCw, Info, Users, Wrench, Package, Truck, Layers, Building2, Loader2,
+  ExternalLink, RefreshCw, Info, Users, Wrench, Package, Truck, Layers, Building2, Loader2, Upload, Download,
 } from "lucide-react";
 import { useSynchroniserChantier } from "../hooks/useX3Sync";
+import BaremePrixTable from "../components/BaremePrixTable";
+import { useBaremeChantier, useBaremeChantierActions, useRefreshBareme } from "../hooks/useBaremeHierarchie";
+import { baremeHierarchieService } from "../services/baremeHierarchieService";
+import ImportBaremeDialog from "../components/ImportBaremeDialog";
+import { telechargerModeleBareme } from "../utils/baremeModele";
 import { useChantier } from "../hooks/useChantiers";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useDecomptesPaginated } from "../hooks/useDecomptes";
@@ -220,6 +225,72 @@ function TabDecomptes({ chantierId }) {
   );
 }
 
+// ─── Onglet Barème du chantier ───────────────────────────────────────────────
+function TabBareme({ chantierId }) {
+  const { addToast } = useToast();
+  const { data, isLoading } = useBaremeChantier(chantierId);
+  const { setPrix, reset, valider } = useBaremeChantierActions(chantierId);
+  const [busyId, setBusyId] = useState(null);
+  const [showImport, setShowImport] = useState(false);
+  const refreshBareme = useRefreshBareme();
+  const err = e => e?.response?.data?.errors?.[0] ?? "Erreur.";
+
+  async function run(id, fn, okMsg) {
+    setBusyId(id);
+    try { await fn(); if (okMsg) addToast(okMsg, "success"); }
+    catch (e) { addToast(err(e), "error"); }
+    finally { setBusyId(null); }
+  }
+
+  if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
+
+  const modeleChantier = (data?.lignes ?? []).map(l => ({ code: l.code, designation: l.designation, unite: l.unite, prix: l.prix_effectif, prix_base: l.prix_base, source: l.source }));
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-gray-500 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+        Le chantier hérite du barème général. Un prix modifié ici s'applique à tous les contrats de ce chantier qui n'ont pas leur propre écart
+        (les contrats déjà actifs gardent leurs prix figés). Un écart proposé par un autre profil que le DACC attend sa validation.
+      </p>
+      <div className="flex justify-end gap-2">
+        <button onClick={() => telechargerModeleBareme(modeleChantier, "bareme_chantier", [["Prix de base", "prix_base"], ["Provenance", "source"]])}
+          title="Fichier CodeArticle ; Unité ; Prix unitaire, pré-rempli avec les prix appliqués au chantier"
+          className="inline-flex items-center gap-1.5 text-sm text-gray-700 font-medium border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">
+          <Download size={14} /> Exporter en Excel
+        </button>
+        <button onClick={() => setShowImport(true)}
+          className="inline-flex items-center gap-1.5 text-sm text-[#087F3E] font-medium border border-[#087F3E]/40 px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE]">
+          <Upload size={14} /> Importer un fichier
+        </button>
+      </div>
+      {showImport && (
+        <ImportBaremeDialog
+          lignesModele={modeleChantier}
+          nomModele="modele_import_bareme_chantier"
+          titre="Importer le barème du chantier"
+          description="Fichier CSV ou Excel avec les colonnes : CodeArticle, Désignation, Unité, Prix unitaire. Sans code article, l'article est retrouvé par sa désignation. Seuls les écarts par rapport au barème général sont enregistrés : un prix égal à la base rétablit l'héritage. Les articles absents du barème général sont refusés."
+          onAnalyser={({ lignes: l }) => baremeHierarchieService.importChantier(chantierId, { lignes: l, appliquer: false })}
+          onAppliquer={async ({ lignes: l }) => {
+            const r = await baremeHierarchieService.importChantier(chantierId, { lignes: l, appliquer: true });
+            refreshBareme();
+            return r;
+          }}
+          onClose={() => setShowImport(false)}
+        />
+      )}
+      <BaremePrixTable
+        rows={data?.lignes ?? []}
+        level="chantier"
+        canValidate={!!data?.peut_valider}
+        busyId={busyId}
+        onSave={(r, prix) => run(r.bareme_id, () => setPrix.mutateAsync({ baremeId: r.bareme_id, prix }), "Prix du chantier enregistré.")}
+        onReset={(r) => run(r.bareme_id, () => reset.mutateAsync(r.bareme_id), "Prix de base rétabli.")}
+        onValider={(r) => run(r.bareme_id, () => valider.mutateAsync(r.bareme_id), "Prix validé.")}
+      />
+    </div>
+  );
+}
+
 // ─── Page principale ─────────────────────────────────────────────────────────
 export default function ChantierFormPage() {
   const { id }   = useParams();
@@ -283,6 +354,7 @@ export default function ChantierFormPage() {
   const tabs = [
     { id: "contrats",  label: `Contrats de sous-traitance${contrats.length > 0 ? ` (${contrats.length})` : ""}`, icon: FileText },
     { id: "decomptes", label: "Décomptes récents", icon: Hash },
+    { id: "bareme",    label: "Barème", icon: Layers },
   ];
 
   return (
@@ -411,6 +483,7 @@ export default function ChantierFormPage() {
         <div className="p-5">
           {activeTab === "contrats"  && <TabContrats chantierId={id} />}
           {activeTab === "decomptes" && <TabDecomptes chantierId={id} />}
+          {activeTab === "bareme"    && <TabBareme chantierId={id} />}
         </div>
       </div>
     </div>
