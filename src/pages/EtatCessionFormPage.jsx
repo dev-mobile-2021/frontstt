@@ -1029,12 +1029,16 @@ export default function EtatCessionFormPage() {
               </button>
             )}
 
-            {/* soumis : valider ou rejeter */}
+            {/* soumis : valider, rejeter ou retourner au CT */}
             {etat.statut === "soumis" && (
               <>
                 <button onClick={() => setPendingStatut("valide")}
                   className="px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
                   Valider / Arrêter
+                </button>
+                <button onClick={() => setPendingStatut("retourner")}
+                  className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
+                  Retourner au CT
                 </button>
                 <button onClick={() => setPendingStatut("rejete")}
                   className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors">
@@ -1104,6 +1108,15 @@ export default function EtatCessionFormPage() {
           {etat.statut === "valide" && (
             <div className="mt-4 flex items-center gap-2 bg-[#E8F5EE] border border-[#087F3E]/30 rounded-lg px-4 py-3 text-sm text-[#087F3E]">
               <CheckCircle2 size={16} /> Arrêté et validé — consommable par les décomptes. Les lignes sont verrouillées.
+            </div>
+          )}
+          {etat.statut === "brouillon" && etat.motif_rejet && (
+            <div className="mt-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+              <XCircle size={16} className="flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold">Retourné par le DT — corrections demandées</p>
+                <p className="mt-0.5">{etat.motif_rejet}</p>
+              </div>
             </div>
           )}
           {etat.statut === "brouillon" && (
@@ -1197,26 +1210,30 @@ export default function EtatCessionFormPage() {
                 {pendingStatut === "soumis"    ? "Soumettre l'état de cession ?"          :
                  pendingStatut === "valide"    ? "Valider et arrêter l'état de cession ?" :
                  pendingStatut === "brouillon" ? "Remettre en brouillon ?"                :
+                 pendingStatut === "retourner" ? "Retourner au chargé de travaux ?"       :
                  "Rejeter l'état de cession ?"}
               </h3>
               <p className="text-sm text-gray-500 mt-1">
                 {pendingStatut === "soumis"    ? "L'état passera en contrôle DCG. Les lignes seront verrouillées." :
                  pendingStatut === "valide"    ? "L'état sera arrêté et consommable par les décomptes. Action irréversible." :
                  pendingStatut === "brouillon" ? "Les lignes seront de nouveau modifiables pour correction." :
+                 pendingStatut === "retourner" ? "L'état repassera en brouillon. Le CT pourra le corriger et re-soumettre. Saisissez le motif du retour." :
                  "L'état sera rejeté. Saisissez un motif."}
               </p>
             </div>
 
-            {/* Motif de rejet */}
-            {pendingStatut === "rejete" && (
+            {/* Motif de rejet ou retour */}
+            {(pendingStatut === "rejete" || pendingStatut === "retourner") && (
               <div>
-                <label className="text-xs font-medium text-gray-600 block mb-1">Motif du rejet <span className="text-red-500">*</span></label>
+                <label className="text-xs font-medium text-gray-600 block mb-1">
+                  {pendingStatut === "retourner" ? "Motif du retour" : "Motif du rejet"} <span className="text-red-500">*</span>
+                </label>
                 <textarea
                   value={motifRejet ?? ""}
                   onChange={e => setMotifRejet(e.target.value)}
                   rows={3}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 resize-none"
-                  placeholder="Raison du rejet…"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 resize-none"
+                  placeholder={pendingStatut === "retourner" ? "Corrections demandées…" : "Raison du rejet…"}
                 />
               </div>
             )}
@@ -1225,11 +1242,15 @@ export default function EtatCessionFormPage() {
               <button onClick={() => { setPendingStatut(null); setMotifRejet(""); }}
                 className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
               <button
-                onClick={() => handleStatut(pendingStatut, pendingStatut === "rejete" ? motifRejet : undefined)}
-                disabled={statutMut.isPending || (pendingStatut === "rejete" && !motifRejet?.trim())}
+                onClick={() => handleStatut(
+                  pendingStatut === "retourner" ? "brouillon" : pendingStatut,
+                  (pendingStatut === "rejete" || pendingStatut === "retourner") ? motifRejet : undefined
+                )}
+                disabled={statutMut.isPending || ((pendingStatut === "rejete" || pendingStatut === "retourner") && !motifRejet?.trim())}
                 className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-60 text-white
-                  ${pendingStatut === "rejete"    ? "bg-red-500 hover:bg-red-600"      :
-                    pendingStatut === "brouillon" ? "bg-amber-500 hover:bg-amber-600"  :
+                  ${pendingStatut === "rejete"    ? "bg-red-500 hover:bg-red-600"       :
+                    pendingStatut === "retourner" ? "bg-amber-500 hover:bg-amber-600"   :
+                    pendingStatut === "brouillon" ? "bg-amber-500 hover:bg-amber-600"   :
                     "bg-[#087F3E] hover:bg-[#065A2C]"}`}>
                 {statutMut.isPending && <Loader2 size={14} className="animate-spin" />} Confirmer
               </button>

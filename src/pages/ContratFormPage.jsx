@@ -174,6 +174,7 @@ function ParametrageFinancierTab({ contrat, avenants }) {
 
   const [fin, setFin] = useState({
     taux_rg:                   contrat?.taux_rg ?? 5,
+    taux_revision_prix:        contrat?.taux_revision_prix ?? 0,
     taux_avance:               contrat?.taux_avance ?? 5,
     taux_remboursement_avance: contrat?.taux_remboursement_avance ?? 6.25,
     delai_paiement:            contrat?.delai_paiement ?? 30,
@@ -240,6 +241,11 @@ function ParametrageFinancierTab({ contrat, avenants }) {
           <div className="space-y-1">
             <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">TVA (%)</label>
             <input type="number" step="0.01" value={fin.taux_tva} onChange={e => set("taux_tva", e.target.value)} className={inputCls} />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Révision de prix (%)</label>
+            <input type="number" step="0.01" min="0" value={fin.taux_revision_prix} onChange={e => set("taux_revision_prix", e.target.value)} className={inputCls} placeholder="0" />
+            <p className="text-[10px] text-gray-400">Poste B décompte — calculé automatiquement sur A</p>
           </div>
           <div className="space-y-1">
             <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Taux avance (%)</label>

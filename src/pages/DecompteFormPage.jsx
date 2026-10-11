@@ -4,7 +4,7 @@ import {
   ArrowLeft, Save, Send, ChevronRight, FileDown, Info, CheckCircle2,
   Clock, XCircle, Circle, RotateCcw, AlertTriangle, Plus, Trash2, RefreshCw,
 } from "lucide-react";
-import { useDecompte, useSaveDecompte, useValiderDecompte, useRejeterDecompte, usePayerDecompte, useDecompteCircuit } from "../hooks/useDecomptes";
+import { useDecompte, useSaveDecompte, useValiderDecompte, useRejeterDecompte, usePayerDecompte, useDecompteCircuit, useDecompteCessions } from "../hooks/useDecomptes";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
@@ -33,6 +33,76 @@ const STATUT_COLORS = {
 
 function statutColor(statut) {
   return STATUT_COLORS[statut] || "bg-purple-100 text-purple-700 border-purple-200";
+}
+
+// ─── Checklists par étape ────────────────────────────────────────────────────
+const CHECKLISTS = {
+  dacc: [
+    "Dossier d'attachement de la période validé — code et montantFinal vérifiés",
+    "États de cession de la période arrêtés et visés",
+    "Poste A = montantFinal du dossier d'attachement",
+    "Lignes G/I/K = totaux des états de cession consommés",
+    "Calculs Poste B (révision) et Poste D (RG) cohérents avec A",
+  ],
+  dexa: [
+    "Montants des travaux cohérents avec le DQE et les avenants",
+    "Pièces jointes obligatoires présentes",
+    "Cohérence Poste A / dossier d'attachement",
+  ],
+  dcg: [
+    "États de cession visés (quantités DCG + prix DACC)",
+    "Montants G/I/K conformes aux états de cession",
+    "Remboursements H/J/L cohérents avec les cessions cumulées",
+    "Imputation analytique correcte (rubrique 6Axx)",
+  ],
+  dga: [
+    "Solde BC suffisant pour couvrir ce décompte (net HT vs solde BC)",
+    "Cumul travaux dans l'enveloppe du marché actualisé",
+  ],
+  dg: [
+    "Les 4 visas précédents (DACC, DEXA, DCG, DGA) sont présents avec noms et dates",
+    "Montant net TTC confirmé et cohérent",
+  ],
+};
+
+function ChecklistEtape({ profil }) {
+  const items = CHECKLISTS[profil?.toLowerCase()] ?? [];
+  const [checked, setChecked] = useState(() => new Array(items.length).fill(false));
+
+  if (items.length === 0) return null;
+
+  const nbOk = checked.filter(Boolean).length;
+
+  function toggle(i) {
+    setChecked(prev => prev.map((v, idx) => idx === i ? !v : v));
+  }
+
+  return (
+    <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
+          Checklist de contrôle — {profil?.toUpperCase()}
+        </p>
+        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${nbOk === items.length ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+          {nbOk}/{items.length}
+        </span>
+      </div>
+      <ul className="space-y-2">
+        {items.map((item, i) => (
+          <li key={i} className="flex items-start gap-2.5 cursor-pointer" onClick={() => toggle(i)}>
+            <div className={`mt-0.5 w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors
+              ${checked[i] ? "bg-[#087F3E] border-[#087F3E]" : "border-amber-400 bg-white"}`}>
+              {checked[i] && <CheckCircle2 size={10} className="text-white" />}
+            </div>
+            <span className={`text-xs leading-relaxed ${checked[i] ? "text-gray-400 line-through" : "text-amber-900"}`}>
+              {item}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="text-[10px] text-amber-600">Ces cases sont locales — elles ne sont pas enregistrées. Le bouton Valider reste actif indépendamment.</p>
+    </div>
+  );
 }
 
 // ─── Circuit Stepper ─────────────────────────────────────────────────────────
@@ -378,31 +448,31 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
   const prev    = d.precedent?.postes ?? {};
 
   const [mode, setMode]     = useState(payload.mode ?? "cumulatif");
+  const [libelleM, setLibelleM] = useState(() => (decompte.payload?.postes?.M?.libelle ?? ""));
   const [postes, setPostes] = useState(() => {
     const p = payload.postes ?? {};
     return {
-      B:  p.B?.cumulM  ?? 0,
-      B2: p.B2?.cumulM ?? 0,
-      E:  p.E?.cumulM  ?? 0,
-      H:  p.H?.cumulM  ?? 0,
-      J:  p.J?.cumulM  ?? 0,
-      L:  p.L?.cumulM  ?? 0,
-      F:  p.F?.cumulM  ?? 0,
-      M:  p.M?.cumulM  ?? 0,
+      B2:   p.B2?.cumulM ?? 0,
+      tauxE: p.E?.tauxE  ?? 0,
+      tauxH: p.H?.tauxH  ?? 100,
+      tauxJ: p.J?.tauxJ  ?? 100,
+      tauxL: p.L?.tauxL  ?? 100,
+      F:    p.F?.cumulM  ?? 0,
+      M:    p.M?.cumulM  ?? 0,
     };
   });
 
   useEffect(() => {
     const p = (decompte.payload?.postes) ?? {};
+    setLibelleM(p.M?.libelle ?? "");
     setPostes({
-      B:  p.B?.cumulM  ?? 0,
-      B2: p.B2?.cumulM ?? 0,
-      E:  p.E?.cumulM  ?? 0,
-      H:  p.H?.cumulM  ?? 0,
-      J:  p.J?.cumulM  ?? 0,
-      L:  p.L?.cumulM  ?? 0,
-      F:  p.F?.cumulM  ?? 0,
-      M:  p.M?.cumulM  ?? 0,
+      B2:   p.B2?.cumulM ?? 0,
+      tauxE: p.E?.tauxE  ?? 0,
+      tauxH: p.H?.tauxH  ?? 100,
+      tauxJ: p.J?.tauxJ  ?? 100,
+      tauxL: p.L?.tauxL  ?? 100,
+      F:    p.F?.cumulM  ?? 0,
+      M:    p.M?.cumulM  ?? 0,
     });
   }, [decompte.id]);
 
@@ -415,34 +485,75 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
   const cumulA   = p.A?.cumulM ?? d.montant_brut ?? 0;
   const mensuelA = cumulA - cM1("A");
 
-  // Poste C (avances = tauxAD% × A)
-  const tauxAD   = p.C?.tauxAD ?? 15;
-  const cumulC   = p.C?.cumulM ?? Math.round(cumulA * tauxAD / 100);
-  const mensuelC = cumulC - cM1("C");
+  // Poste C — Avance démarrage (depuis payload backend)
+  const tauxAD          = p.C?.tauxAD          ?? d.contrat?.taux_avance               ?? 20;
+  const tauxRembAD      = p.C?.tauxRembAD       ?? d.contrat?.taux_remboursement_avance ?? 6.25;
+  // C1 — montant avance accordée
+  const montantAvance   = p.C?.montant_avance   ?? 0;
+  // C2 — cumul avances M-1
+  const prevCumulAvance = p.C?.prev_cumul_avance ?? montantAvance;
+  // C3 — cumul avances M (= C1)
+  const cumulAvanceM    = p.C?.cumul_avance_m   ?? montantAvance;
+  // C4 — remboursement mensuel
+  const rembMensuelC    = p.C?.remb_mensuel     ?? 0;
+  // C5 — cumul remb M-1
+  const prevCumulRembAD = p.C?.prev_cumul_remb  ?? 0;
+  // C6 — cumul remb M
+  const cumulRembAD     = p.C?.cumul_remboursements ?? 0;
+  // C7 — restant
+  const restantAD       = p.C?.restant          ?? montantAvance;
+  const mensuelC        = rembMensuelC;
+  const cumulC          = cumulRembAD;
 
   // Poste D (RG = tauxRG% × A) — négatif
   const tauxRG   = p.D?.tauxRG ?? (d.taux_retenue_garantie ?? 5);
   const cumulD   = p.D?.cumulM ?? Math.round(cumulA * tauxRG / 100);
   const mensuelD = cumulD - cM1("D");
 
+  // Poste B — auto (tauxRevisionPrix × A)
+  const tauxRevisionPrix = p.B?.tauxRevision ?? d.contrat?.taux_revision_prix ?? 0;
+  const cumulB   = p.B?.cumulM ?? Math.round(cumulA * tauxRevisionPrix / 100);
+  const mensuelB = cumulB - cM1("B");
+
   // Postes saisissables
-  const mensuelB  = postes.B  - cM1("B");
   const mensuelB2 = postes.B2 - cM1("B2");
-  const mensuelE  = postes.E  - cM1("E");
-  const cumulG    = p.G?.cumulM ?? 0;
-  const mensuelH  = postes.H  - cM1("H");
-  const cumulI    = p.I?.cumulM ?? 0;
-  const mensuelJ  = postes.J  - cM1("J");
-  const cumulK    = p.K?.cumulM ?? 0;
-  const mensuelL  = postes.L  - cM1("L");
+  const mensuelF  = postes.F  - cM1("F");
   const mensuelM  = postes.M  - cM1("M");
 
-  // Détail Poste C (avances)
-  const remboursementMensuelC = mensuelC; // même valeur, remboursé proportionnellement
-  const restantARemboursC     = Math.max(0, cumulC - cumulC); // = 0 quand remboursement = avance
+  // Poste E — Restitution RG (taux saisi × reliquat RG M-1)
+  const prevCumulE   = p.E?.cumulM1 ?? cM1("E");
+  const reliquatRgM1 = Math.max(0, cM1("D") - prevCumulE);
+  const mensuelE     = Math.round(postes.tauxE / 100 * reliquatRgM1);
+  const cumulE       = prevCumulE + mensuelE;
+  const reliquatRgM  = Math.max(0, cumulD - cumulE);
+
+  // Postes G/I/K — cessions (depuis payload backend)
+  const mensuelG = p.G?.mensuelM ?? 0;
+  const cumulGM1 = p.G?.cumulM1  ?? 0;
+  const cumulG   = p.G?.cumulM   ?? 0;
+  const mensuelI = p.I?.mensuelM ?? 0;
+  const cumulIM1 = p.I?.cumulM1  ?? 0;
+  const cumulI   = p.I?.cumulM   ?? 0;
+  const mensuelK = p.K?.mensuelM ?? 0;
+  const cumulKM1 = p.K?.cumulM1  ?? 0;
+  const cumulK   = p.K?.cumulM   ?? 0;
+
+  // Postes H/J/L — remboursements (taux saisi × mensuel cession)
+  const rembMensuelH = Math.round(postes.tauxH / 100 * mensuelG);
+  const cumulHM1     = p.H?.cumulM1  ?? 0;
+  const cumulH       = Math.min(cumulG, cumulHM1 + rembMensuelH);
+  const reliquatG    = cumulG - cumulH;
+  const rembMensuelJ = Math.round(postes.tauxJ / 100 * mensuelI);
+  const cumulJM1     = p.J?.cumulM1  ?? 0;
+  const cumulJ       = Math.min(cumulI, cumulJM1 + rembMensuelJ);
+  const reliquatI    = cumulI - cumulJ;
+  const rembMensuelL = Math.round(postes.tauxL / 100 * mensuelK);
+  const cumulLM1     = p.L?.cumulM1  ?? 0;
+  const cumulL       = Math.min(cumulK, cumulLM1 + rembMensuelL);
+  const reliquatK    = cumulK - cumulL;
 
   // Net HT = A + B + B2 − C − D + E − H − J + L − M − F
-  const netHt  = mensuelA + mensuelB + mensuelB2 - mensuelC - mensuelD + mensuelE - mensuelH - mensuelJ + mensuelL - mensuelM - postes.F;
+  const netHt  = mensuelA + mensuelB + mensuelB2 - mensuelC - mensuelD + mensuelE - rembMensuelH - rembMensuelJ + rembMensuelL - mensuelM - mensuelF;
   const tva    = Math.round(netHt * (d.taux_tva ?? 18) / 100);
   const netTtc = netHt + tva;
 
@@ -452,20 +563,27 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
     return {
       mode,
       postes: {
-        B:  { cumulM: postes.B  },
         B2: { cumulM: postes.B2 },
-        E:  { cumulM: postes.E  },
-        H:  { cumulM: postes.H  },
-        J:  { cumulM: postes.J  },
-        L:  { cumulM: postes.L  },
+        E:  { tauxE: postes.tauxE },
+        H:  { tauxH: postes.tauxH },
+        J:  { tauxJ: postes.tauxJ },
+        L:  { tauxL: postes.tauxL },
         F:  { cumulM: postes.F  },
-        M:  { cumulM: postes.M  },
+        M:  { cumulM: postes.M, libelle: libelleM },
       },
     };
   }
 
+  function handleSaveWithValidation() {
+    if (postes.M !== 0 && !libelleM.trim()) {
+      alert("Le libellé du Poste M (Autres retenues) est obligatoire quand le montant est renseigné.");
+      return;
+    }
+    onSave(buildPayload());
+  }
+
   const attachementCode = p.A?.attachementCode;
-  const nbCessions = (p.G?.cessionsIds ?? []).length;
+  const nbCessionsCourants = (p.G?.cessionsIds ?? []).length + (p.I?.cessionsIds ?? []).length + (p.K?.cessionsIds ?? []).length;
 
   return (
     <div className="flex gap-5 items-start">
@@ -499,65 +617,183 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
                 extra={attachementCode ? `Dossier ${attachementCode}` : "Aucun attachement — initier depuis le contrat"}
                 cumulM1={cM1("A")} mensuelM={mensuelA} cumulM={cumulA} editable={false} />
 
-              <PosteLigne code="B" type="plus" label="Révisions de prix"
-                cumulM1={cM1("B")} mensuelM={mensuelB} cumulM={postes.B}
-                editable={canEdit} onChange={v => handleSet("B", v)} />
+              <PosteLigne code="B" type="plus"
+                label={`Révisions de prix${tauxRevisionPrix > 0 ? ` (${tauxRevisionPrix}% × A)` : " — taux non configuré"}`}
+                extra={tauxRevisionPrix === 0 ? "Configurer le taux dans l'onglet Paramétrage du contrat" : null}
+                cumulM1={cM1("B")} mensuelM={mensuelB} cumulM={cumulB} editable={false} />
 
               <PosteLigne code="B2" type="plus" label="Sommes à faire valoir"
                 cumulM1={cM1("B2")} mensuelM={mensuelB2} cumulM={postes.B2}
                 editable={canEdit} onChange={v => handleSet("B2", v)} />
 
-              <PosteLigne code="C" type="info" label="Avances démarrage (info)" taux={tauxAD}
-                cumulM1={cM1("C")} mensuelM={mensuelC} cumulM={cumulC} editable={false}>
-                <SousLigne label="Montant avance M"      cumulM1={null}       mensuelM={cumulC * tauxAD / 100 || mensuelC} cumulM={null} />
-                <SousLigne label="Cumul avances M-1"     cumulM1={cM1("C")}   mensuelM={null}    cumulM={null} />
-                <SousLigne label="Cumul avances M"       cumulM1={null}       mensuelM={null}    cumulM={cumulC} highlight />
-                <SousLigne label="Remboursement mensuel" cumulM1={cM1("C")}   mensuelM={mensuelC} cumulM={cumulC} />
-                <SousLigne label="Cumul remb. M-1"       cumulM1={cM1("C")}   mensuelM={null}    cumulM={null} />
-                <SousLigne label="Cumul remb. M"         cumulM1={null}       mensuelM={null}    cumulM={cumulC} highlight />
-                <SousLigne label="Restant à rembourser"  cumulM1={null}       mensuelM={null}    cumulM={0} />
+              <PosteLigne code="C" type="info"
+                label={`Avance démarrage — remb. ${tauxRembAD}% × mensuel A`}
+                taux={tauxAD}
+                extra={`Montant avance : ${num(montantAvance)} FCFA (${tauxAD}% × marché initial) — seul C4 entre dans le Net HT`}
+                cumulM1={prevCumulRembAD} mensuelM={rembMensuelC} cumulM={cumulRembAD} editable={false}>
+                <SousLigne label="C1 — Montant avance accordée"  cumulM1={null}           mensuelM={null}         cumulM={montantAvance} highlight />
+                <SousLigne label="C2 — Cumul avances M-1"        cumulM1={null}           mensuelM={null}         cumulM={prevCumulAvance} />
+                <SousLigne label="C3 — Cumul avances M"          cumulM1={null}           mensuelM={null}         cumulM={cumulAvanceM} />
+                <SousLigne label="C4 — Remboursement mensuel"    cumulM1={prevCumulRembAD} mensuelM={rembMensuelC} cumulM={cumulRembAD} highlight />
+                <SousLigne label="C5 — Cumul remb. M-1"          cumulM1={null}           mensuelM={null}         cumulM={prevCumulRembAD} />
+                <SousLigne label="C6 — Cumul remb. M"            cumulM1={null}           mensuelM={null}         cumulM={cumulRembAD} highlight />
+                <SousLigne label="C7 — Restant à rembourser"     cumulM1={null}           mensuelM={null}         cumulM={restantAD} />
               </PosteLigne>
 
               <PosteLigne code="D" type="minus" label="Retenue de garantie" taux={tauxRG}
                 cumulM1={cM1("D")} mensuelM={mensuelD} cumulM={cumulD} editable={false} />
 
-              <PosteLigne code="E" type="plus" label="Restitution RG"
-                cumulM1={cM1("E")} mensuelM={mensuelE} cumulM={postes.E}
-                editable={canEdit} onChange={v => handleSet("E", v)} />
+              <PosteLigne code="E" type="plus"
+                label={`Restitution RG${postes.tauxE > 0 ? ` (${postes.tauxE}% × reliquat)` : ""}`}
+                extra={`Reliquat RG disponible : ${num(reliquatRgM1)} FCFA`}
+                cumulM1={prevCumulE} mensuelM={mensuelE} cumulM={cumulE} editable={false}>
+                {canEdit && (
+                  <tr className="bg-blue-50/60 border-b border-gray-50">
+                    <td className="px-4 py-1.5 w-12" />
+                    <td className="px-2 py-1.5 pl-8">
+                      <span className="text-[11px] text-blue-600">└ Taux restitution (%)</span>
+                    </td>
+                    <td colSpan={2} />
+                    <td className="px-4 py-1.5 text-right">
+                      <input type="number" min={0} max={100} step={1}
+                        value={postes.tauxE}
+                        onChange={e => handleSet("tauxE", Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                        className="w-20 text-right px-2 py-1 rounded-lg border border-blue-200 bg-white text-blue-800 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                    </td>
+                  </tr>
+                )}
+                <SousLigne label="Restitution mensuelle"     cumulM1={null}    mensuelM={mensuelE}  cumulM={null} />
+                <SousLigne label="Cumul restitutions M-1"    cumulM1={null}    mensuelM={null}      cumulM={prevCumulE} />
+                <SousLigne label="Cumul restitutions M"      cumulM1={null}    mensuelM={null}      cumulM={cumulE} highlight />
+                <SousLigne label="Reliquat RG restant"       cumulM1={null}    mensuelM={null}      cumulM={reliquatRgM} />
+              </PosteLigne>
 
-              <PosteLigne code="G" type="info" label="Cessions matériaux (info)"
-                extra="état de cession" extra2={nbCessions > 0 ? `${nbCessions} état(s) consommé(s)` : undefined}
-                cumulM1={cM1("G")} mensuelM={cumulG - cM1("G")} cumulM={cumulG} editable={false} />
+              <PosteLigne code="F" type="minus" label="Pénalités"
+                cumulM1={cM1("F")} mensuelM={mensuelF} cumulM={postes.F}
+                editable={canEdit} onChange={v => handleSet("F", v)} />
 
-              <PosteLigne code="H" type="minus" label="Remboursement cessions matériaux"
-                extra={`Montant cédé sur la période : ${num(cumulG)} FCFA`}
-                extra2={`Déjà remboursé (décomptes antérieurs) : ${num(cM1("H"))} FCFA`}
-                cumulM1={cM1("H")} mensuelM={mensuelH} cumulM={postes.H}
-                editable={canEdit} onChange={v => handleSet("H", Math.min(v, cumulG))} />
+              <PosteLigne code="G" type="info" label="Cessions matériaux (MTX)"
+                extra={nbCessionsCourants > 0 ? `${nbCessionsCourants} état(s) de cession sur la période` : "Aucune cession sur la période"}
+                cumulM1={cumulGM1} mensuelM={mensuelG} cumulM={cumulG} editable={false}>
+                <SousLigne label="Cessions mensuel MTX"        cumulM1={null}    mensuelM={mensuelG} cumulM={null} />
+                <SousLigne label="Cumul cessions MTX M-1"      cumulM1={null}    mensuelM={null}     cumulM={cumulGM1} />
+                <SousLigne label="Cumul cessions MTX M"        cumulM1={null}    mensuelM={null}     cumulM={cumulG} highlight />
+              </PosteLigne>
 
-              <PosteLigne code="I" type="info" label="Cessions matériel (info)"
+              <PosteLigne code="H" type="minus" label="Remboursement cessions MTX"
+                extra={`Taux remb. : ${postes.tauxH}% × cession mensuelle`}
+                extra2={`Reliquat MTX : ${num(reliquatG)} FCFA`}
+                cumulM1={cumulHM1} mensuelM={rembMensuelH} cumulM={cumulH} editable={false}>
+                {canEdit && (
+                  <tr className="bg-blue-50/60 border-b border-gray-50">
+                    <td className="px-4 py-1.5 w-12" />
+                    <td className="px-2 py-1.5 pl-8">
+                      <span className="text-[11px] text-blue-600">└ Taux remboursement (%)</span>
+                    </td>
+                    <td colSpan={2} />
+                    <td className="px-4 py-1.5 text-right">
+                      <input type="number" min={0} max={100} step={1}
+                        value={postes.tauxH}
+                        onChange={e => handleSet("tauxH", Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                        className="w-20 text-right px-2 py-1 rounded-lg border border-blue-200 bg-white text-blue-800 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                    </td>
+                  </tr>
+                )}
+                <SousLigne label="Remboursement mensuel MTX"   cumulM1={null}    mensuelM={rembMensuelH} cumulM={null} />
+                <SousLigne label="Cumul remb. MTX M-1"         cumulM1={null}    mensuelM={null}         cumulM={cumulHM1} />
+                <SousLigne label="Cumul remb. MTX M"           cumulM1={null}    mensuelM={null}         cumulM={cumulH} highlight />
+                <SousLigne label="Reliquat MTX"                cumulM1={null}    mensuelM={null}         cumulM={reliquatG} />
+              </PosteLigne>
+
+              <PosteLigne code="I" type="info" label="Cessions matériel (MTL)"
                 extra="état de cession"
-                cumulM1={cM1("I")} mensuelM={cumulI - cM1("I")} cumulM={cumulI} editable={false} />
+                cumulM1={cumulIM1} mensuelM={mensuelI} cumulM={cumulI} editable={false}>
+                <SousLigne label="Cessions mensuel MTL"        cumulM1={null}    mensuelM={mensuelI} cumulM={null} />
+                <SousLigne label="Cumul cessions MTL M-1"      cumulM1={null}    mensuelM={null}     cumulM={cumulIM1} />
+                <SousLigne label="Cumul cessions MTL M"        cumulM1={null}    mensuelM={null}     cumulM={cumulI} highlight />
+              </PosteLigne>
 
-              <PosteLigne code="J" type="minus" label="Remboursement cessions matériel"
-                extra={`Montant cédé sur la période : ${num(cumulI)} FCFA`}
-                extra2={`Déjà remboursé (décomptes antérieurs) : ${num(cM1("J"))} FCFA`}
-                cumulM1={cM1("J")} mensuelM={mensuelJ} cumulM={postes.J}
-                editable={canEdit} onChange={v => handleSet("J", Math.min(v, cumulI))} />
+              <PosteLigne code="J" type="minus" label="Remboursement cessions MTL"
+                extra={`Taux remb. : ${postes.tauxJ}% × cession mensuelle`}
+                extra2={`Reliquat MTL : ${num(reliquatI)} FCFA`}
+                cumulM1={cumulJM1} mensuelM={rembMensuelJ} cumulM={cumulJ} editable={false}>
+                {canEdit && (
+                  <tr className="bg-blue-50/60 border-b border-gray-50">
+                    <td className="px-4 py-1.5 w-12" />
+                    <td className="px-2 py-1.5 pl-8">
+                      <span className="text-[11px] text-blue-600">└ Taux remboursement (%)</span>
+                    </td>
+                    <td colSpan={2} />
+                    <td className="px-4 py-1.5 text-right">
+                      <input type="number" min={0} max={100} step={1}
+                        value={postes.tauxJ}
+                        onChange={e => handleSet("tauxJ", Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                        className="w-20 text-right px-2 py-1 rounded-lg border border-blue-200 bg-white text-blue-800 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                    </td>
+                  </tr>
+                )}
+                <SousLigne label="Remboursement mensuel MTL"   cumulM1={null}    mensuelM={rembMensuelJ} cumulM={null} />
+                <SousLigne label="Cumul remb. MTL M-1"         cumulM1={null}    mensuelM={null}         cumulM={cumulJM1} />
+                <SousLigne label="Cumul remb. MTL M"           cumulM1={null}    mensuelM={null}         cumulM={cumulJ} highlight />
+                <SousLigne label="Reliquat MTL"                cumulM1={null}    mensuelM={null}         cumulM={reliquatI} />
+              </PosteLigne>
 
-              <PosteLigne code="K" type="info" label="Cessions ressources humaines (info)"
+              <PosteLigne code="K" type="info" label="Cessions ressources humaines (RH)"
                 extra="état de cession"
-                cumulM1={cM1("K")} mensuelM={cumulK - cM1("K")} cumulM={cumulK} editable={false} />
+                cumulM1={cumulKM1} mensuelM={mensuelK} cumulM={cumulK} editable={false}>
+                <SousLigne label="Cessions mensuel RH"         cumulM1={null}    mensuelM={mensuelK} cumulM={null} />
+                <SousLigne label="Cumul cessions RH M-1"       cumulM1={null}    mensuelM={null}     cumulM={cumulKM1} />
+                <SousLigne label="Cumul cessions RH M"         cumulM1={null}    mensuelM={null}     cumulM={cumulK} highlight />
+              </PosteLigne>
 
-              <PosteLigne code="L" type="minus" label="Remboursement RH"
-                extra={`Montant cédé sur la période : ${num(cumulK)} FCFA`}
-                extra2={`Déjà remboursé (décomptes antérieurs) : ${num(cM1("L"))} FCFA`}
-                cumulM1={cM1("L")} mensuelM={mensuelL} cumulM={postes.L}
-                editable={canEdit} onChange={v => handleSet("L", Math.min(v, cumulK))} />
+              <PosteLigne code="L" type="minus" label="Remboursement cessions RH"
+                extra={`Taux remb. : ${postes.tauxL}% × cession mensuelle`}
+                extra2={`Reliquat RH : ${num(reliquatK)} FCFA`}
+                cumulM1={cumulLM1} mensuelM={rembMensuelL} cumulM={cumulL} editable={false}>
+                {canEdit && (
+                  <tr className="bg-blue-50/60 border-b border-gray-50">
+                    <td className="px-4 py-1.5 w-12" />
+                    <td className="px-2 py-1.5 pl-8">
+                      <span className="text-[11px] text-blue-600">└ Taux remboursement (%)</span>
+                    </td>
+                    <td colSpan={2} />
+                    <td className="px-4 py-1.5 text-right">
+                      <input type="number" min={0} max={100} step={1}
+                        value={postes.tauxL}
+                        onChange={e => handleSet("tauxL", Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                        className="w-20 text-right px-2 py-1 rounded-lg border border-blue-200 bg-white text-blue-800 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                    </td>
+                  </tr>
+                )}
+                <SousLigne label="Remboursement mensuel RH"    cumulM1={null}    mensuelM={rembMensuelL} cumulM={null} />
+                <SousLigne label="Cumul remb. RH M-1"          cumulM1={null}    mensuelM={null}         cumulM={cumulLM1} />
+                <SousLigne label="Cumul remb. RH M"            cumulM1={null}    mensuelM={null}         cumulM={cumulL} highlight />
+                <SousLigne label="Reliquat RH"                 cumulM1={null}    mensuelM={null}         cumulM={reliquatK} />
+              </PosteLigne>
 
-              <PosteLigne code="M" type="minus" label="Autres retenues"
+              <PosteLigne code="M" type="minus"
+                label={libelleM ? `Autres retenues — ${libelleM}` : "Autres retenues"}
+                extra={canEdit ? null : (libelleM || "Aucun libellé")}
                 cumulM1={cM1("M")} mensuelM={mensuelM} cumulM={postes.M}
-                editable={canEdit} onChange={v => handleSet("M", v)} />
+                editable={canEdit} onChange={v => handleSet("M", v)}>
+                {canEdit && (
+                  <tr className="bg-gray-50/70 border-b border-gray-50">
+                    <td className="px-4 py-1.5 w-12" />
+                    <td className="px-2 py-1.5 pl-8" colSpan={4}>
+                      <input
+                        type="text"
+                        placeholder="Libellé obligatoire si montant ≠ 0 …"
+                        value={libelleM}
+                        onChange={e => setLibelleM(e.target.value)}
+                        className={`w-full text-xs px-2 py-1 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-300
+                          ${postes.M !== 0 && !libelleM.trim()
+                            ? "border-red-300 bg-red-50 text-red-700 placeholder-red-300"
+                            : "border-gray-200 bg-white text-gray-700"}`}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </PosteLigne>
             </tbody>
           </table>
 
@@ -594,9 +830,9 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
               { label: "Sommes à faire valoir",   value: mensuelB2, color: "text-green-700" },
               { label: "Retenue de garantie",     value: -mensuelD, color: "text-red-600" },
               { label: "Remb. avance démarrage",  value: -mensuelC, color: "text-red-600" },
-              { label: "Remboursement MTX",       value: -mensuelH, color: "text-red-600" },
-              { label: "Remboursement MTL",       value: -mensuelJ, color: "text-red-600" },
-              { label: "Remboursement RH",        value: -mensuelL, color: "text-red-600" },
+              { label: "Remboursement MTX",       value: -rembMensuelH, color: "text-red-600" },
+              { label: "Remboursement MTL",       value: -rembMensuelJ, color: "text-red-600" },
+              { label: "Remboursement RH",        value: -rembMensuelL, color: "text-red-600" },
               { label: "Autres retenues",         value: -mensuelM, color: "text-red-600" },
               { label: "Net HT",                  value: netHt,     color: netHt < 0 ? "text-red-600 font-bold" : "text-[#087F3E] font-bold" },
               { label: `TVA ${d.taux_tva ?? 18}%`, value: tva,     color: "text-gray-600" },
@@ -630,30 +866,30 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
               </button>
               <button
                 onClick={() => {
-                  if (!window.confirm("Réinitialiser les remboursements cessions (H, J, L) à hauteur des montants cédés (G, I, K) ?")) return;
-                  setPostes(prev => ({ ...prev, H: cumulG, J: cumulI, L: cumulK }));
+                  if (!window.confirm("Réinitialiser les taux de remboursement cessions à 100% (remboursement intégral MTX/MTL/RH) ?")) return;
+                  setPostes(prev => ({ ...prev, tauxH: 100, tauxJ: 100, tauxL: 100 }));
                   onSave({
                     mode,
                     postes: {
                       B:  { cumulM: postes.B  },
                       B2: { cumulM: postes.B2 },
-                      E:  { cumulM: postes.E  },
-                      H:  { cumulM: cumulG    },
-                      J:  { cumulM: cumulI    },
-                      L:  { cumulM: cumulK    },
+                      E:  { tauxE: postes.tauxE },
+                      H:  { tauxH: 100 },
+                      J:  { tauxJ: 100 },
+                      L:  { tauxL: 100 },
                       F:  { cumulM: postes.F  },
                       M:  { cumulM: postes.M  },
                     },
                   });
                 }}
                 disabled={saving}
-                title="Cale H=G, J=I, L=K — remboursement total des cessions"
+                title="Taux remboursement → 100% pour MTX, MTL, RH"
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50">
-                <RefreshCw size={11} /> Cessions (MTL/MTX/RH)
+                <RefreshCw size={11} /> Cessions 100% (MTX/MTL/RH)
               </button>
             </div>
 
-            <button onClick={() => onSave(buildPayload())} disabled={saving}
+            <button onClick={handleSaveWithValidation} disabled={saving}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
               {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={14} />}
               Enregistrer le brouillon
@@ -661,6 +897,186 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Onglet Cessions ─────────────────────────────────────────────────────────
+function CessionsTab({ decompte, canEdit, onSave, saving }) {
+  const { data, isLoading, refetch } = useDecompteCessions(decompte?.id);
+  const attachees     = data?.attachees     ?? [];
+  const disponibles   = data?.disponibles   ?? [];
+  const nonEligibles  = data?.non_eligibles ?? [];
+  const [showNonElig, setShowNonElig] = useState(false);
+
+  // IDs sélectionnés (attachés à ce décompte)
+  const [selected, setSelected] = useState(() => new Set(attachees.map(e => e.id)));
+
+  useEffect(() => {
+    setSelected(new Set((data?.attachees ?? []).map(e => e.id)));
+  }, [data]);
+
+  function toggle(id) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  async function handleSave() {
+    const payload = decompte.payload ?? {};
+    await onSave({ ...payload, cessions_ids: [...selected] });
+    refetch();
+  }
+
+  const fmtPeriode = (debut, fin) => {
+    const d = debut ? new Date(debut + "T00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }) : "?";
+    const f = fin   ? new Date(fin   + "T00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "?";
+    return `${d} → ${f}`;
+  };
+
+  const totalSelected = [...selected].reduce((sum, id) => {
+    const ec = [...attachees, ...disponibles].find(e => e.id === id);
+    return sum + (ec?.montant_total ?? 0);
+  }, 0);
+
+  if (isLoading) return <div className="py-10 text-center text-sm text-gray-400">Chargement…</div>;
+
+  return (
+    <div className="space-y-6">
+      {/* Résumé */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-semibold text-gray-800">
+            {selected.size} état(s) sélectionné(s) · Total : <span className="text-[#087F3E]">{num(totalSelected)} FCFA</span>
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {disponibles.length} état(s) disponible(s) non consommé(s)
+          </p>
+        </div>
+        {canEdit && (
+          <button onClick={handleSave} disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
+            {saving ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={13} />}
+            Enregistrer la sélection
+          </button>
+        )}
+      </div>
+
+      {/* États attachés à ce décompte */}
+      <div>
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          Attachés à ce décompte ({attachees.length})
+        </p>
+        {attachees.length === 0 ? (
+          <p className="text-sm text-gray-400 py-3">Aucun état de cession sélectionné.</p>
+        ) : (
+          <div className="border border-gray-200 rounded-xl overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-100">
+                <tr>
+                  {canEdit && <th className="px-3 py-2 w-8" />}
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Code</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Période</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-semibold text-gray-400 uppercase">Montant</th>
+                </tr>
+              </thead>
+              <tbody>
+                {attachees.map(ec => (
+                  <tr key={ec.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    {canEdit && (
+                      <td className="px-3 py-2">
+                        <input type="checkbox" checked={selected.has(ec.id)} onChange={() => toggle(ec.id)}
+                          className="accent-[#087F3E]" />
+                      </td>
+                    )}
+                    <td className="px-3 py-2 font-mono text-xs text-gray-700">{ec.code}</td>
+                    <td className="px-3 py-2 text-xs text-gray-500">{fmtPeriode(ec.periode_debut, ec.periode_fin)}</td>
+                    <td className="px-3 py-2 text-right text-xs font-medium text-gray-800 tabular-nums">{num(ec.montant_total)} FCFA</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* États disponibles non consommés */}
+      {canEdit && disponibles.length > 0 && (
+        <div>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            Disponibles — non consommés ({disponibles.length})
+          </p>
+          <div className="border border-blue-100 rounded-xl overflow-hidden bg-blue-50/30">
+            <table className="w-full text-sm">
+              <thead className="bg-blue-50 border-b border-blue-100">
+                <tr>
+                  <th className="px-3 py-2 w-8" />
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-blue-400 uppercase">Code</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-blue-400 uppercase">Période</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-semibold text-blue-400 uppercase">Montant</th>
+                </tr>
+              </thead>
+              <tbody>
+                {disponibles.map(ec => (
+                  <tr key={ec.id} className="border-b border-blue-50 hover:bg-blue-50">
+                    <td className="px-3 py-2">
+                      <input type="checkbox" checked={selected.has(ec.id)} onChange={() => toggle(ec.id)}
+                        className="accent-[#087F3E]" />
+                    </td>
+                    <td className="px-3 py-2 font-mono text-xs text-gray-700">{ec.code}</td>
+                    <td className="px-3 py-2 text-xs text-gray-500">{fmtPeriode(ec.periode_debut, ec.periode_fin)}</td>
+                    <td className="px-3 py-2 text-right text-xs font-medium text-gray-800 tabular-nums">{num(ec.montant_total)} FCFA</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-[10px] text-gray-400 mt-1.5">Cochez les états à inclure dans ce décompte puis enregistrez.</p>
+        </div>
+      )}
+
+      {!canEdit && disponibles.length > 0 && (
+        <p className="text-xs text-gray-400">
+          {disponibles.length} état(s) de cession disponible(s) non inclus dans ce décompte.
+        </p>
+      )}
+
+      {/* États non éligibles */}
+      {nonEligibles.length > 0 && (
+        <div>
+          <button onClick={() => setShowNonElig(v => !v)}
+            className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">
+            <ChevronRight size={13} className={`transition-transform ${showNonElig ? "rotate-90" : ""}`} />
+            {nonEligibles.length} état(s) non éligible(s)
+          </button>
+          {showNonElig && (
+            <div className="mt-2 border border-gray-100 rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-100">
+                  <tr>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Code</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Période</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-semibold text-gray-400 uppercase">Montant</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Motif</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {nonEligibles.map(ec => (
+                    <tr key={ec.id} className="border-b border-gray-50 bg-gray-50/50">
+                      <td className="px-3 py-2 font-mono text-xs text-gray-500">{ec.code}</td>
+                      <td className="px-3 py-2 text-xs text-gray-400">{fmtPeriode(ec.periode_debut, ec.periode_fin)}</td>
+                      <td className="px-3 py-2 text-right text-xs text-gray-400 tabular-nums">{num(ec.montant_total)} FCFA</td>
+                      <td className="px-3 py-2 text-xs text-amber-600">{ec.motif}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -831,9 +1247,13 @@ export default function DecompteFormPage() {
     );
   }
 
+  const nbCessionsAttachees = (d?.payload?.postes?.G?.cessionsIds ?? []).length
+    + (d?.payload?.postes?.I?.cessionsIds ?? []).length
+    + (d?.payload?.postes?.K?.cessionsIds ?? []).length;
+
   const tabs = [
     { id: "structure", label: "Structure" },
-    { id: "cessions",  label: `Cessions (${(d?.payload?.postes?.G?.cessionsIds ?? []).length})` },
+    { id: "cessions",  label: `Cessions (${nbCessionsAttachees})` },
     { id: "workflow",  label: `Workflow & Discussion (${(d?.validations ?? []).length})` },
     { id: "pieces",    label: "Pièces jointes" },
   ];
@@ -940,15 +1360,19 @@ export default function DecompteFormPage() {
                 )}
 
                 {activeTab === "cessions" && (
-                  <div className="text-sm text-gray-500 py-6 text-center">
-                    {(d.payload?.postes?.G?.cessionsIds ?? []).length === 0
-                      ? "Aucun état de cession consommé pour cette période."
-                      : `${d.payload.postes.G.cessionsIds.length} état(s) de cession consommé(s).`}
-                  </div>
+                  <CessionsTab decompte={d} canEdit={canEdit} onSave={handleSavePayload} saving={saveMut.isPending} />
                 )}
 
                 {activeTab === "workflow" && (
                   <div className="max-w-xl">
+                    {(() => {
+                      const etapes = [...circuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+                      const currentEtape = etapes.find(e => e.statut_avant === d.statut);
+                      const userRole = currentUser?.role?.designation?.toLowerCase() ?? "";
+                      const isAdmin  = userRole === "admin";
+                      const canVal   = currentEtape && (isAdmin || userRole === currentEtape.profil_code?.toLowerCase());
+                      return canVal ? <ChecklistEtape profil={currentEtape.profil_code} /> : null;
+                    })()}
                     <CircuitStepper
                       decompte={d}
                       circuit={circuit}

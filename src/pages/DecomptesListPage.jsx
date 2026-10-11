@@ -49,9 +49,10 @@ const TYPE_BADGE = {
 const STATUTS_INSTANCE = ["soumis", "valide_dacc", "valide_dex", "valide_dga", "valide_dg", "valide_ct", "valide_cp", "valide_daf"];
 
 const INIT = {
-  contrat_id: "", etat_cession_id: "", montant_brut: "",
-  taux_retenue_garantie: "5", taux_tva: "18",
-  date_echeance: "", observations: "",
+  contrat_id: "",
+  type:       "provisoire",
+  date_debut: "",
+  date_fin:   "",
 };
 
 function MiniKPI({ icon: Icon, label, value, sub, iconColor = "text-gray-500" }) {
@@ -209,27 +210,23 @@ export default function DecomptesListPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     const errs = {};
-    if (!form.contrat_id)      errs.contrat_id      = "Requis";
-    if (!form.etat_cession_id) errs.etat_cession_id = "Requis";
-    if (!form.montant_brut)    errs.montant_brut    = "Requis";
+    if (!form.contrat_id) errs.contrat_id = "Requis";
+    if (!form.date_debut) errs.date_debut  = "Requis";
+    if (!form.date_fin)   errs.date_fin    = "Requis";
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
     try {
       const created = await saveMut.mutateAsync({
-        contrat_id:            parseInt(form.contrat_id),
-        etat_cession_id:       parseInt(form.etat_cession_id),
-        montant_brut:          parseFloat(form.montant_brut),
-        taux_retenue_garantie: parseFloat(form.taux_retenue_garantie || 5),
-        taux_tva:              parseFloat(form.taux_tva || 18),
-        date_echeance:         form.date_echeance || null,
-        observations:          form.observations  || null,
-        statut: "brouillon",
+        contrat_id: parseInt(form.contrat_id),
+        type:       form.type || "provisoire",
+        date_debut: form.date_debut,
+        date_fin:   form.date_fin,
       });
       addToast("Décompte créé.", "success");
       setShowModal(false);
       if (created?.data?.id) navigate(`/decomptes/${created.data.id}`);
     } catch (err) {
-      const msg = err?.response?.data?.error || err?.response?.data?.errors?.[0] || "Erreur lors de la création.";
+      const msg = err?.response?.data?.error || err?.response?.data?.message || "Erreur lors de la création.";
       addToast(msg, "error");
     }
   }
@@ -475,10 +472,10 @@ export default function DecomptesListPage() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <Field label="Contrat" required>
-                <SearchSelect value={form.contrat_id} onChange={e => { set("contrat_id", e.target.value); set("etat_cession_id", ""); }}
+                <SearchSelect value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)}
                   className={`${INPUT} ${errors.contrat_id ? "border-red-400" : ""}`}>
                   <option value="">— Sélectionner un contrat —</option>
-                  {contrats.map(c => (
+                  {contrats.filter(c => c.statut === "actif").map(c => (
                     <option key={c.id} value={c.id}>
                       {c.code} — {c.soustraitant?.raison_sociale ?? "?"} / {c.chantier?.designation ?? "?"}
                     </option>
@@ -487,55 +484,28 @@ export default function DecomptesListPage() {
                 {errors.contrat_id && <p className="text-xs text-red-500 mt-1">{errors.contrat_id}</p>}
               </Field>
 
-              {form.contrat_id && (
-                <Field label="État de cession" required>
-                  <SearchSelect value={form.etat_cession_id} onChange={e => set("etat_cession_id", e.target.value)}
-                    className={`${INPUT} ${errors.etat_cession_id ? "border-red-400" : ""}`}>
-                    <option value="">— Sélectionner un état de cession —</option>
-                    {etatsCession.map(ec => (
-                      <option key={ec.id} value={ec.id}>
-                        {ec.code ?? `EC-${ec.id}`} — {ec.periode_debut ?? ""} → {ec.periode_fin ?? ""}
-                      </option>
-                    ))}
-                  </SearchSelect>
-                  {errors.etat_cession_id && <p className="text-xs text-red-500 mt-1">{errors.etat_cession_id}</p>}
-                  {etatsCession.length === 0 && (
-                    <p className="text-xs text-amber-600 mt-1">
-                      Aucun état de cession pour ce contrat.{" "}
-                      <button type="button" onClick={() => { setShowModal(false); navigate("/etats-cession"); }}
-                        className="underline font-medium hover:text-amber-800">
-                        Créer un état de cession
-                      </button>
-                    </p>
-                  )}
-                </Field>
-              )}
-
-              <Field label="Montant brut HT (FCFA)" required>
-                <input type="number" min="0" value={form.montant_brut} onChange={e => set("montant_brut", e.target.value)}
-                  className={`${INPUT} ${errors.montant_brut ? "border-red-400" : ""}`} placeholder="0" />
-                {errors.montant_brut && <p className="text-xs text-red-500 mt-1">{errors.montant_brut}</p>}
+              <Field label="Type de décompte">
+                <SearchSelect value={form.type} onChange={e => set("type", e.target.value)} className={INPUT}>
+                  {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </SearchSelect>
               </Field>
 
               <div className="grid grid-cols-2 gap-3">
-                <Field label="Retenue garantie (%)">
-                  <input type="number" min="0" max="100" value={form.taux_retenue_garantie}
-                    onChange={e => set("taux_retenue_garantie", e.target.value)} className={INPUT} />
+                <Field label="Date de début" required>
+                  <input type="date" value={form.date_debut} onChange={e => set("date_debut", e.target.value)}
+                    className={`${INPUT} ${errors.date_debut ? "border-red-400" : ""}`} />
+                  {errors.date_debut && <p className="text-xs text-red-500 mt-1">{errors.date_debut}</p>}
                 </Field>
-                <Field label="TVA (%)">
-                  <input type="number" min="0" max="100" value={form.taux_tva}
-                    onChange={e => set("taux_tva", e.target.value)} className={INPUT} />
+                <Field label="Date de fin" required>
+                  <input type="date" value={form.date_fin} onChange={e => set("date_fin", e.target.value)}
+                    className={`${INPUT} ${errors.date_fin ? "border-red-400" : ""}`} />
+                  {errors.date_fin && <p className="text-xs text-red-500 mt-1">{errors.date_fin}</p>}
                 </Field>
               </div>
 
-              <Field label="Date d'échéance">
-                <input type="date" value={form.date_echeance} onChange={e => set("date_echeance", e.target.value)} className={INPUT} />
-              </Field>
-
-              <Field label="Observations">
-                <textarea value={form.observations} onChange={e => set("observations", e.target.value)}
-                  rows={2} className={INPUT} placeholder="Notes optionnelles…" />
-              </Field>
+              <p className="text-[11px] text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
+                Les postes A, B, D seront calculés automatiquement depuis l'attachement validé et les paramètres du contrat. Les cessions se sélectionnent dans l'onglet Cessions après création.
+              </p>
 
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setShowModal(false)}

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { decompteService } from "../services/decompteService";
+import http from "../services/http";
 
 export function useDecomptesPaginated(filters = {}) {
   return useQuery({
@@ -70,6 +71,15 @@ export function useDecompteCircuit() {
   return useQuery({
     queryKey: ["decompte_circuit"],
     queryFn: () => decompteService.getCircuit(),
-    staleTime: 5 * 60 * 1000, // circuit rarement modifié
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useDecompteCessions(id) {
+  return useQuery({
+    queryKey: ["decompte_cessions", String(id)],
+    queryFn: () => http.get(`/decompte/${id}/cessions`).then(r => r.data?.data),
+    enabled: !!id,
+    staleTime: 30 * 1000,
   });
 }

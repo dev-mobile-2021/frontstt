@@ -46,6 +46,11 @@ const INIT = {
   chantier_id: "", soustraitant_id: "",
   objet: "", type_contrat: "",
   montant_initial: "", date_debut: "", date_fin_prevue: "",
+  taux_rg:                  5,
+  taux_revision_prix:       0,
+  taux_avance:              20,
+  taux_remboursement_avance: 6.25,
+  taux_tva:                 18,
 };
 
 function Field({ label, required, children }) {
@@ -152,12 +157,17 @@ export default function ContratsListPage() {
 
     try {
       const created = await saveMut.mutateAsync({
-        chantier_id:     parseInt(form.chantier_id),
-        soustraitant_id: parseInt(form.soustraitant_id),
-        objet:           form.objet.trim(),
-        type_contrat:    form.type_contrat  || null,
-        date_debut:      form.date_debut      || null,
-        date_fin_prevue: form.date_fin_prevue || null,
+        chantier_id:               parseInt(form.chantier_id),
+        soustraitant_id:           parseInt(form.soustraitant_id),
+        objet:                     form.objet.trim(),
+        type_contrat:              form.type_contrat  || null,
+        date_debut:                form.date_debut      || null,
+        date_fin_prevue:           form.date_fin_prevue || null,
+        taux_rg:                   parseFloat(form.taux_rg)                   || 5,
+        taux_revision_prix:        parseFloat(form.taux_revision_prix)        || 0,
+        taux_avance:               parseFloat(form.taux_avance)               || 20,
+        taux_remboursement_avance: parseFloat(form.taux_remboursement_avance) || 6.25,
+        taux_tva:                  parseFloat(form.taux_tva)                  || 18,
         statut: "brouillon",
       });
       addToast("Contrat créé.", "success");
@@ -398,7 +408,7 @@ export default function ContratsListPage() {
       {/* ── Modal création ── */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
               <h2 className="text-base font-bold text-gray-900">Nouveau contrat</h2>
               <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
@@ -449,6 +459,32 @@ export default function ContratsListPage() {
                 <Field label="Date de fin prévue">
                   <input type="date" value={form.date_fin_prevue} onChange={e => set("date_fin_prevue", e.target.value)} className={INPUT} />
                 </Field>
+              </div>
+
+              <div className="border-t border-gray-100 pt-4">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Conditions financières</p>
+                <div className="grid grid-cols-3 gap-3">
+                  <Field label="Retenue de garantie (%)">
+                    <input type="number" step="0.01" min="0" value={form.taux_rg}
+                      onChange={e => set("taux_rg", e.target.value)} className={INPUT} />
+                  </Field>
+                  <Field label="TVA (%)">
+                    <input type="number" step="0.01" min="0" value={form.taux_tva}
+                      onChange={e => set("taux_tva", e.target.value)} className={INPUT} />
+                  </Field>
+                  <Field label="Révision de prix (%)">
+                    <input type="number" step="0.01" min="0" value={form.taux_revision_prix}
+                      onChange={e => set("taux_revision_prix", e.target.value)} className={INPUT} placeholder="0" />
+                  </Field>
+                  <Field label="Avance démarrage (%)">
+                    <input type="number" step="0.01" min="0" value={form.taux_avance}
+                      onChange={e => set("taux_avance", e.target.value)} className={INPUT} />
+                  </Field>
+                  <Field label="Remb. avance / décompte (%)">
+                    <input type="number" step="0.01" min="0" value={form.taux_remboursement_avance}
+                      onChange={e => set("taux_remboursement_avance", e.target.value)} className={INPUT} />
+                  </Field>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2">
