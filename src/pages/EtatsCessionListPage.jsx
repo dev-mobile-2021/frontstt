@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Search, RotateCcw, ChevronLeft, ChevronRight, Plus, X, Loader2,
@@ -16,6 +16,70 @@ import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonTable } from "../components/Skeleton";
 import { formatMontantCourt } from "../utils/formatters";
 import SearchSelect from "../components/SearchSelect";
+
+// ─── MoisSelect ─────────────────────────────────────────────────
+const MOIS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+
+function buildMoisOptions() {
+  const now = new Date();
+  const options = [];
+  for (let i = -2; i <= 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const y = d.getFullYear();
+    const m = d.getMonth(); // 0-based
+    options.push({
+      key:   `${y}-${String(m + 1).padStart(2, "0")}`,
+      label: `25 ${MOIS_FR[m]} ${y}`,
+    });
+  }
+  return options;
+}
+
+function moisToPeriode(key) {
+  if (!key) return { periode_debut: "", periode_fin: "" };
+  const [y, m] = key.split("-").map(Number);
+  const prevM = m === 1 ? 12 : m - 1;
+  const prevY = m === 1 ? y - 1 : y;
+  const pad = n => String(n).padStart(2, "0");
+  return { periode_debut: `${prevY}-${pad(prevM)}-26`, periode_fin: `${y}-${pad(m)}-25` };
+}
+
+function MoisSelect({ value, onChange }) {
+  const options  = buildMoisOptions();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const selected = options.find(o => o.key === value);
+
+  useEffect(() => {
+    function h(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative w-full">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white hover:border-[#087F3E] focus:outline-none">
+        <span className={selected ? "text-gray-800" : "text-gray-400"}>
+          {selected ? selected.label : "— Sélectionner un mois —"}
+        </span>
+        <ChevronRight size={13} className={`text-gray-400 transition-transform ${open ? "rotate-90" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute z-[999] mt-1 left-0 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+          <ul className="max-h-52 overflow-y-auto py-1">
+            {options.map(o => (
+              <li key={o.key} onClick={() => { onChange(o.key); setOpen(false); }}
+                className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] ${value === o.key ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
+                {o.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const STATUTS = [
   { value: "brouillon", label: "Brouillon" },
@@ -66,6 +130,7 @@ export default function EtatsCessionListPage() {
   const [showModal,     setShowModal]    = useState(false);
   const [form,          setForm]         = useState(INIT);
   const [errors,        setErrors]       = useState({});
+  const [selectedMois,  setSelectedMois] = useState("");
 
   useEffect(() => {
     const t = setTimeout(() => { setDebounced(search.trim()); setPage(1); }, 400);
@@ -105,6 +170,36 @@ export default function EtatsCessionListPage() {
     };
   }, [allEC]);
 
+  // Auto-sélection du mois quand le contrat change dans le modal
+  useEffect(() => {
+    if (!form.contrat_id || !showModal) return;
+    const contrat = contrats.find(c => String(c.id) === String(form.contrat_id));
+    fetch(`${API_BASE}/etats-cession?contrat_id=${form.contrat_id}&per_page=1&sort=periode_fin&dir=desc`, {
+      headers: getAuthHeader(),
+    })
+      .then(r => r.json())
+      .then(res => {
+        const last = res?.data?.[0];
+        let debutStr;
+        if (last?.periode_fin) {
+          const d = new Date(last.periode_fin);
+          d.setDate(d.getDate() + 1);
+          debutStr = d.toISOString().slice(0, 10);
+        } else if (contrat?.date_debut) {
+          debutStr = contrat.date_debut.slice(0, 10);
+        } else return;
+        // Retrouve le mois correspondant (début = 26 du mois M-1, donc mois cible = mois de debutStr + 1)
+        const d = new Date(debutStr);
+        const targetY = d.getDate() >= 26 ? (d.getMonth() === 11 ? d.getFullYear() + 1 : d.getFullYear()) : d.getFullYear();
+        const targetM = d.getDate() >= 26 ? (d.getMonth() + 1) % 12 + 1 : d.getMonth() + 1;
+        const key = `${targetY}-${String(targetM).padStart(2, "0")}`;
+        setSelectedMois(key);
+        const { periode_debut, periode_fin } = moisToPeriode(key);
+        setForm(f => ({ ...f, periode_debut, periode_fin }));
+      })
+      .catch(() => {});
+  }, [form.contrat_id, showModal]);
+
   async function handleDelete() {
     try {
       await deleteMut.mutateAsync(confirmDelete.id);
@@ -116,8 +211,9 @@ export default function EtatsCessionListPage() {
     }
   }
 
-  function reset()   { setSearch(""); setStatut(""); setContratFilter(""); setPage(1); }
-  function set(k, v) { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
+  function reset()     { setSearch(""); setStatut(""); setContratFilter(""); setPage(1); }
+  function set(k, v)  { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
+  function openModal() { setForm(INIT); setErrors({}); setSelectedMois(""); setShowModal(true); }
 
   async function exportExcel() {
     try {
@@ -181,7 +277,7 @@ export default function EtatsCessionListPage() {
             >
               <Eye size={15} /> CONSULTATION
             </Link>
-            <button onClick={() => { setForm(INIT); setErrors({}); setShowModal(true); }}
+            <button onClick={openModal}
               className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
               <Plus size={16} /> Nouvel état de cession
             </button>
@@ -357,20 +453,27 @@ export default function EtatsCessionListPage() {
                 </SearchSelect>
                 {errors.contrat_id && <p className="text-xs text-red-500 mt-1">{errors.contrat_id}</p>}
               </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Période début" required>
-                  <input type="date" value={form.periode_debut}
-                    onChange={e => { const v = e.target.value; setForm(f => ({ ...f, periode_debut: v, periode_fin: f.periode_fin < v ? "" : f.periode_fin })); setErrors(er => ({ ...er, periode_debut: undefined })); }}
-                    className={`${INPUT} ${errors.periode_debut ? "border-red-400" : ""}`} />
-                  {errors.periode_debut && <p className="text-xs text-red-500 mt-1">{errors.periode_debut}</p>}
-                </Field>
-                <Field label="Période fin" required>
-                  <input type="date" value={form.periode_fin} min={form.periode_debut || undefined}
-                    onChange={e => set("periode_fin", e.target.value)}
-                    className={`${INPUT} ${errors.periode_fin ? "border-red-400" : ""}`} />
-                  {errors.periode_fin && <p className="text-xs text-red-500 mt-1">{errors.periode_fin}</p>}
-                </Field>
-              </div>
+              <Field label="Mois" required>
+                <MoisSelect
+                  value={selectedMois}
+                  onChange={key => {
+                    setSelectedMois(key);
+                    const { periode_debut, periode_fin } = moisToPeriode(key);
+                    setForm(f => ({ ...f, periode_debut, periode_fin }));
+                    setErrors(e => ({ ...e, periode_debut: undefined, periode_fin: undefined }));
+                  }}
+                />
+                {form.periode_debut && form.periode_fin && (
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    Période : <span className="font-medium text-gray-700">
+                      {new Date(form.periode_debut + "T00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
+                    </span> → <span className="font-medium text-gray-700">
+                      {new Date(form.periode_fin + "T00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
+                    </span>
+                  </p>
+                )}
+                {(errors.periode_debut || errors.periode_fin) && <p className="text-xs text-red-500 mt-1">Sélectionner un mois</p>}
+              </Field>
               <Field label="Observations">
                 <textarea value={form.observations} onChange={e => set("observations", e.target.value)}
                   rows={2} className={INPUT} placeholder="Notes optionnelles…" />

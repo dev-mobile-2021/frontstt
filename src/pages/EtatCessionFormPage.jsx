@@ -759,6 +759,98 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
   );
 }
 
+// ─── Formulaire de création ──────────────────────────────────────
+function CreationForm({ contrats, form, set, saving, onSubmit, onCancel, inputCls, fmtDate }) {
+  const EC_API = import.meta.env.VITE_API_BASE + "/api";
+
+  // Quand le contrat change : auto-remplir les dates
+  useEffect(() => {
+    if (!form.contrat_id) return;
+    const contrat = contrats.find(c => String(c.id) === String(form.contrat_id));
+
+    // Cherche le dernier état de cession du contrat
+    fetch(`${EC_API}/etats-cession?contrat_id=${form.contrat_id}&per_page=1&sort=periode_fin&dir=desc`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("stt_token")}` },
+    })
+      .then(r => r.json())
+      .then(res => {
+        const last = res?.data?.[0];
+        let debut;
+        if (last?.periode_fin) {
+          // Jour suivant la fin du dernier état (normalement le 26)
+          const d = new Date(last.periode_fin);
+          d.setDate(d.getDate() + 1);
+          debut = d.toISOString().slice(0, 10);
+        } else if (contrat?.date_debut) {
+          debut = contrat.date_debut.slice(0, 10);
+        } else {
+          return;
+        }
+        // Fin = 25 du mois suivant le début
+        const dDebut = new Date(debut);
+        const fin = new Date(dDebut.getFullYear(), dDebut.getMonth() + 1, 25);
+        set("periode_debut", debut);
+        set("periode_fin",   fin.toISOString().slice(0, 10));
+      })
+      .catch(() => {});
+  }, [form.contrat_id]);
+
+  // Affichage "26/25" : ex. "26 Sep → 25 Oct 2026"
+  const periodeLabel = form.periode_debut && form.periode_fin
+    ? `${fmtDate(form.periode_debut)} → ${fmtDate(form.periode_fin)}`
+    : null;
+
+  return (
+    <form onSubmit={onSubmit} className="max-w-xl space-y-5">
+      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+        <h2 className="text-base font-bold text-gray-900">Nouvel état de cession</h2>
+
+        {/* Contrat */}
+        <div>
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1.5">Contrat *</label>
+          <ContratSelect value={form.contrat_id} onChange={v => set("contrat_id", v)} contrats={contrats} />
+        </div>
+
+        {/* Période début */}
+        <div>
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1.5">Période début *</label>
+          <input type="date" value={form.periode_debut} onChange={e => set("periode_debut", e.target.value)}
+            className={inputCls} />
+        </div>
+
+        {/* Période fin */}
+        <div>
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1.5">Période fin *</label>
+          <input type="date" value={form.periode_fin} onChange={e => set("periode_fin", e.target.value)}
+            className={inputCls} />
+          {periodeLabel && (
+            <p className="text-xs text-[#087F3E] mt-1.5 font-medium">{periodeLabel}</p>
+          )}
+        </div>
+
+        {/* Observations */}
+        <div>
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1.5">Observations</label>
+          <textarea value={form.observations} onChange={e => set("observations", e.target.value)}
+            rows={3} placeholder="Notes optionnelles…" className={`${inputCls} resize-none`} />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3">
+        <button type="button" onClick={onCancel}
+          className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+          Annuler
+        </button>
+        <button type="submit" disabled={saving}
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium disabled:opacity-60">
+          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+          Créer l'état de cession
+        </button>
+      </div>
+    </form>
+  );
+}
+
 // ─── Page principale ─────────────────────────────────────────────
 export default function EtatCessionFormPage() {
   const { id }          = useParams();
@@ -1027,45 +1119,16 @@ export default function EtatCessionFormPage() {
 
       {/* Formulaire création */}
       {isNew && (
-        <form onSubmit={handleSave} className="space-y-5">
-          <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700">Contrat</h3>
-            <ContratSelect value={form.contrat_id} onChange={v => set("contrat_id", v)} contrats={contrats} />
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700">Période de travaux</h3>
-            <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Mois *</label>
-              <MoisSelect
-                value={selectedMois}
-                onChange={key => {
-                  setSelectedMois(key);
-                  const { periode_debut, periode_fin } = computePeriodeFromMois(key);
-                  setForm(f => ({ ...f, periode_debut, periode_fin }));
-                }}
-                options={moisOptions}
-              />
-              {form.periode_debut && form.periode_fin && (
-                <p className="text-xs text-gray-500 mt-2">
-                  Période : <span className="font-medium text-gray-700">{fmtDate(form.periode_debut)}</span> → <span className="font-medium text-gray-700">{fmtDate(form.periode_fin)}</span>
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1">Observations</label>
-            <textarea value={form.observations} onChange={e => set("observations", e.target.value)}
-              rows={3} placeholder="Remarques éventuelles…" className={`${inputCls} resize-none`} />
-          </div>
-          <div className="flex justify-end gap-3">
-            <button type="button" onClick={() => navigate("/etats-cession")}
-              className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors">Annuler</button>
-            <button type="submit" disabled={saveMut.isPending}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium disabled:opacity-60">
-              {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Créer l'état de cession
-            </button>
-          </div>
-        </form>
+        <CreationForm
+          contrats={contrats}
+          form={form}
+          set={set}
+          saving={saveMut.isPending}
+          onSubmit={handleSave}
+          onCancel={() => navigate("/etats-cession")}
+          inputCls={inputCls}
+          fmtDate={fmtDate}
+        />
       )}
 
       {/* Blocs par poste */}

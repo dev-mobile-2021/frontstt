@@ -218,15 +218,24 @@ export default function ConsultationEtatsCessionPage() {
   }
   function toggleSort() {}
 
+  function buildPdfParams() {
+    const params = new URLSearchParams();
+    if (applied.chantier_id)     params.set("chantier_id",     applied.chantier_id);
+    if (applied.soustraitant_id) params.set("soustraitant_id", applied.soustraitant_id);
+    if (applied.statut_ec)       params.set("statut",          applied.statut_ec);
+    if (applied.date_debut)      params.set("date_debut",      applied.date_debut);
+    if (applied.date_fin)        params.set("date_fin",        applied.date_fin);
+    if (applied.poste)           params.set("poste",           applied.poste);
+    if (applied.code_article)    params.set("code_article",    applied.code_article);
+    if (applied.ref_bs)          params.set("ref_bs",          applied.ref_bs);
+    if (applied.ref_br)          params.set("ref_br",          applied.ref_br);
+    return params;
+  }
+
   async function handlePdfRecap() {
     setPdfLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (applied.chantier_id) params.set("chantier_id", applied.chantier_id);
-      if (applied.statut_ec)   params.set("statut", applied.statut_ec);
-      if (applied.date_debut)  params.set("date_debut", applied.date_debut);
-      if (applied.date_fin)    params.set("date_fin",   applied.date_fin);
-      const resp = await fetch(`${API_BASE}/pdf/recap-cessions?${params}`, { headers: getAuthHeader() });
+      const resp = await fetch(`${API_BASE}/pdf/recap-cessions?${buildPdfParams()}`, { headers: getAuthHeader() });
       const blob = await resp.blob();
       window.open(URL.createObjectURL(blob), "_blank");
     } finally { setPdfLoading(false); }
@@ -235,25 +244,14 @@ export default function ConsultationEtatsCessionPage() {
   async function handlePdfRecapArticles() {
     setPdfLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (applied.chantier_id) params.set("chantier_id", applied.chantier_id);
-      if (applied.statut_ec)   params.set("statut", applied.statut_ec);
-      if (applied.date_debut)  params.set("date_debut", applied.date_debut);
-      if (applied.date_fin)    params.set("date_fin",   applied.date_fin);
-      const resp = await fetch(`${API_BASE}/pdf/recap-articles?${params}`, { headers: getAuthHeader() });
+      const resp = await fetch(`${API_BASE}/pdf/recap-articles?${buildPdfParams()}`, { headers: getAuthHeader() });
       const blob = await resp.blob();
       window.open(URL.createObjectURL(blob), "_blank");
     } finally { setPdfLoading(false); }
   }
 
   async function handleExcel() {
-    const params = new URLSearchParams();
-    if (applied.chantier_id)     params.set("chantier_id", applied.chantier_id);
-    if (applied.soustraitant_id) params.set("soustraitant_id", applied.soustraitant_id);
-    if (applied.statut_ec)       params.set("statut", applied.statut_ec);
-    if (applied.date_debut)      params.set("date_debut", applied.date_debut);
-    if (applied.date_fin)        params.set("date_fin",   applied.date_fin);
-    const resp = await fetch(`${API_BASE}/excel/consultation-lignes?${params}`, { headers: getAuthHeader() });
+    const resp = await fetch(`${API_BASE}/excel/consultation-lignes?${buildPdfParams()}`, { headers: getAuthHeader() });
     const blob = await resp.blob();
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "consultation-cessions.xlsx"; a.click();
   }
@@ -267,7 +265,7 @@ export default function ConsultationEtatsCessionPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500">
         <button onClick={() => navigate("/etats-cession")} className="hover:text-[#087F3E] flex items-center gap-1">
@@ -277,102 +275,111 @@ export default function ConsultationEtatsCessionPage() {
         <span className="text-gray-900 font-medium">Consultation articles</span>
       </div>
 
-      <PageHeader
-        title="Consultation Articles"
-        subtitle="Vue détail des lignes de cession — style Sage X3"
-        action={
+      {/* Entête + Filtres intégrés */}
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        {/* Titre + actions */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Consultation Articles</h1>
+            <p className="text-xs text-gray-400 mt-0.5">Récap matériaux — lignes de cession</p>
+          </div>
           <div className="flex gap-2">
             <button onClick={handlePdfRecap} disabled={pdfLoading || lignes.length === 0}
-              className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-40">
-              <FileDown size={14} /> PDF récap
+              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 disabled:opacity-40">
+              <FileDown size={13} /> PDF récap
             </button>
             <button onClick={handlePdfRecapArticles} disabled={pdfLoading || lignes.length === 0}
-              className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-40">
-              <FileDown size={14} /> PDF récap articles
+              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 disabled:opacity-40">
+              <FileDown size={13} /> PDF matériaux
             </button>
             <button onClick={handleExcel}
-              className="inline-flex items-center gap-1.5 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50">
-              <FileSpreadsheet size={14} /> Excel
+              className="inline-flex items-center gap-1.5 bg-[#087F3E] text-white px-3 py-1.5 rounded-lg text-xs hover:bg-[#065A2C]">
+              <FileSpreadsheet size={13} /> Excel
             </button>
           </div>
-        }
-      />
+        </div>
 
-      {/* Filtres */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
-        <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-          <Filter size={14} /> Filtres
+        {/* Filtres dans l'entête */}
+        <div className="px-5 py-4 space-y-3">
+          {/* Ligne 1 : Chantier + STT + Statut + Poste */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="md:col-span-1 space-y-1">
+              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Chantier</label>
+              <ChantierSelect value={filters.chantier_id} onChange={v => set("chantier_id", v)} chantiers={chantiers} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Sous-traitant</label>
+              <select value={filters.soustraitant_id} onChange={e => set("soustraitant_id", e.target.value)} className={inputCls}>
+                <option value="">Tous</option>
+                {soustraitants.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Statut EC</label>
+              <select value={filters.statut_ec} onChange={e => set("statut_ec", e.target.value)} className={inputCls}>
+                {STATUT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Poste</label>
+              <select value={filters.poste} onChange={e => set("poste", e.target.value)} className={inputCls}>
+                {POSTE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Ligne 2 : Période + Code article + Réf BS + Réf BR + Appliquer */}
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
+            <div className="space-y-1">
+              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Période début</label>
+              <input type="date" value={filters.date_debut} onChange={e => set("date_debut", e.target.value)} className={inputCls} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Période fin</label>
+              <input type="date" value={filters.date_fin} min={filters.date_debut || undefined} onChange={e => set("date_fin", e.target.value)} className={inputCls} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Code article</label>
+              <input value={filters.code_article} onChange={e => set("code_article", e.target.value)}
+                placeholder="ex. FBNOR6" className={inputCls} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Réf. BS</label>
+              <input value={filters.ref_bs} onChange={e => set("ref_bs", e.target.value)}
+                placeholder="ex. BS-X3-..." className={inputCls} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Réf. BR</label>
+              <input value={filters.ref_br} onChange={e => set("ref_br", e.target.value)}
+                placeholder="ex. BR-..." className={inputCls} />
+            </div>
+            <div className="flex gap-2">
+              {hasActiveFilters && (
+                <button onClick={handleReset} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 border border-gray-200 px-2.5 py-2 rounded-lg">
+                  <X size={12} /> Reset
+                </button>
+              )}
+              <button onClick={handleApply}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                <Search size={13} /> Appliquer
+              </button>
+            </div>
+          </div>
+
+          {/* Badges filtres actifs */}
           {hasActiveFilters && (
-            <button onClick={handleReset} className="ml-auto text-xs text-gray-400 hover:text-red-500 flex items-center gap-1">
-              <X size={12} /> Réinitialiser
-            </button>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {applied.chantier_id && <span className="text-[10px] bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">{chantiers.find(c => String(c.id) === applied.chantier_id)?.designation ?? applied.chantier_id}</span>}
+              {applied.soustraitant_id && <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">{soustraitants.find(s => String(s.id) === applied.soustraitant_id)?.raison_sociale ?? applied.soustraitant_id}</span>}
+              {applied.statut_ec && <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">{applied.statut_ec}</span>}
+              {applied.poste && <span className="text-[10px] bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full">{applied.poste}</span>}
+              {applied.date_debut && <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">Du {applied.date_debut}</span>}
+              {applied.date_fin && <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">Au {applied.date_fin}</span>}
+              {applied.code_article && <span className="text-[10px] bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full">{applied.code_article}</span>}
+              {applied.ref_bs && <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">BS: {applied.ref_bs}</span>}
+              {applied.ref_br && <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">BR: {applied.ref_br}</span>}
+            </div>
           )}
-        </div>
-
-        {/* Ligne 1 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="space-y-1 lg:col-span-2">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Chantier</label>
-            <ChantierSelect value={filters.chantier_id} onChange={v => set("chantier_id", v)} chantiers={chantiers} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Sous-traitant</label>
-            <SearchSelect value={filters.soustraitant_id} onChange={e => set("soustraitant_id", e.target.value)} className={inputCls}>
-              <option value="">Tous</option>
-              {soustraitants.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
-            </SearchSelect>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Statut EC</label>
-            <SearchSelect value={filters.statut_ec} onChange={e => set("statut_ec", e.target.value)} className={inputCls}>
-              {STATUT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </SearchSelect>
-          </div>
-        </div>
-
-        {/* Ligne 2 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date début</label>
-            <input type="date" value={filters.date_debut} onChange={e => set("date_debut", e.target.value)} className={inputCls} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Date fin</label>
-            <input type="date" value={filters.date_fin} min={filters.date_debut || undefined} onChange={e => set("date_fin", e.target.value)} className={inputCls} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Poste</label>
-            <SearchSelect value={filters.poste} onChange={e => set("poste", e.target.value)} className={inputCls}>
-              {POSTE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </SearchSelect>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Code article</label>
-            <input value={filters.code_article} onChange={e => set("code_article", e.target.value)}
-              placeholder="ex. FBNOR6" className={inputCls} />
-          </div>
-        </div>
-
-        {/* Ligne 3 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Réf. BS</label>
-            <input value={filters.ref_bs} onChange={e => set("ref_bs", e.target.value)}
-              placeholder="ex. BS-X3-..." className={inputCls} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-gray-500 font-medium uppercase tracking-wide">Réf. BR</label>
-            <input value={filters.ref_br} onChange={e => set("ref_br", e.target.value)}
-              placeholder="ex. BR-..." className={inputCls} />
-          </div>
-        </div>
-
-        {/* Bouton Appliquer */}
-        <div className="flex justify-end pt-1">
-          <button onClick={handleApply}
-            className="inline-flex items-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white px-8 py-2.5 rounded-lg text-sm font-medium transition-colors">
-            <Search size={14} /> Appliquer
-          </button>
         </div>
       </div>
 

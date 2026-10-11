@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   ArrowLeft, Save, Send, ChevronRight, FileDown, Info, CheckCircle2,
-  Clock, XCircle, Circle, RotateCcw, AlertTriangle, Plus, Trash2,
+  Clock, XCircle, Circle, RotateCcw, AlertTriangle, Plus, Trash2, RefreshCw,
 } from "lucide-react";
 import { useDecompte, useSaveDecompte, useValiderDecompte, useRejeterDecompte, usePayerDecompte, useDecompteCircuit } from "../hooks/useDecomptes";
 import { useContratsPaginated } from "../hooks/useContrats";
@@ -614,7 +614,45 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
         </div>
 
         {canEdit && (
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3">
+            {/* Réinitialisation par niveau */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">Réinitialiser :</span>
+              <button
+                onClick={() => {
+                  if (!window.confirm("Réinitialiser le Poste A depuis l'attachement validé le plus récent ? Les postes manuels (B, B2, E…) sont conservés.")) return;
+                  onSave(buildPayload());
+                }}
+                disabled={saving}
+                title="Re-lit le Poste A depuis l'attachement validé"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50">
+                <RefreshCw size={11} /> Attachement
+              </button>
+              <button
+                onClick={() => {
+                  if (!window.confirm("Réinitialiser les remboursements cessions (H, J, L) à hauteur des montants cédés (G, I, K) ?")) return;
+                  setPostes(prev => ({ ...prev, H: cumulG, J: cumulI, L: cumulK }));
+                  onSave({
+                    mode,
+                    postes: {
+                      B:  { cumulM: postes.B  },
+                      B2: { cumulM: postes.B2 },
+                      E:  { cumulM: postes.E  },
+                      H:  { cumulM: cumulG    },
+                      J:  { cumulM: cumulI    },
+                      L:  { cumulM: cumulK    },
+                      F:  { cumulM: postes.F  },
+                      M:  { cumulM: postes.M  },
+                    },
+                  });
+                }}
+                disabled={saving}
+                title="Cale H=G, J=I, L=K — remboursement total des cessions"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50">
+                <RefreshCw size={11} /> Cessions (MTL/MTX/RH)
+              </button>
+            </div>
+
             <button onClick={() => onSave(buildPayload())} disabled={saving}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
               {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={14} />}
@@ -710,7 +748,11 @@ export default function DecompteFormPage() {
   const rejeterMut = useRejeterDecompte();
   const payerMut   = usePayerDecompte();
 
-  const canEdit = isNew || decompte?.statut === "brouillon";
+  // Décompte verrouillé si le DG a déjà validé (même si rejeté ensuite)
+  const lockedByDg = !isNew && (decompte?.validations ?? []).some(
+    v => v.profil_code?.toLowerCase() === "dg" && v.action === "valide"
+  );
+  const canEdit = !lockedByDg && (isNew || decompte?.statut === "brouillon");
   const d       = decompte;
 
   async function handleCreate(form) {
@@ -833,8 +875,14 @@ export default function DecompteFormPage() {
             <p className="text-xs text-gray-400 mt-0.5">Mode : Saisie manuelle</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Bandeau verrouillage DG */}
+            {lockedByDg && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs">
+                <XCircle size={12} /> Verrouillé — validé par le DG, aucune modification possible
+              </div>
+            )}
             {/* Bandeau statut en validation */}
-            {d.statut !== "brouillon" && d.statut !== "paye" && d.statut !== "rejete" && (() => {
+            {!lockedByDg && d.statut !== "brouillon" && d.statut !== "paye" && d.statut !== "rejete" && (() => {
               const etapes = [...circuit].sort((a, b) => a.ordre - b.ordre);
               const cur = etapes.find(e => e.statut_avant === d.statut);
               return cur ? (
