@@ -172,20 +172,24 @@ function ParametrageFinancierTab({ contrat, avenants }) {
   const avenatsValides = avenants.filter(a => a.statut === "valide");
   const totalAvenants  = avenatsValides.reduce((s, a) => s + parseFloat(a.montant ?? 0), 0);
 
-  const [fin, setFin] = useState({
-    taux_rg:                   contrat?.taux_rg ?? 5,
-    taux_revision_prix:        contrat?.taux_revision_prix ?? 0,
-    taux_avance:               contrat?.taux_avance ?? 5,
-    taux_remboursement_avance: contrat?.taux_remboursement_avance ?? 6.25,
-    delai_paiement:            contrat?.delai_paiement ?? 30,
-    taux_penalite:             contrat?.taux_penalite ?? 0.1,
-    plafond_penalite:          contrat?.plafond_penalite ?? 10,
-    taux_tva:                  contrat?.taux_tva ?? 18,
-    delai_execution:           contrat?.delai_execution ?? "",
-    date_signature:            contrat?.date_signature ? contrat.date_signature.substring(0, 10) : "",
-    financement:               contrat?.financement ?? "",
+  const buildFin = (c) => ({
+    taux_rg:                   c?.taux_rg ?? 5,
+    taux_revision_prix:        c?.taux_revision_prix ?? 0,
+    taux_avance:               c?.taux_avance ?? 5,
+    taux_remboursement_avance: c?.taux_remboursement_avance ?? 6.25,
+    delai_paiement:            c?.delai_paiement ?? 30,
+    taux_penalite:             c?.taux_penalite ?? 0.1,
+    plafond_penalite:          c?.plafond_penalite ?? 10,
+    taux_tva:                  c?.taux_tva ?? 18,
+    delai_execution:           c?.delai_execution ?? "",
+    date_signature:            c?.date_signature ? c.date_signature.substring(0, 10) : "",
+    financement:               c?.financement ?? "",
   });
+
+  const [fin, setFin] = useState(() => buildFin(contrat));
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => { if (contrat?.id) setFin(buildFin(contrat)); }, [contrat?.id, contrat?.updated_at]);
 
   const set = (k, v) => setFin(f => ({ ...f, [k]: v }));
 
