@@ -2,22 +2,24 @@ import http from "./http";
 import { gql } from "./gql";
 
 const LIST_FIELDS = `
-  id code contrat_id etat_cession_id statut
-  montant_brut montant_ht montant_ttc montant_retenue_garantie
-  taux_retenue_garantie taux_tva montant_avances_deduites montant_penalites
-  date_echeance motif_rejet created_at updated_at
+  id code contrat_id statut type date_debut date_fin
+  montant_ht montant_ttc motif_rejet created_at updated_at
   contrat { id code objet soustraitant { id raison_sociale } chantier { id code designation } }
-  etat_cession { id code periode_debut periode_fin }
 `;
 
 const DETAIL_FIELDS = `
-  id code contrat_id etat_cession_id statut motif_rejet observations date_echeance
-  montant_brut taux_retenue_garantie montant_retenue_garantie
-  montant_avances_deduites montant_penalites montant_ht taux_tva montant_tva montant_ttc
+  id code contrat_id statut type motif_rejet
+  date_debut date_fin postes
+  montant_ht montant_tva montant_ttc
   created_by updated_by created_at updated_at
   validations { id profil_code libelle action motif validated_at user { id nom prenom } }
-  contrat { id code objet montant_initial montant_actuel soustraitant { id raison_sociale } chantier { id code designation } avenants { id statut montant } }
-  etat_cession { id code montant_total periode_debut periode_fin }
+  contrat {
+    id code objet montant_initial montant_actuel
+    taux_rg taux_revision_prix taux_avance taux_remboursement_avance taux_tva
+    soustraitant { id raison_sociale }
+    chantier { id code designation }
+    avenants { id statut montant }
+  }
 `;
 
 export const decompteService = {
