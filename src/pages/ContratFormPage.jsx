@@ -757,7 +757,7 @@ function PiecesJointesTab({ contratId, isNew }) {
             multiple
             accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
             className="hidden"
-            onChange={e => handleFiles(e.target.files)}
+            onChange={e => { handleFiles(e.target.files); e.target.value = ""; }}
           />
         </div>
       </div>
@@ -2206,7 +2206,7 @@ export default function ContratFormPage() {
 
       <PageHeader
         title={isNew ? "Nouveau contrat" : `${contrat.code} — ${contrat.objet}`}
-        subtitle={isNew ? "Remplir les informations du contrat" : [contrat.chantier?.designation, contrat.soustraitant?.raison_sociale].filter(Boolean).join(" · ")}
+        subtitle={isNew ? "Remplir les informations du contrat" : <span>{contrat.chantier?.designation}{contrat.soustraitant?.raison_sociale && <><br /><span className="text-gray-400">{contrat.soustraitant.raison_sociale}</span></>}</span>}
         action={
           !isNew && <StatusBadge statut={contrat.statut} />
         }
