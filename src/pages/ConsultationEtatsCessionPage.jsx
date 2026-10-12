@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
@@ -46,36 +47,49 @@ const INIT_FILTERS = {
   code_article: "", ref_bs: "", ref_br: "",
 };
 
-function ChantierSelect({ value, onChange, chantiers }) {
+function PortalSearchSelect({ value, onChange, options, placeholder, labelKey = "label", valueKey = "id" }) {
   const [open, setOpen]     = useState(false);
   const [search, setSearch] = useState("");
-  const ref                 = useRef(null);
+  const btnRef              = useRef(null);
+  const [rect, setRect]     = useState(null);
 
-  const selected   = chantiers.find(c => String(c.id) === String(value));
-  const filtered   = chantiers.filter(c =>
-    !search || `${c.code} ${c.designation}`.toLowerCase().includes(search.toLowerCase())
+  const selected = options.find(o => String(o[valueKey]) === String(value));
+  const filtered = options.filter(o =>
+    !search || String(o[labelKey]).toLowerCase().includes(search.toLowerCase())
   );
 
   useEffect(() => {
-    function onClick(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
+    if (!open) return;
+    function onDown(e) {
+      if (btnRef.current && !btnRef.current.contains(e.target) &&
+          !document.getElementById("portal-search-select")?.contains(e.target)) {
+        setOpen(false); setSearch("");
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
 
-  function pick(id) { onChange(id); setOpen(false); setSearch(""); }
+  function handleOpen() {
+    if (btnRef.current) setRect(btnRef.current.getBoundingClientRect());
+    setOpen(o => !o);
+  }
+
+  function pick(v) { onChange(v); setOpen(false); setSearch(""); }
 
   return (
-    <div ref={ref} className="relative w-full">
-      <button type="button" onClick={() => setOpen(o => !o)}
+    <>
+      <button ref={btnRef} type="button" onClick={handleOpen}
         className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
         <span className={selected ? "text-gray-800 truncate" : "text-gray-400"}>
-          {selected ? selected.designation : "Tous les chantiers"}
+          {selected ? selected[labelKey] : placeholder}
         </span>
         <ChevronDown size={14} className={`ml-2 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
-
-      {open && (
-        <div className="absolute z-[999] mt-1 left-0 min-w-[220px] w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
+      {open && rect && createPortal(
+        <div id="portal-search-select"
+          style={{ position: "fixed", top: rect.bottom + 4, left: rect.left, width: rect.width, zIndex: 9999 }}
+          className="bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
           <div className="p-2 border-b border-gray-100">
             <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
               <Search size={13} className="text-gray-400 shrink-0" />
@@ -88,21 +102,20 @@ function ChantierSelect({ value, onChange, chantiers }) {
           <ul className="max-h-52 overflow-y-auto py-1">
             <li onClick={() => pick("")}
               className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] ${!value ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-500"}`}>
-              Tous les chantiers
+              {placeholder}
             </li>
-            {filtered.length === 0 && (
-              <li className="px-3 py-3 text-sm text-gray-400 text-center">Aucun résultat</li>
-            )}
-            {filtered.map(c => (
-              <li key={c.id} onClick={() => pick(String(c.id))}
-                className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] transition-colors ${String(value) === String(c.id) ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
-                {c.designation}
+            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-gray-400 text-center">Aucun résultat</li>}
+            {filtered.map(o => (
+              <li key={o[valueKey]} onClick={() => pick(String(o[valueKey]))}
+                className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] transition-colors ${String(value) === String(o[valueKey]) ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
+                {o[labelKey]}
               </li>
             ))}
           </ul>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   );
 }
 
@@ -305,17 +318,23 @@ export default function ConsultationEtatsCessionPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="md:col-span-1 space-y-1">
               <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Chantier</label>
-              <select value={filters.chantier_id} onChange={e => set("chantier_id", e.target.value)} className={inputCls}>
-                <option value="">Tous les chantiers</option>
-                {chantiers.map(c => <option key={c.id} value={c.id}>{c.designation}</option>)}
-              </select>
+              <PortalSearchSelect
+                value={filters.chantier_id}
+                onChange={v => set("chantier_id", v)}
+                options={chantiers}
+                placeholder="Tous les chantiers"
+                labelKey="designation"
+              />
             </div>
             <div className="space-y-1">
               <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Sous-traitant</label>
-              <select value={filters.soustraitant_id} onChange={e => set("soustraitant_id", e.target.value)} className={inputCls}>
-                <option value="">Tous</option>
-                {soustraitants.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
-              </select>
+              <PortalSearchSelect
+                value={filters.soustraitant_id}
+                onChange={v => set("soustraitant_id", v)}
+                options={soustraitants}
+                placeholder="Tous les STT"
+                labelKey="raison_sociale"
+              />
             </div>
             <div className="space-y-1">
               <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Statut EC</label>
