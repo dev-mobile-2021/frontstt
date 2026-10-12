@@ -1188,6 +1188,7 @@ export default function DecompteFormPage() {
   const deleteMut  = useDeleteDecompte();
 
   const [confirmDel, setConfirmDel] = useState(false);
+  const { currentUser } = useUser();
 
   // Décompte verrouillé si le DG a déjà validé (même si rejeté ensuite)
   const lockedByDg = !isNew && (decompte?.validations ?? []).some(
