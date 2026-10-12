@@ -45,7 +45,12 @@ export const decompteService = {
       }`,
       { id: parseInt(id, 10) }
     );
-    return data.decomptesPaginated.data[0] ?? null;
+    const item = data.decomptesPaginated.data[0] ?? null;
+    if (item) {
+      try { item.payload = typeof item.postes === "string" ? JSON.parse(item.postes) : (item.postes ?? {}); }
+      catch { item.payload = {}; }
+    }
+    return item;
   },
 
   async save(payload) {
