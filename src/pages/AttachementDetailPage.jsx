@@ -1097,6 +1097,26 @@ function ZoneDocuments({ att, canEdit, updateAttachement }) {
     }
   }
 
+  async function handleDownload(doc, preview = false) {
+    try {
+      const token = localStorage.getItem("stt_token");
+      const url   = pieceJointeService.downloadUrl(doc.id);
+      const resp  = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!resp.ok) { addToast("Erreur lors du téléchargement.", "error"); return; }
+      const blob  = await resp.blob();
+      const objUrl = URL.createObjectURL(blob);
+      if (preview) {
+        window.open(objUrl, "_blank");
+      } else {
+        const a = document.createElement("a");
+        a.href = objUrl; a.download = doc.nom; a.click();
+      }
+      setTimeout(() => URL.revokeObjectURL(objUrl), 10000);
+    } catch {
+      addToast("Erreur lors du téléchargement.", "error");
+    }
+  }
+
   async function handleDelete(doc) {
     try {
       await pieceJointeService.delete(doc.id);
@@ -1145,22 +1165,19 @@ function ZoneDocuments({ att, canEdit, updateAttachement }) {
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
               {isViewable(doc.mime) && (
-                <a
-                  href={pieceJointeService.downloadUrl(doc.id)}
-                  target="_blank"
-                  rel="noreferrer"
+                <button
+                  onClick={() => handleDownload(doc, true)}
                   title="Visualiser"
                   className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                   <Eye size={14} />
-                </a>
+                </button>
               )}
-              <a
-                href={pieceJointeService.downloadUrl(doc.id)}
-                download={doc.nom}
+              <button
+                onClick={() => handleDownload(doc, false)}
                 title="Télécharger"
                 className="p-1.5 rounded-lg text-gray-400 hover:text-[#087F3E] hover:bg-green-50 transition-colors">
                 <Download size={14} />
-              </a>
+              </button>
               {canEdit && (
                 <button
                   onClick={() => handleDelete(doc)}

@@ -114,7 +114,7 @@ function DecomptesTab({ decomptes, contratId, isNew }) {
   if (decomptes.length === 0) return (
     <div className="text-center py-12 text-gray-400 text-sm">
       <p className="font-medium text-gray-500">Aucun décompte</p>
-      <Link to={`/decomptes/nouveau`} className="mt-3 inline-block text-xs text-[#087F3E] hover:underline">
+      <Link to={`/decomptes/nouveau?contrat_id=${contratId}`} className="mt-3 inline-block text-xs text-[#087F3E] hover:underline">
         Créer un décompte →
       </Link>
     </div>
@@ -122,7 +122,7 @@ function DecomptesTab({ decomptes, contratId, isNew }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Link to="/decomptes/nouveau" className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors">
+        <Link to={`/decomptes/nouveau?contrat_id=${contratId}`} className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors">
           + Nouveau décompte
         </Link>
       </div>
