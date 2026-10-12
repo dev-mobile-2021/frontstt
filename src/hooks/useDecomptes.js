@@ -22,7 +22,10 @@ export function useSaveDecompte() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (payload) => decompteService.save(payload),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["decomptes"] }),
+    onSuccess: (_data, payload) => {
+      qc.invalidateQueries({ queryKey: ["decomptes"] });
+      if (payload?.id) qc.invalidateQueries({ queryKey: ["decompte", String(payload.id)] });
+    },
   });
 }
 

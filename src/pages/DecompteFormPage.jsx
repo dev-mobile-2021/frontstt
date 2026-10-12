@@ -855,10 +855,7 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-400">Réinitialiser :</span>
               <button
-                onClick={() => {
-                  if (!window.confirm("Réinitialiser le Poste A depuis l'attachement validé le plus récent ? Les postes manuels (B, B2, E…) sont conservés.")) return;
-                  onSave(buildPayload());
-                }}
+                onClick={() => onSave(buildPayload())}
                 disabled={saving}
                 title="Re-lit le Poste A depuis l'attachement validé"
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50">
@@ -866,7 +863,6 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
               </button>
               <button
                 onClick={() => {
-                  if (!window.confirm("Réinitialiser les taux de remboursement cessions à 100% (remboursement intégral MTX/MTL/RH) ?")) return;
                   setPostes(prev => ({ ...prev, tauxH: 100, tauxJ: 100, tauxL: 100 }));
                   onSave({
                     mode,
