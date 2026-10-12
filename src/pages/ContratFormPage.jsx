@@ -746,11 +746,12 @@ function PiecesJointesTab({ contratId, isNew }) {
           onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
           className={`border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 py-6 cursor-pointer transition-colors
             ${dragging ? "border-[#087F3E] bg-[#E8F5EE]/60" : "border-gray-200 hover:border-[#087F3E]/50 hover:bg-gray-50"}`}
-          onClick={() => document.getElementById("pj-file-input").click()}
+          onClick={() => !uploadMut.isPending && document.getElementById("pj-file-input").click()}
         >
-          <Upload size={20} className="text-gray-400" />
-          <p className="text-sm text-gray-500">Glissez-déposez vos fichiers ici ou <span className="text-[#087F3E] font-medium">cliquez pour parcourir</span></p>
-          <p className="text-xs text-gray-400">PDF, DOCX, XLSX, JPG, PNG — max 10 MB par fichier</p>
+          {uploadMut.isPending
+            ? <><div className="w-5 h-5 border-2 border-[#087F3E] border-t-transparent rounded-full animate-spin" /><p className="text-sm text-[#087F3E]">Upload en cours…</p></>
+            : <><Upload size={20} className="text-gray-400" /><p className="text-sm text-gray-500">Glissez-déposez vos fichiers ici ou <span className="text-[#087F3E] font-medium">cliquez pour parcourir</span></p><p className="text-xs text-gray-400">PDF, DOCX, XLSX, JPG, PNG — max 10 MB par fichier</p></>
+          }
           <input
             id="pj-file-input"
             type="file"
