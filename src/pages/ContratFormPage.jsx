@@ -1362,9 +1362,15 @@ function AttachementsTab({ contratId, chantierId, isNew, contrat }) {
     .sort((a, b) => (b.periodeDebut ?? "").localeCompare(a.periodeDebut ?? ""));
 
   function handleShowForm() {
-    const suggestion = nextPeriode(contratAtts, contrat?.date_debut);
-    setForm(suggestion);
-    setShowForm(true);
+    try {
+      const suggestion = nextPeriode(contratAtts, contrat?.date_debut);
+      setForm(suggestion);
+      setShowForm(true);
+    } catch (e) {
+      console.error("handleShowForm error:", e);
+      setForm({ periode_debut: "", periode_fin: "" });
+      setShowForm(true);
+    }
   }
 
   if (isNew) return (
