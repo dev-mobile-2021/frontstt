@@ -1327,9 +1327,13 @@ function nextPeriode(contratAtts, dateDebut) {
     debut = dateDebut ? dateDebut.slice(0, 10) : new Date().toISOString().slice(0, 10);
   } else {
     // Lendemain du dernier periodeFin
-    const d = new Date(last.periodeFin + "T00:00");
-    d.setDate(d.getDate() + 1);
-    debut = d.toISOString().slice(0, 10);
+    if (!last.periodeFin) {
+      debut = dateDebut ? dateDebut.slice(0, 10) : new Date().toISOString().slice(0, 10);
+    } else {
+      const d = new Date(last.periodeFin + "T00:00");
+      d.setDate(d.getDate() + 1);
+      debut = d.toISOString().slice(0, 10);
+    }
   }
 
   // Fin = 25 du mois de début (ou mois suivant si on est déjà après le 25)

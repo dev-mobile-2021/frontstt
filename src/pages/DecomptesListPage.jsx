@@ -105,7 +105,7 @@ export default function DecomptesListPage() {
     return () => clearTimeout(t);
   }, [search]);
 
-  const filters = { code: debounced || undefined, statut: statut || undefined, type: typeFilter || undefined, contrat_id: contratFilter ? parseInt(contratFilter) : undefined, page, count: 15 };
+  const filters = { code: debounced || undefined, statut: statut || undefined, type: typeFilter || undefined, contrat_id: contratFilter ? parseInt(contratFilter) : undefined, soustraitant_id: sttFilter ? parseInt(sttFilter) : undefined, page, count: 15 };
 
   const { data: circuitData = [] } = useDecompteCircuit();
 
@@ -140,12 +140,7 @@ export default function DecomptesListPage() {
       .sort((a, b) => a.nom.localeCompare(b.nom));
   }, [contrats]);
 
-  // Filtrage client-side par sous-traitant (le backend ne filtre pas par STT directement)
-  const rows = useMemo(() => {
-    const base = data?.data ?? [];
-    if (!sttFilter) return base;
-    return base.filter(d => String(d.contrat?.soustraitant_id ?? d.contrat?.soustraitant?.id) === sttFilter);
-  }, [data, sttFilter]);
+  const rows = data?.data ?? [];
 
   const contratIdInt = form.contrat_id ? parseInt(form.contrat_id) : undefined;
   const { data: ecData } = useEtatsCessionPaginated(

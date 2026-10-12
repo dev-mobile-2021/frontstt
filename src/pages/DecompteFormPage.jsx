@@ -4,7 +4,7 @@ import {
   ArrowLeft, Save, Send, ChevronRight, FileDown, Info, CheckCircle2,
   Clock, XCircle, Circle, RotateCcw, AlertTriangle, Plus, Trash2, RefreshCw,
 } from "lucide-react";
-import { useDecompte, useSaveDecompte, useValiderDecompte, useRejeterDecompte, usePayerDecompte, useDecompteCircuit, useDecompteCessions } from "../hooks/useDecomptes";
+import { useDecompte, useSaveDecompte, useValiderDecompte, useRejeterDecompte, usePayerDecompte, useDecompteCircuit, useDecompteCessions, useDeleteDecompte } from "../hooks/useDecomptes";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
@@ -1183,6 +1183,9 @@ export default function DecompteFormPage() {
   const validerMut = useValiderDecompte();
   const rejeterMut = useRejeterDecompte();
   const payerMut   = usePayerDecompte();
+  const deleteMut  = useDeleteDecompte();
+
+  const [confirmDel, setConfirmDel] = useState(false);
 
   // Décompte verrouillé si le DG a déjà validé (même si rejeté ensuite)
   const lockedByDg = !isNew && (decompte?.validations ?? []).some(
@@ -1239,6 +1242,16 @@ export default function DecompteFormPage() {
       addToast("Décompte marqué payé.", "success");
     } catch (err) {
       addToast(err.response?.data?.error ?? "Erreur.", "error");
+    }
+  }
+
+  async function handleDelete() {
+    try {
+      await deleteMut.mutateAsync(parseInt(id, 10));
+      addToast("Décompte supprimé.", "info");
+      navigate("/decomptes");
+    } catch (err) {
+      addToast(err.response?.data?.error ?? "Erreur lors de la suppression.", "error");
     }
   }
 
@@ -1343,6 +1356,12 @@ export default function DecompteFormPage() {
                 </div>
               ) : null;
             })()}
+            {canEdit && !isNew && (
+              <button onClick={() => setConfirmDel(true)}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50">
+                <Trash2 size={14} /> Supprimer
+              </button>
+            )}
             <button onClick={handleExcel}
               className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-700 border border-emerald-200 rounded-xl hover:bg-emerald-50">
               <FileDown size={14} /> Excel
@@ -1433,6 +1452,16 @@ export default function DecompteFormPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={confirmDel}
+        title="Supprimer le décompte"
+        message={`Supprimer définitivement ${d?.code} ? Cette action est irréversible.`}
+        confirmLabel="Supprimer"
+        confirmClass="bg-red-500 hover:bg-red-600 text-white"
+        onConfirm={() => { setConfirmDel(false); handleDelete(); }}
+        onCancel={() => setConfirmDel(false)}
+      />
     </div>
   );
 }
