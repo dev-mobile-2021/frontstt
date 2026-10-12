@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   ArrowLeft, Save, Send, ChevronRight, FileDown, Info, CheckCircle2,
   Clock, XCircle, Circle, RotateCcw, AlertTriangle, Plus, Trash2, RefreshCw,
@@ -1102,12 +1102,12 @@ function CessionsTab({ decompte, canEdit, onSave, saving }) {
 }
 
 // ─── Formulaire nouveau décompte ─────────────────────────────────────────────
-function NouveauForm({ onSave, saving }) {
+function NouveauForm({ onSave, saving, initialContratId }) {
   const { data: contratsData } = useContratsPaginated({ count: 100 });
   const contrats = contratsData?.data ?? [];
 
   const [form, setForm] = useState({
-    contrat_id: "",
+    contrat_id: initialContratId ? String(initialContratId) : "",
     type:       "provisoire",
     date_debut: "",
     date_fin:   "",
@@ -1169,10 +1169,12 @@ function NouveauForm({ onSave, saving }) {
 
 // ─── Page principale ─────────────────────────────────────────────────────────
 export default function DecompteFormPage() {
-  const { id }       = useParams();
-  const navigate     = useNavigate();
-  const { addToast } = useToast();
-  const isNew        = !id || id === "nouveau";
+  const { id }         = useParams();
+  const [searchParams] = useSearchParams();
+  const navigate       = useNavigate();
+  const { addToast }   = useToast();
+  const isNew          = !id || id === "nouveau";
+  const initialContratId = searchParams.get("contrat_id") || null;
 
   const [activeTab, setActiveTab] = useState("structure");
 
@@ -1378,7 +1380,7 @@ export default function DecompteFormPage() {
       {isNew ? (
         <div className="bg-white border border-gray-200 rounded-2xl p-6">
           <div className="grid grid-cols-[1fr_auto] gap-6">
-            <NouveauForm onSave={handleCreate} saving={saveMut.isPending} />
+            <NouveauForm onSave={handleCreate} saving={saveMut.isPending} initialContratId={initialContratId} />
             {/* Tabs vides pour respecter la maquette */}
             <div className="w-56" />
           </div>

@@ -9,6 +9,7 @@ import * as XLSX from "xlsx";
 import { useAttachements } from "../hooks/useAttachements";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
+import { pieceJointeService } from "../services/pieceJointeService";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const num = (v) => new Intl.NumberFormat("fr-FR").format(Math.round(v || 0));
@@ -1061,6 +1062,141 @@ function VueDacc({ att, updateAttachement, validerAttachement, rejeterAttachemen
   );
 }
 
+// ─── Zone Documents ──────────────────────────────────────────────────────────
+function ZoneDocuments({ att, canEdit, updateAttachement }) {
+  const { addToast } = useToast();
+  const [uploading, setUploading] = useState(false);
+  const uploadRef = useRef(null);
+  const docs = att.documents ?? [];
+
+  const contratIdInt = parseInt(att.contratId, 10);
+
+  async function handleUpload(file) {
+    if (!file) return;
+    if (!contratIdInt) { addToast("Contrat introuvable pour l'upload.", "error"); return; }
+    setUploading(true);
+    try {
+      const pj = await pieceJointeService.upload(contratIdInt, "autre", file);
+      updateAttachement(att.id, a => ({
+        ...a,
+        documents: [...(a.documents ?? []), {
+          id:       pj.id,
+          nom:      pj.nom_original,
+          taille:   pj.taille_fmt,
+          mime:     pj.mime_type,
+          date:     pj.created_at,
+          uploadBy: pj.uploaded_by,
+        }],
+      }));
+      addToast(`Document "${pj.nom_original}" ajouté.`, "success");
+    } catch {
+      addToast("Erreur lors de l'upload.", "error");
+    } finally {
+      setUploading(false);
+      if (uploadRef.current) uploadRef.current.value = "";
+    }
+  }
+
+  async function handleDelete(doc) {
+    try {
+      await pieceJointeService.delete(doc.id);
+      updateAttachement(att.id, a => ({
+        ...a,
+        documents: (a.documents ?? []).filter(d => d.id !== doc.id),
+      }));
+      addToast("Document supprimé.", "info");
+    } catch {
+      addToast("Erreur lors de la suppression.", "error");
+    }
+  }
+
+  function mimeIcon(mime) {
+    if (!mime) return <FileText size={14} className="text-gray-400" />;
+    if (mime.includes("pdf")) return <FileText size={14} className="text-red-500" />;
+    if (mime.includes("sheet") || mime.includes("excel") || mime.includes("xls"))
+      return <FileText size={14} className="text-green-600" />;
+    if (mime.includes("word") || mime.includes("doc"))
+      return <FileText size={14} className="text-blue-600" />;
+    if (mime.includes("image")) return <Eye size={14} className="text-purple-500" />;
+    return <FileText size={14} className="text-gray-400" />;
+  }
+
+  const isViewable = (mime) => mime && (mime.includes("pdf") || mime.includes("image"));
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <h3 className="font-semibold text-gray-800 text-sm">Documents du dossier</h3>
+        <span className="text-xs text-gray-400">{docs.length} fichier{docs.length > 1 ? "s" : ""}</span>
+      </div>
+
+      <div className="divide-y divide-gray-50">
+        {docs.length === 0 && (
+          <p className="text-xs text-gray-400 text-center py-5">Aucun document joint</p>
+        )}
+        {docs.map(doc => (
+          <div key={doc.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50/60">
+            <div className="flex-shrink-0">{mimeIcon(doc.mime)}</div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-800 truncate">{doc.nom}</p>
+              <p className="text-[10px] text-gray-400 mt-0.5">
+                {doc.taille}{doc.date ? ` · ${doc.date}` : ""}{doc.uploadBy ? ` · ${doc.uploadBy}` : ""}
+              </p>
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {isViewable(doc.mime) && (
+                <a
+                  href={pieceJointeService.downloadUrl(doc.id)}
+                  target="_blank"
+                  rel="noreferrer"
+                  title="Visualiser"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                  <Eye size={14} />
+                </a>
+              )}
+              <a
+                href={pieceJointeService.downloadUrl(doc.id)}
+                download={doc.nom}
+                title="Télécharger"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-[#087F3E] hover:bg-green-50 transition-colors">
+                <Download size={14} />
+              </a>
+              {canEdit && (
+                <button
+                  onClick={() => handleDelete(doc)}
+                  title="Supprimer"
+                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                  <Trash2 size={14} />
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {canEdit && (
+        <div className="px-5 py-4 border-t border-gray-100">
+          <input
+            ref={uploadRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+            className="sr-only"
+            onChange={e => handleUpload(e.target.files?.[0])}
+          />
+          <button
+            onClick={() => uploadRef.current?.click()}
+            disabled={uploading}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-xs font-medium hover:border-[#087F3E] hover:text-[#087F3E] hover:bg-[#087F3E]/5 transition-colors disabled:opacity-60">
+            {uploading
+              ? <><div className="w-3.5 h-3.5 border-2 border-[#087F3E] border-t-transparent rounded-full animate-spin" /> Upload en cours…</>
+              : <><Upload size={13} /> Joindre un document (PDF, Word, Excel, image)</>}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page principale ─────────────────────────────────────────────────────────
 export default function AttachementDetailPage() {
   const { id } = useParams();
@@ -1188,6 +1324,9 @@ export default function AttachementDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Documents joints */}
+      <ZoneDocuments att={att} canEdit={isCTEditable} updateAttachement={updateAttachement} />
 
       {/* Fil de discussion — toujours visible */}
       <FilDiscussion att={att} currentUser={currentUser} updateAttachement={updateAttachement} />
