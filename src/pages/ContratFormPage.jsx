@@ -2046,7 +2046,7 @@ export default function ContratFormPage() {
 
   // ── Remote data ─────────────────────────────────────────────
   const { data: contrat, isLoading, isError } = useContrat(!isNew ? id : null);
-  const { data: chantiersData }   = useChantiersPaginated({ count: 100 });
+  const { data: chantiersData }   = useChantiersPaginated({ count: 500 });
   const { data: sttData }         = useSousTraitantsPaginated({ count: 500 });
   const contratIdInt = !isNew && id ? parseInt(id, 10) : null;
   const { data: decomptesData }   = useDecomptesPaginated({ contrat_id: contratIdInt, count: 100 });
