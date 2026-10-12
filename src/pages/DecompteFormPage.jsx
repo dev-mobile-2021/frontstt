@@ -10,6 +10,7 @@ import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import http from "../services/http";
 import SearchSelect from "../components/SearchSelect";
+import ConfirmModal from "../components/ConfirmModal";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const num  = v => new Intl.NumberFormat("fr-FR").format(Math.round(Math.abs(v ?? 0)));
@@ -447,6 +448,9 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
   const payload = d.payload ?? {};
   const prev    = d.precedent?.postes ?? {};
 
+  const [confirmAtt, setConfirmAtt]         = useState(false);
+  const [confirmCessions, setConfirmCessions] = useState(false);
+
   const [mode, setMode]     = useState(payload.mode ?? "cumulatif");
   const [libelleM, setLibelleM] = useState(() => (decompte.payload?.postes?.M?.libelle ?? ""));
   const [postes, setPostes] = useState(() => {
@@ -855,29 +859,14 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-400">Réinitialiser :</span>
               <button
-                onClick={() => onSave(buildPayload())}
+                onClick={() => setConfirmAtt(true)}
                 disabled={saving}
                 title="Re-lit le Poste A depuis l'attachement validé"
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50">
                 <RefreshCw size={11} /> Attachement
               </button>
               <button
-                onClick={() => {
-                  setPostes(prev => ({ ...prev, tauxH: 100, tauxJ: 100, tauxL: 100 }));
-                  onSave({
-                    mode,
-                    postes: {
-                      B:  { cumulM: postes.B  },
-                      B2: { cumulM: postes.B2 },
-                      E:  { tauxE: postes.tauxE },
-                      H:  { tauxH: 100 },
-                      J:  { tauxJ: 100 },
-                      L:  { tauxL: 100 },
-                      F:  { cumulM: postes.F  },
-                      M:  { cumulM: postes.M  },
-                    },
-                  });
-                }}
+                onClick={() => setConfirmCessions(true)}
                 disabled={saving}
                 title="Taux remboursement → 100% pour MTX, MTL, RH"
                 className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50">
@@ -893,6 +882,41 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={confirmAtt}
+        title="Réinitialiser depuis l'attachement"
+        message="Le Poste A sera relu depuis le dossier d'attachement validé le plus récent. Les postes manuels (B, B2, E…) sont conservés."
+        confirmLabel="Réinitialiser"
+        confirmClass="bg-amber-500 hover:bg-amber-600 text-white"
+        onConfirm={() => { setConfirmAtt(false); onSave(buildPayload()); }}
+        onCancel={() => setConfirmAtt(false)}
+      />
+      <ConfirmModal
+        open={confirmCessions}
+        title="Réinitialiser taux cessions à 100%"
+        message="Les taux de remboursement MTX, MTL et RH (postes H, J, L) seront réinitialisés à 100%. Cette action écrasera les taux saisis manuellement."
+        confirmLabel="Réinitialiser à 100%"
+        confirmClass="bg-blue-600 hover:bg-blue-700 text-white"
+        onConfirm={() => {
+          setConfirmCessions(false);
+          setPostes(prev => ({ ...prev, tauxH: 100, tauxJ: 100, tauxL: 100 }));
+          onSave({
+            mode,
+            postes: {
+              B:  { cumulM: postes.B  },
+              B2: { cumulM: postes.B2 },
+              E:  { tauxE: postes.tauxE },
+              H:  { tauxH: 100 },
+              J:  { tauxJ: 100 },
+              L:  { tauxL: 100 },
+              F:  { cumulM: postes.F  },
+              M:  { cumulM: postes.M  },
+            },
+          });
+        }}
+        onCancel={() => setConfirmCessions(false)}
+      />
     </div>
   );
 }
