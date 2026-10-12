@@ -20,17 +20,19 @@ import SearchSelect from "../components/SearchSelect";
 // ─── MoisSelect ─────────────────────────────────────────────────
 const MOIS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 
-function buildMoisOptions() {
+function buildMoisOptions(dateDebut) {
   const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth() + 2, 1);
+  const start = dateDebut
+    ? new Date(dateDebut.slice(0, 7) + "-01")
+    : new Date(now.getFullYear(), now.getMonth() - 2, 1);
   const options = [];
-  for (let i = -2; i <= 6; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-    const y = d.getFullYear();
-    const m = d.getMonth(); // 0-based
-    options.push({
-      key:   `${y}-${String(m + 1).padStart(2, "0")}`,
-      label: `25 ${MOIS_FR[m]} ${y}`,
-    });
+  let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cur <= end) {
+    const y = cur.getFullYear();
+    const m = cur.getMonth();
+    options.push({ key: `${y}-${String(m + 1).padStart(2, "0")}`, label: `25 ${MOIS_FR[m]} ${y}` });
+    cur = new Date(y, m + 1, 1);
   }
   return options;
 }
@@ -44,8 +46,8 @@ function moisToPeriode(key) {
   return { periode_debut: `${prevY}-${pad(prevM)}-26`, periode_fin: `${y}-${pad(m)}-25` };
 }
 
-function MoisSelect({ value, onChange }) {
-  const options  = buildMoisOptions();
+function MoisSelect({ value, onChange, dateDebut }) {
+  const options  = buildMoisOptions(dateDebut);
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const selected = options.find(o => o.key === value);
@@ -456,6 +458,7 @@ export default function EtatsCessionListPage() {
               <Field label="Mois" required>
                 <MoisSelect
                   value={selectedMois}
+                  dateDebut={contrats.find(c => String(c.id) === String(form.contrat_id))?.date_debut}
                   onChange={key => {
                     setSelectedMois(key);
                     const { periode_debut, periode_fin } = moisToPeriode(key);
