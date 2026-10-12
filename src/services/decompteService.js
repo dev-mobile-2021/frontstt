@@ -37,20 +37,8 @@ export const decompteService = {
   },
 
   async getById(id) {
-    const data = await gql(
-      `query GetDecompte($id: ID) {
-        decomptesPaginated(id: $id) {
-          data { ${DETAIL_FIELDS} }
-        }
-      }`,
-      { id: parseInt(id, 10) }
-    );
-    const item = data.decomptesPaginated.data[0] ?? null;
-    if (item) {
-      try { item.payload = typeof item.postes === "string" ? JSON.parse(item.postes) : (item.postes ?? {}); }
-      catch { item.payload = {}; }
-    }
-    return item;
+    const { data } = await http.get(`/decompte/${id}`);
+    return data.data ?? null;
   },
 
   async save(payload) {
