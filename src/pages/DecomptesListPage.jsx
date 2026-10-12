@@ -8,7 +8,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
 import { useDecomptesPaginated, useDecompteCircuit, useSaveDecompte, useDeleteDecompte } from "../hooks/useDecomptes";
-import { ConfirmModal } from "../components/ConfirmModal";
+import ConfirmModal from "../components/ConfirmModal";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { useToast } from "../context/ToastContext";
