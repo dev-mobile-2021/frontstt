@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import {
   Search, RotateCcw, ChevronLeft, ChevronRight, Plus, X, Loader2,
   FileText, FileSpreadsheet, TrendingUp, ChevronDown,
-  DollarSign, CheckCircle2,
+  DollarSign, CheckCircle2, Trash2,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
-import { useDecomptesPaginated, useDecompteCircuit, useSaveDecompte } from "../hooks/useDecomptes";
+import { useDecomptesPaginated, useDecompteCircuit, useSaveDecompte, useDeleteDecompte } from "../hooks/useDecomptes";
+import { ConfirmModal } from "../components/ConfirmModal";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { useToast } from "../context/ToastContext";
@@ -87,6 +88,8 @@ export default function DecomptesListPage() {
   const navigate     = useNavigate();
   const { addToast } = useToast();
   const saveMut      = useSaveDecompte();
+  const deleteMut    = useDeleteDecompte();
+  const [confirmDel, setConfirmDel] = useState(null);
 
   const [showStats,    setShowStats]  = useState(true);
   const [search,       setSearch]     = useState("");
@@ -427,6 +430,16 @@ export default function DecomptesListPage() {
                       <span className="text-xs text-gray-400 tabular-nums">{circuitStep(d.statut)}</span>
                     )}
                   </td>
+                  {d.statut === "brouillon" && (
+                    <td className="px-2 py-3.5" onClick={e => e.stopPropagation()}>
+                      <button
+                        onClick={() => setConfirmDel(d)}
+                        className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        title="Supprimer">
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -517,6 +530,25 @@ export default function DecomptesListPage() {
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={!!confirmDel}
+        title="Supprimer le décompte"
+        message={`Supprimer définitivement ${confirmDel?.code} ? Cette action est irréversible.`}
+        confirmLabel="Supprimer"
+        confirmClass="bg-red-600 hover:bg-red-700 text-white"
+        onConfirm={async () => {
+          try {
+            await deleteMut.mutateAsync(confirmDel.id);
+            addToast("Décompte supprimé.", "success");
+          } catch {
+            addToast("Erreur lors de la suppression.", "error");
+          } finally {
+            setConfirmDel(null);
+          }
+        }}
+        onCancel={() => setConfirmDel(null)}
+      />
     </div>
   );
 }
