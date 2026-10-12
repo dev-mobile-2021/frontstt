@@ -1242,6 +1242,18 @@ export default function DecompteFormPage() {
     }
   }
 
+  async function handleExcel() {
+    const token = localStorage.getItem("stt_token");
+    const resp  = await fetch(`${import.meta.env.VITE_API_BASE}/api/excel/decompte/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+    const blob  = await resp.blob();
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement("a");
+    a.href      = url;
+    a.download  = `decompte-${d?.code ?? id}.xlsx`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
   async function handlePdf() {
     const token = localStorage.getItem("stt_token");
     const resp  = await fetch(`${import.meta.env.VITE_API_BASE}/api/pdf/decompte/${id}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -1331,6 +1343,10 @@ export default function DecompteFormPage() {
                 </div>
               ) : null;
             })()}
+            <button onClick={handleExcel}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-700 border border-emerald-200 rounded-xl hover:bg-emerald-50">
+              <FileDown size={14} /> Excel
+            </button>
             <button onClick={handlePdf}
               className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
               <FileDown size={14} /> PDF
