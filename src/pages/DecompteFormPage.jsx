@@ -1176,7 +1176,7 @@ export default function DecompteFormPage() {
   const isNew          = !id || id === "nouveau";
   const initialContratId = searchParams.get("contrat_id") || null;
 
-  const [activeTab, setActiveTab] = useState("structure");
+  const [activeTab, setActiveTab] = useState("cessions");
 
   const { data: decompte, isLoading, isError } = useDecompte(!isNew ? id : null);
   const { data: circuit = [] } = useDecompteCircuit();
