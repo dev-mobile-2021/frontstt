@@ -141,8 +141,8 @@ export default function ConsultationEtatsCessionPage() {
 
   const set = (k, v) => setFilters(f => ({ ...f, [k]: v }));
 
-  const { data: chantiersData } = useChantiersPaginated({ count: 200 });
-  const { data: sttData }       = useSousTraitantsPaginated({ count: 200 });
+  const { data: chantiersData } = useChantiersPaginated({ count: 500 });
+  const { data: sttData }       = useSousTraitantsPaginated({ count: 500 });
   const chantiers               = chantiersData?.data ?? [];
   const soustraitants           = sttData?.data ?? [];
 
@@ -305,7 +305,10 @@ export default function ConsultationEtatsCessionPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="md:col-span-1 space-y-1">
               <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Chantier</label>
-              <ChantierSelect value={filters.chantier_id} onChange={v => set("chantier_id", v)} chantiers={chantiers} />
+              <select value={filters.chantier_id} onChange={e => set("chantier_id", e.target.value)} className={inputCls}>
+                <option value="">Tous les chantiers</option>
+                {chantiers.map(c => <option key={c.id} value={c.id}>{c.designation}</option>)}
+              </select>
             </div>
             <div className="space-y-1">
               <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Sous-traitant</label>
