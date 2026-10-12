@@ -10,14 +10,21 @@ import {
 // ─── MoisSelect : sélection "25 Mois YYYY" ──────────────────────
 const MOIS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
 
-function buildMoisOptions() {
-  const year = new Date().getFullYear();
-  return Array.from({ length: 12 }, (_, i) => {
-    const monthIdx = i; // 0..11
-    const key = `${year}-${String(monthIdx + 1).padStart(2, "0")}`;
-    const label = `25 ${MOIS_FR[monthIdx]} ${year}`;
-    return { key, label, year, monthIdx };
-  });
+function buildMoisOptions(dateDebut) {
+  const now = new Date();
+  const end = new Date(now.getFullYear(), now.getMonth() + 2, 1);
+  const start = dateDebut
+    ? new Date(dateDebut.slice(0, 7) + "-01")
+    : new Date(now.getFullYear(), now.getMonth() - 2, 1);
+  const options = [];
+  let cur = new Date(start.getFullYear(), start.getMonth(), 1);
+  while (cur <= end) {
+    const y = cur.getFullYear();
+    const m = cur.getMonth();
+    options.push({ key: `${y}-${String(m + 1).padStart(2, "0")}`, label: `25 ${MOIS_FR[m]} ${y}` });
+    cur = new Date(y, m + 1, 1);
+  }
+  return options;
 }
 
 // Pour une clé "YYYY-MM" (représente le 25 de ce mois), calcule :
@@ -762,40 +769,47 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
 // ─── Formulaire de création ──────────────────────────────────────
 function CreationForm({ contrats, form, set, saving, onSubmit, onCancel, inputCls, fmtDate }) {
   const EC_API = import.meta.env.VITE_API_BASE + "/api";
+  const [selectedMois, setSelectedMois] = useState("");
 
-  // Quand le contrat change (ou au montage si pré-rempli) : auto-remplir les dates
+  const contrat = contrats.find(c => String(c.id) === String(form.contrat_id));
+  const moisOptions = buildMoisOptions(contrat?.date_debut);
+
+  // Quand le contrat change (ou au montage si pré-rempli) : auto-sélectionner le bon mois
   useEffect(() => {
-    if (!form.contrat_id || form.periode_debut) return;
-    const contrat = contrats.find(c => String(c.id) === String(form.contrat_id));
-
-    // Cherche le dernier état de cession du contrat
+    if (!form.contrat_id) return;
     fetch(`${EC_API}/etats-cession?contrat_id=${form.contrat_id}&per_page=1&sort=periode_fin&dir=desc`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("stt_token")}` },
     })
       .then(r => r.json())
       .then(res => {
         const last = res?.data?.[0];
-        let debut;
+        let debutStr;
         if (last?.periode_fin) {
-          // Jour suivant la fin du dernier état (normalement le 26)
           const d = new Date(last.periode_fin);
           d.setDate(d.getDate() + 1);
-          debut = d.toISOString().slice(0, 10);
+          debutStr = d.toISOString().slice(0, 10);
         } else if (contrat?.date_debut) {
-          debut = contrat.date_debut.slice(0, 10);
-        } else {
-          return;
-        }
-        // Fin = 25 du mois suivant le début
-        const dDebut = new Date(debut);
-        const fin = new Date(dDebut.getFullYear(), dDebut.getMonth() + 1, 25);
-        set("periode_debut", debut);
-        set("periode_fin",   fin.toISOString().slice(0, 10));
+          debutStr = contrat.date_debut.slice(0, 10);
+        } else return;
+        const d = new Date(debutStr);
+        const targetY = d.getDate() >= 26 ? (d.getMonth() === 11 ? d.getFullYear() + 1 : d.getFullYear()) : d.getFullYear();
+        const targetM = d.getDate() >= 26 ? (d.getMonth() + 1) % 12 + 1 : d.getMonth() + 1;
+        const key = `${targetY}-${String(targetM).padStart(2, "0")}`;
+        setSelectedMois(key);
+        const { periode_debut, periode_fin } = computePeriodeFromMois(key);
+        set("periode_debut", periode_debut);
+        set("periode_fin",   periode_fin);
       })
       .catch(() => {});
   }, [form.contrat_id, contrats.length]);
 
-  // Affichage "26/25" : ex. "26 Sep → 25 Oct 2026"
+  function handleMoisChange(key) {
+    setSelectedMois(key);
+    const { periode_debut, periode_fin } = computePeriodeFromMois(key);
+    set("periode_debut", periode_debut);
+    set("periode_fin",   periode_fin);
+  }
+
   const periodeLabel = form.periode_debut && form.periode_fin
     ? `${fmtDate(form.periode_debut)} → ${fmtDate(form.periode_fin)}`
     : null;
@@ -811,18 +825,10 @@ function CreationForm({ contrats, form, set, saving, onSubmit, onCancel, inputCl
           <ContratSelect value={form.contrat_id} onChange={v => set("contrat_id", v)} contrats={contrats} />
         </div>
 
-        {/* Période début */}
+        {/* Mois */}
         <div>
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1.5">Période début *</label>
-          <input type="date" value={form.periode_debut} onChange={e => set("periode_debut", e.target.value)}
-            className={inputCls} />
-        </div>
-
-        {/* Période fin */}
-        <div>
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1.5">Période fin *</label>
-          <input type="date" value={form.periode_fin} onChange={e => set("periode_fin", e.target.value)}
-            className={inputCls} />
+          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1.5">Mois *</label>
+          <MoisSelect value={selectedMois} onChange={handleMoisChange} options={moisOptions} />
           {periodeLabel && (
             <p className="text-xs text-[#087F3E] mt-1.5 font-medium">{periodeLabel}</p>
           )}
