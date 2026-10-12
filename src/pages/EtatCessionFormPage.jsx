@@ -763,9 +763,9 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
 function CreationForm({ contrats, form, set, saving, onSubmit, onCancel, inputCls, fmtDate }) {
   const EC_API = import.meta.env.VITE_API_BASE + "/api";
 
-  // Quand le contrat change : auto-remplir les dates
+  // Quand le contrat change (ou au montage si pré-rempli) : auto-remplir les dates
   useEffect(() => {
-    if (!form.contrat_id) return;
+    if (!form.contrat_id || form.periode_debut) return;
     const contrat = contrats.find(c => String(c.id) === String(form.contrat_id));
 
     // Cherche le dernier état de cession du contrat
@@ -793,7 +793,7 @@ function CreationForm({ contrats, form, set, saving, onSubmit, onCancel, inputCl
         set("periode_fin",   fin.toISOString().slice(0, 10));
       })
       .catch(() => {});
-  }, [form.contrat_id]);
+  }, [form.contrat_id, contrats.length]);
 
   // Affichage "26/25" : ex. "26 Sep → 25 Oct 2026"
   const periodeLabel = form.periode_debut && form.periode_fin
