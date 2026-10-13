@@ -448,7 +448,7 @@ export default function ChantierFormPage() {
       <div className="grid grid-cols-5 gap-4">
         {[
           { label: "Budget total",           value: fmt(budgetTotal),        sub: null,                     highlight: false },
-          { label: "STT engagé",   value: fmt(sttEngage),          sub: `Contrats ${fmt(chantier.stt_engage_initial)} + avenants ${fmt(chantier.stt_engage_avenants)} · ${sttPct}% du budget`,   highlight: true  },
+          { label: "Total Contrat", value: fmt(sttEngage),          sub: `Contrats ${fmt(chantier.stt_engage_initial)} + avenants ${fmt(chantier.stt_engage_avenants)} · ${sttPct}% du budget`,   highlight: true  },
           { label: "En cours de validation", value: "—",                     sub: "décomptes soumis",        highlight: false },
           { label: "Avancement physique",    value: "—",                     sub: "données X3",             highlight: false },
           { label: "Contrats sous-trait.",   value: String(contrats.length), sub: null,                     highlight: false },
