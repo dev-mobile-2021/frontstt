@@ -23,15 +23,15 @@ const DETAIL_FIELDS = `
 `;
 
 export const decompteService = {
-  async list({ page = 1, count = 15, code, contrat_id, statut, soustraitant_id } = {}) {
+  async list({ page = 1, count = 15, code, contrat_id, statut, soustraitant_id, chantier_id } = {}) {
     const data = await gql(
-      `query ListDecomptes($page: Int, $count: Int, $code: String, $contrat_id: Int, $statut: String, $soustraitant_id: Int) {
-        decomptesPaginated(page: $page, count: $count, code: $code, contrat_id: $contrat_id, statut: $statut, soustraitant_id: $soustraitant_id) {
+      `query ListDecomptes($page: Int, $count: Int, $code: String, $contrat_id: Int, $statut: String, $soustraitant_id: Int, $chantier_id: Int) {
+        decomptesPaginated(page: $page, count: $count, code: $code, contrat_id: $contrat_id, statut: $statut, soustraitant_id: $soustraitant_id, chantier_id: $chantier_id) {
           data { ${LIST_FIELDS} }
           metadata { total current_page per_page last_page }
         }
       }`,
-      { page, count, code: code || null, contrat_id: contrat_id || null, statut: statut || null, soustraitant_id: soustraitant_id || null }
+      { page, count, code: code || null, contrat_id: contrat_id || null, statut: statut || null, soustraitant_id: soustraitant_id || null, chantier_id: chantier_id || null }
     );
     return data.decomptesPaginated;
   },

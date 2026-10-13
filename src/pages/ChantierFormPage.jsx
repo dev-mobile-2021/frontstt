@@ -317,6 +317,13 @@ export default function ChantierFormPage() {
   const { data: contratsData } = useContratsPaginated({ chantier_id: Number(id), count: 200 });
   const contrats = contratsData?.data ?? [];
 
+  const { data: decomptesChantierData } = useDecomptesPaginated({ chantier_id: Number(id), count: 500 });
+  const decomptesChantier = decomptesChantierData?.data ?? [];
+  const STATUTS_VALIDES   = ["valide_dacc","valide_dexa","valide_dcg","valide_dga","valide_dg","paye"];
+  const decomptesVal      = decomptesChantier.filter(d => STATUTS_VALIDES.includes(d.statut));
+  const realise           = decomptesVal.reduce((s, d) => s + parseFloat(d.montant_ht ?? 0), 0);
+  const nbRealise         = decomptesVal.length;
+
   if (isLoading) {
     return <div className="space-y-6">{[1, 2, 3].map(i => <SkeletonCard key={i} />)}</div>;
   }
@@ -447,15 +454,41 @@ export default function ChantierFormPage() {
       {/* KPIs */}
       <div className="grid grid-cols-5 gap-4">
         {[
-          { label: "Budget total",           value: fmt(budgetTotal),        sub: null,                     highlight: false },
-          { label: "Total Contrat", value: fmt(sttEngage),          sub: `Contrats ${fmt(chantier.stt_engage_initial)} + avenants ${fmt(chantier.stt_engage_avenants)} · ${sttPct}% du budget`,   highlight: true  },
-          { label: "En cours de validation", value: "—",                     sub: "décomptes soumis",        highlight: false },
-          { label: "Avancement physique",    value: "—",                     sub: "données X3",             highlight: false },
-          { label: "Contrats sous-trait.",   value: String(contrats.length), sub: null,                     highlight: false },
-        ].map(({ label, value, sub, highlight }) => (
+          {
+            label: "Budget total",
+            value: fmt(budgetTotal),
+            sub: null,
+            highlight: false,
+          },
+          {
+            label: "Total Contrat",
+            value: fmt(sttEngage),
+            sub: `${contrats.length} contrat${contrats.length > 1 ? "s" : ""} · ${sttPct}% du budget`,
+            highlight: true,
+          },
+          {
+            label: "Réalisé",
+            value: fmt(realise),
+            sub: `${nbRealise} décompte${nbRealise > 1 ? "s" : ""} validés`,
+            highlight: false,
+            accent: true,
+          },
+          {
+            label: "En cours de validation",
+            value: String(decomptesChantier.filter(d => d.statut === "soumis").length),
+            sub: `${fmt(decomptesChantier.filter(d => d.statut === "soumis").reduce((s,d) => s + parseFloat(d.montant_ht ?? 0), 0))} HT`,
+            highlight: false,
+          },
+          {
+            label: "Contrats sous-trait.",
+            value: String(contrats.length),
+            sub: `${fmt(sttEngage)} HT engagé`,
+            highlight: false,
+          },
+        ].map(({ label, value, sub, highlight, accent }) => (
           <div key={label} className="bg-white border border-gray-200 rounded-xl p-4">
             <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</p>
-            <p className={`text-base font-bold ${highlight ? "text-[#087F3E]" : "text-gray-900"}`}>{value}</p>
+            <p className={`text-base font-bold ${highlight ? "text-[#087F3E]" : accent ? "text-blue-600" : "text-gray-900"}`}>{value}</p>
             {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
           </div>
         ))}
