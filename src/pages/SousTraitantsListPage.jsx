@@ -129,7 +129,7 @@ export default function SousTraitantsListPage() {
                 {[
                   ["Raison sociale", "left"], ["Statut", "left"],
                   ["Contrat", "center"], ["Contrat en cours", "center"],
-                  ["Total HT CT (contrats)", "right"], ["Total HT Avenant (avenants)", "right"], ["Total (contrats + avenants)", "right"],
+                  ["Total HT CT (contrats)", "right"], ["Total (contrats + avenants)", "right"],
                   ["Total décompte payé", "right"], ["Total décompte en attente", "right"], ["Décompte en cours", "right"],
                 ].map(([h, align]) => (
                   <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-${align}`}>{h}</th>
@@ -155,7 +155,6 @@ export default function SousTraitantsListPage() {
                   <td className="px-4 py-3.5 text-center"><CountLink n={stt.nb_contrats} to={`/contrats?soustraitant_id=${stt.id}&statut=actif,termine,cloture`} /></td>
                   <td className="px-4 py-3.5 text-center"><CountLink n={stt.nb_contrats_en_cours} to={`/contrats?soustraitant_id=${stt.id}&statut=actif`} /></td>
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.total_ht_contrats} /></td>
-                  <td className="px-4 py-3.5 text-right"><Montant v={stt.total_ht_avenants} color={stt.total_ht_avenants ? "text-violet-700" : undefined} /></td>
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.total_contrats_avenants} strong color={stt.total_contrats_avenants ? "text-[#065A2C]" : undefined} /></td>
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.total_decomptes_payes} /></td>
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.total_decomptes_en_attente} color={stt.total_decomptes_en_attente ? "text-amber-700" : undefined} /></td>
