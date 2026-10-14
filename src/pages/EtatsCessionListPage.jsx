@@ -361,10 +361,6 @@ export default function EtatsCessionListPage() {
               <RotateCcw size={13} /> Réinitialiser
             </button>
           )}
-          <button onClick={exportExcel}
-            className="ml-auto flex items-center gap-1.5 text-sm text-[#087F3E] border border-[#087F3E] px-3 py-2 rounded-lg hover:bg-[#E8F5EE] transition-colors">
-            <FileSpreadsheet size={14} /> Excel
-          </button>
         </div>
       </div>
 
