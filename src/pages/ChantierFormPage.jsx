@@ -20,8 +20,9 @@ import Tabs from "../components/Tabs";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonCard } from "../components/Skeleton";
 import SearchSelect from "../components/SearchSelect";
+import { fmtNum } from "../utils/formatters";
 
-const fmt = n => n == null ? "—" : new Intl.NumberFormat("fr-FR").format(Math.round(n)) + " FCFA";
+const fmt = n => n == null ? "—" : fmtNum(Math.round(n)) + " FCFA";
 const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
 
 // ─── Circuit terrain card ────────────────────────────────────────────────────

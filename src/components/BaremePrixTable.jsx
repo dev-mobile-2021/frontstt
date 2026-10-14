@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Search, Pencil, RotateCcw, Check, X, Loader2 } from "lucide-react";
+import { fmtNum } from "../utils/formatters";
 
-const fmt = (n) => (n == null ? "—" : new Intl.NumberFormat("fr-FR").format(Math.round(n)));
+const fmt = (n) => (n == null ? "—" : fmtNum(Math.round(n)));
 
 const SOURCES = {
   base:     { label: "Barème général", cls: "bg-gray-100 text-gray-600" },

@@ -10,9 +10,10 @@ import { useAttachements } from "../hooks/useAttachements";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 import { pieceJointeService } from "../services/pieceJointeService";
+import { fmtNum } from "../utils/formatters";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-const num = (v) => new Intl.NumberFormat("fr-FR").format(Math.round(v || 0));
+const num = (v) => fmtNum(Math.round(v || 0));
 const fmtDate = (s) => s ? new Date(s).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" }) : "—";
 const today = () => new Date().toISOString().slice(0, 10);
 const fmtPeriode = (d) => {
@@ -290,7 +291,7 @@ function ZoneSTT({ att, canEdit, updateAttachement, currentUser, compact }) {
           },
         }));
 
-        addToast(`Devis STT importé — ${nbRemplies} ligne(s) renseignée(s), total ${new Intl.NumberFormat("fr-FR").format(totalSTTCalc)} FCFA.`, "success");
+        addToast(`Devis STT importé — ${nbRemplies} ligne(s) renseignée(s), total ${fmtNum(totalSTTCalc)} FCFA.`, "success");
       } catch {
         addToast("Erreur de lecture du fichier Excel.", "error");
       } finally {
@@ -395,7 +396,7 @@ function ZoneSTT({ att, canEdit, updateAttachement, currentUser, compact }) {
                           {l.quantiteSTT}
                           {diff !== 0 && <span className="ml-1 text-[9px]">{diff > 0 ? "▲" : "▼"}</span>}
                         </span>
-                        <span className="w-20 text-right text-gray-600">{new Intl.NumberFormat("fr-FR").format(l.montantSTT)}</span>
+                        <span className="w-20 text-right text-gray-600">{fmtNum(l.montantSTT)}</span>
                       </div>
                     </div>
                   );
@@ -403,7 +404,7 @@ function ZoneSTT({ att, canEdit, updateAttachement, currentUser, compact }) {
               </div>
               <div className="px-3 py-2 border-t border-gray-200 bg-gray-50 flex justify-between text-xs font-bold">
                 <span className="text-gray-700">Total STT</span>
-                <span className="text-[#087F3E] tabular-nums">{new Intl.NumberFormat("fr-FR").format(totalSTT)} FCFA</span>
+                <span className="text-[#087F3E] tabular-nums">{fmtNum(totalSTT)} FCFA</span>
               </div>
             </div>
 
@@ -415,7 +416,7 @@ function ZoneSTT({ att, canEdit, updateAttachement, currentUser, compact }) {
               return (
                 <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs ${ecart > 0 ? "bg-red-50 border border-red-200 text-red-700" : "bg-green-50 border border-green-200 text-green-700"}`}>
                   <Info size={11} />
-                  Écart STT/CSE : {ecart > 0 ? "+" : ""}{new Intl.NumberFormat("fr-FR").format(ecart)} FCFA
+                  Écart STT/CSE : {ecart > 0 ? "+" : ""}{fmtNum(ecart)} FCFA
                   {ecart > 0 ? " — STT supérieur au constat CT" : " — STT inférieur au constat CT"}
                 </div>
               );

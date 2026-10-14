@@ -13,10 +13,9 @@ import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import SearchSelect from "../components/SearchSelect";
+import { fmtNum } from "../utils/formatters";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
-
-const fmtNum  = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
 const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "—";
 
 const POSTES = [
@@ -484,13 +483,13 @@ export default function ConsultationEtatsCessionPage() {
                                 <td className="px-4 py-2 text-sm text-gray-700">{l.designation}</td>
                                 <td className="px-4 py-2 text-center text-sm text-gray-600 uppercase">{l.unite || "—"}</td>
                                 <td className="px-4 py-2 text-right text-sm text-gray-800">
-                                  {l.quantite != null ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(l.quantite) : "—"}
+                                  {l.quantite != null ? fmtNum(l.quantite, 2) : "—"}
                                 </td>
                                 <td className="px-4 py-2 text-right text-sm text-gray-800">
-                                  {l.prix_unitaire != null ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(l.prix_unitaire) : "—"}
+                                  {l.prix_unitaire != null ? fmtNum(l.prix_unitaire, 2) : "—"}
                                 </td>
                                 <td className="px-4 py-2 text-right text-sm text-gray-900 font-medium">
-                                  {l.montant != null ? new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(l.montant) : "—"}
+                                  {l.montant != null ? fmtNum(l.montant, 2) : "—"}
                                 </td>
                                 <td className="px-2 py-2">
                                   <Link to={`/etats-cession/${l.etat_cession_id}`}
@@ -505,7 +504,7 @@ export default function ConsultationEtatsCessionPage() {
                               <td colSpan={5} className="px-4 py-2 text-right text-sm font-semibold text-gray-700 border-t border-gray-300">
                               </td>
                               <td className="px-4 py-2 text-right text-sm font-bold text-gray-900 border-t-2 border-gray-400">
-                                {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ndTotal)}
+                                {fmtNum(ndTotal, 2)}
                               </td>
                               <td></td>
                             </tr>
@@ -515,7 +514,7 @@ export default function ConsultationEtatsCessionPage() {
                         {/* TOTAL ND en vert */}
                         <div className="px-4 py-2 text-right bg-gray-50 border-t border-gray-200">
                           <span className="text-sm font-bold text-[#087F3E]">
-                            TOTAL : {new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(ndTotal)}
+                            TOTAL : {fmtNum(ndTotal, 2)}
                           </span>
                         </div>
                       </div>

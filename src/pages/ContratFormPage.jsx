@@ -33,7 +33,7 @@ import StatusBadge from "../components/StatusBadge";
 import Tabs from "../components/Tabs";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonCard } from "../components/Skeleton";
-import { formatMontant, formatMontantCourt, formatDate } from "../utils/formatters";
+import { formatMontant, formatMontantCourt, formatDate, fmtNum } from "../utils/formatters";
 import SearchSelect from "../components/SearchSelect";
 import SousTraitantSelect from "../components/SousTraitantSelect";
 import ArchiveContratDialog from "../components/ArchiveContratDialog";
@@ -165,7 +165,7 @@ function DecomptesTab({ decomptes, contratId, isNew }) {
 function ParametrageFinancierTab({ contrat, avenants }) {
   const { addToast } = useToast();
   const saveContrat = useSaveContrat();
-  const fmt = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
+  const fmt = n => fmtNum(Math.round(n ?? 0));
 
   const montantInitial = parseFloat(contrat?.montant_initial ?? 0);
   const montantActuel  = parseFloat(contrat?.montant_actuel ?? montantInitial);
@@ -422,7 +422,7 @@ function CessionsTab({ contratId, isNew }) {
   );
   const cessions = data?.data ?? [];
 
-  const fmtMontant = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
+  const fmtMontant = n => fmtNum(Math.round(n ?? 0));
   const fmtDate    = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
 
   if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour voir les états de cession.</p>;
@@ -851,7 +851,7 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
 
   const plafond30    = (montantInitial ?? 0) * 0.30;
   const depasse30    = montantInitial > 0 && totalValide > plafond30;
-  const fmt          = n => new Intl.NumberFormat("fr-FR").format(Math.round(n));
+  const fmt          = n => fmtNum(Math.round(n));
 
   if (isNew) return (
     <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer les avenants.</p>
@@ -1114,7 +1114,7 @@ function BonCommandeTab({ contratId, isNew }) {
   const lierMut      = useLierBonsCommande(contratId);
   const delierMut    = useDelierBonCommande();
 
-  const fmt = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
+  const fmt = n => fmtNum(Math.round(n ?? 0));
   const apiError = e => e?.response?.data?.errors?.[0] ?? e?.response?.data?.message ?? "Erreur lors de l'appel à Sage X3.";
 
   const totalHT  = bcs.reduce((s, b) => s + (b.montant_ht ?? 0), 0);
@@ -1356,7 +1356,7 @@ function AttachementsTab({ contratId, chantierId, isNew, contrat }) {
   const [form, setForm] = useState({ periode_debut: "", periode_fin: "" });
   const [loading, setLoading] = useState(false);
 
-  const numFmt = v => new Intl.NumberFormat("fr-FR").format(Math.round(v || 0));
+  const numFmt = v => fmtNum(Math.round(v || 0));
   const contratAtts = attachements
     .filter(a => a.contratId === String(contratId))
     .sort((a, b) => (b.periodeDebut ?? "").localeCompare(a.periodeDebut ?? ""));
@@ -2232,7 +2232,7 @@ export default function ContratFormPage() {
         const pct            = montantActuel > 0 ? Math.round((cumulPaye / montantActuel) * 100) : 0;
         const actualisé      = avenantsList.some(a => a.statut === "valide");
         const nbAvenants     = avenantsList.length;
-        const fmtFull        = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0)) + " FCFA";
+        const fmtFull        = n => fmtNum(Math.round(n ?? 0)) + " FCFA";
         const montantInitialHT = parseFloat(contrat.montant_initial ?? 0);
         const avenantsValides  = avenantsList.filter(a => a.statut === "valide");
         const avenantsAttente  = avenantsList.filter(a => a.statut !== "valide");
@@ -2460,7 +2460,7 @@ export default function ContratFormPage() {
                   {!isNew && (
                     <Field label="Montant HT (calculé)">
                       <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-2.5 text-sm text-gray-700">
-                        {new Intl.NumberFormat("fr-FR").format(Math.round(parseFloat(contrat?.montant_initial ?? 0)))} FCFA
+                        {fmtNum(Math.round(parseFloat(contrat?.montant_initial ?? 0)))} FCFA
                       </div>
                       <p className="text-[11px] text-gray-400 mt-1">Somme des BC Sage X3 liés. Non modifiable.</p>
                     </Field>

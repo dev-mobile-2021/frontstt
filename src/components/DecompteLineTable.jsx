@@ -3,12 +3,13 @@ import { AlertTriangle, ChevronDown, ChevronRight, ExternalLink } from "lucide-r
 import { useNavigate } from "react-router-dom";
 import MoneyDisplay from "./MoneyDisplay";
 import { computeNetHT } from "../utils/decompteCalcul";
+import { fmtNum } from "../utils/formatters";
 
 const INFO_CESSION_POSTES = new Set(["G", "I", "K"]);
 const REMB_POSTES = new Set(["H", "J", "L"]);
 const AUTO_FROM_A = new Set(["B", "D"]);
 
-const num = (v) => new Intl.NumberFormat("fr-FR").format(Math.round(v || 0));
+const num = (v) => fmtNum(Math.round(v || 0));
 const parse = (s) => parseInt((s || "").replace(/\D/g, "")) || 0;
 
 // ── Cell atoms ────────────────────────────────────────────────────

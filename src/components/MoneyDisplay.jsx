@@ -1,8 +1,7 @@
-// Displays a monetary amount in FCFA with consistent formatting
-// sign: "+" | "-" | null — prepend colored sign indicator
-// variant: "normal" | "large" | "small" | "muted"
+import { fmtNum } from "../utils/formatters";
+
 export default function MoneyDisplay({ amount = 0, sign = null, variant = "normal", className = "" }) {
-  const formatted = new Intl.NumberFormat("fr-FR").format(Math.abs(amount));
+  const formatted = fmtNum(Math.round(Math.abs(Number(amount))));
 
   const sizeClass =
     variant === "large" ? "text-xl font-bold" :

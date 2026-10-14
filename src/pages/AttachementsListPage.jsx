@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Plus, Paperclip, Search } from "lucide-react";
 import { useAttachements } from "../hooks/useAttachements";
+import { fmtNum } from "../utils/formatters";
 
-const num = (v) => new Intl.NumberFormat("fr-FR").format(Math.round(v || 0));
+const num = (v) => fmtNum(Math.round(v || 0));
 
 const STATUT_COLORS = {
   "Validé":            "bg-green-100 text-green-700",

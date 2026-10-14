@@ -16,7 +16,7 @@ import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonTable } from "../components/Skeleton";
-import { formatMontantCourt } from "../utils/formatters";
+import { formatMontantCourt, fmtNum } from "../utils/formatters";
 import SearchSelect from "../components/SearchSelect";
 
 // ─── MoisSelect ─────────────────────────────────────────────────
@@ -387,7 +387,7 @@ export default function EtatsCessionListPage() {
                     return (
                       <td key={type} className="px-4 py-3.5 text-xs tabular-nums">
                         {hasType
-                          ? <span className="font-medium text-gray-700">{new Intl.NumberFormat("fr-FR").format(Math.round(total))} FCFA</span>
+                          ? <span className="font-medium text-gray-700">{fmtNum(Math.round(total))} FCFA</span>
                           : <span className="text-gray-300">—</span>}
                       </td>
                     );

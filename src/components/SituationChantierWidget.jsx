@@ -1,5 +1,6 @@
 import { TrendingUp, AlertTriangle, CheckCircle2, Edit3, Layers } from "lucide-react";
 import MoneyDisplay from "./MoneyDisplay";
+import { fmtNum } from "../utils/formatters";
 import { getMontantActualise } from "../utils/contratMetrics";
 import { computeNetHT } from "../utils/decompteCalcul";
 import { getBCDuContrat, getSoldeDisponible } from "../utils/bcMetrics";
@@ -101,7 +102,7 @@ export default function SituationChantierWidget({ contrat, decomptes: allDecompt
             <StatRow key={avt.id} label={avt.numero || `Avenant ${i + 1}`}>
               <span className={`text-xs font-semibold ${avt.montant >= 0 ? "text-blue-600" : "text-red-500"}`}>
                 {avt.montant >= 0 ? "+" : ""}
-                {new Intl.NumberFormat("fr-FR").format(avt.montant)} FCFA
+                {fmtNum(avt.montant)} FCFA
               </span>
             </StatRow>
           ))}
