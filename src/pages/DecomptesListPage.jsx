@@ -8,6 +8,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
 import { useDecomptesPaginated, useDecompteCircuit, useSaveDecompte, useDeleteDecompte } from "../hooks/useDecomptes";
+import { usePeutFaire } from "../hooks/useParametres";
 import ConfirmModal from "../components/ConfirmModal";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
@@ -130,6 +131,7 @@ export default function DecomptesListPage() {
 
   const { data: allData }  = useDecomptesPaginated({ count: 200 });
   const allDecomptes        = allData?.data ?? [];
+  const { data: peutCreerDecompte = false } = usePeutFaire("creer_decompte");
 
   const { data: contratsData } = useContratsPaginated({ count: 100 });
   const contrats = contratsData?.data ?? [];
@@ -237,12 +239,14 @@ export default function DecomptesListPage() {
         title="Décomptes"
         subtitle={isLoading ? "Chargement…" : `${meta.total ?? 0} décompte${(meta.total ?? 0) !== 1 ? "s" : ""}`}
         action={
-          <button
-            onClick={openModal}
-            className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors"
-          >
-            <Plus size={16} /> Nouveau décompte
-          </button>
+          peutCreerDecompte && (
+            <button
+              onClick={openModal}
+              className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors"
+            >
+              <Plus size={16} /> Nouveau décompte
+            </button>
+          )
         }
       />
 

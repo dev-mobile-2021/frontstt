@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { useDecompte, useSaveDecompte, useValiderDecompte, useRejeterDecompte, usePayerDecompte, useDecompteCircuit, useDecompteCessions, useDeleteDecompte } from "../hooks/useDecomptes";
 import { useContratsPaginated } from "../hooks/useContrats";
+import { usePeutFaire } from "../hooks/useParametres";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import http from "../services/http";
@@ -107,7 +108,7 @@ function ChecklistEtape({ profil }) {
 }
 
 // ─── Circuit Stepper ─────────────────────────────────────────────────────────
-function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre }) {
+function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider = false }) {
   const [showRejet, setShowRejet]   = useState(false);
   const [motif, setMotif]           = useState("");
   const { currentUser } = useUser();
@@ -131,7 +132,7 @@ function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSo
 
   const userRole   = currentUser?.role?.designation?.toLowerCase() ?? "";
   const isAdmin    = userRole === "admin";
-  const canValidate = isAdmin || !currentEtape || userRole === currentEtape.profil_code?.toLowerCase();
+  const canValidate = peutValider && (isAdmin || !currentEtape || userRole === currentEtape.profil_code?.toLowerCase());
 
   const findVal = profil => validations.find(v => v.profil_code === profil && v.action === "valide");
 
@@ -1195,6 +1196,7 @@ export default function DecompteFormPage() {
     v => v.profil_code?.toLowerCase() === "dg" && v.action === "valide"
   );
   const canEdit = !lockedByDg && (isNew || decompte?.statut === "brouillon");
+  const { data: peutValiderDecompte = false } = usePeutFaire("valider_decompte");
   const d       = decompte;
 
   async function handleCreate(form) {
@@ -1438,6 +1440,7 @@ export default function DecompteFormPage() {
                       onRejeter={handleRejeter}
                       onPayer={handlePayer}
                       onSoumettre={handleValider}
+                      peutValider={peutValiderDecompte}
                     />
                   </div>
                 )}
