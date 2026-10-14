@@ -1,9 +1,10 @@
 import { NavLink } from "react-router-dom";
 import {
   LayoutDashboard, FileText, Calculator, Users, Building2, BarChart3, Settings,
-  ChevronLeft, ChevronRight, ReceiptText, FileStack, Package, Paperclip,
+  ChevronLeft, ChevronRight, ReceiptText, FileStack, Package, Paperclip, Eye,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
+import { usePeutFaire } from "../hooks/useParametres";
 
 const NAV_ITEMS = [
   { label: "Tableau de bord", to: "/dashboard",      icon: LayoutDashboard },
@@ -11,6 +12,7 @@ const NAV_ITEMS = [
   { label: "Décomptes",       to: "/decomptes",       icon: Calculator },
   { label: "États de cession", to: "/etats-cession",  icon: Package },
   { label: "Attachements",    to: "/attachements",    icon: Paperclip, badge: true },
+  { label: "Consultation",    to: "/etats-cession/consultation", icon: Eye, roles: ["DCG", "Assistant DCG", "Admin"] },
   { label: "Relevés",         to: "/releves",         icon: ReceiptText },
   { label: "Factures",        to: "/factures",        icon: FileStack },
   { label: "Sous-traitants",  to: "/sous-traitants",  icon: Users },
@@ -59,6 +61,7 @@ function NavItem({ to, icon: Icon, label, collapsed, pendingCount }) {
 export default function Sidebar({ collapsed, onToggle }) {
   const { currentUser } = useUser();
   const attachPending = 0;
+  const userRole = currentUser?.role?.designation;
   return (
     <aside
       className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300 overflow-hidden`}
@@ -85,7 +88,7 @@ export default function Sidebar({ collapsed, onToggle }) {
         {!collapsed && (
           <p className="text-xs uppercase tracking-wide font-medium text-gray-400 px-2 mb-2">Navigation</p>
         )}
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.filter(item => !item.roles || item.roles.includes(userRole)).map((item) => (
           <NavItem key={item.to} {...item} collapsed={collapsed} pendingCount={item.badge ? attachPending : 0} />
         ))}
       </nav>
