@@ -354,10 +354,12 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
     if (!x3Config?.chantier_code) return addToast("Ce chantier n'a pas de code X3 configuré.", "error");
     setX3Loading(true);
     try {
+      if (!x3Config?.soustraitant_code) return addToast("Le sous-traitant n'a pas de code STT configuré.", "error");
       const rows = await x3Service.getCessionsMtx({
-        chantier_code: x3Config.chantier_code,
-        periode_debut: x3Config.periode_debut,
-        periode_fin:   x3Config.periode_fin,
+        chantier_code:    x3Config.chantier_code,
+        soustraitant_code: x3Config.soustraitant_code,
+        periode_debut:    x3Config.periode_debut,
+        periode_fin:      x3Config.periode_fin,
       });
       const gasoilCodes = contratBaremes
         .filter(cb => cb.bareme?.type === "gasoil")
