@@ -9,6 +9,7 @@ const FIELDS = `
   code_x3 abrege devise ninea_x3 synced_at created_at updated_at
   nb_contrats nb_contrats_en_cours total_ht_contrats total_ht_avenants total_contrats_avenants
   total_decomptes_payes total_decomptes_en_attente total_decomptes_en_cours
+  montant_realise montant_a_realiser nets_a_payer payes restant_a_payer
 `;
 
 export const soustraitantService = {
