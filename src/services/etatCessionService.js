@@ -17,15 +17,24 @@ const DETAIL_FIELDS = `
 `;
 
 export const etatCessionService = {
-  async list({ page = 1, count = 15, code, contrat_id, chantier_id, soustraitant_id, statut } = {}) {
+  async list({ page = 1, count = 15, code, contrat_id, contrat_code, chantier_id, soustraitant_id, soustraitant_nom, statut } = {}) {
     const data = await gql(
-      `query ListEtatsCession($page: Int, $count: Int, $code: String, $contrat_id: Int, $chantier_id: Int, $soustraitant_id: Int, $statut: String) {
-        etatsCessionPaginated(page: $page, count: $count, code: $code, contrat_id: $contrat_id, chantier_id: $chantier_id, soustraitant_id: $soustraitant_id, statut: $statut) {
+      `query ListEtatsCession($page: Int, $count: Int, $code: String, $contrat_id: Int, $contrat_code: String, $chantier_id: Int, $soustraitant_id: Int, $soustraitant_nom: String, $statut: String) {
+        etatsCessionPaginated(page: $page, count: $count, code: $code, contrat_id: $contrat_id, contrat_code: $contrat_code, chantier_id: $chantier_id, soustraitant_id: $soustraitant_id, soustraitant_nom: $soustraitant_nom, statut: $statut) {
           data { ${LIST_FIELDS} }
           metadata { total current_page per_page last_page }
         }
       }`,
-      { page, count, code: code || null, contrat_id: contrat_id || null, chantier_id: chantier_id || null, soustraitant_id: soustraitant_id || null, statut: statut || null }
+      {
+        page, count,
+        code:             code             || null,
+        contrat_id:       contrat_id       || null,
+        contrat_code:     contrat_code     || null,
+        chantier_id:      chantier_id      || null,
+        soustraitant_id:  soustraitant_id  || null,
+        soustraitant_nom: soustraitant_nom || null,
+        statut:           statut           || null,
+      }
     );
     return data.etatsCessionPaginated;
   },
