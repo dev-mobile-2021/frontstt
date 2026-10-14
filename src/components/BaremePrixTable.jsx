@@ -11,27 +11,19 @@ const SOURCES = {
 };
 
 function SourceBadge({ source, level }) {
-  // Vu du contrat, le parent est le chantier : un prix non modifié par le contrat vient du « barème chantier »
-  // (qui reprend lui-même le barème général tant que le chantier n'a pas d'écart).
   const eff = level === "contrat" && source !== "contrat" ? "chantier" : source;
   const s = SOURCES[eff] ?? SOURCES.base;
   return <span className={`inline-block text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded ${s.cls}`}>{s.label}</span>;
 }
 
-/**
- * Tableau de prix hérités avec écarts (chantier ou contrat).
- *  rows : [{ bareme_id, code, designation, unite, prix_base, prix_herite?, source_herite?, prix_effectif, source,
- *            prix_propose, statut_prix, contrat_bareme_id? }]
- *  level : "chantier" | "contrat"
- *  Un écart = source égale au niveau courant.
- */
 export default function BaremePrixTable({
   rows = [], level = "contrat", canValidate = false, disabled = false,
   onSave, onReset, onValider, busyId = null,
+  selected = [], onSelectChange,
 }) {
   const [search, setSearch] = useState("");
   const [onlyEcarts, setOnlyEcarts] = useState(false);
-  const [editing, setEditing] = useState(null); // bareme_id
+  const [editing, setEditing] = useState(null);
   const [value, setValue] = useState("");
 
   const isEcart = (r) => r.source === level || r.prix_propose != null;
@@ -59,6 +51,26 @@ export default function BaremePrixTable({
   const attente = rows.filter((r) => r.statut_prix === "en_attente").length;
   const heritage = level === "contrat" ? "du chantier" : "de la base";
 
+  // cases à cocher : seulement les lignes en attente
+  const lignesEnAttente = visibles.filter(r => r.statut_prix === "en_attente");
+  const allSelected = lignesEnAttente.length > 0 && lignesEnAttente.every(r => selected.includes(r.contrat_bareme_id));
+
+  function toggleRow(r) {
+    if (!onSelectChange) return;
+    const id = r.contrat_bareme_id;
+    onSelectChange(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  }
+
+  function toggleAll() {
+    if (!onSelectChange) return;
+    const ids = lignesEnAttente.map(r => r.contrat_bareme_id);
+    if (allSelected) {
+      onSelectChange(prev => prev.filter(x => !ids.includes(x)));
+    } else {
+      onSelectChange(prev => [...new Set([...prev, ...ids])]);
+    }
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -73,7 +85,7 @@ export default function BaremePrixTable({
         </label>
         <span className="text-xs text-gray-400">
           {rows.length} article{rows.length > 1 ? "s" : ""} · {ecarts} écart{ecarts > 1 ? "s" : ""}
-          {attente > 0 && <span className="text-amber-600 font-medium"> · {attente} en attente DACC</span>}
+          {attente > 0 && <span className="text-amber-600 font-medium"> · {attente} en attente de validation</span>}
         </span>
       </div>
 
@@ -81,6 +93,15 @@ export default function BaremePrixTable({
         <table className="w-full text-sm min-w-[780px]">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+              {canValidate && (
+                <th className="px-3 py-3 w-8">
+                  {lignesEnAttente.length > 0 && (
+                    <input type="checkbox" checked={allSelected} onChange={toggleAll}
+                      title="Tout sélectionner / désélectionner"
+                      className="accent-[#087F3E] cursor-pointer" />
+                  )}
+                </th>
+              )}
               <th className="text-left px-4 py-3">Article</th>
               <th className="text-left px-3 py-3">Unité</th>
               {level === "chantier" && <th className="text-right px-3 py-3">Prix de base</th>}
@@ -92,7 +113,7 @@ export default function BaremePrixTable({
           </thead>
           <tbody className="divide-y divide-gray-100">
             {visibles.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm">
+              <tr><td colSpan={canValidate ? 8 : 7} className="px-4 py-10 text-center text-gray-400 text-sm">
                 {rows.length === 0 ? "Aucun article dans le barème général. Le DACC doit d'abord l'alimenter (Paramétrage → Barème général)." : "Aucun article ne correspond."}
               </td></tr>
             )}
@@ -101,8 +122,17 @@ export default function BaremePrixTable({
               const enAttente = r.statut_prix === "en_attente";
               const isEditing = editing === r.bareme_id;
               const busy = busyId === r.bareme_id;
+              const isSelected = selected.includes(r.contrat_bareme_id);
               return (
-                <tr key={r.bareme_id} className={ecart ? "bg-amber-50/30" : "hover:bg-gray-50"}>
+                <tr key={r.bareme_id} className={isSelected ? "bg-amber-50" : ecart ? "bg-amber-50/30" : "hover:bg-gray-50"}>
+                  {canValidate && (
+                    <td className="px-3 py-3">
+                      {enAttente && (
+                        <input type="checkbox" checked={isSelected} onChange={() => toggleRow(r)}
+                          className="accent-[#087F3E] cursor-pointer" />
+                      )}
+                    </td>
+                  )}
                   <td className="px-4 py-3">
                     <p className="font-medium text-gray-900">{r.designation}</p>
                     <p className="text-xs font-mono text-gray-400">{r.code}</p>
@@ -137,7 +167,7 @@ export default function BaremePrixTable({
                   </td>
                   <td className="px-3 py-3">
                     {enAttente ? (
-                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">En attente DACC</span>
+                      <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">En attente validation</span>
                     ) : ecart ? (
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Écart validé</span>
                     ) : (

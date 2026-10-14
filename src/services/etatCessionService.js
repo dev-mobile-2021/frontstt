@@ -5,7 +5,7 @@ const LIST_FIELDS = `
   id code contrat_id periode_debut periode_fin montant_total statut
   motif_rejet created_at updated_at
   contrat { id code objet soustraitant { id raison_sociale } chantier { id code designation } }
-  lignes { poste montant }
+  lignes { poste montant prix_unitaire }
 `;
 
 const DETAIL_FIELDS = `

@@ -77,4 +77,8 @@ export const baremeHierarchieService = {
     const { data } = await http.post(`/contrat/bareme/${contratBaremeId}/valider-prix`);
     return data;
   },
+  async validerContratBulk(ids) {
+    const { data } = await http.post(`/contrat/bareme/valider-prix-bulk`, { ids });
+    return data;
+  },
 };

@@ -611,11 +611,17 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                         autoFocus />
                     ) : canEdit ? (
                       <button onClick={() => { setEditingLigne(l.id); setEditLignePrix(String(l.prix_unitaire)); }}
-                        className="text-gray-600 hover:text-[#087F3E] transition-colors tabular-nums">
-                        {fmtNum(l.prix_unitaire)} FCFA
+                        className={`hover:text-[#087F3E] transition-colors tabular-nums ${!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0 ? "text-amber-600 font-semibold" : "text-gray-600"}`}>
+                        {!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0
+                          ? <span title="Prix manquant — validez dans le barème du contrat">⚠ 0 FCFA</span>
+                          : <>{fmtNum(l.prix_unitaire)} FCFA</>}
                       </button>
                     ) : (
-                      <span className="tabular-nums text-gray-600">{fmtNum(l.prix_unitaire)} FCFA</span>
+                      <span className={`tabular-nums ${!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0 ? "text-amber-600 font-semibold" : "text-gray-600"}`}>
+                        {!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0
+                          ? <span title="Prix manquant">⚠ 0 FCFA</span>
+                          : <>{fmtNum(l.prix_unitaire)} FCFA</>}
+                      </span>
                     )}
                   </td>
                   <td className="px-5 py-2.5 text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</td>
@@ -987,8 +993,9 @@ export default function EtatCessionFormPage() {
   const canEdit = isNew || etat?.statut === "brouillon";
   // Avancement des statuts de bloc (Viser qtés, Valider prix) : soumis uniquement
   const canAdvanceBloc = etat?.statut === "soumis";
-  const lignes  = etat?.lignes ?? [];
-  const totalEC = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+  const lignes       = etat?.lignes ?? [];
+  const totalEC      = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
+  const lignesSansPrix = lignes.filter(l => !l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0);
 
   const x3Config = !isNew && etat ? {
     chantier_code:    etat.contrat?.chantier?.code_x3 ?? null,
@@ -1035,10 +1042,17 @@ export default function EtatCessionFormPage() {
 
             {/* brouillon : soumettre */}
             {etat.statut === "brouillon" && peutCreer && (
-              <button onClick={() => setPendingStatut("soumis")}
-                className="px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
-                Soumettre
-              </button>
+              lignesSansPrix.length > 0 ? (
+                <span title={`${lignesSansPrix.length} ligne(s) sans prix — validez les prix dans le barème du contrat`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium cursor-not-allowed border border-amber-300">
+                  ⚠ {lignesSansPrix.length} ligne{lignesSansPrix.length > 1 ? "s" : ""} sans prix
+                </span>
+              ) : (
+                <button onClick={() => setPendingStatut("soumis")}
+                  className="px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
+                  Soumettre
+                </button>
+              )
             )}
 
             {/* soumis : valider, rejeter ou retourner au CT */}

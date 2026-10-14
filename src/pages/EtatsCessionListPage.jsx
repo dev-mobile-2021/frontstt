@@ -418,7 +418,16 @@ export default function EtatsCessionListPage() {
                     );
                   })}
                   <td className="px-4 py-3.5"><MoneyDisplay amount={e.montant_total ?? 0} variant="small" /></td>
-                  <td className="px-4 py-3.5"><StatusBadge statut={e.statut} /></td>
+                  <td className="px-4 py-3.5">
+                    <div className="flex items-center gap-1.5">
+                      <StatusBadge statut={e.statut} />
+                      {e.statut === "brouillon" && (e.lignes ?? []).some(l => !l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0) && (
+                        <span title="Lignes sans prix — soumission bloquée" className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
+                          ⚠ Prix
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="px-4 py-3.5" onClick={ev => ev.stopPropagation()}>
                     {e.statut === "brouillon" && (
                       <button

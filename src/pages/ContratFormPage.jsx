@@ -339,12 +339,14 @@ function ParametrageFinancierTab({ contrat, avenants }) {
 function BaremeCessionsTab({ contratId, isNew, statut }) {
   const { addToast } = useToast();
   const { data, isLoading } = useBaremeContrat(isNew ? null : contratId);
-  const { setPrix, reset, valider } = useBaremeContratActions(contratId);
+  const { setPrix, reset, valider, validerBulk } = useBaremeContratActions(contratId);
   const addMut = useAddBaremeContrat(contratId);
   const [busyId, setBusyId] = useState(null);
   const [showImport, setShowImport] = useState(false);
   const refreshBareme = useRefreshBareme();
   const { data: peutGererBareme = false } = usePeutFaire("gerer_bareme");
+  const { data: peutValiderBareme = false } = usePeutFaire("valider_bareme");
+  const [selected, setSelected] = useState([]); // contrat_bareme_ids en attente sélectionnés
   const [nouveau, setNouveau] = useState({ code_article: "", designation: "", unite: "", prix: "" });
 
   if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer son barème.</p>;
@@ -374,6 +376,15 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
     try { await fn(); if (okMsg) addToast(okMsg, "success"); }
     catch (e) { addToast(err(e), "error"); }
     finally { setBusyId(null); }
+  }
+
+  async function handleValiderSelection() {
+    if (selected.length === 0) return;
+    try {
+      await validerBulk.mutateAsync(selected);
+      addToast(`${selected.length} prix validé(s).`, "success");
+      setSelected([]);
+    } catch (e) { addToast(err(e), "error"); }
   }
 
   return (
@@ -466,12 +477,25 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
           onClose={() => setShowImport(false)}
         />
       )}
+      {peutValiderBareme && selected.length > 0 && (
+        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+          <span className="text-sm text-amber-800 font-medium">{selected.length} ligne{selected.length > 1 ? "s" : ""} sélectionnée{selected.length > 1 ? "s" : ""}</span>
+          <button onClick={handleValiderSelection} disabled={validerBulk.isPending}
+            className="inline-flex items-center gap-1.5 text-sm font-semibold bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] disabled:opacity-60">
+            {validerBulk.isPending ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle size={13} />}
+            Valider la sélection
+          </button>
+          <button onClick={() => setSelected([])} className="text-xs text-amber-600 hover:underline">Tout désélectionner</button>
+        </div>
+      )}
       <BaremePrixTable
         rows={lignes}
         level="contrat"
-        canValidate={!!data?.peut_valider}
+        canValidate={peutValiderBareme}
         disabled={bloque}
         busyId={busyId}
+        selected={selected}
+        onSelectChange={setSelected}
         onSave={(r, prix) => run(r.bareme_id, () => setPrix.mutateAsync({ baremeId: r.bareme_id, prix }), "Prix enregistré.")}
         onReset={(r) => run(r.bareme_id, () => reset.mutateAsync(r.bareme_id), "Prix hérité rétabli.")}
         onValider={(r) => run(r.bareme_id, () => valider.mutateAsync(r.contrat_bareme_id), "Prix validé.")}
