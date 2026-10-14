@@ -3,7 +3,10 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, ChevronDown, Calendar, MapPin, FileText, Hash,
   ExternalLink, RefreshCw, Info, Users, Wrench, Package, Truck, Layers, Building2, Loader2, Upload, Download,
+  UserCheck, History, Save,
 } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import http from "../services/http";
 import { useSynchroniserChantier } from "../hooks/useX3Sync";
 import BaremePrixTable from "../components/BaremePrixTable";
 import { useBaremeChantier, useBaremeChantierActions, useRefreshBareme } from "../hooks/useBaremeHierarchie";
@@ -13,7 +16,9 @@ import { telechargerModeleBareme } from "../utils/baremeModele";
 import { useChantier } from "../hooks/useChantiers";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useDecomptesPaginated } from "../hooks/useDecomptes";
+import { useUsersPaginated } from "../hooks/useUsers";
 import { useToast } from "../context/ToastContext";
+import { useUser } from "../context/UserContext";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import Tabs from "../components/Tabs";
@@ -292,6 +297,144 @@ function TabBareme({ chantierId }) {
   );
 }
 
+// ─── Section affectation DT / CT ────────────────────────────────────────────
+function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
+  const qc = useQueryClient();
+  const { addToast } = useToast();
+  const [form, setForm] = useState({ role: "DT", user_id: "", note: "" });
+  const [showHistory, setShowHistory] = useState(false);
+
+  const { data: usersData } = useUsersPaginated({ count: 200 });
+  const users = usersData?.data ?? [];
+  const dtUsers = users.filter(u => u.role?.designation === "DT");
+  const ctUsers = users.filter(u => u.role?.designation === "CT");
+
+  const { data: history } = useQuery({
+    queryKey: ["chantier_affectations", chantierId],
+    queryFn: () => http.get(`/chantiers/${chantierId}/affectations`).then(r => r.data.data),
+  });
+
+  const affecterMut = useMutation({
+    mutationFn: (payload) => http.post(`/chantiers/${chantierId}/affecter`, payload).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chantier", String(chantierId)] });
+      qc.invalidateQueries({ queryKey: ["chantier_affectations", chantierId] });
+      addToast(`${form.role} affecté avec succès.`, "success");
+      setForm(f => ({ ...f, user_id: "", note: "" }));
+    },
+    onError: (e) => addToast(e?.response?.data?.error ?? "Erreur lors de l'affectation.", "error"),
+  });
+
+  const dtUser  = chantier.dt_user;
+  const ctUser  = chantier.ct_user;
+  const fmtUser = u => u ? `${u.prenom ?? ""} ${u.nom ?? ""}`.trim() : null;
+  const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900">Responsables du chantier</h3>
+          <p className="text-xs text-gray-400 mt-0.5">DT et CT — valident les décomptes avant le circuit administratif</p>
+        </div>
+        <button onClick={() => setShowHistory(h => !h)}
+          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#087F3E] transition-colors">
+          <History size={13} /> Historique
+        </button>
+      </div>
+
+      {/* Affichage actuel */}
+      <div className="grid grid-cols-2 gap-3">
+        {[
+          { badge: "CT", label: "Conducteur de Travaux", user: ctUser, color: "amber" },
+          { badge: "DT", label: "Directeur de Travaux",  user: dtUser, color: "green" },
+        ].map(({ badge, label, user, color }) => {
+          const colors = {
+            amber: { wrap: "bg-amber-50 border-amber-200", badge: "bg-amber-100 text-amber-800 border-amber-300" },
+            green: { wrap: "bg-[#E8F5EE] border-[#b5ddc8]", badge: "bg-[#d4edd9] text-[#065A2C] border-[#b5ddc8]" },
+          };
+          const c = colors[color];
+          return (
+            <div key={badge} className={`flex items-start gap-3 p-4 rounded-xl border ${c.wrap}`}>
+              <div className={`flex-shrink-0 px-2 py-1 rounded border text-xs font-bold ${c.badge}`}>{badge}</div>
+              <div>
+                <p className="text-xs text-gray-500">{label}</p>
+                {fmtUser(user)
+                  ? <p className="text-sm font-semibold text-gray-800 mt-0.5">{fmtUser(user)}</p>
+                  : <p className="text-sm text-gray-400 italic mt-0.5">Non affecté</p>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Formulaire DACC */}
+      {isDacc && (
+        <div className="border border-dashed border-[#087F3E]/40 rounded-xl p-4 space-y-3 bg-[#f8fdf9]">
+          <p className="text-xs font-semibold text-[#087F3E] flex items-center gap-1.5"><UserCheck size={13} /> Affecter un responsable</p>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Rôle</label>
+              <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value, user_id: "" }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+                <option value="DT">DT — Directeur de Travaux</option>
+                <option value="CT">CT — Conducteur de Travaux</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Utilisateur</label>
+              <select value={form.user_id} onChange={e => setForm(f => ({ ...f, user_id: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+                <option value="">— Sélectionner —</option>
+                {(form.role === "DT" ? dtUsers : ctUsers).map(u => (
+                  <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Note (optionnel)</label>
+              <input type="text" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+                placeholder="Motif de changement…"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30" />
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <button onClick={() => affecterMut.mutate({ role: form.role, user_id: parseInt(form.user_id), note: form.note || null })}
+              disabled={!form.user_id || affecterMut.isPending}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white text-sm rounded-lg hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
+              {affecterMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+              Affecter
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Historique */}
+      {showHistory && (
+        <div className="border border-gray-100 rounded-xl overflow-hidden">
+          <div className="bg-gray-50 px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Historique des affectations</div>
+          {!history || history.length === 0 ? (
+            <p className="px-4 py-6 text-sm text-gray-400 text-center">Aucune affectation enregistrée.</p>
+          ) : (
+            <ul className="divide-y divide-gray-100">
+              {history.map(h => (
+                <li key={h.id} className="px-4 py-3 flex items-start gap-3">
+                  <span className={`mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded border ${h.role === "DT" ? "bg-[#d4edd9] text-[#065A2C] border-[#b5ddc8]" : "bg-amber-100 text-amber-800 border-amber-300"}`}>{h.role}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-800 font-medium">{h.user?.prenom} {h.user?.nom}</p>
+                    {h.note && <p className="text-xs text-gray-500 mt-0.5 italic">« {h.note} »</p>}
+                    <p className="text-xs text-gray-400 mt-0.5">Par {h.assigned_by?.prenom} {h.assigned_by?.nom} · {fmtDate(h.created_at)}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page principale ─────────────────────────────────────────────────────────
 export default function ChantierFormPage() {
   const { id }   = useParams();
@@ -313,6 +456,8 @@ export default function ChantierFormPage() {
     }
   }
   const [activeTab, setActiveTab] = useState("contrats");
+  const { currentUser } = useUser();
+  const isDacc = currentUser?.role?.designation === "DACC";
 
   const { data: chantier, isLoading, isError } = useChantier(id);
   const { data: contratsData } = useContratsPaginated({ chantier_id: Number(id), count: 200 });
@@ -433,24 +578,8 @@ export default function ChantierFormPage() {
         </div>
       </div>
 
-      {/* Circuit terrain */}
-      {(chantier.conducteur_travaux || chantier.chef_projet) && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-          <div>
-            <h3 className="text-sm font-semibold text-gray-900">Circuit terrain — responsables du chantier</h3>
-            <p className="text-xs text-gray-400 mt-0.5">Avant circuit administratif (DACC → DEX → DGA → DG)</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <RoleCard badge="CT" role="Conducteur de Travaux" level="Niveau 1 (constat terrain)"
-              nom={chantier.conducteur_travaux} color="amber" />
-            <RoleCard badge="DT" role="Directeur de Travaux" level="Niveau 2 (direction technique)"
-              nom={chantier.chef_projet} color="green" />
-          </div>
-          <p className="text-xs text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
-            Ces deux rôles valident en premier les décomptes de ce chantier, avant transmission au circuit administratif central.
-          </p>
-        </div>
-      )}
+      {/* Responsables DT / CT */}
+      <SectionAffectationDTCT chantierId={id} chantier={chantier} isDacc={isDacc} />
 
       {/* KPIs */}
       <div className="grid grid-cols-5 gap-4">
