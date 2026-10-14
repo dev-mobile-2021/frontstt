@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import ConfirmModal from "../components/ConfirmModal";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
@@ -39,6 +40,7 @@ import SousTraitantSelect from "../components/SousTraitantSelect";
 import ArchiveContratDialog from "../components/ArchiveContratDialog";
 import BaremePrixTable from "../components/BaremePrixTable";
 import ImportBaremeDialog from "../components/ImportBaremeDialog";
+import ImportDqeModal from "../components/ImportDqeModal";
 import { telechargerModeleBareme } from "../utils/baremeModele";
 import { baremeHierarchieService } from "../services/baremeHierarchieService";
 import { useBaremeContrat, useBaremeContratActions, useRefreshBareme } from "../hooks/useBaremeHierarchie";
@@ -1570,6 +1572,9 @@ function DqeTab({ contratId, contrat }) {
   const toggleRub   = (id) => setCollapsedRub(s => ({ ...s, [id]: !s[id] }));
   const togglePoste = (id) => setCollapsedPoste(s => ({ ...s, [id]: !s[id] }));
 
+  const [showImportDqe, setShowImportDqe] = useState(false);
+  const qc = useQueryClient();
+
   // Confirm delete
   const [confirmDel, setConfirmDel] = useState(null); // { type, id, label }
 
@@ -1645,12 +1650,20 @@ function DqeTab({ contratId, contrat }) {
       {/* Header actions + Total */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         {!readonly ? (
-          <button
-            onClick={() => setAddingRubrique(true)}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#076a34] transition-colors"
-          >
-            <Plus size={14} /> Ajouter une rubrique
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setAddingRubrique(true)}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#076a34] transition-colors"
+            >
+              <Plus size={14} /> Ajouter une rubrique
+            </button>
+            <button
+              onClick={() => setShowImportDqe(true)}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#087F3E] text-[#087F3E] text-sm font-medium hover:bg-[#087F3E]/5 transition-colors"
+            >
+              <Upload size={14} /> Importer
+            </button>
+          </div>
         ) : (
           <div className="text-xs text-gray-500 italic">Contrat {contrat?.statut} — lecture seule</div>
         )}
@@ -2022,6 +2035,17 @@ function DqeTab({ contratId, contrat }) {
             </div>
           </div>
         </div>
+      )}
+
+      {showImportDqe && (
+        <ImportDqeModal
+          contratId={contratId}
+          onImported={() => {
+            qc.invalidateQueries(["dqe", contratId]);
+            setShowImportDqe(false);
+          }}
+          onClose={() => setShowImportDqe(false)}
+        />
       )}
     </div>
   );
