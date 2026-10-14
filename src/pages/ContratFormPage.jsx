@@ -1552,7 +1552,7 @@ function DqeTab({ contratId, contrat }) {
 
   // Formulaires inline
   const [addingRubrique, setAddingRubrique] = useState(false);
-  const [rubForm, setRubForm] = useState({ designation: "", code: "" });
+  const [rubForm, setRubForm] = useState({ designation: "", code: "", bon_commande_id: null });
   const [editRubId, setEditRubId] = useState(null);
   const [editRubForm, setEditRubForm] = useState({ designation: "", code: "" });
 
@@ -1575,21 +1575,33 @@ function DqeTab({ contratId, contrat }) {
   const [showImportDqe, setShowImportDqe] = useState(false);
   const qc = useQueryClient();
 
+  const { data: bcsData } = useBonCommandesByContrat(contratId);
+  const bcs = bcsData ?? [];
+
   // Confirm delete
   const [confirmDel, setConfirmDel] = useState(null); // { type, id, label }
 
-  const resetAddRub = () => { setAddingRubrique(false); setRubForm({ designation: "", code: "" }); };
+  const resetAddRub = () => { setAddingRubrique(false); setRubForm({ designation: "", code: "", bon_commande_id: null }); };
   const resetAddPoste = () => { setAddingPosteFor(null); setPosteForm({ designation: "" }); };
   const resetAddLigne = () => { setAddingLigneFor(null); setLigneForm({ designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" }); };
 
   const submitAddRub = async () => {
     if (!rubForm.designation.trim()) return;
-    await saveRubrique.mutateAsync({ designation: rubForm.designation.trim(), code: rubForm.code.trim() || null });
+    await saveRubrique.mutateAsync({
+      designation:     rubForm.designation.trim(),
+      code:            rubForm.code.trim() || null,
+      bon_commande_id: rubForm.bon_commande_id ? Number(rubForm.bon_commande_id) : null,
+    });
     resetAddRub();
   };
   const submitEditRub = async (id) => {
     if (!editRubForm.designation.trim()) return;
-    await saveRubrique.mutateAsync({ id, designation: editRubForm.designation.trim(), code: editRubForm.code?.trim() || null });
+    await saveRubrique.mutateAsync({
+      id,
+      designation:     editRubForm.designation.trim(),
+      code:            editRubForm.code?.trim() || null,
+      bon_commande_id: editRubForm.bon_commande_id ? Number(editRubForm.bon_commande_id) : null,
+    });
     setEditRubId(null);
   };
   const submitAddPoste = async (rubriqueId) => {
@@ -1697,6 +1709,21 @@ function DqeTab({ contratId, contrat }) {
               placeholder="TERRASSEMENTS"
             />
           </div>
+          {bcs.length > 0 && (
+            <div className="min-w-[180px]">
+              <label className="block text-[11px] text-gray-600 mb-1">BC associé (optionnel)</label>
+              <select
+                value={rubForm.bon_commande_id || ""}
+                onChange={e => setRubForm(s => ({ ...s, bon_commande_id: e.target.value || null }))}
+                className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-white"
+              >
+                <option value="">— Aucun BC —</option>
+                {bcs.map(bc => (
+                  <option key={bc.id} value={bc.id}>{bc.numero ?? bc.code_x3}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex gap-2">
             <button
               onClick={submitAddRub}
@@ -1749,6 +1776,18 @@ function DqeTab({ contratId, contrat }) {
                     onChange={e => setEditRubForm(s => ({ ...s, designation: e.target.value }))}
                     className="flex-1 min-w-[200px] px-2 py-1 border border-gray-200 rounded text-sm"
                   />
+                  {bcs.length > 0 && (
+                    <select
+                      value={editRubForm.bon_commande_id || ""}
+                      onChange={e => setEditRubForm(s => ({ ...s, bon_commande_id: e.target.value || null }))}
+                      className="border border-gray-200 rounded px-2 py-1 text-xs bg-white max-w-[200px]"
+                    >
+                      <option value="">— Aucun BC —</option>
+                      {bcs.map(bc => (
+                        <option key={bc.id} value={bc.id}>{bc.numero ?? bc.code_x3}</option>
+                      ))}
+                    </select>
+                  )}
                   <button onClick={() => submitEditRub(rub.id)} className="px-2 py-1 rounded bg-[#087F3E] text-white text-xs hover:bg-[#076a34]">OK</button>
                   <button onClick={() => setEditRubId(null)} className="px-2 py-1 rounded border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">Annuler</button>
                 </div>
@@ -1757,12 +1796,17 @@ function DqeTab({ contratId, contrat }) {
                   <div className="flex-1 font-semibold text-[#087F3E] text-sm">
                     {rub.code && <span className="text-xs text-gray-500 font-mono mr-2">{rub.code}</span>}
                     RA : {rub.designation}
+                    {rub.bon_commande && (
+                      <span className="ml-2 text-[11px] font-normal bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                        BC : {rub.bon_commande.numero ?? rub.bon_commande.code_x3}
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm font-bold text-[#087F3E]">{fmtMontantDqe(rubMontant)} FCFA</div>
                   {!readonly && (
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => { setEditRubId(rub.id); setEditRubForm({ designation: rub.designation, code: rub.code || "" }); }}
+                        onClick={() => { setEditRubId(rub.id); setEditRubForm({ designation: rub.designation, code: rub.code || "", bon_commande_id: rub.bon_commande_id || "" }); }}
                         className="p-1 rounded hover:bg-white/60 text-gray-600" title="Modifier"
                       >
                         <Pencil size={13} />
