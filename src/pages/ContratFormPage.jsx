@@ -44,7 +44,8 @@ import ImportBaremeDialog from "../components/ImportBaremeDialog";
 import ImportDqeModal from "../components/ImportDqeModal";
 import { telechargerModeleBareme } from "../utils/baremeModele";
 import { baremeHierarchieService } from "../services/baremeHierarchieService";
-import { useBaremeContrat, useBaremeContratActions, useRefreshBareme } from "../hooks/useBaremeHierarchie";
+import { useBaremeContrat, useBaremeContratActions, useRefreshBareme, useAddBaremeContrat } from "../hooks/useBaremeHierarchie";
+import ArticleX3Select from "../components/ArticleX3Select";
 
 // ─── Workflow transitions ────────────────────────────────────────
 const TRANSITIONS = {
@@ -339,18 +340,34 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
   const { addToast } = useToast();
   const { data, isLoading } = useBaremeContrat(isNew ? null : contratId);
   const { setPrix, reset, valider } = useBaremeContratActions(contratId);
+  const addMut = useAddBaremeContrat(contratId);
   const [busyId, setBusyId] = useState(null);
   const [showImport, setShowImport] = useState(false);
   const refreshBareme = useRefreshBareme();
   const { data: peutGererBareme = false } = usePeutFaire("gerer_bareme");
+  const [nouveau, setNouveau] = useState({ code_article: "", designation: "", unite: "", prix: "" });
 
   if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer son barème.</p>;
   if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
 
-  const err = e => e?.response?.data?.errors?.[0] ?? "Erreur.";
+  const err = e => e?.response?.data?.error ?? e?.response?.data?.errors?.[0] ?? "Erreur.";
   const lignes = data?.lignes ?? [];
   const fige = !!data?.fige;
   const bloque = ["resilie", "archive", "cloture"].includes(statut);
+
+  async function handleAdd() {
+    const prix = parseFloat(nouveau.prix);
+    if (!nouveau.code_article) return addToast("Choisissez un article Sage X3.", "error");
+    if (isNaN(prix) || prix < 0) return addToast("Saisissez un prix valide.", "error");
+    try {
+      await addMut.mutateAsync({ code_article: nouveau.code_article, prix_contrat: prix, unite: nouveau.unite || null });
+      setNouveau({ code_article: "", designation: "", unite: "", prix: "" });
+      addToast("Article ajouté au barème du contrat.", "success");
+    } catch (e) {
+      const msg = err(e);
+      addToast(msg === "DUPLICATE" ? "Cet article est déjà dans le barème du contrat." : msg, "error");
+    }
+  }
 
   async function run(id, fn, okMsg) {
     setBusyId(id);
@@ -372,6 +389,52 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
           Les prix seront figés à l'activation, qui est impossible tant qu'un écart attend la validation DACC.
         </p>
       )}
+      {!bloque && peutGererBareme && (
+        <div className="border border-dashed border-gray-300 rounded-xl p-4 space-y-3">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ajouter un article Sage X3</p>
+          <div className="grid md:grid-cols-[1fr_110px_140px_auto] gap-3 items-end">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Article (classes MTX, BAS, PRP)</label>
+              <ArticleX3Select
+                value={nouveau.code_article}
+                classe="MTX,BAS,PRP"
+                onSelect={a => {
+                  if (!a) return setNouveau(n => ({ ...n, code_article: "", designation: "", unite: "", prix: "" }));
+                  const existant = lignes.find(l => l.code_article === a.code_article || l.code === a.code_article);
+                  setNouveau(n => ({
+                    ...n,
+                    code_article: a.code_article,
+                    designation: a.designation,
+                    unite: a.unite ?? n.unite,
+                    prix: existant?.prix_effectif != null ? String(existant.prix_effectif) : existant?.prix != null ? String(existant.prix) : n.prix,
+                  }));
+                }}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Unité</label>
+              <input list="unites-bareme-contrat" value={nouveau.unite}
+                onChange={e => setNouveau(n => ({ ...n, unite: e.target.value.toUpperCase() }))}
+                placeholder="Unité X3"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+              <datalist id="unites-bareme-contrat">
+                {["T","KG","L","M3","M2","ML","M","SAC","U","PC","BARRE","H","JOUR","MOIS"].map(u => <option key={u} value={u} />)}
+              </datalist>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Prix chantier = Prix appliqué (FCFA)</label>
+              <input type="number" min="0" step="any" value={nouveau.prix}
+                onChange={e => setNouveau(n => ({ ...n, prix: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+            </div>
+            <button onClick={handleAdd} disabled={addMut.isPending}
+              className="inline-flex items-center gap-1.5 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
+              {addMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Ajouter
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-end gap-2">
         <button onClick={() => telechargerModeleBareme(
             lignes.map(l => ({ code: l.code, designation: l.designation, unite: l.unite, prix: l.prix_effectif, prix_chantier: l.prix_herite,

@@ -51,6 +51,11 @@ export const baremeHierarchieService = {
     return data;
   },
 
+  async addContrat(contratId, payload) {
+    const { data } = await http.post(`/contrat/${contratId}/bareme`, payload);
+    return data;
+  },
+
   // ── Contrat
   async listContrat(contratId) {
     const { data } = await http.get(`/contrat/${contratId}/baremes/effectifs`);

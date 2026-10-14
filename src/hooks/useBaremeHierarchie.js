@@ -50,6 +50,11 @@ export function useBaremeChantierActions(chantierId) {
 export function useBaremeContrat(contratId) {
   return useQuery({ queryKey: ["bareme-contrat", String(contratId)], queryFn: () => svc.listContrat(contratId), enabled: !!contratId });
 }
+export function useAddBaremeContrat(contratId) {
+  const refresh = useRefresh();
+  return useMutation({ mutationFn: (p) => svc.addContrat(contratId, p), onSuccess: refresh });
+}
+
 export function useBaremeContratActions(contratId) {
   const refresh = useRefresh();
   return {
