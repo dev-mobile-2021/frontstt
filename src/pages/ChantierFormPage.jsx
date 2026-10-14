@@ -17,6 +17,7 @@ import { useChantier } from "../hooks/useChantiers";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useDecomptesPaginated } from "../hooks/useDecomptes";
 import { useUsersPaginated } from "../hooks/useUsers";
+import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import PageHeader from "../components/PageHeader";
@@ -435,6 +436,131 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
   );
 }
 
+// ─── Section portefeuilles CT ────────────────────────────────────────────────
+function SectionPortefeuillesCT({ chantierId, isDacc }) {
+  const qc = useQueryClient();
+  const { addToast } = useToast();
+  const [form, setForm] = useState({ ct_user_id: "", soustraitant_id: "" });
+
+  const { data: usersData } = useUsersPaginated({ count: 200 });
+  const users    = usersData?.data ?? [];
+  const ctUsers  = users.filter(u => u.role?.designation === "CT");
+
+  const { data: sttData } = useSousTraitantsPaginated({ count: 500 });
+  const soustraitants = sttData?.data ?? [];
+
+  const { data: portefeuilles, isLoading } = useQuery({
+    queryKey: ["ct_portefeuilles", chantierId],
+    queryFn: () => http.get(`/chantiers/${chantierId}/ct-portefeuilles`).then(r => r.data.data ?? r.data),
+  });
+
+  const addMut = useMutation({
+    mutationFn: (p) => http.post(`/chantiers/${chantierId}/ct-portefeuilles`, p).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ct_portefeuilles", chantierId] });
+      addToast("STT ajouté au portefeuille.", "success");
+      setForm({ ct_user_id: "", soustraitant_id: "" });
+    },
+    onError: (e) => addToast(e?.response?.data?.error ?? "Erreur.", "error"),
+  });
+
+  const delMut = useMutation({
+    mutationFn: (id) => http.delete(`/chantiers/${chantierId}/ct-portefeuilles/${id}`).then(r => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["ct_portefeuilles", chantierId] });
+      addToast("STT retiré du portefeuille.", "success");
+    },
+    onError: (e) => addToast(e?.response?.data?.error ?? "Erreur.", "error"),
+  });
+
+  const groups = portefeuilles ?? [];
+  const fmtUser = u => u ? `${u.prenom ?? ""} ${u.nom ?? ""}`.trim() : "—";
+
+  // STTs déjà assignés (tous CT confondus) pour empêcher doublon dans le select
+  const assignedSttIds = new Set(
+    groups.flatMap(g => g.portefeuille?.map(p => String(p.soustraitant?.id)) ?? [])
+  );
+  const availableStt = soustraitants.filter(s => !assignedSttIds.has(String(s.id)));
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+      <div>
+        <h3 className="text-sm font-semibold text-gray-900">Portefeuilles CT</h3>
+        <p className="text-xs text-gray-400 mt-0.5">Chaque CT est responsable des sous-traitants qui lui sont assignés</p>
+      </div>
+
+      {/* Liste groupée par CT */}
+      {isLoading ? (
+        <p className="text-sm text-gray-400 text-center py-4">Chargement…</p>
+      ) : groups.length === 0 ? (
+        <p className="text-sm text-gray-400 text-center py-4 border border-dashed border-gray-200 rounded-lg">Aucun portefeuille configuré.</p>
+      ) : (
+        <div className="space-y-3">
+          {groups.map(g => (
+            <div key={g.ct?.id} className="border border-gray-100 rounded-xl overflow-hidden">
+              <div className="bg-amber-50 border-b border-amber-100 px-4 py-2.5 flex items-center gap-2">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300">CT</span>
+                <span className="text-sm font-semibold text-gray-800">{fmtUser(g.ct)}</span>
+                <span className="text-xs text-gray-400 ml-auto">{g.portefeuille?.length ?? 0} STT</span>
+              </div>
+              {!g.portefeuille?.length ? (
+                <p className="px-4 py-3 text-xs text-gray-400 italic">Aucun sous-traitant assigné</p>
+              ) : (
+                <ul className="divide-y divide-gray-50">
+                  {g.portefeuille.map(p => (
+                    <li key={p.id} className="px-4 py-2.5 flex items-center justify-between">
+                      <span className="text-sm text-gray-700">{p.soustraitant?.raison_sociale}</span>
+                      {isDacc && (
+                        <button onClick={() => delMut.mutate(p.id)} disabled={delMut.isPending}
+                          className="text-gray-300 hover:text-red-500 transition-colors p-1">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Formulaire DACC */}
+      {isDacc && (
+        <div className="border border-dashed border-[#087F3E]/40 rounded-xl p-4 space-y-3 bg-[#f8fdf9]">
+          <p className="text-xs font-semibold text-[#087F3E]">Assigner un STT à un CT</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">CT</label>
+              <select value={form.ct_user_id} onChange={e => setForm(f => ({ ...f, ct_user_id: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+                <option value="">— Sélectionner un CT —</option>
+                {ctUsers.map(u => <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Sous-traitant</label>
+              <select value={form.soustraitant_id} onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+                <option value="">— Sélectionner un STT —</option>
+                {availableStt.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="flex justify-end">
+            <button onClick={() => addMut.mutate({ ct_user_id: parseInt(form.ct_user_id), soustraitant_id: parseInt(form.soustraitant_id) })}
+              disabled={!form.ct_user_id || !form.soustraitant_id || addMut.isPending}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white text-sm rounded-lg hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
+              {addMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+              Assigner
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page principale ─────────────────────────────────────────────────────────
 export default function ChantierFormPage() {
   const { id }   = useParams();
@@ -580,6 +706,9 @@ export default function ChantierFormPage() {
 
       {/* Responsables DT / CT */}
       <SectionAffectationDTCT chantierId={id} chantier={chantier} isDacc={isDacc} />
+
+      {/* Portefeuilles CT → STT */}
+      <SectionPortefeuillesCT chantierId={id} isDacc={isDacc} />
 
       {/* KPIs */}
       <div className="grid grid-cols-5 gap-4">
