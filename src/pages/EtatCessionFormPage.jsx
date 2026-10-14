@@ -162,6 +162,7 @@ import {
 } from "../hooks/useEtatsCession";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useContratBaremes } from "../hooks/useContratBaremes";
+import { usePeutFaire } from "../hooks/useParametres";
 import { x3Service } from "../services/x3Service";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
@@ -866,6 +867,9 @@ export default function EtatCessionFormPage() {
   const { currentUser } = useUser();
   const [searchParams]  = useSearchParams();
 
+  const { data: peutCreer }   = usePeutFaire("creer_etat_cession");
+  const { data: peutValider } = usePeutFaire("valider_etat_cession");
+
   const isDCG = DCG_ROLES.includes(currentUser?.role?.designation);
 
   // Postes visibles selon profil
@@ -1028,7 +1032,7 @@ export default function EtatCessionFormPage() {
             <StatusBadge statut={etat.statut} />
 
             {/* brouillon : soumettre */}
-            {etat.statut === "brouillon" && (
+            {etat.statut === "brouillon" && peutCreer && (
               <button onClick={() => setPendingStatut("soumis")}
                 className="px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
                 Soumettre
@@ -1036,7 +1040,7 @@ export default function EtatCessionFormPage() {
             )}
 
             {/* soumis : valider, rejeter ou retourner au CT */}
-            {etat.statut === "soumis" && (
+            {etat.statut === "soumis" && peutValider && (
               <>
                 <button onClick={() => setPendingStatut("valide")}
                   className="px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">

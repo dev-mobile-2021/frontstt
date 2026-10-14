@@ -12,6 +12,7 @@ import { useContratsPaginated } from "../hooks/useContrats";
 import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useChantiersPaginated } from "../hooks/useChantiers";
 import { useToast } from "../context/ToastContext";
+import { usePeutFaire } from "../hooks/useParametres";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
@@ -121,7 +122,8 @@ function KPICard({ icon: Icon, label, value, sub, color = "text-gray-500", bg = 
 
 export default function EtatsCessionListPage() {
   const navigate     = useNavigate();
-  const { addToast } = useToast();
+  const { addToast }             = useToast();
+  const { data: peutCreer }      = usePeutFaire("creer_etat_cession");
   const saveMut      = useSaveEtatCession();
   const deleteMut    = useDeleteEtatCession();
   const [confirmDelete, setConfirmDelete] = useState(null); // { id, code }
@@ -303,10 +305,12 @@ export default function EtatsCessionListPage() {
             >
               <Eye size={15} /> CONSULTATION
             </Link>
-            <button onClick={openModal}
-              className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
-              <Plus size={16} /> Nouvel état de cession
-            </button>
+            {peutCreer && (
+              <button onClick={openModal}
+                className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
+                <Plus size={16} /> Nouvel état de cession
+              </button>
+            )}
           </div>
         }
       />
