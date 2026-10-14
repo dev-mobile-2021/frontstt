@@ -8,6 +8,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
 import { useContratsPaginated, useSaveContrat, useDeleteContrat, useContratStatut } from "../hooks/useContrats";
+import { usePeutFaire } from "../hooks/useParametres";
 import { useChantiersPaginated } from "../hooks/useChantiers";
 import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useToast } from "../context/ToastContext";
@@ -70,6 +71,7 @@ export default function ContratsListPage() {
   const navigate     = useNavigate();
   const { addToast } = useToast();
   const saveMut      = useSaveContrat();
+  const { data: peutCreerContrat = false } = usePeutFaire("creer_contrat");
   const deleteMut    = useDeleteContrat();
   const statutMut    = useContratStatut();
 
@@ -183,14 +185,14 @@ export default function ContratsListPage() {
       <PageHeader
         title="Contrats"
         subtitle={isLoading ? "Chargement…" : `${meta.total ?? 0} contrat${(meta.total ?? 0) !== 1 ? "s" : ""}`}
-        action={
+        action={peutCreerContrat ? (
           <button
             onClick={openModal}
             className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors"
           >
             <Plus size={16} /> Nouveau contrat
           </button>
-        }
+        ) : null}
       />
 
       <div className="bg-white border border-gray-200 rounded-xl p-4">

@@ -29,6 +29,7 @@ import {
 import { pieceJointeService } from "../services/pieceJointeService";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
+import { usePeutFaire } from "../hooks/useParametres";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import Tabs from "../components/Tabs";
@@ -341,6 +342,7 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
   const [busyId, setBusyId] = useState(null);
   const [showImport, setShowImport] = useState(false);
   const refreshBareme = useRefreshBareme();
+  const { data: peutGererBareme = false } = usePeutFaire("gerer_bareme");
 
   if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer son barème.</p>;
   if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
@@ -379,7 +381,7 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
           className="inline-flex items-center gap-1.5 text-sm text-gray-700 font-medium border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">
           <Download size={14} /> Exporter en Excel
         </button>
-        {!bloque && (
+        {!bloque && peutGererBareme && (
           <button onClick={() => setShowImport(true)}
             className="inline-flex items-center gap-1.5 text-sm text-[#087F3E] font-medium border border-[#087F3E]/40 px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE]">
             <Upload size={14} /> Importer un fichier
