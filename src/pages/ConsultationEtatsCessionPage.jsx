@@ -172,9 +172,20 @@ export default function ConsultationEtatsCessionPage() {
     return p;
   }, [applied, page]);
 
+  const statsParams = useMemo(() => {
+    const p = { ...queryParams, page: 1, count: 9999 };
+    return p;
+  }, [queryParams]);
+
   const { data, isLoading } = useQuery({
     queryKey: ["etatcession_lignes", queryParams],
     queryFn: () => fetchLignes(queryParams),
+    keepPreviousData: true,
+  });
+
+  const { data: statsData } = useQuery({
+    queryKey: ["etatcession_lignes_stats", statsParams],
+    queryFn: () => fetchLignes(statsParams),
     keepPreviousData: true,
   });
 
@@ -182,7 +193,8 @@ export default function ConsultationEtatsCessionPage() {
   const totalRows  = data?.total  ?? 0;
   const totalPages = data?.pages  ?? 1;
 
-  const lignes = lignesRaw;
+  const lignes      = lignesRaw;
+  const lignesStats = statsData?.data ?? lignes;
 
   // Grouper par mois (periode_debut) puis par ref_bs (ND)
   const groupesMois = useMemo(() => {
@@ -211,12 +223,12 @@ export default function ConsultationEtatsCessionPage() {
     });
   }, [lignes]);
 
-  // KPIs
-  const totalMontant = lignes.reduce((s, l) => s + (parseFloat(l.montant) || 0), 0);
+  // KPIs calculés sur toutes les lignes (pas seulement la page courante)
+  const totalMontant = lignesStats.reduce((s, l) => s + (parseFloat(l.montant) || 0), 0);
   const kpis = POSTES.map(p => ({
     ...p,
-    total: lignes.filter(l => l.poste?.toUpperCase() === p.key).reduce((s, l) => s + (parseFloat(l.montant) || 0), 0),
-    count: lignes.filter(l => l.poste?.toUpperCase() === p.key).length,
+    total: lignesStats.filter(l => l.poste?.toUpperCase() === p.key).reduce((s, l) => s + (parseFloat(l.montant) || 0), 0),
+    count: lignesStats.filter(l => l.poste?.toUpperCase() === p.key).length,
   }));
 
   function handleApply() {
