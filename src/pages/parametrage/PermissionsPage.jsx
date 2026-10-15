@@ -3,21 +3,6 @@ import PageHeader from "../../components/PageHeader";
 import { useToast } from "../../context/ToastContext";
 import { usePermissions, useUpdatePermission } from "../../hooks/useParametres";
 
-const ROLE_COLORS = {
-  "Admin":               "bg-purple-100 text-purple-700 border-purple-200",
-  "DG":                  "bg-red-100 text-red-700 border-red-200",
-  "DGA":                 "bg-orange-100 text-orange-700 border-orange-200",
-  "DEX":                 "bg-blue-100 text-blue-700 border-blue-200",
-  "DACC":                "bg-indigo-100 text-indigo-700 border-indigo-200",
-  "DT":                  "bg-cyan-100 text-cyan-700 border-cyan-200",
-  "CT":                  "bg-teal-100 text-teal-700 border-teal-200",
-  "Assistant DEX":       "bg-sky-100 text-sky-700 border-sky-200",
-  "Assistant DACC":      "bg-violet-100 text-violet-700 border-violet-200",
-  "Contrôleur Chantier": "bg-amber-100 text-amber-700 border-amber-200",
-  "Assistant DCG":       "bg-lime-100 text-lime-700 border-lime-200",
-  "DCG":                 "bg-green-100 text-green-700 border-green-200",
-  "Comptable":           "bg-pink-100 text-pink-700 border-pink-200",
-};
 
 function Toggle({ checked, disabled, onChange }) {
   return (
@@ -102,12 +87,12 @@ export default function PermissionsPage() {
         <table className="min-w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="sticky left-0 z-10 bg-gray-50 px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 w-72">
+              <th className="sticky left-0 z-10 bg-gray-50 px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 w-96 min-w-[22rem]">
                 Action
               </th>
               {allRoles.map(role => (
-                <th key={role} className="px-3 py-4 text-center whitespace-nowrap">
-                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${ROLE_COLORS[role] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                <th key={role} className="px-2 py-4 text-center w-16">
+                  <span className="inline-flex items-center rounded-md border border-gray-200 bg-white px-2 py-0.5 text-xs font-medium text-gray-600 whitespace-nowrap">
                     {role}
                   </span>
                 </th>
@@ -146,8 +131,7 @@ export default function PermissionsPage() {
                     return (
                       <td
                         key={role}
-                        className={`px-3 py-4 text-center transition-colors
-                          ${isActive && !isAdmin ? "bg-green-50/60" : ""}`}
+                        className="px-2 py-4 text-center"
                       >
                         <div className="flex justify-center">
                           <Toggle
@@ -156,6 +140,7 @@ export default function PermissionsPage() {
                             onChange={val => toggleRole(perm.cle, role, val)}
                           />
                         </div>
+
                       </td>
                     );
                   })}
