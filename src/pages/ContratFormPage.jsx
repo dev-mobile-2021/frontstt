@@ -1992,33 +1992,40 @@ function DqeTab({ contratId, contrat }) {
                               {(poste.lignes || []).map((ligne) => (
                                 editLigneId === ligne.id ? (
                                   <tr key={ligne.id} className="bg-amber-50/40">
-                                    <td className="py-1 pr-2">
-                                      <input autoFocus value={editLigneForm.designation}
-                                        onChange={e => setEditLigneForm(s => ({ ...s, designation: e.target.value }))}
-                                        className="w-full px-2 py-1 border border-gray-200 rounded text-xs" />
-                                    </td>
-                                    <td className="pr-2">
-                                      <input value={editLigneForm.unite || ""}
-                                        onChange={e => setEditLigneForm(s => ({ ...s, unite: e.target.value }))}
-                                        className="w-full px-2 py-1 border border-gray-200 rounded text-xs" maxLength={20} />
-                                    </td>
-                                    <td className="pr-2">
-                                      <input type="number" step="0.001" value={editLigneForm.quantite_prevue}
-                                        onChange={e => setEditLigneForm(s => ({ ...s, quantite_prevue: e.target.value }))}
-                                        className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
-                                    </td>
-                                    <td className="pr-2">
-                                      <input type="number" step="0.01" value={editLigneForm.prix_unitaire}
-                                        onChange={e => setEditLigneForm(s => ({ ...s, prix_unitaire: e.target.value }))}
-                                        className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
-                                    </td>
-                                    <td className="text-right pr-2 font-semibold">{fmtMontantDqe(liveEditLigneMontant)}</td>
-                                    <td>
-                                      <div className="flex items-center gap-1 justify-end">
-                                        <button onClick={() => submitEditLigne(ligne.id)} className="px-1.5 py-0.5 rounded bg-[#087F3E] text-white text-[10px]">OK</button>
-                                        <button onClick={() => setEditLigneId(null)} className="px-1.5 py-0.5 rounded border border-gray-200 text-[10px] text-gray-600">X</button>
-                                      </div>
-                                    </td>
+                                    {(() => {
+                                      const handleKey = (e) => {
+                                        if (e.key === "Enter") { e.preventDefault(); submitEditLigne(ligne.id); }
+                                        if (e.key === "Escape") setEditLigneId(null);
+                                      };
+                                      return <>
+                                        <td className="py-1 pr-2">
+                                          <input autoFocus value={editLigneForm.designation}
+                                            onChange={e => setEditLigneForm(s => ({ ...s, designation: e.target.value }))}
+                                            onKeyDown={handleKey}
+                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs" />
+                                        </td>
+                                        <td className="pr-2">
+                                          <input value={editLigneForm.unite || ""}
+                                            onChange={e => setEditLigneForm(s => ({ ...s, unite: e.target.value }))}
+                                            onKeyDown={handleKey}
+                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs" maxLength={20} />
+                                        </td>
+                                        <td className="pr-2">
+                                          <input type="number" step="0.001" value={editLigneForm.quantite_prevue}
+                                            onChange={e => setEditLigneForm(s => ({ ...s, quantite_prevue: e.target.value }))}
+                                            onKeyDown={handleKey}
+                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                        </td>
+                                        <td className="pr-2">
+                                          <input type="number" step="0.01" value={editLigneForm.prix_unitaire}
+                                            onChange={e => setEditLigneForm(s => ({ ...s, prix_unitaire: e.target.value }))}
+                                            onKeyDown={handleKey}
+                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                        </td>
+                                        <td className="text-right pr-2 font-semibold">{fmtMontantDqe(liveEditLigneMontant)}</td>
+                                        <td className="text-[10px] text-gray-400 pl-1">↵ Entrée</td>
+                                      </>;
+                                    })()}
                                   </tr>
                                 ) : (
                                   <tr key={ligne.id} className="border-b border-gray-50 hover:bg-gray-50/50">
