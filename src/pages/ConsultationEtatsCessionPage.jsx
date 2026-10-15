@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useChantiersPaginated } from "../hooks/useChantiers";
 import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
+import { usePeutFaire } from "../hooks/useParametres";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import SearchSelect from "../components/SearchSelect";
@@ -143,6 +144,7 @@ async function fetchLignes(params) {
 
 export default function ConsultationEtatsCessionPage() {
   const navigate = useNavigate();
+  const { data: peutConsulter, isLoading: checkingPerm } = usePeutFaire("consulter_articles");
 
   const [filters, setFilters] = useState(INIT_FILTERS);
   const [applied, setApplied] = useState({});
@@ -284,6 +286,14 @@ export default function ConsultationEtatsCessionPage() {
     const resp = await fetch(`${API_BASE}/excel/consultation-cumul?${buildPdfParams()}`, { headers: getAuthHeader() });
     const blob = await resp.blob();
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "consultation-cumul.xlsx"; a.click();
+  }
+
+  if (!checkingPerm && !peutConsulter) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center">
+        <p className="text-gray-500 text-sm">Vous n'avez pas accès à cette page.</p>
+      </div>
+    );
   }
 
   const hasActiveFilters = Object.values(applied).some(v => !!v);
