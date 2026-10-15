@@ -145,9 +145,11 @@ export default function EtatsCessionListPage() {
   }, [search]);
 
   const filters = {
-    code:        debounced || undefined,
-    statut:      statut    || undefined,
-    chantier_id: chantierFilter ? parseInt(chantierFilter) : undefined,
+    code:             debounced || undefined,
+    contrat_code:     debounced || undefined,
+    soustraitant_nom: debounced || undefined,
+    statut:           statut    || undefined,
+    chantier_id:      chantierFilter ? parseInt(chantierFilter) : undefined,
     page,
     count: 15,
   };
