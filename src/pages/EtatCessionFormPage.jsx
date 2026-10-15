@@ -991,6 +991,7 @@ export default function EtatCessionFormPage() {
   const lignes       = etat?.lignes ?? [];
   const totalEC      = lignes.reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
   const lignesSansPrix = lignes.filter(l => !l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0);
+  const baremeEnAttente = contratBaremes.filter(cb => cb.statut_prix === "en_attente").length;
 
   const x3Config = !isNew && etat ? {
     chantier_code:    etat.contrat?.chantier?.code_x3 ?? null,
@@ -1034,6 +1035,11 @@ export default function EtatCessionFormPage() {
                 <span title={`${lignesSansPrix.length} ligne(s) sans prix — validez les prix dans le barème du contrat`}
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium cursor-not-allowed border border-amber-300">
                   ⚠ {lignesSansPrix.length} ligne{lignesSansPrix.length > 1 ? "s" : ""} sans prix
+                </span>
+              ) : baremeEnAttente > 0 ? (
+                <span title={`${baremeEnAttente} prix en attente de validation dans le barème — le DACC ou DEX doit valider avant soumission`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium cursor-not-allowed border border-amber-300">
+                  ⚠ {baremeEnAttente} prix barème en attente
                 </span>
               ) : (
                 <button onClick={() => setPendingStatut("soumis")}
