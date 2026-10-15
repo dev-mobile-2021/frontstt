@@ -39,6 +39,8 @@ import EtatsCessionListPage from "./pages/EtatsCessionListPage";
 import EtatCessionDetailPage from "./pages/EtatCessionDetailPage";
 import EtatCessionFormPage from "./pages/EtatCessionFormPage";
 import ConsultationEtatsCessionPage from "./pages/ConsultationEtatsCessionPage";
+import NoteDevisListPage from "./pages/NoteDevisListPage";
+import NoteDevisDetailPage from "./pages/NoteDevisDetailPage";
 import AttachementsListPage from "./pages/AttachementsListPage";
 import AttachementDetailPage from "./pages/AttachementDetailPage";
 
@@ -79,6 +81,10 @@ export default function App() {
                 <Route path="/etats-cession/nouveau" element={<EtatCessionFormPage />} />
                 <Route path="/etats-cession/:id/modifier" element={<EtatCessionFormPage />} />
                 <Route path="/etats-cession/:id" element={<EtatCessionFormPage />} />
+
+                {/* Notes de devis */}
+                <Route path="/notes-devis" element={<NoteDevisListPage />} />
+                <Route path="/notes-devis/:id" element={<NoteDevisDetailPage />} />
 
                 {/* Décomptes */}
                 <Route path="/decomptes" element={<DecomptesListPage />} />

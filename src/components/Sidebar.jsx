@@ -25,6 +25,7 @@ const CONTROLLER_GROUP = {
   icon: Layers,
   children: [
     { label: "États de cession", to: "/etats-cession", icon: Package },
+    { label: "Notes de devis",   to: "/notes-devis",   icon: FileText },
     { label: "Consultation",     to: "/consultation",   icon: Eye },
   ],
 };
