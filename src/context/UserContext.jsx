@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { authService } from "../services/authService";
+import queryClient from "../config/queryClient";
 
 const UserContext = createContext(null);
 
@@ -40,6 +41,7 @@ export function UserProvider({ children }) {
 
   const logout = useCallback(() => {
     authService.logout();
+    queryClient.clear();
     setCurrentUser(null);
     setIsLoggedIn(false);
   }, []);
