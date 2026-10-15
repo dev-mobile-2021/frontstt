@@ -106,10 +106,10 @@ export default function PermissionsPage() {
               return (
                 <tr
                   key={perm.cle}
-                  className={`transition-colors hover:bg-gray-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50/40"}`}
+                  className={`transition-colors hover:bg-gray-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
                 >
                   {/* Action label */}
-                  <td className="sticky left-0 z-10 bg-inherit px-5 py-4 w-72">
+                  <td className={`sticky left-0 z-10 px-5 py-4 w-72 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
                     <div className="flex items-start gap-2">
                       <div className="min-w-0">
                         <p className="font-medium text-gray-800 leading-snug">{perm.label}</p>
