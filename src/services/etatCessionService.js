@@ -66,6 +66,11 @@ export const etatCessionService = {
     return data;
   },
 
+  async deleteLignesPoste(etatId, poste) {
+    const { data } = await http.delete(`/etatcession/${etatId}/lignes/${poste}`);
+    return data;
+  },
+
   async setStatut(id, statut, motif) {
     const { data } = await http.post("/etatcession/statut", { id, statut, motif: motif ?? null });
     return data;

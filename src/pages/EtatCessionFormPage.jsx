@@ -159,7 +159,7 @@ import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
 import {
   useEtatCession, useSaveEtatCession, useSaveLigneEC,
-  useDeleteLigneEC, useEtatCessionStatut, useEtatCessionStatutBloc, useDeleteEtatCession,
+  useDeleteLigneEC, useDeleteLignesPosteEC, useEtatCessionStatut, useEtatCessionStatutBloc, useDeleteEtatCession,
 } from "../hooks/useEtatsCession";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useContratBaremes } from "../hooks/useContratBaremes";
@@ -285,8 +285,9 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
   const [editingLigne, setEditingLigne] = useState(null);
   const [editLignePrix, setEditLignePrix] = useState("");
 
-  const saveMut   = useSaveLigneEC();
-  const deleteMut = useDeleteLigneEC();
+  const saveMut          = useSaveLigneEC();
+  const deleteMut        = useDeleteLigneEC();
+  const deleteLignesMut  = useDeleteLignesPosteEC();
 
   const cfg   = POSTE_CONFIG[poste];
   const c     = cfg.color;
@@ -371,10 +372,8 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
 
       if (filtered.length === 0) return addToast("Aucune donnée X3 pour cette période.", "info");
 
-      // Supprimer les lignes existantes pour ce poste avant de réimporter
-      for (const l of lignes) {
-        await deleteMut.mutateAsync(l.id);
-      }
+      // Supprimer toutes les lignes du poste en une seule requête
+      await deleteLignesMut.mutateAsync({ etatId: parseInt(etatId, 10), poste });
 
       for (const row of filtered) {
         const prixX3     = parseFloat(row.prix_unitaire);
@@ -421,7 +420,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
 
       if (lignesGmao.length === 0) return addToast("Aucune donnée GMAO pour cette période.", "info");
 
-      for (const l of lignes) await deleteMut.mutateAsync(l.id);
+      await deleteLignesMut.mutateAsync({ etatId: parseInt(etatId, 10), poste: "MTL" });
 
       for (const row of lignesGmao) {
         await saveMut.mutateAsync({

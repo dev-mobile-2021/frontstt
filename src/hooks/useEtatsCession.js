@@ -46,6 +46,14 @@ export function useDeleteLigneEC() {
   });
 }
 
+export function useDeleteLignesPosteEC() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ etatId, poste }) => etatCessionService.deleteLignesPoste(etatId, poste),
+    onSuccess: (_data, { etatId }) => qc.invalidateQueries({ queryKey: ["etat_cession", String(etatId)] }),
+  });
+}
+
 export function useEtatCessionStatut() {
   const qc = useQueryClient();
   return useMutation({
