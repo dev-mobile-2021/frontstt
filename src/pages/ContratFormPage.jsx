@@ -512,6 +512,7 @@ function CessionsTab({ contratId, isNew }) {
     { enabled: !isNew && !!contratId }
   );
   const cessions = data?.data ?? [];
+  const { data: peutCreerEC = false } = usePeutFaire("creer_etat_cession");
 
   const fmtMontant = n => fmtNum(Math.round(n ?? 0));
   const fmtDate    = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
@@ -523,12 +524,14 @@ function CessionsTab({ contratId, isNew }) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">{cessions.length} état(s) de cession pour ce contrat</p>
-        <Link
-          to={`/etats-cession/nouveau?contrat_id=${contratId}`}
-          className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors"
-        >
-          <Plus size={13} /> Créer un état de cession
-        </Link>
+        {peutCreerEC && (
+          <Link
+            to={`/etats-cession/nouveau?contrat_id=${contratId}`}
+            className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors"
+          >
+            <Plus size={13} /> Créer un état de cession
+          </Link>
+        )}
       </div>
 
       {cessions.length === 0 ? (
