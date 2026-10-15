@@ -11,14 +11,21 @@ import { usePeutFaire } from "../hooks/useParametres";
 const NAV_ITEMS = [
   { label: "Tableau de bord", to: "/dashboard",      icon: LayoutDashboard },
   { label: "Contrats",        to: "/contrats",        icon: FileText },
-  { label: "Décomptes",       to: "/decomptes",       icon: Calculator },
   { label: "Attachements",    to: "/attachements",    icon: Paperclip, badge: true },
-  { label: "Relevés",         to: "/releves",         icon: ReceiptText },
-  { label: "Factures",        to: "/factures",        icon: FileStack },
   { label: "Sous-traitants",  to: "/sous-traitants",  icon: Users },
   { label: "Chantiers",       to: "/chantiers",       icon: Building2 },
   { label: "Rapports",        to: "/rapports",        icon: BarChart3 },
 ];
+
+const DECOMPTE_GROUP = {
+  label: "Décompte",
+  icon: Calculator,
+  children: [
+    { label: "Décomptes", to: "/decomptes", icon: Calculator },
+    { label: "Relevés",   to: "/releves",   icon: ReceiptText },
+    { label: "Factures",  to: "/factures",  icon: FileStack },
+  ],
+};
 
 const CONTROLLER_GROUP = {
   label: "Controller de gestion",
@@ -89,6 +96,8 @@ export default function Sidebar({ collapsed, onToggle }) {
   const paramActive = PARAMETRAGE_GROUP.children.some(c => location.pathname.startsWith(c.to));
   const [controllerOpen, setControllerOpen] = useState(false);
   const controllerActive = CONTROLLER_GROUP.children.some(c => location.pathname.startsWith(c.to));
+  const [decompteOpen, setDecompteOpen] = useState(false);
+  const decompteActive = DECOMPTE_GROUP.children.some(c => location.pathname.startsWith(c.to));
   return (
     <aside
       className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300`}
@@ -115,6 +124,43 @@ export default function Sidebar({ collapsed, onToggle }) {
         {NAV_ITEMS.filter(item => !item.roles || item.roles.includes(userRole)).map((item) => (
           <NavItem key={item.to} {...item} collapsed={collapsed} pendingCount={item.badge ? attachPending : 0} />
         ))}
+
+        {/* Décompte */}
+        <div>
+          <button
+            onClick={() => setDecompteOpen(v => !v)}
+            className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${decompteActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
+          >
+            <Calculator className={`w-5 h-5 flex-shrink-0 ${decompteActive ? "text-[#087F3E]" : "text-gray-500"}`} />
+            {!collapsed && (
+              <>
+                <span className="flex-1 text-left">Décompte</span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${(decompteOpen || decompteActive) ? "rotate-180" : ""}`} />
+              </>
+            )}
+          </button>
+          {!collapsed && (decompteOpen || decompteActive) && (
+            <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
+              {DECOMPTE_GROUP.children.map(item => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-600 hover:bg-gray-50"}`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#087F3E] rounded-r-full" />}
+                      <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#087F3E]" : "text-gray-400"}`} />
+                      <span className="truncate">{item.label}</span>
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Controller de gestion */}
         <div>
