@@ -129,7 +129,7 @@ export default function SousTraitantsListPage() {
                 {[
                   ["Raison sociale", "left"], ["Statut", "left"],
                   ["Contrat", "center"], ["Contrat en cours", "center"],
-                  ["Total HT CT (contrats)", "right"], ["Total (contrats + avenants)", "right"],
+                  ["Total HT CT (contrats)", "right"],
                   ["Montant réalisé", "right"], ["Montant à réaliser", "right"],
                   ["Nets à payer", "right"], ["Payés", "right"], ["Restant à payer", "right"],
                 ].map(([h, align]) => (
@@ -140,7 +140,7 @@ export default function SousTraitantsListPage() {
             <tbody className="divide-y divide-gray-100">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="text-center py-14 text-gray-400 text-sm">
+                  <td colSpan={10} className="text-center py-14 text-gray-400 text-sm">
                     <Users size={28} className="mx-auto mb-2 text-gray-300" />
                     Aucun sous-traitant correspondant
                   </td>
@@ -156,7 +156,6 @@ export default function SousTraitantsListPage() {
                   <td className="px-4 py-3.5 text-center"><CountLink n={stt.nb_contrats} to={`/contrats?soustraitant_id=${stt.id}&statut=actif,termine,cloture`} /></td>
                   <td className="px-4 py-3.5 text-center"><CountLink n={stt.nb_contrats_en_cours} to={`/contrats?soustraitant_id=${stt.id}&statut=actif`} /></td>
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.total_ht_contrats} /></td>
-                  <td className="px-4 py-3.5 text-right"><Montant v={stt.total_contrats_avenants} strong color={stt.total_contrats_avenants ? "text-[#065A2C]" : undefined} /></td>
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.montant_realise} /></td>
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.montant_a_realiser} color={stt.montant_a_realiser ? "text-blue-700" : undefined} /></td>
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.nets_a_payer} /></td>
