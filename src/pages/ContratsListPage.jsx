@@ -13,6 +13,7 @@ import { useChantiersPaginated } from "../hooks/useChantiers";
 import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableEmpty } from "../components/Table";
 import StatusBadge from "../components/StatusBadge";
 import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonTable } from "../components/Skeleton";
@@ -244,26 +245,23 @@ export default function ContratsListPage() {
           Impossible de charger les contrats.
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
-          <table className="w-full min-w-[960px]">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-gray-50 border-b border-gray-200">
-                {["Code", "Chantier", "Sous-traitant", "Objet", "Montant actualisé", "Validation", "Réalisé", "À réaliser", "Projets avenants", "Actions"].map(h => (
-                  <th key={h} className={`text-xs uppercase tracking-wide font-medium text-gray-500 px-4 py-3.5
-                    ${["Montant actualisé","Réalisé","À réaliser"].includes(h) ? "text-right" : h === "Actions" ? "text-center sticky right-0 bg-gray-50 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]" : "text-left"}`}>
+        <div>
+        <Table>
+            <TableHeader>
+              <tr>
+                {["Code", "Chantier", "Sous-traitant", "Objet", "Montant actualisé", "Validation", "Réalisé", "À réaliser", "Avenants", "Actions"].map(h => (
+                  <TableHead key={h} className={
+                    ["Montant actualisé","Réalisé","À réaliser"].includes(h) ? "text-right" :
+                    h === "Actions" ? "text-center sticky right-0 bg-[#065A2C]" : ""
+                  }>
                     {h}
-                  </th>
+                  </TableHead>
                 ))}
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+            </TableHeader>
+            <TableBody>
               {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="py-16 text-center">
-                    <FileText size={28} className="mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm text-gray-400">Aucun contrat ne correspond aux filtres.</p>
-                  </td>
-                </tr>
+                <TableEmpty colSpan={10} icon={FileText} message="Aucun contrat ne correspond aux filtres." />
               ) : rows.map(c => {
                 const realise    = parseFloat(c.montant_realise ?? 0);
                 const contracte  = parseFloat(c.montant_actuel ?? c.montant_initial ?? 0);
@@ -275,36 +273,35 @@ export default function ContratsListPage() {
 
                 return (
                   <Fragment key={c.id}>
-                    <tr onClick={() => navigate(`/contrats/${c.id}`)}
-                      className="hover:bg-gray-50 even:bg-gray-50/40 group cursor-pointer transition-colors">
-                      <td className="px-4 py-3.5">
-                        <span className="text-sm font-semibold font-mono text-gray-900">{c.code}</span>
+                    <TableRow clickable onClick={() => navigate(`/contrats/${c.id}`)} className="group">
+                      <TableCell>
+                        <span className="font-semibold font-mono text-gray-900">{c.code}</span>
                         {c.type_contrat && <p className="text-xs text-gray-400 mt-0.5">{c.type_contrat}</p>}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <p className="text-sm text-gray-700 truncate max-w-[150px]">{c.chantier?.designation ?? "—"}</p>
+                      </TableCell>
+                      <TableCell>
+                        <p className="truncate max-w-[150px]">{c.chantier?.designation ?? "—"}</p>
                         {c.chantier?.code && <p className="text-xs font-mono text-gray-400">{c.chantier.code}</p>}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <p className="text-sm text-gray-700 truncate max-w-[140px]">{c.soustraitant?.raison_sociale ?? "—"}</p>
-                      </td>
-                      <td className="px-4 py-3.5 max-w-[160px]">
-                        <p className="text-sm text-gray-800 truncate">{c.objet}</p>
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
+                      </TableCell>
+                      <TableCell>
+                        <p className="truncate max-w-[140px]">{c.soustraitant?.raison_sociale ?? "—"}</p>
+                      </TableCell>
+                      <TableCell className="max-w-[160px]">
+                        <p className="truncate">{c.objet}</p>
+                      </TableCell>
+                      <TableCell className="text-right">
                         <MoneyDisplay amount={contracte} variant="small" className={isModified ? "text-violet-600 font-semibold" : ""} />
                         {isModified && (
                           <p className="text-xs text-gray-400 mt-0.5">init. {formatMontantCourt(parseFloat(c.montant_initial ?? 0))}</p>
                         )}
                         {c.nb_bons_commande === 0 && !["resilie", "archive"].includes(c.statut) && (
                           <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded"
-                            title="Aucun bon de commande Sage X3 lié : le montant du contrat est à 0">
+                            title="Aucun bon de commande Sage X3 lié">
                             <AlertTriangle size={10} /> Aucun BC lié
                           </span>
                         )}
-                      </td>
-                      <td className="px-4 py-3.5"><StatusBadge statut={c.statut} /></td>
-                      <td className="px-4 py-3.5 text-right">
+                      </TableCell>
+                      <TableCell><StatusBadge statut={c.statut} /></TableCell>
+                      <TableCell className="text-right">
                         {realise > 0 ? (
                           <>
                             <MoneyDisplay amount={realise} variant="small" className="text-[#087F3E] font-semibold" />
@@ -316,13 +313,13 @@ export default function ContratsListPage() {
                             </div>
                           </>
                         ) : <span className="text-xs text-gray-400">0%</span>}
-                      </td>
-                      <td className="px-4 py-3.5 text-right">
+                      </TableCell>
+                      <TableCell className="text-right">
                         <MoneyDisplay amount={Math.abs(aRealiser)} variant="small"
                           className={aRealiser < 0 ? "text-red-600 font-semibold" : "text-gray-700"} />
                         {aRealiser < 0 && <p className="text-xs text-red-400 mt-0.5">Dépassement</p>}
-                      </td>
-                      <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
+                      </TableCell>
+                      <TableCell onClick={e => e.stopPropagation()}>
                         <div className="flex items-center gap-2">
                           {hasAvenants ? (
                             <>
@@ -336,8 +333,8 @@ export default function ContratsListPage() {
                             </>
                           ) : <span className="text-xs text-gray-300 ml-5">—</span>}
                         </div>
-                      </td>
-                      <td className="px-4 py-3.5 text-center sticky right-0 bg-white group-hover:bg-gray-50 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]" onClick={e => e.stopPropagation()}>
+                      </TableCell>
+                      <TableCell className="text-center sticky right-0 bg-white group-hover:bg-[#E8F5EE]/60 shadow-[-6px_0_8px_-6px_rgba(0,0,0,0.12)]" onClick={e => e.stopPropagation()}>
                         <ActionsMenu items={[
                           { label: "Consulter", icon: Eye, to: `/contrats/${c.id}` },
                           { label: "Modifier", icon: Pencil, to: `/contrats/${c.id}` },
@@ -351,42 +348,42 @@ export default function ContratsListPage() {
                             disabled: !["brouillon", "soumis"].includes(c.statut),
                             hint: "Seul un brouillon peut être supprimé" },
                         ]} />
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
 
                     {isOpen && c.avenants.map(a => (
                       <tr key={`avn-${a.id}`} className="bg-violet-50/40 border-l-2 border-violet-200">
-                        <td className="px-4 py-2">
+                        <TableCell>
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs text-violet-300">↳</span>
                             <span className="text-xs font-mono font-medium text-violet-600">{a.code}</span>
                           </div>
-                        </td>
-                        <td className="px-4 py-2" />
-                        <td className="px-4 py-2 text-xs text-gray-500 italic" colSpan={2}>{a.objet}</td>
-                        <td className="px-4 py-2 text-right">
+                        </TableCell>
+                        <TableCell />
+                        <TableCell className="text-xs text-gray-500 italic" colSpan={2}>{a.objet}</TableCell>
+                        <TableCell className="text-right">
                           <span className={`text-xs font-semibold ${parseFloat(a.montant) >= 0 ? "text-violet-700" : "text-red-600"}`}>
                             {parseFloat(a.montant) >= 0 ? "+" : ""}{formatMontantCourt(parseFloat(a.montant))}
                           </span>
-                        </td>
-                        <td className="px-4 py-2">
+                        </TableCell>
+                        <TableCell>
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${AVENANT_STATUT_COLORS[a.statut] ?? "bg-gray-100 text-gray-500"}`}>
                             {a.statut}
                           </span>
-                        </td>
-                        <td className="px-4 py-2" colSpan={4}>
+                        </TableCell>
+                        <TableCell colSpan={4}>
                           {a.date_signature && <span className="text-xs text-gray-400">{formatDate(a.date_signature)}</span>}
-                        </td>
+                        </TableCell>
                       </tr>
                     ))}
                   </Fragment>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
+            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-white rounded-b-xl">
               <p className="text-xs text-gray-500">
                 Page {meta.current_page} / {meta.last_page} — {meta.total} résultat{meta.total !== 1 ? "s" : ""}
               </p>
