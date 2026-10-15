@@ -509,6 +509,8 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
     queryFn: () => http.get(`/chantiers/${chantierId}/ct-portefeuilles`).then(r => r.data.data ?? r.data),
   });
 
+  const closeModal = () => { setShowModal(false); setForm({ ct_user_id: "", soustraitant_id: "" }); };
+
   const addMut = useMutation({
     mutationFn: (p) => http.post(`/chantiers/${chantierId}/ct-portefeuilles`, p).then(r => r.data),
     onSuccess: () => {
@@ -531,13 +533,10 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
   const groups = portefeuilles ?? [];
   const fmtUser = u => u ? `${u.prenom ?? ""} ${u.nom ?? ""}`.trim() : "—";
 
-  // STTs déjà assignés (tous CT confondus) pour empêcher doublon dans le select
   const assignedSttIds = new Set(
     groups.flatMap(g => g.portefeuille?.map(p => String(p.soustraitant?.id)) ?? [])
   );
   const availableStt = soustraitants.filter(s => !assignedSttIds.has(String(s.id)));
-
-  const closeModal = () => { setShowModal(false); setForm({ ct_user_id: "", soustraitant_id: "" }); };
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
