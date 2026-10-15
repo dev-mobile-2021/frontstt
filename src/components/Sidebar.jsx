@@ -81,7 +81,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   const paramActive = PARAMETRAGE_GROUP.children.some(c => location.pathname.startsWith(c.to));
   return (
     <aside
-      className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300 overflow-hidden relative`}
+      className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300 overflow-hidden`}
     >
       {/* Logo + Brand */}
       <div className={`flex items-center border-b border-gray-100 ${collapsed ? "justify-center px-2 py-4" : "gap-3 px-5 py-5"}`}>
