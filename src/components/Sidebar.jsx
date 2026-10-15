@@ -46,8 +46,9 @@ const CONTROLLER_GROUP = {
 };
 
 const PARAMETRAGE_GROUP = {
-  label: "Accès Admin",
+  label: "Paramétrage",
   icon: Settings,
+  roles: ["Admin", "DG"],
   children: [
     { label: "Circuit validation", to: "/parametrage/circuit",      icon: GitBranch },
     { label: "Paramètres",        to: "/parametrage/parametres",    icon: Sliders },
@@ -245,8 +246,8 @@ export default function Sidebar({ collapsed, onToggle }) {
           )}
         </div>
 
-        {/* Paramétrage — dans la liste, séparé par un border-top */}
-        <div className="pt-2 mt-2 border-t border-gray-100">
+        {/* Paramétrage — visible Admin et DG uniquement */}
+        {PARAMETRAGE_GROUP.roles.includes(userRole) && <div className="pt-2 mt-2 border-t border-gray-100">
           <button
             onClick={() => setParamOpen(v => !v)}
             className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${paramActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
@@ -280,7 +281,7 @@ export default function Sidebar({ collapsed, onToggle }) {
               ))}
             </div>
           )}
-        </div>
+        </div>}
       </nav>
 
       {/* Bouton collapse — absolu sur le bord droit, style GMAO */}
