@@ -20,6 +20,7 @@ import { useUsersPaginated } from "../hooks/useUsers";
 import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useToast } from "../context/ToastContext";
 import { useUser } from "../context/UserContext";
+import { usePeutFaire } from "../hooks/useParametres";
 import PageHeader from "../components/PageHeader";
 import StatusBadge from "../components/StatusBadge";
 import Tabs from "../components/Tabs";
