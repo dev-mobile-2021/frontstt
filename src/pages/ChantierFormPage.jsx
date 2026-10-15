@@ -513,7 +513,7 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ct_portefeuilles", chantierId] });
       addToast("STT ajouté au portefeuille.", "success");
-      setForm({ ct_user_id: "", soustraitant_id: "" });
+      closeModal();
     },
     onError: (e) => addToast(e?.response?.data?.error ?? "Erreur.", "error"),
   });
