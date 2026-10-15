@@ -6,22 +6,22 @@ import {
   GitBranch, Sliders, Shield, ShieldCheck, Tags, Upload, ChevronDown, Layers,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
-import { usePeutFaire } from "../hooks/useParametres";
+import { usePermissions } from "../hooks/useParametres";
 
 const NAV_ITEMS = [
-  { label: "Tableau de bord", to: "/dashboard",      icon: LayoutDashboard },
-  { label: "Contrats",        to: "/contrats",        icon: FileText },
-  { label: "Attachements",    to: "/attachements",    icon: Paperclip, badge: true },
-  { label: "Rapports",        to: "/rapports",        icon: BarChart3 },
+  { label: "Tableau de bord", to: "/dashboard",      icon: LayoutDashboard, permKey: "menu_dashboard" },
+  { label: "Contrats",        to: "/contrats",        icon: FileText,        permKey: "menu_contrats" },
+  { label: "Attachements",    to: "/attachements",    icon: Paperclip,       permKey: "menu_attachements", badge: true },
+  { label: "Rapports",        to: "/rapports",        icon: BarChart3,       permKey: "menu_rapports" },
 ];
 
 const REFERENTIEL_GROUP = {
   label: "Référentiel",
   icon: Building2,
   children: [
-    { label: "Sous-traitants", to: "/sous-traitants",       icon: Users },
-    { label: "Chantiers",      to: "/chantiers",             icon: Building2 },
-    { label: "Articles X3",    to: "/parametrage/articles",  icon: Package },
+    { label: "Sous-traitants", to: "/sous-traitants",       icon: Users,     permKey: "menu_sous_traitants" },
+    { label: "Chantiers",      to: "/chantiers",             icon: Building2, permKey: "menu_chantiers" },
+    { label: "Articles X3",    to: "/parametrage/articles",  icon: Package,   permKey: "menu_articles" },
   ],
 };
 
@@ -29,9 +29,9 @@ const DECOMPTE_GROUP = {
   label: "Décompte",
   icon: Calculator,
   children: [
-    { label: "Décomptes", to: "/decomptes", icon: Calculator },
-    { label: "Relevés",   to: "/releves",   icon: ReceiptText },
-    { label: "Factures",  to: "/factures",  icon: FileStack },
+    { label: "Décomptes", to: "/decomptes", icon: Calculator,  permKey: "menu_decomptes" },
+    { label: "Relevés",   to: "/releves",   icon: ReceiptText, permKey: "menu_releves" },
+    { label: "Factures",  to: "/factures",  icon: FileStack,   permKey: "menu_factures" },
   ],
 };
 
@@ -39,9 +39,9 @@ const CONTROLLER_GROUP = {
   label: "Controller de gestion",
   icon: Layers,
   children: [
-    { label: "États de cession", to: "/etats-cession", icon: Package },
-    { label: "Notes de devis",   to: "/notes-devis",   icon: FileText },
-    { label: "Consultation",     to: "/consultation",   icon: Eye },
+    { label: "États de cession", to: "/etats-cession", icon: Package,  permKey: "menu_etats_cession" },
+    { label: "Notes de devis",   to: "/notes-devis",   icon: FileText, permKey: "permission_voir_notes_devis" },
+    { label: "Consultation",     to: "/consultation",  icon: Eye,      permKey: "permission_consulter_articles" },
   ],
 };
 
@@ -99,8 +99,15 @@ export default function Sidebar({ collapsed, onToggle }) {
   const { currentUser } = useUser();
   const attachPending = 0;
   const userRole = currentUser?.role?.designation;
-  const { data: peutConsulterArticles = false } = usePeutFaire("consulter_articles");
-  const { data: peutVoirNotesDevis   = false } = usePeutFaire("voir_notes_devis");
+  const { data: allPerms = [] } = usePermissions();
+
+  function canSeeMenu(key) {
+    if (userRole === "Admin") return true;
+    const perm = allPerms.find(p => p.cle === key);
+    if (!perm) return true;
+    return perm.roles.some(r => r.designation === userRole && r.actif);
+  }
+
   const location = useLocation();
   const paramActive = PARAMETRAGE_GROUP.children.some(c => location.pathname.startsWith(c.to));
   const controllerActive = CONTROLLER_GROUP.children.some(c => location.pathname.startsWith(c.to));
@@ -133,12 +140,12 @@ export default function Sidebar({ collapsed, onToggle }) {
 
       {/* Navigation scrollable — inclut Paramétrage en bas */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden">
-        {NAV_ITEMS.filter(item => !item.roles || item.roles.includes(userRole)).map((item) => (
+        {NAV_ITEMS.filter(item => canSeeMenu(item.permKey)).map((item) => (
           <NavItem key={item.to} {...item} collapsed={collapsed} pendingCount={item.badge ? attachPending : 0} />
         ))}
 
         {/* Référentiel */}
-        <div>
+        {(canSeeMenu("menu_sous_traitants") || canSeeMenu("menu_chantiers") || canSeeMenu("menu_articles")) && <div>
           <button
             onClick={() => setReferentielOpen(v => !v)}
             className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${referentielActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
@@ -153,7 +160,7 @@ export default function Sidebar({ collapsed, onToggle }) {
           </button>
           {!collapsed && referentielOpen && (
             <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
-              {REFERENTIEL_GROUP.children.map(item => (
+              {REFERENTIEL_GROUP.children.filter(item => canSeeMenu(item.permKey)).map(item => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -172,10 +179,10 @@ export default function Sidebar({ collapsed, onToggle }) {
               ))}
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Décompte */}
-        <div>
+        {(canSeeMenu("menu_decomptes") || canSeeMenu("menu_releves") || canSeeMenu("menu_factures")) && <div>
           <button
             onClick={() => setDecompteOpen(v => !v)}
             className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${decompteActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
@@ -190,7 +197,7 @@ export default function Sidebar({ collapsed, onToggle }) {
           </button>
           {!collapsed && decompteOpen && (
             <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
-              {DECOMPTE_GROUP.children.map(item => (
+              {DECOMPTE_GROUP.children.filter(item => canSeeMenu(item.permKey)).map(item => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -209,10 +216,10 @@ export default function Sidebar({ collapsed, onToggle }) {
               ))}
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Controller de gestion */}
-        <div>
+        {(canSeeMenu("menu_etats_cession") || canSeeMenu("permission_voir_notes_devis") || canSeeMenu("permission_consulter_articles")) && <div>
           <button
             onClick={() => setControllerOpen(v => !v)}
             className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${controllerActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
@@ -227,10 +234,7 @@ export default function Sidebar({ collapsed, onToggle }) {
           </button>
           {!collapsed && controllerOpen && (
             <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
-              {CONTROLLER_GROUP.children.filter(item =>
-                (item.to !== "/consultation" || peutConsulterArticles) &&
-                (item.to !== "/notes-devis"  || peutVoirNotesDevis)
-              ).map(item => (
+              {CONTROLLER_GROUP.children.filter(item => canSeeMenu(item.permKey)).map(item => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -249,10 +253,10 @@ export default function Sidebar({ collapsed, onToggle }) {
               ))}
             </div>
           )}
-        </div>
+        </div>}
 
-        {/* Paramétrage — visible Admin et DG uniquement */}
-        {PARAMETRAGE_GROUP.roles.includes(userRole) && <div className="pt-2 mt-2 border-t border-gray-100">
+        {/* Paramétrage */}
+        {canSeeMenu("menu_parametrage") && <div className="pt-2 mt-2 border-t border-gray-100">
           <button
             onClick={() => setParamOpen(v => !v)}
             className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${paramActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}

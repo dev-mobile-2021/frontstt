@@ -24,6 +24,40 @@ function Toggle({ checked, disabled, onChange }) {
   );
 }
 
+function PermRow({ perm, idx, allRoles, updateMut, toggleRole }) {
+  const roleMap = Object.fromEntries(perm.roles.map(r => [r.designation, r.actif]));
+  const activeCount = perm.roles.filter(r => r.actif).length;
+  return (
+    <tr className={`transition-colors hover:bg-gray-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+      <td className={`sticky left-0 z-10 px-5 py-4 w-72 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
+        <p className="font-medium text-gray-800 leading-snug">{perm.label}</p>
+        {perm.description && (
+          <p className="mt-0.5 text-xs text-gray-400 leading-relaxed">{perm.description}</p>
+        )}
+        <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-gray-400">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#087F3E]" />
+          {activeCount} rôle{activeCount !== 1 ? "s" : ""} autorisé{activeCount !== 1 ? "s" : ""}
+        </span>
+      </td>
+      {allRoles.map(role => {
+        const isAdmin = role === "Admin";
+        const isActive = roleMap[role] ?? false;
+        return (
+          <td key={role} className="px-2 py-4 text-center">
+            <div className="flex justify-center">
+              <Toggle
+                checked={isAdmin ? true : isActive}
+                disabled={isAdmin || updateMut.isPending}
+                onChange={val => toggleRole(perm.cle, role, val)}
+              />
+            </div>
+          </td>
+        );
+      })}
+    </tr>
+  );
+}
+
 export default function PermissionsPage() {
   const { data: permissions = [], isLoading } = usePermissions();
   const updateMut = useUpdatePermission();
@@ -43,6 +77,9 @@ export default function PermissionsPage() {
     );
     return result;
   }, [permissions]);
+
+  const actionPerms = useMemo(() => permissions.filter(p => p.cle.startsWith("permission_")), [permissions]);
+  const menuPerms   = useMemo(() => permissions.filter(p => p.cle.startsWith("menu_")),       [permissions]);
 
   async function toggleRole(cle, designation, actif) {
     const perm = permissions.find(p => p.cle === cle);
@@ -88,7 +125,7 @@ export default function PermissionsPage() {
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
               <th className="sticky left-0 z-10 bg-gray-50 px-5 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 w-96 min-w-[22rem]">
-                Action
+                Élément
               </th>
               {allRoles.map(role => (
                 <th key={role} className="px-2 py-4 text-center w-16">
@@ -100,53 +137,21 @@ export default function PermissionsPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {permissions.map((perm, idx) => {
-              const roleMap = Object.fromEntries(perm.roles.map(r => [r.designation, r.actif]));
-              const activeCount = perm.roles.filter(r => r.actif).length;
-              return (
-                <tr
-                  key={perm.cle}
-                  className={`transition-colors hover:bg-gray-50 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
-                >
-                  {/* Action label */}
-                  <td className={`sticky left-0 z-10 px-5 py-4 w-72 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}>
-                    <div className="flex items-start gap-2">
-                      <div className="min-w-0">
-                        <p className="font-medium text-gray-800 leading-snug">{perm.label}</p>
-                        {perm.description && (
-                          <p className="mt-0.5 text-xs text-gray-400 leading-relaxed">{perm.description}</p>
-                        )}
-                        <span className="mt-1.5 inline-flex items-center gap-1 text-xs text-gray-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-[#087F3E]" />
-                          {activeCount} rôle{activeCount !== 1 ? "s" : ""} autorisé{activeCount !== 1 ? "s" : ""}
-                        </span>
-                      </div>
-                    </div>
-                  </td>
+            {/* Section Actions */}
+            <tr className="bg-gray-100">
+              <td colSpan={allRoles.length + 1} className="px-5 py-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Actions</span>
+              </td>
+            </tr>
+            {actionPerms.map((perm, idx) => <PermRow key={perm.cle} perm={perm} idx={idx} allRoles={allRoles} updateMut={updateMut} toggleRole={toggleRole} />)}
 
-                  {/* Toggle per role */}
-                  {allRoles.map(role => {
-                    const isAdmin = role === "Admin";
-                    const isActive = roleMap[role] ?? false;
-                    return (
-                      <td
-                        key={role}
-                        className="px-2 py-4 text-center"
-                      >
-                        <div className="flex justify-center">
-                          <Toggle
-                            checked={isAdmin ? true : isActive}
-                            disabled={isAdmin || updateMut.isPending}
-                            onChange={val => toggleRole(perm.cle, role, val)}
-                          />
-                        </div>
-
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
+            {/* Section Menus */}
+            <tr className="bg-gray-100">
+              <td colSpan={allRoles.length + 1} className="px-5 py-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">Visibilité des menus</span>
+              </td>
+            </tr>
+            {menuPerms.map((perm, idx) => <PermRow key={perm.cle} perm={perm} idx={idx} allRoles={allRoles} updateMut={updateMut} toggleRole={toggleRole} />)}
           </tbody>
         </table>
       </div>
