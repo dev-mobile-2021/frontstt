@@ -1801,16 +1801,17 @@ function DqeTab({ contratId, contrat }) {
           {bcs.length > 0 && (
             <div className="min-w-[180px]">
               <label className="block text-[11px] text-gray-600 mb-1">BC associé (optionnel)</label>
-              <select
+              <SearchSelect
                 value={rubForm.bon_commande_id || ""}
                 onChange={e => setRubForm(s => ({ ...s, bon_commande_id: e.target.value || null }))}
+                placeholder="— Aucun BC —"
                 className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-white"
               >
                 <option value="">— Aucun BC —</option>
                 {bcs.map(bc => (
                   <option key={bc.id} value={bc.id}>{bc.numero ?? bc.code_x3}</option>
                 ))}
-              </select>
+              </SearchSelect>
             </div>
           )}
           <div className="flex gap-2">
@@ -1866,16 +1867,17 @@ function DqeTab({ contratId, contrat }) {
                     className="flex-1 min-w-[200px] px-2 py-1 border border-gray-200 rounded text-sm"
                   />
                   {bcs.length > 0 && (
-                    <select
+                    <SearchSelect
                       value={editRubForm.bon_commande_id || ""}
                       onChange={e => setEditRubForm(s => ({ ...s, bon_commande_id: e.target.value || null }))}
+                      placeholder="— Aucun BC —"
                       className="border border-gray-200 rounded px-2 py-1 text-xs bg-white max-w-[200px]"
                     >
                       <option value="">— Aucun BC —</option>
                       {bcs.map(bc => (
                         <option key={bc.id} value={bc.id}>{bc.numero ?? bc.code_x3}</option>
                       ))}
-                    </select>
+                    </SearchSelect>
                   )}
                   <button onClick={() => submitEditRub(rub.id)} className="px-2 py-1 rounded bg-[#087F3E] text-white text-xs hover:bg-[#076a34]">OK</button>
                   <button onClick={() => setEditRubId(null)} className="px-2 py-1 rounded border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">Annuler</button>
