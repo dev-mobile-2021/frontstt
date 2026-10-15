@@ -711,47 +711,52 @@ export default function ChantierFormPage() {
       <SectionPortefeuillesCT chantierId={id} isDacc={isDacc} />
 
       {/* KPIs */}
-      <div className="grid grid-cols-5 gap-4">
-        {[
+      {(() => {
+        const decomptesEnCours = decomptesChantier.filter(d => d.statut === "soumis");
+        const kpis = [
           {
             label: "Budget total",
-            value: fmt(budgetTotal),
-            sub: null,
-            highlight: false,
+            nombre: null,
+            montant: fmt(budgetTotal),
+            color: "text-gray-900",
           },
           {
             label: "Total Contrat",
-            value: fmt(sttEngage),
-            sub: `${contrats.length} contrat${contrats.length > 1 ? "s" : ""} · ${sttPct}% du budget`,
-            highlight: true,
+            nombre: `${contrats.length} contrat${contrats.length > 1 ? "s" : ""}`,
+            montant: fmt(sttEngage),
+            color: "text-[#087F3E]",
           },
           {
             label: "Réalisé",
-            value: fmt(realise),
-            sub: `${nbRealise} décompte${nbRealise > 1 ? "s" : ""} validés`,
-            highlight: false,
-            accent: true,
+            nombre: `${nbRealise} décompte${nbRealise > 1 ? "s" : ""} validé${nbRealise > 1 ? "s" : ""}`,
+            montant: fmt(realise),
+            color: "text-blue-600",
           },
           {
             label: "En cours de validation",
-            value: String(decomptesChantier.filter(d => d.statut === "soumis").length),
-            sub: `${fmt(decomptesChantier.filter(d => d.statut === "soumis").reduce((s,d) => s + parseFloat(d.montant_ht ?? 0), 0))} HT`,
-            highlight: false,
+            nombre: `${decomptesEnCours.length} décompte${decomptesEnCours.length > 1 ? "s" : ""}`,
+            montant: fmt(decomptesEnCours.reduce((s,d) => s + parseFloat(d.montant_ht ?? 0), 0)),
+            color: "text-amber-600",
           },
           {
             label: "Contrats sous-trait.",
-            value: String(contrats.length),
-            sub: `${fmt(sttEngage)} HT engagé`,
-            highlight: false,
+            nombre: `${contrats.length} contrat${contrats.length > 1 ? "s" : ""}`,
+            montant: fmt(sttEngage),
+            color: "text-violet-600",
           },
-        ].map(({ label, value, sub, highlight, accent }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">{label}</p>
-            <p className={`text-base font-bold ${highlight ? "text-[#087F3E]" : accent ? "text-blue-600" : "text-gray-900"}`}>{value}</p>
-            {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+        ];
+        return (
+          <div className="grid grid-cols-5 gap-4">
+            {kpis.map(({ label, nombre, montant, color }) => (
+              <div key={label} className="bg-white border border-gray-200 rounded-xl p-4">
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">{label}</p>
+                <p className={`text-base font-bold ${color}`}>{montant} <span className="text-xs font-normal text-gray-400">FCFA</span></p>
+                {nombre && <p className="text-xs text-gray-500 mt-1 font-medium">{nombre}</p>}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        );
+      })()}
 
       {/* Budget par famille */}
       {totalBudget > 0 && (
