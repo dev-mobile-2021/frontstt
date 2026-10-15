@@ -22,6 +22,15 @@ import ChantierFormPage from "./pages/ChantierFormPage";
 import RapportsPage from "./pages/RapportsPage";
 import RapportDetailPage from "./pages/RapportDetailPage";
 import ParametragePage from "./pages/ParametragePage";
+import CircuitPage from "./pages/parametrage/CircuitPage";
+import ParametresPage from "./pages/parametrage/ParametresPage";
+import UtilisateursPage from "./pages/parametrage/UtilisateursPage";
+import RolesPage from "./pages/parametrage/RolesPage";
+import PermissionsPage from "./pages/parametrage/PermissionsPage";
+import BaremesPage from "./pages/parametrage/BaremesPage";
+import ArticlesX3Page from "./pages/parametrage/ArticlesX3Page";
+import MtxPage from "./pages/parametrage/MtxPage";
+import BtDocumentsPage from "./pages/parametrage/BtDocumentsPage";
 import RelevesListPage from "./pages/RelevesListPage";
 import ReleveDetailPage from "./pages/ReleveDetailPage";
 import FacturesListPage from "./pages/FacturesListPage";
@@ -92,8 +101,17 @@ export default function App() {
                 <Route path="/attachements" element={<AttachementsListPage />} />
                 <Route path="/attachements/:id" element={<AttachementDetailPage />} />
 
-                {/* Paramétrage */}
-                <Route path="/parametrage" element={<ParametragePage />} />
+                {/* Paramétrage — ancienne route (tab) conservée */}
+                <Route path="/parametrage" element={<Navigate to="/parametrage/circuit" replace />} />
+                <Route path="/parametrage/circuit" element={<CircuitPage />} />
+                <Route path="/parametrage/parametres" element={<ParametresPage />} />
+                <Route path="/parametrage/utilisateurs" element={<UtilisateursPage />} />
+                <Route path="/parametrage/roles" element={<RolesPage />} />
+                <Route path="/parametrage/permissions" element={<PermissionsPage />} />
+                <Route path="/parametrage/baremes" element={<BaremesPage />} />
+                <Route path="/parametrage/articles" element={<ArticlesX3Page />} />
+                <Route path="/parametrage/mtx" element={<MtxPage />} />
+                <Route path="/parametrage/bt" element={<BtDocumentsPage />} />
 
                 <Route path="*" element={<NotFoundPage />} />
               </Route>
