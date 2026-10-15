@@ -2357,24 +2357,65 @@ export default function ContratFormPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <button onClick={() => navigate("/contrats")} className="hover:text-[#087F3E] flex items-center gap-1 transition-colors">
-          <ArrowLeft size={14} /> Contrats
-        </button>
-        <ChevronRight size={14} />
-        <span className="text-gray-900 font-medium">
-          {isNew ? "Nouveau contrat" : contrat.code}
-        </span>
-      </div>
+      {/* Back button */}
+      <button onClick={() => navigate("/contrats")} className="mb-3 flex items-center gap-1 text-[13px] text-gray-500 hover:text-gray-900 transition-colors">
+        <ArrowLeft size={14} /> Retour aux contrats
+      </button>
 
       <PageHeader
-        title={isNew ? "Nouveau contrat" : `${contrat.code} — ${contrat.objet}`}
-        subtitle={isNew ? "Remplir les informations du contrat" : <span>{contrat.chantier?.designation}{contrat.soustraitant?.raison_sociale && <><br /><span className="text-gray-400">{contrat.soustraitant.raison_sociale}</span></>}</span>}
-        action={
-          !isNew && <StatusBadge statut={contrat.statut} />
-        }
+        title={isNew ? "Nouveau contrat" : (contrat.objet || contrat.code)}
+        subtitle={isNew
+          ? "Remplir les informations du contrat"
+          : [contrat.chantier?.designation, contrat.soustraitant?.raison_sociale].filter(Boolean).join(" · ")}
+        action={!isNew && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {["brouillon","soumis","resilie","cloture"].includes(contrat.statut) && (
+              <button onClick={() => setConfirmArchContrat(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+                <Archive size={13} /> Archiver
+              </button>
+            )}
+            {["brouillon","soumis"].includes(contrat.statut) && (
+              <button onClick={() => setConfirmDelContrat(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-red-200 rounded-lg text-red-500 hover:bg-red-50 transition-colors">
+                <Trash2 size={13} /> Supprimer
+              </button>
+            )}
+            <button
+              onClick={async () => {
+                const token = localStorage.getItem("stt_token");
+                const resp = await fetch(`${import.meta.env.VITE_API_BASE}/api/pdf/contrat/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+                const blob = await resp.blob();
+                const url = URL.createObjectURL(blob);
+                window.open(url, "_blank");
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+              <Download size={13} /> PDF
+            </button>
+            <button onClick={() => navigate(`/decomptes/nouveau?contrat_id=${id}`)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-[#087F3E] text-white rounded-lg hover:bg-[#065A2C] transition-colors font-medium">
+              <FilePlus size={14} /> Nouveau décompte
+            </button>
+          </div>
+        )}
       />
+
+      {/* Badge row — view mode only */}
+      {!isNew && (
+        <div className="flex flex-wrap items-center gap-2 mb-1">
+          <StatusBadge statut={contrat.statut} />
+          {avenantsList.length > 0 && (
+            <span className="inline-flex items-center text-xs bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full font-medium">
+              {avenantsList.length} avenant{avenantsList.length > 1 ? "s" : ""}
+            </span>
+          )}
+          <button onClick={() => setActiveTab("decomptes")}
+            className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-[#087F3E] border border-gray-200 px-2.5 py-1 rounded-full transition-colors">
+            Consulter les décomptes
+          </button>
+        </div>
+      )}
 
       {/* KPI Bandeau — view mode only */}
       {!isNew && (() => {
@@ -2394,145 +2435,78 @@ export default function ContratFormPage() {
         const avenantsValides  = avenantsList.filter(a => a.statut === "valide");
         const avenantsAttente  = avenantsList.filter(a => a.statut !== "valide");
         const montantAvenants  = avenantsValides.reduce((s, a) => s + parseFloat(a.montant ?? 0), 0);
-        const montantAttente   = avenantsAttente.reduce((s, a) => s + parseFloat(a.montant ?? 0), 0);
 
         return (
-          <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-4">
-            {/* Row 1 : badges + boutons */}
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-2 flex-wrap">
-                {nbAvenants > 0 && (
-                  <span className="inline-flex items-center text-xs bg-violet-100 text-violet-700 px-2.5 py-1 rounded-full font-medium">
-                    {nbAvenants} avenant{nbAvenants > 1 ? "s" : ""}
-                  </span>
-                )}
-                <StatusBadge statut={contrat.statut} />
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                {["brouillon", "soumis", "resilie", "cloture"].includes(contrat.statut) && (
-                  <button onClick={() => setConfirmArchContrat(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors">
-                    <Archive size={13} /> Archiver
-                  </button>
-                )}
-                {["brouillon", "soumis"].includes(contrat.statut) && (
-                  <button onClick={() => setConfirmDelContrat(true)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-red-200 rounded-lg text-red-500 hover:bg-red-50 transition-colors">
-                    <Trash2 size={13} /> Supprimer
-                  </button>
-                )}
-                <button
-                  onClick={async () => {
-                    const token = localStorage.getItem("stt_token");
-                    const resp = await fetch(`${import.meta.env.VITE_API_BASE}/api/pdf/contrat/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-                    const blob = await resp.blob();
-                    const url = URL.createObjectURL(blob);
-                    window.open(url, "_blank");
-                    setTimeout(() => URL.revokeObjectURL(url), 60000);
-                  }}
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  <Download size={13} /> PDF
-                </button>
-                <button
-                  onClick={() => setActiveTab("decomptes")}
-                  className="px-4 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Consulter
-                </button>
-                <button
-                  onClick={() => navigate(`/decomptes/nouveau?contrat_id=${id}`)}
-                  className="px-4 py-1.5 text-sm bg-[#087F3E] text-white rounded-lg hover:bg-[#065A2C] transition-colors"
-                >
-                  Créer un décompte
-                </button>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {/* Card 1: Montant initial */}
+            <div className="col-span-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
+              <p className="text-[11px] text-gray-400 uppercase tracking-wide">Montant HT initial</p>
+              <p className="mt-1 text-[22px] font-bold text-gray-900 tabular-nums">{fmtFull(montantInitialHT)}</p>
+              {bcsList.length > 0 && <p className="text-[11px] text-gray-400 mt-0.5">{bcsList.length} BC Sage X3 liés</p>}
+            </div>
+            {/* Card 2: Avenants */}
+            <div className="col-span-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
+              <p className="text-[11px] text-gray-400 uppercase tracking-wide">Avenants validés</p>
+              <p className={`mt-1 text-[22px] font-bold tabular-nums ${montantAvenants > 0 ? "text-violet-700" : "text-gray-400"}`}>
+                {montantAvenants > 0 ? "+ " : ""}{fmtFull(montantAvenants)}
+              </p>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                {avenantsValides.length} validé{avenantsValides.length > 1 ? "s" : ""}
+                {avenantsAttente.length > 0 && <> · {avenantsAttente.length} en attente</>}
+              </p>
+            </div>
+            {/* Card 3: Montant actualisé */}
+            <div className="col-span-2 rounded-xl border border-[#087F3E]/30 bg-[#E8F5EE] px-4 py-3">
+              <p className="text-[11px] text-[#087F3E]/70 uppercase tracking-wide">Montant actualisé</p>
+              <p className="mt-1 text-[22px] font-bold text-[#087F3E] tabular-nums">{fmtFull(montantActuel)}</p>
+              {actualisé && <span className="text-[10px] text-violet-600">initial + avenants validés</span>}
+            </div>
+            {/* Card 4: Réalisé */}
+            <div className="col-span-1 rounded-xl border border-gray-200 bg-white px-4 py-3">
+              <p className="text-[11px] text-gray-400 uppercase tracking-wide">Réalisé</p>
+              <p className="mt-1 text-[22px] font-bold text-[#087F3E] tabular-nums">{pct}%</p>
+              <div className="mt-1.5 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-full bg-[#087F3E] rounded-full" style={{ width: `${Math.min(pct,100)}%` }} />
               </div>
             </div>
-
-            {/* Avertissement : aucun BC lié */}
-            {bcsLoaded && bcsList.length === 0 && !["resilie", "archive"].includes(contrat.statut) && (
-              <div className="flex items-center justify-between gap-3 flex-wrap bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-                <p className="flex items-center gap-2 text-sm text-amber-800">
-                  <AlertTriangle size={15} className="flex-shrink-0" />
-                  <span>
-                    <strong>Aucun bon de commande Sage X3 lié.</strong> Le montant du contrat est calculé à partir des BC : il reste à 0 tant qu'aucun BC n'est lié.
-                  </span>
-                </p>
-                <button onClick={() => setActiveTab("bonscommande")}
-                  className="px-3 py-1.5 text-sm font-medium text-amber-900 border border-amber-300 rounded-lg bg-white hover:bg-amber-100 transition-colors">
-                  Récupérer les BC
-                </button>
-              </div>
-            )}
-
-            {/* Row 2 : montants du marché */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1 border-t border-gray-100">
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Montant HT (marché initial)</p>
-                <p className="text-xl font-bold text-gray-900">{fmtFull(montantInitialHT)}</p>
-                {bcsList.length > 0 && (
-                  <p className="text-xs text-gray-400 mt-0.5">Somme des {bcsList.length} BC Sage X3 liés (HT)</p>
-                )}
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
-                  Montant avenant{avenantsValides.length > 1 ? "s" : ""}
-                </p>
-                <p className={`text-xl font-bold ${montantAvenants > 0 ? "text-violet-700" : "text-gray-400"}`}>
-                  {montantAvenants > 0 ? "+ " : ""}{fmtFull(montantAvenants)}
-                </p>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {avenantsValides.length} validé{avenantsValides.length > 1 ? "s" : ""}
-                  {avenantsAttente.length > 0 && <> · {avenantsAttente.length} en attente ({fmtFull(montantAttente)}, non compté)</>}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Montant HT actualisé</p>
-                <p className="text-xl font-bold text-[#087F3E]">{fmtFull(montantActuel)}</p>
-                {actualisé && (
-                  <span className="text-[10px] text-violet-600 bg-violet-50 px-1.5 py-0.5 rounded font-medium">initial + avenants validés</span>
-                )}
-              </div>
+            {/* Card 5: En validation */}
+            <div className="col-span-1 rounded-xl border border-gray-200 bg-white px-4 py-3">
+              <p className="text-[11px] text-gray-400 uppercase tracking-wide">En validation</p>
+              <p className="mt-1 text-[20px] font-bold text-amber-600 tabular-nums">{formatMontantCourt(enValidation)}</p>
+              <p className="text-[11px] text-gray-400 mt-0.5">{nbValidation} décompte{nbValidation > 1 ? "s" : ""}</p>
             </div>
-
-            {/* Row 3 : suivi */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-3 border-t border-gray-100">
-              {/* Décomptes */}
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Décomptes</p>
-                <p className="text-sm font-medium text-gray-700 leading-snug">
-                  {nbPaye > 0 && <span className="text-[#087F3E]">{nbPaye} payé{nbPaye > 1 ? "s" : ""}</span>}
-                  {nbPaye > 0 && nbValidation > 0 && <span className="text-gray-300"> · </span>}
-                  {nbValidation > 0 && <span className="text-amber-600">{nbValidation} en validation</span>}
-                  {(nbPaye > 0 || nbValidation > 0) && nbBrouillon > 0 && <span className="text-gray-300"> · </span>}
-                  {nbBrouillon > 0 && <span className="text-gray-500">{nbBrouillon} brouillon{nbBrouillon > 1 ? "s" : ""}</span>}
-                  {decomptes.length === 0 && <span className="text-gray-400">Aucun décompte</span>}
-                </p>
-              </div>
-
-              {/* Cumul payé */}
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Cumul payé</p>
-                <p className="text-lg font-bold text-[#087F3E]">{pct}%</p>
-                <div className="mt-1 h-1.5 bg-gray-100 rounded-full overflow-hidden w-full">
-                  <div className="h-full bg-[#087F3E] rounded-full" style={{ width: `${Math.min(pct, 100)}%` }} />
-                </div>
-              </div>
-
-              {/* En validation */}
-              <div>
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">En validation</p>
-                <p className="text-lg font-bold text-amber-600">{formatMontantCourt(enValidation)}</p>
+            {/* Card 6: Décomptes */}
+            <div className="col-span-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
+              <p className="text-[11px] text-gray-400 uppercase tracking-wide">Décomptes</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {nbPaye > 0 && <span className="text-[11px] bg-[#E8F5EE] text-[#087F3E] px-2 py-0.5 rounded-full font-medium">{nbPaye} payé{nbPaye > 1 ? "s" : ""}</span>}
+                {nbValidation > 0 && <span className="text-[11px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">{nbValidation} en cours</span>}
+                {nbBrouillon > 0 && <span className="text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">{nbBrouillon} brouillon{nbBrouillon > 1 ? "s" : ""}</span>}
+                {decomptes.length === 0 && <span className="text-[11px] text-gray-400">Aucun</span>}
               </div>
             </div>
           </div>
         );
       })()}
 
+      {/* BC warning banner */}
+      {!isNew && bcsLoaded && bcsList.length === 0 && !["resilie","archive"].includes(contrat.statut) && (
+        <div className="flex items-center justify-between gap-3 flex-wrap bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <p className="flex items-center gap-2 text-sm text-amber-800">
+            <AlertTriangle size={15} className="flex-shrink-0" />
+            <span><strong>Aucun bon de commande Sage X3 lié.</strong> Le montant reste à 0.</span>
+          </p>
+          <button onClick={() => setActiveTab("bonscommande")}
+            className="px-3 py-1.5 text-sm font-medium text-amber-900 border border-amber-300 rounded-lg bg-white hover:bg-amber-100 transition-colors">
+            Récupérer les BC
+          </button>
+        </div>
+      )}
+
       {/* Workflow — view mode only */}
       {!isNew && transitions.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Actions</p>
+        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
+          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-3">Workflow</p>
           <div className="flex flex-wrap gap-3 items-end">
             {transitions.map(t => (
               <button
@@ -2582,11 +2556,11 @@ export default function ContratFormPage() {
       )}
 
       {/* Tabs */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
         <div className="border-b border-gray-200 px-5 pt-2">
           <Tabs items={tabs} activeTab={activeTab} onChange={setActiveTab} />
         </div>
-        <div className="p-6">
+        <div className="p-5">
 
           {/* Tab: Info */}
           {activeTab === "info" && (
