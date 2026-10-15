@@ -495,6 +495,7 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
   const { addToast } = useToast();
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ ct_user_id: "", soustraitant_id: "" });
+  const [confirmDel, setConfirmDel] = useState(null); // { id, name }
 
   const { data: usersData } = useUsersPaginated({ count: 200 });
   const users    = usersData?.data ?? [];
@@ -580,7 +581,7 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
                       <li key={p.id} className="px-4 py-2.5 flex items-center justify-between hover:bg-gray-50/60 transition-colors">
                         <span className="text-sm text-gray-700">{p.soustraitant?.raison_sociale}</span>
                         {isDacc && (
-                          <button onClick={() => delMut.mutate(p.id)} disabled={delMut.isPending}
+                          <button onClick={() => setConfirmDel({ id: p.id, name: p.soustraitant?.raison_sociale })} disabled={delMut.isPending}
                             className="text-gray-300 hover:text-red-500 transition-colors p-1 rounded">
                             <X size={13} />
                           </button>
@@ -639,6 +640,33 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white text-sm font-medium rounded-xl hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
                 {addMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                 Assigner
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Modal confirmation suppression */}
+      {confirmDel && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirmDel(null)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-900">Confirmer la suppression</h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Retirer <strong>{confirmDel.name}</strong> du portefeuille ?
+              </p>
+            </div>
+            <div className="px-6 py-4 flex justify-end gap-2">
+              <button onClick={() => setConfirmDel(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl">
+                Annuler
+              </button>
+              <button onClick={() => { delMut.mutate(confirmDel.id); setConfirmDel(null); }}
+                disabled={delMut.isPending}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors">
+                {delMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <X size={13} />}
+                Supprimer
               </button>
             </div>
           </div>
