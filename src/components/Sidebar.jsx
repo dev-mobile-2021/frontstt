@@ -99,14 +99,14 @@ export default function Sidebar({ collapsed, onToggle }) {
   const attachPending = 0;
   const userRole = currentUser?.role?.designation;
   const location = useLocation();
-  const [paramOpen, setParamOpen] = useState(false);
   const paramActive = PARAMETRAGE_GROUP.children.some(c => location.pathname.startsWith(c.to));
-  const [controllerOpen, setControllerOpen] = useState(false);
   const controllerActive = CONTROLLER_GROUP.children.some(c => location.pathname.startsWith(c.to));
-  const [decompteOpen, setDecompteOpen] = useState(false);
   const decompteActive = DECOMPTE_GROUP.children.some(c => location.pathname.startsWith(c.to));
-  const [referentielOpen, setReferentielOpen] = useState(false);
   const referentielActive = REFERENTIEL_GROUP.children.some(c => location.pathname.startsWith(c.to));
+  const [paramOpen, setParamOpen] = useState(paramActive);
+  const [controllerOpen, setControllerOpen] = useState(controllerActive);
+  const [decompteOpen, setDecompteOpen] = useState(decompteActive);
+  const [referentielOpen, setReferentielOpen] = useState(referentielActive);
   return (
     <aside
       className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300`}
@@ -144,11 +144,11 @@ export default function Sidebar({ collapsed, onToggle }) {
             {!collapsed && (
               <>
                 <span className="flex-1 text-left">Référentiel</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${(referentielOpen || referentielActive) ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${referentielOpen ? "rotate-180" : ""}`} />
               </>
             )}
           </button>
-          {!collapsed && (referentielOpen || referentielActive) && (
+          {!collapsed && referentielOpen && (
             <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
               {REFERENTIEL_GROUP.children.map(item => (
                 <NavLink
@@ -181,11 +181,11 @@ export default function Sidebar({ collapsed, onToggle }) {
             {!collapsed && (
               <>
                 <span className="flex-1 text-left">Décompte</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${(decompteOpen || decompteActive) ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${decompteOpen ? "rotate-180" : ""}`} />
               </>
             )}
           </button>
-          {!collapsed && (decompteOpen || decompteActive) && (
+          {!collapsed && decompteOpen && (
             <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
               {DECOMPTE_GROUP.children.map(item => (
                 <NavLink
@@ -218,11 +218,11 @@ export default function Sidebar({ collapsed, onToggle }) {
             {!collapsed && (
               <>
                 <span className="flex-1 text-left">Controller de gestion</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${(controllerOpen || controllerActive) ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${controllerOpen ? "rotate-180" : ""}`} />
               </>
             )}
           </button>
-          {!collapsed && (controllerOpen || controllerActive) && (
+          {!collapsed && controllerOpen && (
             <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
               {CONTROLLER_GROUP.children.map(item => (
                 <NavLink
@@ -255,11 +255,11 @@ export default function Sidebar({ collapsed, onToggle }) {
             {!collapsed && (
               <>
                 <span className="flex-1 text-left">Paramétrage</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${(paramOpen || paramActive) ? "rotate-180" : ""}`} />
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${paramOpen ? "rotate-180" : ""}`} />
               </>
             )}
           </button>
-          {!collapsed && (paramOpen || paramActive) && (
+          {!collapsed && paramOpen && (
             <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
               {PARAMETRAGE_GROUP.children.map(item => (
                 <NavLink
