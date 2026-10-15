@@ -299,13 +299,7 @@ export default function EtatsCessionListPage() {
         subtitle="Arrêtés périodiques MTX/MTL/RH, contrôlés et visés, consommés par les décomptes"
         action={
           <div className="flex items-center gap-2">
-            <Link
-              to="/etats-cession/consultation"
-              className="inline-flex items-center gap-1.5 border-2 border-[#087F3E] text-[#087F3E] px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-[#087F3E] hover:text-white transition-all"
-            >
-              <Eye size={15} /> CONSULTATION
-            </Link>
-            {peutCreer && (
+{peutCreer && (
               <button onClick={openModal}
                 className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
                 <Plus size={16} /> Nouvel état de cession
