@@ -583,7 +583,8 @@ export default function ChantierFormPage() {
   }
   const [activeTab, setActiveTab] = useState("contrats");
   const { currentUser } = useUser();
-  const isDacc = currentUser?.role?.designation === "DACC";
+  const { data: peutAffecterResponsable } = usePeutFaire("affecter_responsable");
+  const isDacc = !!peutAffecterResponsable;
 
   const { data: chantier, isLoading, isError } = useChantier(id);
   const { data: contratsData } = useContratsPaginated({ chantier_id: Number(id), count: 200 });
