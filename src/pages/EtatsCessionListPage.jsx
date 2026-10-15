@@ -416,15 +416,13 @@ export default function EtatsCessionListPage() {
                     </div>
                   </TableCell>
                   <TableCell onClick={ev => ev.stopPropagation()}>
-                    {e.statut === "brouillon" && (
-                      <button
-                        onClick={() => setConfirmDelete({ id: e.id, code: e.code })}
-                        className="p-1.5 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"
-                        title="Supprimer"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => setConfirmDelete({ id: e.id, code: e.code })}
+                      className="p-1.5 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </TableCell>
                 </TableRow>
               ))}
