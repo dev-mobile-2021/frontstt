@@ -81,7 +81,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   const paramActive = PARAMETRAGE_GROUP.children.some(c => location.pathname.startsWith(c.to));
   return (
     <aside
-      className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300 overflow-hidden`}
+      className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300 overflow-hidden relative`}
     >
       {/* Logo + Brand */}
       <div className={`flex items-center border-b border-gray-100 ${collapsed ? "justify-center px-2 py-4" : "gap-3 px-5 py-5"}`}>
@@ -100,25 +100,18 @@ export default function Sidebar({ collapsed, onToggle }) {
         )}
       </div>
 
-      {/* Main navigation */}
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-        {!collapsed && (
-          <p className="text-xs uppercase tracking-wide font-medium text-gray-400 px-2 mb-2">Navigation</p>
-        )}
+      {/* Main navigation — scrollable */}
+      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden">
         {NAV_ITEMS.filter(item => !item.roles || item.roles.includes(userRole)).map((item) => (
           <NavItem key={item.to} {...item} collapsed={collapsed} pendingCount={item.badge ? attachPending : 0} />
         ))}
       </nav>
 
-      {/* Secondary navigation — Paramétrage accordion */}
-      <div className="px-2 py-3 border-t border-gray-100">
-        {!collapsed && (
-          <p className="text-xs uppercase tracking-wide font-medium text-gray-400 px-2 mb-2">Administration</p>
-        )}
-        {/* Group header */}
+      {/* Paramétrage — fixed at bottom, border-top */}
+      <div className="shrink-0 border-t border-gray-100 px-2 py-3">
         <button
           onClick={() => setParamOpen(v => !v)}
-          className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${paramActive ? "text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
+          className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${paramActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
         >
           <Settings className={`w-5 h-5 flex-shrink-0 ${paramActive ? "text-[#087F3E]" : "text-gray-500"}`} />
           {!collapsed && (
@@ -128,7 +121,6 @@ export default function Sidebar({ collapsed, onToggle }) {
             </>
           )}
         </button>
-        {/* Children */}
         {!collapsed && (paramOpen || paramActive) && (
           <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
             {PARAMETRAGE_GROUP.children.map(item => (
@@ -152,23 +144,14 @@ export default function Sidebar({ collapsed, onToggle }) {
         )}
       </div>
 
-      {/* Toggle button */}
-      <div className="px-2 pb-4">
-        <button
-          onClick={onToggle}
-          title={collapsed ? "Développer le menu" : "Réduire le menu"}
-          className={`w-full flex items-center py-2.5 rounded-lg text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-colors ${collapsed ? "justify-center" : "gap-2 px-3"}`}
-        >
-          {collapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <>
-              <ChevronLeft className="w-4 h-4" />
-              <span className="text-xs font-medium">Réduire</span>
-            </>
-          )}
-        </button>
-      </div>
+      {/* Toggle collapse — bouton absolu sur le bord droit comme GMAO */}
+      <button
+        onClick={onToggle}
+        title={collapsed ? "Développer" : "Réduire"}
+        className="absolute -right-3 top-[26px] hidden h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-all duration-200 hover:text-[#087F3E] lg:flex"
+      >
+        <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />
+      </button>
     </aside>
   );
 }
