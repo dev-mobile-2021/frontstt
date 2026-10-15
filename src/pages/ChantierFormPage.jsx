@@ -303,7 +303,8 @@ function TabBareme({ chantierId }) {
 function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
   const qc = useQueryClient();
   const { addToast } = useToast();
-  const [form, setForm] = useState({ role: "DT", user_id: "", note: "" });
+  const [editing, setEditing] = useState(null); // "DT" | "CT" | null
+  const [form, setForm] = useState({ user_id: "", note: "" });
   const [showHistory, setShowHistory] = useState(false);
 
   const { data: usersData } = useUsersPaginated({ count: 200 });
@@ -318,113 +319,123 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
 
   const affecterMut = useMutation({
     mutationFn: (payload) => http.post(`/chantiers/${chantierId}/affecter`, payload).then(r => r.data),
-    onSuccess: () => {
+    onSuccess: (_, vars) => {
       qc.invalidateQueries({ queryKey: ["chantier", String(chantierId)] });
       qc.invalidateQueries({ queryKey: ["chantier_affectations", chantierId] });
-      addToast(`${form.role} affecté avec succès.`, "success");
-      setForm(f => ({ ...f, user_id: "", note: "" }));
+      addToast(`${vars.role} affecté avec succès.`, "success");
+      setEditing(null);
+      setForm({ user_id: "", note: "" });
     },
     onError: (e) => addToast(e?.response?.data?.error ?? "Erreur lors de l'affectation.", "error"),
   });
 
   const dtUser  = chantier.dt_user;
   const ctUser  = chantier.ct_user;
-  const fmtUser = u => u ? `${u.prenom ?? ""} ${u.nom ?? ""}`.trim() : null;
-  const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+  const initials = u => u ? `${(u.prenom ?? "")[0] ?? ""}${(u.nom ?? "")[0] ?? ""}`.toUpperCase() : null;
+  const fmtUser  = u => u ? `${u.prenom ?? ""} ${u.nom ?? ""}`.trim() : null;
+  const fmtDate  = d => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "—";
+
+  const ROLES = [
+    { badge: "CT", label: "Conducteur de Travaux", user: ctUser, userList: ctUsers, accent: "amber",
+      colors: { avatar: "bg-amber-100 text-amber-700", badge: "bg-amber-100 text-amber-700 border-amber-200", ring: "ring-amber-300", btn: "text-amber-600 hover:bg-amber-50 border-amber-200" } },
+    { badge: "DT", label: "Directeur de Travaux",  user: dtUser, userList: dtUsers, accent: "green",
+      colors: { avatar: "bg-[#E8F5EE] text-[#087F3E]", badge: "bg-[#E8F5EE] text-[#065A2C] border-[#b5ddc8]", ring: "ring-[#087F3E]", btn: "text-[#087F3E] hover:bg-[#E8F5EE] border-[#b5ddc8]" } },
+  ];
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
         <div>
           <h3 className="text-sm font-semibold text-gray-900">Responsables du chantier</h3>
           <p className="text-xs text-gray-400 mt-0.5">DT et CT — valident les décomptes avant le circuit administratif</p>
         </div>
         <button onClick={() => setShowHistory(h => !h)}
-          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#087F3E] transition-colors">
+          className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${showHistory ? "bg-gray-100 text-gray-700 border-gray-200" : "text-gray-400 border-transparent hover:text-gray-600"}`}>
           <History size={13} /> Historique
         </button>
       </div>
 
-      {/* Affichage actuel */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { badge: "CT", label: "Conducteur de Travaux", user: ctUser, color: "amber" },
-          { badge: "DT", label: "Directeur de Travaux",  user: dtUser, color: "green" },
-        ].map(({ badge, label, user, color }) => {
-          const colors = {
-            amber: { wrap: "bg-amber-50 border-amber-200", badge: "bg-amber-100 text-amber-800 border-amber-300" },
-            green: { wrap: "bg-[#E8F5EE] border-[#b5ddc8]", badge: "bg-[#d4edd9] text-[#065A2C] border-[#b5ddc8]" },
-          };
-          const c = colors[color];
-          return (
-            <div key={badge} className={`flex items-start gap-3 p-4 rounded-xl border ${c.wrap}`}>
-              <div className={`flex-shrink-0 px-2 py-1 rounded border text-xs font-bold ${c.badge}`}>{badge}</div>
-              <div>
-                <p className="text-xs text-gray-500">{label}</p>
-                {fmtUser(user)
-                  ? <p className="text-sm font-semibold text-gray-800 mt-0.5">{fmtUser(user)}</p>
-                  : <p className="text-sm text-gray-400 italic mt-0.5">Non affecté</p>}
+      {/* Cards CT + DT */}
+      <div className="grid grid-cols-2 divide-x divide-gray-100">
+        {ROLES.map(({ badge, label, user, userList, colors }) => (
+          <div key={badge} className="p-5 space-y-4">
+            {/* Carte personne */}
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ring-2 ${colors.avatar} ${user ? colors.ring : "ring-gray-200"}`}>
+                {initials(user) ?? <span className="text-gray-300 text-lg">?</span>}
               </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${colors.badge}`}>{badge}</span>
+                  <span className="text-[10px] text-gray-400">{label}</span>
+                </div>
+                {fmtUser(user)
+                  ? <p className="text-sm font-semibold text-gray-800 truncate">{fmtUser(user)}</p>
+                  : <p className="text-sm text-gray-400 italic">Non affecté</p>}
+              </div>
+              {isDacc && (
+                <button onClick={() => { setEditing(editing === badge ? null : badge); setForm({ user_id: "", note: "" }); }}
+                  className={`flex-shrink-0 flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${editing === badge ? "bg-gray-100 text-gray-600 border-gray-200" : colors.btn}`}>
+                  <UserCheck size={12} /> {user ? "Changer" : "Affecter"}
+                </button>
+              )}
             </div>
-          );
-        })}
+
+            {/* Formulaire inline */}
+            {isDacc && editing === badge && (
+              <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Utilisateur</label>
+                  <select value={form.user_id} onChange={e => setForm(f => ({ ...f, user_id: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 bg-white">
+                    <option value="">— Sélectionner —</option>
+                    {userList.map(u => (
+                      <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Motif (optionnel)</label>
+                  <input type="text" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+                    placeholder="Ex : remplacement, mutation…"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 bg-white" />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => { setEditing(null); setForm({ user_id: "", note: "" }); }}
+                    className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg">
+                    Annuler
+                  </button>
+                  <button onClick={() => affecterMut.mutate({ role: badge, user_id: parseInt(form.user_id), note: form.note || null })}
+                    disabled={!form.user_id || affecterMut.isPending}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#087F3E] text-white text-xs font-medium rounded-lg hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
+                    {affecterMut.isPending ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
+                    Confirmer
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
-      {/* Formulaire DACC */}
-      {isDacc && (
-        <div className="border border-dashed border-[#087F3E]/40 rounded-xl p-4 space-y-3 bg-[#f8fdf9]">
-          <p className="text-xs font-semibold text-[#087F3E] flex items-center gap-1.5"><UserCheck size={13} /> Affecter un responsable</p>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Rôle</label>
-              <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value, user_id: "" }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
-                <option value="DT">DT — Directeur de Travaux</option>
-                <option value="CT">CT — Conducteur de Travaux</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Utilisateur</label>
-              <select value={form.user_id} onChange={e => setForm(f => ({ ...f, user_id: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
-                <option value="">— Sélectionner —</option>
-                {(form.role === "DT" ? dtUsers : ctUsers).map(u => (
-                  <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Note (optionnel)</label>
-              <input type="text" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                placeholder="Motif de changement…"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30" />
-            </div>
-          </div>
-          <div className="flex justify-end">
-            <button onClick={() => affecterMut.mutate({ role: form.role, user_id: parseInt(form.user_id), note: form.note || null })}
-              disabled={!form.user_id || affecterMut.isPending}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white text-sm rounded-lg hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
-              {affecterMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-              Affecter
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Historique */}
+      {/* Historique timeline */}
       {showHistory && (
-        <div className="border border-gray-100 rounded-xl overflow-hidden">
-          <div className="bg-gray-50 px-4 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">Historique des affectations</div>
+        <div className="border-t border-gray-100">
+          <div className="px-5 py-3 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">Historique des affectations</div>
           {!history || history.length === 0 ? (
-            <p className="px-4 py-6 text-sm text-gray-400 text-center">Aucune affectation enregistrée.</p>
+            <p className="px-5 py-6 text-sm text-gray-400 text-center">Aucune affectation enregistrée.</p>
           ) : (
-            <ul className="divide-y divide-gray-100">
-              {history.map(h => (
-                <li key={h.id} className="px-4 py-3 flex items-start gap-3">
-                  <span className={`mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded border ${h.role === "DT" ? "bg-[#d4edd9] text-[#065A2C] border-[#b5ddc8]" : "bg-amber-100 text-amber-800 border-amber-300"}`}>{h.role}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-800 font-medium">{h.user?.prenom} {h.user?.nom}</p>
-                    {h.note && <p className="text-xs text-gray-500 mt-0.5 italic">« {h.note} »</p>}
+            <ul className="px-5 py-3 space-y-3">
+              {history.map((h, i) => (
+                <li key={h.id} className="flex items-start gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${h.role === "DT" ? "bg-[#E8F5EE] text-[#065A2C]" : "bg-amber-100 text-amber-700"}`}>{h.role}</div>
+                    {i < history.length - 1 && <div className="w-px flex-1 bg-gray-200 mt-1 min-h-[16px]" />}
+                  </div>
+                  <div className="flex-1 pb-3">
+                    <p className="text-sm font-medium text-gray-800">{h.user?.prenom} {h.user?.nom}</p>
+                    {h.note && <p className="text-xs text-gray-500 italic mt-0.5">« {h.note} »</p>}
                     <p className="text-xs text-gray-400 mt-0.5">Par {h.assigned_by?.prenom} {h.assigned_by?.nom} · {fmtDate(h.created_at)}</p>
                   </div>
                 </li>
