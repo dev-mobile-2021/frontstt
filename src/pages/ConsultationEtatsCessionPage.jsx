@@ -364,16 +364,6 @@ export default function ConsultationEtatsCessionPage() {
               <input value={filters.code_article} onChange={e => set("code_article", e.target.value)}
                 placeholder="ex. FBNOR6" className={inputCls} />
             </div>
-            <div className="space-y-1">
-              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Réf. BS</label>
-              <input value={filters.ref_bs} onChange={e => set("ref_bs", e.target.value)}
-                placeholder="ex. BS-X3-..." className={inputCls} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Réf. BR</label>
-              <input value={filters.ref_br} onChange={e => set("ref_br", e.target.value)}
-                placeholder="ex. BR-..." className={inputCls} />
-            </div>
             <div className="flex gap-2">
               {hasActiveFilters && (
                 <button onClick={handleReset} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 border border-gray-200 px-2.5 py-2 rounded-lg">
