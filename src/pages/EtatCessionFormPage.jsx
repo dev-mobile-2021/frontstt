@@ -100,9 +100,8 @@ function ContratSelect({ value, onChange, contrats }) {
   const [search, setSearch] = useState("");
   const ref                 = useRef(null);
 
-  const actifs   = contrats.filter(c => c.statut === "actif");
-  const selected = actifs.find(c => String(c.id) === String(value));
-  const filtered = actifs.filter(c => {
+  const selected = contrats.find(c => String(c.id) === String(value));
+  const filtered = contrats.filter(c => {
     if (!search) return true;
     const txt = `${c.code} ${c.soustraitant?.raison_sociale ?? ""} ${c.objet ?? ""}`.toLowerCase();
     return txt.includes(search.toLowerCase());
@@ -125,7 +124,7 @@ function ContratSelect({ value, onChange, contrats }) {
       <button type="button" onClick={() => setOpen(o => !o)}
         className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
         <span className={selected ? "text-gray-800 truncate text-left" : "text-gray-400"}>
-          {selected ? render(selected) : "— Sélectionner un contrat actif —"}
+          {selected ? render(selected) : "— Sélectionner un contrat —"}
         </span>
         <ChevronDown size={14} className={`ml-2 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
