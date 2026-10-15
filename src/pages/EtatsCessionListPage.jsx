@@ -129,40 +129,26 @@ export default function EtatsCessionListPage() {
   const deleteMut    = useDeleteEtatCession();
   const [confirmDelete, setConfirmDelete] = useState(null); // { id, code }
 
-  const [search,        setSearch]       = useState("");
-  const [statut,        setStatut]       = useState("");
-  const [contratFilter, setContratFilter] = useState("");
-  const [sttFilter,     setSttFilter]    = useState("");
-  const [chantierFilter,setChantierFilter] = useState("");
-  const [page,          setPage]         = useState(1);
-  const [debounced,     setDebounced]    = useState("");
-  const [debouncedContrat, setDebouncedContrat] = useState("");
-  const [debouncedStt,     setDebouncedStt]     = useState("");
-  const [showModal,     setShowModal]    = useState(false);
-  const [form,          setForm]         = useState(INIT);
-  const [errors,        setErrors]       = useState({});
-  const [selectedMois,  setSelectedMois] = useState("");
+  const [search,         setSearch]        = useState("");
+  const [statut,         setStatut]        = useState("");
+  const [chantierFilter, setChantierFilter] = useState("");
+  const [page,           setPage]          = useState(1);
+  const [debounced,      setDebounced]     = useState("");
+  const [showModal,      setShowModal]     = useState(false);
+  const [form,           setForm]          = useState(INIT);
+  const [errors,         setErrors]        = useState({});
+  const [selectedMois,   setSelectedMois]  = useState("");
 
   useEffect(() => {
     const t = setTimeout(() => { setDebounced(search.trim()); setPage(1); }, 400);
     return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => {
-    const t = setTimeout(() => { setDebouncedContrat(contratFilter.trim()); setPage(1); }, 400);
-    return () => clearTimeout(t);
-  }, [contratFilter]);
-
-  useEffect(() => {
-    const t = setTimeout(() => { setDebouncedStt(sttFilter.trim()); setPage(1); }, 400);
-    return () => clearTimeout(t);
-  }, [sttFilter]);
-
   const filters = {
-    code:             debounced         || undefined,
-    statut:           statut            || undefined,
-    contrat_code:     debouncedContrat  || undefined,
-    soustraitant_nom: debouncedStt      || undefined,
+    code:             debounced || undefined,
+    contrat_code:     debounced || undefined,
+    soustraitant_nom: debounced || undefined,
+    statut:           statut    || undefined,
     chantier_id:      chantierFilter ? parseInt(chantierFilter) : undefined,
     page,
     count: 15,
@@ -172,7 +158,7 @@ export default function EtatsCessionListPage() {
   const rows       = data?.data ?? [];
   const meta       = data?.metadata ?? {};
   const totalPages = meta.last_page ?? 1;
-  const hasFilter  = search || statut || debouncedContrat || debouncedStt || chantierFilter;
+  const hasFilter  = search || statut || chantierFilter;
 
   const { data: allData } = useEtatsCessionPaginated({ count: 500 });
   const allEC = allData?.data ?? [];
@@ -240,7 +226,7 @@ export default function EtatsCessionListPage() {
     }
   }
 
-  function reset()     { setSearch(""); setStatut(""); setContratFilter(""); setSttFilter(""); setChantierFilter(""); setPage(1); }
+  function reset()     { setSearch(""); setStatut(""); setChantierFilter(""); setPage(1); }
   function set(k, v)  { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: undefined })); }
   function openModal() { setForm(INIT); setErrors({}); setSelectedMois(""); setShowModal(true); }
 
@@ -323,7 +309,7 @@ export default function EtatsCessionListPage() {
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[200px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input placeholder="Code, contrat, sous-traitant…" value={search}
+            <input placeholder="Code EC, code contrat, sous-traitant…" value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
           </div>
@@ -332,24 +318,6 @@ export default function EtatsCessionListPage() {
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </SearchSelect>
-          <div className="relative">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input
-              placeholder="Code contrat (ex: CTR-CSE-2305)"
-              value={contratFilter}
-              onChange={e => setContratFilter(e.target.value)}
-              className="pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] w-52"
-            />
-          </div>
-          <div className="relative">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            <input
-              placeholder="Sous-traitant…"
-              value={sttFilter}
-              onChange={e => setSttFilter(e.target.value)}
-              className="pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] w-44"
-            />
-          </div>
           <SearchSelect value={chantierFilter} onChange={e => { setChantierFilter(e.target.value); setPage(1); }}
             className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[200px]">
             <option value="">Tous les chantiers</option>
