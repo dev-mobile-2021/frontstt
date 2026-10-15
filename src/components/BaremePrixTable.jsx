@@ -151,9 +151,9 @@ export default function BaremePrixTable({
                         <input type="number" min="0" step="any" value={value} autoFocus
                           onChange={(e) => setValue(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") commit(r); if (e.key === "Escape") setEditing(null); }}
+                          onBlur={() => commit(r)}
                           className="w-28 border border-gray-300 rounded-lg px-2 py-1 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none" />
-                        <button onClick={() => commit(r)} className="p-1.5 rounded bg-[#087F3E] text-white hover:bg-[#065A2C]"><Check size={13} /></button>
-                        <button onClick={() => setEditing(null)} className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50"><X size={13} /></button>
+                        <span className="text-[10px] text-gray-400">↵</span>
                       </div>
                     ) : (
                       <>
