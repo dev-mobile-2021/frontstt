@@ -265,7 +265,13 @@ export default function ConsultationEtatsCessionPage() {
   async function handleExcel() {
     const resp = await fetch(`${API_BASE}/excel/consultation-lignes?${buildPdfParams()}`, { headers: getAuthHeader() });
     const blob = await resp.blob();
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "consultation-cessions.xlsx"; a.click();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "consultation-recap-periode.xlsx"; a.click();
+  }
+
+  async function handleExcelCumul() {
+    const resp = await fetch(`${API_BASE}/excel/consultation-cumul?${buildPdfParams()}`, { headers: getAuthHeader() });
+    const blob = await resp.blob();
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "consultation-cumul.xlsx"; a.click();
   }
 
   const hasActiveFilters = Object.values(applied).some(v => !!v);
@@ -298,15 +304,19 @@ export default function ConsultationEtatsCessionPage() {
           <div className="flex gap-2">
             <button onClick={handlePdfRecap} disabled={pdfLoading || lignes.length === 0}
               className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 disabled:opacity-40">
-              <FileDown size={13} /> PDF récap
+              <FileDown size={13} /> PDF Récap / Période
             </button>
             <button onClick={handlePdfRecapArticles} disabled={pdfLoading || lignes.length === 0}
               className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 disabled:opacity-40">
-              <FileDown size={13} /> PDF matériaux
+              <FileDown size={13} /> PDF Cumul
             </button>
-            <button onClick={handleExcel}
-              className="inline-flex items-center gap-1.5 bg-[#087F3E] text-white px-3 py-1.5 rounded-lg text-xs hover:bg-[#065A2C]">
-              <FileSpreadsheet size={13} /> Excel
+            <button onClick={handleExcel} disabled={lignes.length === 0}
+              className="inline-flex items-center gap-1.5 bg-[#087F3E] text-white px-3 py-1.5 rounded-lg text-xs hover:bg-[#065A2C] disabled:opacity-40">
+              <FileSpreadsheet size={13} /> Excel Récap / Période
+            </button>
+            <button onClick={handleExcelCumul} disabled={lignes.length === 0}
+              className="inline-flex items-center gap-1.5 bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs hover:bg-emerald-800 disabled:opacity-40">
+              <FileSpreadsheet size={13} /> Excel Cumul
             </button>
           </div>
         </div>

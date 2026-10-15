@@ -12,7 +12,7 @@ const NAV_ITEMS = [
   { label: "Décomptes",       to: "/decomptes",       icon: Calculator },
   { label: "États de cession", to: "/etats-cession",  icon: Package },
   { label: "Attachements",    to: "/attachements",    icon: Paperclip, badge: true },
-  { label: "Consultation",    to: "/etats-cession/consultation", icon: Eye, roles: ["DCG", "Assistant DCG", "Admin"] },
+  { label: "Consultation",    to: "/consultation", icon: Eye, roles: ["DCG", "Assistant DCG", "Admin"] },
   { label: "Relevés",         to: "/releves",         icon: ReceiptText },
   { label: "Factures",        to: "/factures",        icon: FileStack },
   { label: "Sous-traitants",  to: "/sous-traitants",  icon: Users },

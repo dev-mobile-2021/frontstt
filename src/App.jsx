@@ -66,6 +66,7 @@ export default function App() {
                 {/* États de cession */}
                 <Route path="/etats-cession" element={<EtatsCessionListPage />} />
                 <Route path="/etats-cession/consultation" element={<ConsultationEtatsCessionPage />} />
+                <Route path="/consultation" element={<ConsultationEtatsCessionPage />} />
                 <Route path="/etats-cession/nouveau" element={<EtatCessionFormPage />} />
                 <Route path="/etats-cession/:id/modifier" element={<EtatCessionFormPage />} />
                 <Route path="/etats-cession/:id" element={<EtatCessionFormPage />} />
