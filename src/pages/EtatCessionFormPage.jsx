@@ -346,10 +346,11 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
     }
   }
 
-  // Trouve le prix contrat pour un article X3 (par code_article → bareme.code)
+  // Trouve le prix effectif pour un article X3 (prix_contrat > prix_herite > prix_base)
   function getPrixBareme(codeArticle) {
     const cb = contratBaremes.find(cb => cb.bareme?.code === codeArticle);
-    return cb?.prix_contrat ?? null;
+    if (!cb) return null;
+    return cb.prix_contrat ?? cb.prix_herite ?? cb.bareme?.prix_unitaire ?? null;
   }
 
   async function handleX3Import() {
