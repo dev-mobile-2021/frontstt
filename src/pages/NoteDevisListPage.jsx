@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Plus, FileDown, Trash2, FileText, Loader2, X, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useNotesDevisPaginated, useCreateNoteDevis, useDeleteNoteDevis } from "../hooks/useNotesDevis";
-import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
+import { useEtatsCessionPaginated, useEtatCession } from "../hooks/useEtatsCession";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
 import { SkeletonTable } from "../components/Skeleton";
@@ -36,10 +36,13 @@ export default function NoteDevisListPage() {
   const meta = data?.metadata ?? {};
   const totalPages = meta.last_page ?? 1;
 
-  // États de cession validés pour le modal
+  // États de cession validés pour le modal (dropdown)
   const { data: ecsData } = useEtatsCessionPaginated({ statut: "valide", count: 500 });
   const ecsList = ecsData?.data ?? [];
-  const selectedEc = ecsList.find(e => String(e.id) === String(selectedEcId));
+
+  // Chargement complet de l'état sélectionné (avec lignes)
+  const { data: selectedEcData, isLoading: loadingEc } = useEtatCession(selectedEcId || null);
+  const selectedEc = selectedEcData ?? null;
 
   const createMut = useCreateNoteDevis();
   const deleteMut = useDeleteNoteDevis();
@@ -212,7 +215,10 @@ export default function NoteDevisListPage() {
               </div>
 
               {/* Aperçu de l'état sélectionné */}
-              {selectedEc && (
+              {selectedEcId && loadingEc && (
+                <div className="text-center py-6 text-gray-400 text-sm">Chargement des lignes…</div>
+              )}
+              {selectedEc && !loadingEc && (
                 <div className="space-y-4">
                   {/* Infos */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
