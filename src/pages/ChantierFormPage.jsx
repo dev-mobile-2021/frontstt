@@ -612,19 +612,21 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
             <div className="px-6 py-5 space-y-4">
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-gray-600">Conducteur de Travaux (CT)</label>
-                <select value={form.ct_user_id} onChange={e => setForm(f => ({ ...f, ct_user_id: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 bg-white">
+                <SearchSelect value={form.ct_user_id} onChange={e => setForm(f => ({ ...f, ct_user_id: e.target.value }))}
+                  placeholder="— Sélectionner un CT —"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
                   <option value="">— Sélectionner un CT —</option>
                   {ctUsers.map(u => <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>)}
-                </select>
+                </SearchSelect>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-gray-600">Sous-traitant</label>
-                <select value={form.soustraitant_id} onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 bg-white">
+                <SearchSelect value={form.soustraitant_id} onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
+                  placeholder="— Sélectionner un STT —"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
                   <option value="">— Sélectionner un STT —</option>
                   {availableStt.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
-                </select>
+                </SearchSelect>
               </div>
             </div>
 
