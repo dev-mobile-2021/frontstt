@@ -431,115 +431,81 @@ export default function ConsultationEtatsCessionPage() {
         </div>
       )}
 
-      {/* Tableau style RECAP ETATS DE CESSION */}
-      <div className="space-y-0">
+      {/* Tableau plat paginé */}
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
         {isLoading ? (
-          <div className="bg-white border border-gray-200 rounded-2xl py-16 text-center text-sm text-gray-400">Chargement…</div>
+          <div className="py-16 text-center text-sm text-gray-400">Chargement…</div>
         ) : lignes.length === 0 ? (
-          <div className="bg-white border border-gray-200 rounded-2xl py-16 text-center text-sm text-gray-400">
+          <div className="py-16 text-center text-sm text-gray-400">
             Aucun article trouvé. Appliquez des filtres pour afficher les données.
           </div>
         ) : (
           <>
-            {groupesMois.map(mois => {
-              const moisLabel = new Date(mois.moisKey + "-15").toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-              return (
-                <div key={mois.moisKey} className="mb-6">
-                  {/* En-tête mois */}
-                  <div className="bg-[#e8f4fb] border border-[#b8d9ec] rounded-t-xl px-6 py-3 text-center">
-                    <span className="text-base font-semibold text-gray-700 italic">{moisLabel}</span>
-                  </div>
-
-                  {/* NDs du mois */}
-                  {mois.nds.map((nd, ndIdx) => {
-                    const ndTotal = nd.lignes.reduce((s, l) => s + (parseFloat(l.montant) || 0), 0);
-                    return (
-                      <div key={nd.ref_bs || ndIdx} className="border-x border-b border-gray-200 bg-white overflow-hidden">
-                        {/* En-tête ND */}
-                        <div className="bg-gray-100 border-b border-gray-200 px-4 py-2 grid grid-cols-4 gap-4 text-sm font-semibold text-gray-700">
-                          <span className="font-mono">{nd.ref_bs || "—"}</span>
-                          <span>{nd.date_sortie ? new Date(nd.date_sortie).toLocaleDateString("fr-FR") : "—"}</span>
-                          <span>{nd.chantier?.code_x3 || nd.chantier?.code || "—"}</span>
-                          <span>{nd.soustraitant?.raison_sociale || "—"}</span>
-                        </div>
-
-                        {/* Colonnes */}
-                        <table className="w-full text-sm">
-                          <thead>
-                            <tr className="border-b border-dashed border-gray-300">
-                              <th className="px-4 py-2 text-left text-sm font-bold text-gray-800 w-36">Code article</th>
-                              <th className="px-4 py-2 text-left text-sm font-bold text-gray-800">Description article</th>
-                              <th className="px-4 py-2 text-center text-sm font-bold text-gray-800 w-20">Unite</th>
-                              <th className="px-4 py-2 text-right text-sm font-bold text-gray-800 w-32">Qté demandée</th>
-                              <th className="px-4 py-2 text-right text-sm font-bold text-gray-800 w-28">P.U</th>
-                              <th className="px-4 py-2 text-right text-sm font-bold text-gray-800 w-36">Valeur</th>
-                              <th className="w-8"></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {nd.lignes.map(l => (
-                              <tr key={l.id} className="border-b border-dashed border-gray-100 hover:bg-gray-50">
-                                <td className="px-4 py-2 font-mono text-sm text-gray-800">{l.code_article || "—"}</td>
-                                <td className="px-4 py-2 text-sm text-gray-700">{l.designation}</td>
-                                <td className="px-4 py-2 text-center text-sm text-gray-600 uppercase">{l.unite || "—"}</td>
-                                <td className="px-4 py-2 text-right text-sm text-gray-800">
-                                  {l.quantite != null ? fmtNum(l.quantite, 2) : "—"}
-                                </td>
-                                <td className="px-4 py-2 text-right text-sm text-gray-800">
-                                  {l.prix_unitaire != null ? fmtNum(l.prix_unitaire, 2) : "—"}
-                                </td>
-                                <td className="px-4 py-2 text-right text-sm text-gray-900 font-medium">
-                                  {l.montant != null ? fmtNum(l.montant, 2) : "—"}
-                                </td>
-                                <td className="px-2 py-2">
-                                  <Link to={`/etats-cession/${l.etat_cession_id}`}
-                                    className="text-gray-300 hover:text-[#087F3E] transition-colors inline-flex">
-                                    <Eye size={12} />
-                                  </Link>
-                                </td>
-                              </tr>
-                            ))}
-                            {/* Sous-total ND */}
-                            <tr className="border-t border-gray-300 bg-gray-50/50">
-                              <td colSpan={5} className="px-4 py-2 text-right text-sm font-semibold text-gray-700 border-t border-gray-300">
-                              </td>
-                              <td className="px-4 py-2 text-right text-sm font-bold text-gray-900 border-t-2 border-gray-400">
-                                {fmtNum(ndTotal, 2)}
-                              </td>
-                              <td></td>
-                            </tr>
-                          </tbody>
-                        </table>
-
-                        {/* TOTAL ND en vert */}
-                        <div className="px-4 py-2 text-right bg-gray-50 border-t border-gray-200">
-                          <span className="text-sm font-bold text-[#087F3E]">
-                            TOTAL : {fmtNum(ndTotal, 2)}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })}
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-[#065A2C]">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white">Période</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white">Chantier</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white">Sous-traitant</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white">Poste</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white">Code article</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white">Désignation</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-white">Unité</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-white">Quantité</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-white">P.U</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-white">Montant</th>
+                  <th className="w-8"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {lignes.map((l, i) => (
+                  <tr key={l.id ?? i} className={`border-b border-gray-100 hover:bg-[#E8F5EE] transition-colors ${i % 2 === 0 ? "bg-white" : "bg-gray-50/40"}`}>
+                    <td className="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap">
+                      {l.periode_debut ? new Date(l.periode_debut).toLocaleDateString("fr-FR", { month: "short", year: "numeric" }) : "—"}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs text-gray-700">{l.chantier?.code_x3 || l.chantier?.designation || "—"}</td>
+                    <td className="px-4 py-2.5 text-xs text-gray-700">{l.soustraitant?.raison_sociale || "—"}</td>
+                    <td className="px-4 py-2.5 text-xs">
+                      {l.poste ? (
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                          l.poste === "MTX" ? "bg-blue-50 text-blue-700" :
+                          l.poste === "GASOIL" ? "bg-orange-50 text-orange-700" :
+                          l.poste === "MTL" ? "bg-violet-50 text-violet-700" :
+                          "bg-green-50 text-green-700"
+                        }`}>{l.poste}</span>
+                      ) : "—"}
+                    </td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-gray-800">{l.code_article || "—"}</td>
+                    <td className="px-4 py-2.5 text-xs text-gray-700">{l.designation || "—"}</td>
+                    <td className="px-4 py-2.5 text-center text-xs text-gray-600 uppercase">{l.unite || "—"}</td>
+                    <td className="px-4 py-2.5 text-right text-xs text-gray-800">{l.quantite != null ? fmtNum(l.quantite, 2) : "—"}</td>
+                    <td className="px-4 py-2.5 text-right text-xs text-gray-800">{l.prix_unitaire != null ? fmtNum(l.prix_unitaire, 0) : "—"}</td>
+                    <td className="px-4 py-2.5 text-right text-xs font-semibold text-gray-900">{l.montant != null ? fmtNum(l.montant, 0) : "—"}</td>
+                    <td className="px-2 py-2">
+                      <Link to={`/etats-cession/${l.etat_cession_id}`}
+                        className="text-gray-300 hover:text-[#087F3E] transition-colors inline-flex">
+                        <Eye size={12} />
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-5 py-3">
-                <span className="text-xs text-gray-500">Page {page} / {totalPages} · {totalRows} lignes</span>
-                <div className="flex gap-2">
-                  <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                    className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-white disabled:opacity-40">
-                    <ChevronLeft size={14} />
-                  </button>
-                  <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                    className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-white disabled:opacity-40">
-                    <ChevronRight size={14} />
-                  </button>
-                </div>
+            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
+              <span className="text-xs text-gray-500">Page {page} / {totalPages} · {totalRows} ligne{totalRows > 1 ? "s" : ""}</span>
+              <div className="flex gap-2">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                  className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40">
+                  <ChevronLeft size={14} />
+                </button>
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                  className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40">
+                  <ChevronRight size={14} />
+                </button>
               </div>
-            )}
+            </div>
           </>
         )}
       </div>
