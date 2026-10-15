@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, FileText, Calculator, Users, Building2, BarChart3, Settings,
-  ChevronLeft, ChevronRight, ReceiptText, FileStack, Package, Paperclip, Eye,
+  ChevronLeft, ChevronRight, ChevronsLeft, ReceiptText, FileStack, Package, Paperclip, Eye,
   GitBranch, Sliders, Shield, ShieldCheck, Tags, Upload, ChevronDown,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
@@ -144,13 +144,13 @@ export default function Sidebar({ collapsed, onToggle }) {
         </div>
       </nav>
 
-      {/* Bouton collapse — absolu sur le bord droit */}
+      {/* Bouton collapse — absolu sur le bord droit, style GMAO */}
       <button
         onClick={onToggle}
-        title={collapsed ? "Développer" : "Réduire"}
-        className="absolute -right-3 top-[26px] hidden h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-all hover:text-[#087F3E] lg:flex"
+        aria-label={collapsed ? "Déplier la barre latérale" : "Replier la barre latérale"}
+        className="absolute -right-3 top-[26px] hidden h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-all duration-200 hover:text-[#087F3E] lg:flex"
       >
-        <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />
+        <ChevronsLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />
       </button>
     </aside>
   );
