@@ -6,6 +6,7 @@ import {
   ArrowLeft, ChevronRight, ChevronDown, Save, Loader2, Plus, X, Trash2,
   CheckCircle2, XCircle, Search, FileText, Fuel, FileDown, Sheet,
 } from "lucide-react";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../components/Table";
 
 // ─── MoisSelect : sélection "25 Mois YYYY" ──────────────────────
 const MOIS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -474,7 +475,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
     : 0;
 
   return (
-    <div className={`border rounded-2xl overflow-hidden ${c.border}`}>
+    <div className={`border rounded-xl overflow-hidden ${c.border}`}>
       {/* Header */}
       <div className={`flex items-center justify-between px-5 py-3.5 ${c.bg} border-b ${c.border}`}>
         <div className="flex items-center gap-2.5">
@@ -569,39 +570,37 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
           Aucune ligne. {canEdit && "Cliquez sur « Ajouter » pour commencer."}
         </div>
       ) : lignes.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 bg-white">
-                <th className="text-left px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-28">Code article</th>
-                <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Désignation</th>
-                <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-16">Unité</th>
-                {poste === "MTX" && <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-24">Date sortie</th>}
-                {poste === "MTX" && <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Réf. BS</th>}
-                {poste === "MTX" && <th className="text-left px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide">Réf. BR</th>}
-                <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-24">Quantité</th>
-                <th className="text-right px-3 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-28">
-                  Prix unit. <span className="text-gray-300 text-xs">✏</span>
-                </th>
-                <th className="text-right px-5 py-2.5 text-xs font-medium text-gray-400 uppercase tracking-wide w-32">Montant</th>
-                {canEdit && <th className="w-10" />}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
+        <div className="px-5 pb-4">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Code article</TableHead>
+                <TableHead>Désignation</TableHead>
+                <TableHead>Unité</TableHead>
+                {poste === "MTX" && <TableHead>Date sortie</TableHead>}
+                {poste === "MTX" && <TableHead>Réf. BS</TableHead>}
+                {poste === "MTX" && <TableHead>Réf. BR</TableHead>}
+                <TableHead className="text-right">Quantité</TableHead>
+                <TableHead className="text-right">Prix unit.</TableHead>
+                <TableHead className="text-right">Montant</TableHead>
+                {canEdit && <TableHead />}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {lignes.map(l => (
-                <tr key={l.id} className="hover:bg-gray-50/50">
-                  <td className="px-5 py-2.5">
+                <TableRow key={l.id}>
+                  <TableCell>
                     {l.code_article
                       ? <span className="font-mono text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{l.code_article}</span>
                       : <span className="text-gray-300">—</span>}
-                  </td>
-                  <td className="px-3 py-2.5 text-gray-800">{l.designation}</td>
-                  {poste === "MTX" && <td className="px-3 py-2.5 text-xs text-gray-500 whitespace-nowrap">{l.date_sortie ? new Date(l.date_sortie).toLocaleDateString("fr-FR", {day:"2-digit",month:"short",year:"numeric"}) : "—"}</td>}
-                  {poste === "MTX" && <td className="px-3 py-2.5"><span className="font-mono text-xs text-blue-600">{l.ref_bs ?? "—"}</span></td>}
-                  {poste === "MTX" && <td className="px-3 py-2.5"><span className="font-mono text-xs text-green-600">{l.ref_br ?? "—"}</span></td>}
-                  <td className="px-3 py-2.5 text-gray-500 text-xs uppercase">{l.unite || "—"}</td>
-                  <td className="px-3 py-2.5 text-right text-gray-700">{fmtNum(l.quantite)}</td>
-                  <td className="px-3 py-2.5 text-right text-xs">
+                  </TableCell>
+                  <TableCell className="text-gray-800 whitespace-normal max-w-[280px]">{l.designation}</TableCell>
+                  {poste === "MTX" && <TableCell className="text-xs text-gray-500">{l.date_sortie ? new Date(l.date_sortie).toLocaleDateString("fr-FR", {day:"2-digit",month:"short",year:"numeric"}) : "—"}</TableCell>}
+                  {poste === "MTX" && <TableCell><span className="font-mono text-xs text-blue-600">{l.ref_bs ?? "—"}</span></TableCell>}
+                  {poste === "MTX" && <TableCell><span className="font-mono text-xs text-green-600">{l.ref_br ?? "—"}</span></TableCell>}
+                  <TableCell className="text-xs text-gray-500 uppercase">{l.unite || "—"}</TableCell>
+                  <TableCell className="text-right text-gray-700">{fmtNum(l.quantite)}</TableCell>
+                  <TableCell className="text-right text-xs">
                     {canEdit && editingLigne === l.id ? (
                       <input type="number" min="0" step="any" value={editLignePrix}
                         onChange={e => setEditLignePrix(e.target.value)}
@@ -623,28 +622,24 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                           : <>{fmtNum(l.prix_unitaire)} FCFA</>}
                       </span>
                     )}
-                  </td>
-                  <td className="px-5 py-2.5 text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</td>
+                  </TableCell>
+                  <TableCell className="text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</TableCell>
                   {canEdit && (
-                    <td className="pr-3 py-2.5 text-right">
+                    <TableCell className="text-right">
                       <button onClick={() => setConfirmDel(l.id)} className="text-gray-300 hover:text-red-500 transition-colors">
                         <Trash2 size={13} />
                       </button>
-                    </td>
+                    </TableCell>
                   )}
-                </tr>
+                </TableRow>
               ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t border-gray-200 bg-gray-50">
-                <td colSpan={cfg.hasBonTransfert ? 4 : 4} className="px-5 py-2.5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                  Total {cfg.label}
-                </td>
-                <td className="px-5 py-2.5 text-right font-bold text-gray-900">{fmtNum(total)} FCFA</td>
-                {canEdit && <td />}
-              </tr>
-            </tfoot>
-          </table>
+            </TableBody>
+          </Table>
+          {/* Total footer */}
+          <div className="flex justify-between items-center px-3 py-2.5 mt-1 border-t border-gray-100">
+            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total {cfg.label}</span>
+            <span className="font-bold text-gray-900">{fmtNum(total)} FCFA</span>
+          </div>
         </div>
       )}
 
@@ -747,7 +742,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
       {/* Modal confirmation suppression */}
       {confirmDel && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-red-50 rounded-xl">
                 <Trash2 size={18} className="text-red-500" />
@@ -1008,14 +1003,10 @@ export default function EtatCessionFormPage() {
 
   return (
     <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <button onClick={() => navigate("/etats-cession")} className="hover:text-[#087F3E] flex items-center gap-1 transition-colors">
-          <ArrowLeft size={14} /> États de cession
-        </button>
-        <ChevronRight size={14} />
-        <span className="text-gray-900 font-medium">{isNew ? "Nouvel état de cession" : etat?.code}</span>
-      </div>
+      {/* Back */}
+      <button onClick={() => navigate("/etats-cession")} className="flex items-center gap-1 text-[13px] text-gray-500 hover:text-gray-900 transition-colors">
+        <ArrowLeft size={14} /> Retour aux états de cession
+      </button>
 
       <PageHeader
         title={isNew ? "Nouvel état de cession" : etat.code}
@@ -1086,7 +1077,7 @@ export default function EtatCessionFormPage() {
 
       {/* Infos globales */}
       {!isNew && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5">
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Période</p>
@@ -1204,7 +1195,7 @@ export default function EtatCessionFormPage() {
 
           {/* Résumé total */}
           {lignes.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-5">
+            <div className="bg-white border border-gray-200 rounded-xl p-5">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                 {POSTES_VISIBLES.map(poste => {
                   const montant = lignes.filter(l => l.poste === poste).reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
@@ -1230,7 +1221,7 @@ export default function EtatCessionFormPage() {
       {/* Modal confirmation statut */}
       {pendingStatut && pendingStatut !== "brouillon_delete" && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPendingStatut(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <div>
               <h3 className="text-base font-semibold text-gray-900">
                 {pendingStatut === "soumis"    ? "Soumettre l'état de cession ?"          :
@@ -1288,7 +1279,7 @@ export default function EtatCessionFormPage() {
       {/* Modal suppression */}
       {pendingStatut === "brouillon_delete" && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPendingStatut(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
             <h3 className="text-base font-semibold text-gray-900 mb-2">Supprimer l'état de cession ?</h3>
             <p className="text-sm text-gray-500 mb-5">Toutes les lignes seront supprimées. Action irréversible.</p>
             <div className="flex justify-end gap-3">

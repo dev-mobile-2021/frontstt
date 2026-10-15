@@ -19,6 +19,7 @@ import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonTable } from "../components/Skeleton";
 import { formatMontantCourt, fmtNum } from "../utils/formatters";
 import SearchSelect from "../components/SearchSelect";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableEmpty } from "../components/Table";
 
 // ─── MoisSelect ─────────────────────────────────────────────────
 const MOIS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -370,49 +371,41 @@ export default function EtatsCessionListPage() {
           Impossible de charger les états de cession.
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-          <table className="w-full min-w-[800px]">
-            <thead className="sticky top-0 z-10">
-              <tr className="bg-gray-50 border-b border-gray-200">
+        <div className="space-y-2">
+          <Table>
+            <TableHeader>
+              <TableRow>
                 {["Code", "Contrat / STT", "Chantier", "Période", "MTX", "MTL", "RH", "GASOIL", "Total", "Statut", ""].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                  <TableHead key={h}>{h}</TableHead>
                 ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="py-16 text-center">
-                    <FileText size={28} className="mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm text-gray-400">Aucun état de cession ne correspond aux filtres.</p>
-                  </td>
-                </tr>
+                <TableEmpty colSpan={11} icon={FileText} message="Aucun état de cession ne correspond aux filtres." />
               ) : rows.map(e => (
-                <tr key={e.id} onClick={() => navigate(`/etats-cession/${e.id}`)}
-                  className="hover:bg-gray-50 even:bg-gray-50/40 cursor-pointer transition-colors">
-                  <td className="px-4 py-3.5"><span className="font-mono text-sm font-semibold text-gray-900">{e.code}</span></td>
-                  <td className="px-4 py-3.5">
-                    <p className="text-sm font-mono text-gray-700">{e.contrat?.code ?? "—"}</p>
+                <TableRow key={e.id} clickable onClick={() => navigate(`/etats-cession/${e.id}`)}>
+                  <TableCell><span className="font-mono font-semibold">{e.code}</span></TableCell>
+                  <TableCell>
+                    <p className="font-mono text-gray-700">{e.contrat?.code ?? "—"}</p>
                     <p className="text-xs text-gray-400 truncate max-w-[140px]">{e.contrat?.soustraitant?.raison_sociale}</p>
-                  </td>
-                  <td className="px-4 py-3.5">
-                    <p className="text-xs text-gray-500 truncate max-w-[120px]">{e.contrat?.chantier?.designation ?? "—"}</p>
-                  </td>
-                  <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">{fmtPeriode(e.periode_debut, e.periode_fin)}</td>
+                  </TableCell>
+                  <TableCell className="text-xs text-gray-500 max-w-[120px] truncate">{e.contrat?.chantier?.designation ?? "—"}</TableCell>
+                  <TableCell className="text-xs text-gray-500 whitespace-nowrap">{fmtPeriode(e.periode_debut, e.periode_fin)}</TableCell>
                   {["MTX", "MTL", "RH", "GASOIL"].map(type => {
                     const lignes = e.lignes ?? [];
                     const total = lignes.filter(l => l.poste === type).reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
                     const hasType = lignes.some(l => l.poste === type);
                     return (
-                      <td key={type} className="px-4 py-3.5 text-xs tabular-nums">
+                      <TableCell key={type} className="text-xs tabular-nums">
                         {hasType
                           ? <span className="font-medium text-gray-700">{fmtNum(Math.round(total))} FCFA</span>
                           : <span className="text-gray-300">—</span>}
-                      </td>
+                      </TableCell>
                     );
                   })}
-                  <td className="px-4 py-3.5"><MoneyDisplay amount={e.montant_total ?? 0} variant="small" /></td>
-                  <td className="px-4 py-3.5">
+                  <TableCell><MoneyDisplay amount={e.montant_total ?? 0} variant="small" /></TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-1.5">
                       <StatusBadge statut={e.statut} />
                       {e.statut === "brouillon" && (e.lignes ?? []).some(l => !l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0) && (
@@ -421,8 +414,8 @@ export default function EtatsCessionListPage() {
                         </span>
                       )}
                     </div>
-                  </td>
-                  <td className="px-4 py-3.5" onClick={ev => ev.stopPropagation()}>
+                  </TableCell>
+                  <TableCell onClick={ev => ev.stopPropagation()}>
                     {e.statut === "brouillon" && (
                       <button
                         onClick={() => setConfirmDelete({ id: e.id, code: e.code })}
@@ -432,26 +425,26 @@ export default function EtatsCessionListPage() {
                         <Trash2 size={14} />
                       </button>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
+            <div className="flex items-center justify-between px-4 py-3">
               <p className="text-xs text-gray-500">Page {meta.current_page} / {meta.last_page} — {meta.total} résultat{meta.total !== 1 ? "s" : ""}</p>
               <div className="flex items-center gap-1">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30"><ChevronLeft size={16} /></button>
+                  className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronLeft size={16} /></button>
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
                   <button key={n} onClick={() => setPage(n)}
-                    className={`w-7 h-7 text-xs rounded transition-colors ${n === page ? "bg-[#087F3E] text-white font-semibold" : "hover:bg-gray-200 text-gray-600"}`}>
+                    className={`w-7 h-7 text-xs rounded transition-colors ${n === page ? "bg-[#087F3E] text-white font-semibold" : "hover:bg-gray-100 text-gray-600"}`}>
                     {n}
                   </button>
                 ))}
                 <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30"><ChevronRight size={16} /></button>
+                  className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronRight size={16} /></button>
               </div>
             </div>
           )}
