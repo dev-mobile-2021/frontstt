@@ -1014,13 +1014,6 @@ export default function EtatCessionFormPage() {
           [etat.contrat?.code, etat.contrat?.chantier?.designation, etat.contrat?.soustraitant?.raison_sociale].filter(Boolean).join(" · ")}
         action={!isNew && (
           <div className="flex items-center gap-2">
-            {/* Bouton raccourci CONSULTATION */}
-            <Link
-              to="/etats-cession/consultation"
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border-2 border-[#087F3E] text-[#087F3E] rounded-lg hover:bg-[#087F3E] hover:text-white transition-all"
-            >
-              <Search size={13} /> CONSULTATION
-            </Link>
             <button onClick={handlePdf}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-red-400 text-red-600 rounded-lg hover:bg-red-50 transition-all">
               <FileDown size={13} /> PDF
