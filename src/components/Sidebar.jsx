@@ -100,6 +100,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   const attachPending = 0;
   const userRole = currentUser?.role?.designation;
   const { data: peutConsulterArticles = false } = usePeutFaire("consulter_articles");
+  const { data: peutVoirNotesDevis   = false } = usePeutFaire("voir_notes_devis");
   const location = useLocation();
   const paramActive = PARAMETRAGE_GROUP.children.some(c => location.pathname.startsWith(c.to));
   const controllerActive = CONTROLLER_GROUP.children.some(c => location.pathname.startsWith(c.to));
@@ -227,7 +228,8 @@ export default function Sidebar({ collapsed, onToggle }) {
           {!collapsed && controllerOpen && (
             <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
               {CONTROLLER_GROUP.children.filter(item =>
-                item.to !== "/consultation" || peutConsulterArticles
+                (item.to !== "/consultation" || peutConsulterArticles) &&
+                (item.to !== "/notes-devis"  || peutVoirNotesDevis)
               ).map(item => (
                 <NavLink
                   key={item.to}

@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Plus, FileDown, Trash2, FileText, Loader2, X, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { useNotesDevisPaginated, useCreateNoteDevis, useDeleteNoteDevis } from "../hooks/useNotesDevis";
 import { useEtatsCessionPaginated, useEtatCession } from "../hooks/useEtatsCession";
+import { usePeutFaire } from "../hooks/useParametres";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
 import { SkeletonTable } from "../components/Skeleton";
@@ -26,6 +27,7 @@ function fmtPeriode(debut, fin) {
 export default function NoteDevisListPage() {
   const navigate = useNavigate();
   const { addToast } = useToast();
+  const { data: peutVoir, isLoading: checkingPerm } = usePeutFaire("voir_notes_devis");
   const [page, setPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [selectedEcId, setSelectedEcId] = useState("");
@@ -89,6 +91,14 @@ export default function NoteDevisListPage() {
   const lignesParPoste = selectedEc
     ? (selectedEc.lignes ?? []).slice().sort((a, b) => (POSTES_ORDER[a.poste] ?? 9) - (POSTES_ORDER[b.poste] ?? 9))
     : [];
+
+  if (!checkingPerm && !peutVoir) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center">
+        <p className="text-gray-500 text-sm">Vous n'avez pas accès à cette page.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
