@@ -3,7 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, FileText, Calculator, Users, Building2, BarChart3, Settings,
   ChevronLeft, ChevronRight, ChevronsLeft, ReceiptText, FileStack, Package, Paperclip, Eye,
-  GitBranch, Sliders, Shield, ShieldCheck, Tags, Upload, ChevronDown,
+  GitBranch, Sliders, Shield, ShieldCheck, Tags, Upload, ChevronDown, Layers,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { usePeutFaire } from "../hooks/useParametres";
@@ -12,15 +12,22 @@ const NAV_ITEMS = [
   { label: "Tableau de bord", to: "/dashboard",      icon: LayoutDashboard },
   { label: "Contrats",        to: "/contrats",        icon: FileText },
   { label: "Décomptes",       to: "/decomptes",       icon: Calculator },
-  { label: "États de cession", to: "/etats-cession",  icon: Package },
   { label: "Attachements",    to: "/attachements",    icon: Paperclip, badge: true },
-  { label: "Consultation",    to: "/consultation", icon: Eye, roles: ["DCG", "Assistant DCG", "Admin"] },
   { label: "Relevés",         to: "/releves",         icon: ReceiptText },
   { label: "Factures",        to: "/factures",        icon: FileStack },
   { label: "Sous-traitants",  to: "/sous-traitants",  icon: Users },
   { label: "Chantiers",       to: "/chantiers",       icon: Building2 },
   { label: "Rapports",        to: "/rapports",        icon: BarChart3 },
 ];
+
+const CONTROLLER_GROUP = {
+  label: "Controller de gestion",
+  icon: Layers,
+  children: [
+    { label: "États de cession", to: "/etats-cession", icon: Package },
+    { label: "Consultation",     to: "/consultation",   icon: Eye },
+  ],
+};
 
 const PARAMETRAGE_GROUP = {
   label: "Paramétrage",
@@ -79,6 +86,8 @@ export default function Sidebar({ collapsed, onToggle }) {
   const location = useLocation();
   const [paramOpen, setParamOpen] = useState(false);
   const paramActive = PARAMETRAGE_GROUP.children.some(c => location.pathname.startsWith(c.to));
+  const [controllerOpen, setControllerOpen] = useState(false);
+  const controllerActive = CONTROLLER_GROUP.children.some(c => location.pathname.startsWith(c.to));
   return (
     <aside
       className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300`}
@@ -105,6 +114,43 @@ export default function Sidebar({ collapsed, onToggle }) {
         {NAV_ITEMS.filter(item => !item.roles || item.roles.includes(userRole)).map((item) => (
           <NavItem key={item.to} {...item} collapsed={collapsed} pendingCount={item.badge ? attachPending : 0} />
         ))}
+
+        {/* Controller de gestion */}
+        <div>
+          <button
+            onClick={() => setControllerOpen(v => !v)}
+            className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${controllerActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
+          >
+            <Layers className={`w-5 h-5 flex-shrink-0 ${controllerActive ? "text-[#087F3E]" : "text-gray-500"}`} />
+            {!collapsed && (
+              <>
+                <span className="flex-1 text-left">Controller de gestion</span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${(controllerOpen || controllerActive) ? "rotate-180" : ""}`} />
+              </>
+            )}
+          </button>
+          {!collapsed && (controllerOpen || controllerActive) && (
+            <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
+              {CONTROLLER_GROUP.children.map(item => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-600 hover:bg-gray-50"}`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#087F3E] rounded-r-full" />}
+                      <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#087F3E]" : "text-gray-400"}`} />
+                      <span className="truncate">{item.label}</span>
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Paramétrage — dans la liste, séparé par un border-top */}
         <div className="pt-2 mt-2 border-t border-gray-100">
