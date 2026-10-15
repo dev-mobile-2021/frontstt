@@ -46,7 +46,7 @@ const CONTROLLER_GROUP = {
 };
 
 const PARAMETRAGE_GROUP = {
-  label: "Paramétrage",
+  label: "Accès Admin",
   icon: Settings,
   children: [
     { label: "Circuit validation", to: "/parametrage/circuit",      icon: GitBranch },
