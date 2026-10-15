@@ -2459,7 +2459,7 @@ export default function ContratFormPage() {
             <div className="col-span-2 rounded-xl border border-[#087F3E]/30 bg-[#E8F5EE] px-4 py-3">
               <p className="text-[11px] text-[#087F3E]/70 uppercase tracking-wide">Montant actualisé</p>
               <p className="mt-1 text-[22px] font-bold text-[#087F3E] tabular-nums">{fmtFull(montantActuel)}</p>
-              {actualisé && <span className="text-[10px] text-violet-600">initial + avenants validés</span>}
+              <span className="text-[10px] text-gray-400">Somme des BCs X3</span>
             </div>
             {/* Card 4: Réalisé */}
             <div className="col-span-1 rounded-xl border border-gray-200 bg-white px-4 py-3">
