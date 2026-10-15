@@ -493,6 +493,7 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
 function SectionPortefeuillesCT({ chantierId, isDacc }) {
   const qc = useQueryClient();
   const { addToast } = useToast();
+  const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ ct_user_id: "", soustraitant_id: "" });
 
   const { data: usersData } = useUsersPaginated({ count: 200 });
@@ -535,80 +536,112 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
   );
   const availableStt = soustraitants.filter(s => !assignedSttIds.has(String(s.id)));
 
+  const closeModal = () => { setShowModal(false); setForm({ ct_user_id: "", soustraitant_id: "" }); };
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-      <div>
-        <h3 className="text-sm font-semibold text-gray-900">Portefeuilles CT</h3>
-        <p className="text-xs text-gray-400 mt-0.5">Chaque CT est responsable des sous-traitants qui lui sont assignés</p>
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900">Portefeuilles CT</h3>
+          <p className="text-xs text-gray-400 mt-0.5">Chaque CT est responsable des sous-traitants qui lui sont assignés</p>
+        </div>
+        {isDacc && (
+          <button onClick={() => setShowModal(true)}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-[#087F3E] text-[#087F3E] hover:bg-[#E8F5EE] transition-colors">
+            <UserCheck size={13} /> Assigner un STT
+          </button>
+        )}
       </div>
 
       {/* Liste groupée par CT */}
-      {isLoading ? (
-        <p className="text-sm text-gray-400 text-center py-4">Chargement…</p>
-      ) : groups.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-4 border border-dashed border-gray-200 rounded-lg">Aucun portefeuille configuré.</p>
-      ) : (
-        <div className="space-y-3">
-          {groups.map(g => (
-            <div key={g.ct?.id} className="border border-gray-100 rounded-xl overflow-hidden">
-              <div className="bg-amber-50 border-b border-amber-100 px-4 py-2.5 flex items-center gap-2">
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300">CT</span>
-                <span className="text-sm font-semibold text-gray-800">{fmtUser(g.ct)}</span>
-                <span className="text-xs text-gray-400 ml-auto">{g.portefeuille?.length ?? 0} STT</span>
+      <div className="p-5">
+        {isLoading ? (
+          <p className="text-sm text-gray-400 text-center py-4">Chargement…</p>
+        ) : groups.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-6 border border-dashed border-gray-200 rounded-xl">Aucun portefeuille configuré.</p>
+        ) : (
+          <div className="space-y-3">
+            {groups.map(g => (
+              <div key={g.ct?.id} className="border border-gray-100 rounded-xl overflow-hidden">
+                <div className="bg-amber-50 border-b border-amber-100 px-4 py-2.5 flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">
+                    {((g.ct?.prenom ?? "")[0] ?? "") + ((g.ct?.nom ?? "")[0] ?? "")}
+                  </div>
+                  <span className="text-sm font-semibold text-gray-800">{fmtUser(g.ct)}</span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300 ml-1">CT</span>
+                  <span className="text-xs text-gray-400 ml-auto">{g.portefeuille?.length ?? 0} STT assigné{(g.portefeuille?.length ?? 0) > 1 ? "s" : ""}</span>
+                </div>
+                {!g.portefeuille?.length ? (
+                  <p className="px-4 py-3 text-xs text-gray-400 italic">Aucun sous-traitant assigné</p>
+                ) : (
+                  <ul className="divide-y divide-gray-50">
+                    {g.portefeuille.map(p => (
+                      <li key={p.id} className="px-4 py-2.5 flex items-center justify-between hover:bg-gray-50/60 transition-colors">
+                        <span className="text-sm text-gray-700">{p.soustraitant?.raison_sociale}</span>
+                        {isDacc && (
+                          <button onClick={() => delMut.mutate(p.id)} disabled={delMut.isPending}
+                            className="text-gray-300 hover:text-red-500 transition-colors p-1 rounded">
+                            <X size={13} />
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              {!g.portefeuille?.length ? (
-                <p className="px-4 py-3 text-xs text-gray-400 italic">Aucun sous-traitant assigné</p>
-              ) : (
-                <ul className="divide-y divide-gray-50">
-                  {g.portefeuille.map(p => (
-                    <li key={p.id} className="px-4 py-2.5 flex items-center justify-between">
-                      <span className="text-sm text-gray-700">{p.soustraitant?.raison_sociale}</span>
-                      {isDacc && (
-                        <button onClick={() => delMut.mutate(p.id)} disabled={delMut.isPending}
-                          className="text-gray-300 hover:text-red-500 transition-colors p-1">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                        </button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
-      {/* Formulaire DACC */}
-      {isDacc && (
-        <div className="border border-dashed border-[#087F3E]/40 rounded-xl p-4 space-y-3 bg-[#f8fdf9]">
-          <p className="text-xs font-semibold text-[#087F3E]">Assigner un STT à un CT</p>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">CT</label>
-              <select value={form.ct_user_id} onChange={e => setForm(f => ({ ...f, ct_user_id: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
-                <option value="">— Sélectionner un CT —</option>
-                {ctUsers.map(u => <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>)}
-              </select>
+      {/* Modal assigner STT */}
+      {showModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeModal} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">CT</div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">Assigner un STT à un CT</h3>
+                <p className="text-xs text-gray-400">Portefeuille conducteur de travaux</p>
+              </div>
+              <button onClick={closeModal} className="ml-auto text-gray-400 hover:text-gray-600"><X size={16} /></button>
             </div>
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">Sous-traitant</label>
-              <select value={form.soustraitant_id} onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
-                <option value="">— Sélectionner un STT —</option>
-                {availableStt.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
-              </select>
+
+            <div className="px-6 py-5 space-y-4">
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-gray-600">Conducteur de Travaux (CT)</label>
+                <select value={form.ct_user_id} onChange={e => setForm(f => ({ ...f, ct_user_id: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 bg-white">
+                  <option value="">— Sélectionner un CT —</option>
+                  {ctUsers.map(u => <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-gray-600">Sous-traitant</label>
+                <select value={form.soustraitant_id} onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 bg-white">
+                  <option value="">— Sélectionner un STT —</option>
+                  {availableStt.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+              <button onClick={closeModal} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl">
+                Annuler
+              </button>
+              <button onClick={() => addMut.mutate({ ct_user_id: parseInt(form.ct_user_id), soustraitant_id: parseInt(form.soustraitant_id) })}
+                disabled={!form.ct_user_id || !form.soustraitant_id || addMut.isPending}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white text-sm font-medium rounded-xl hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
+                {addMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                Assigner
+              </button>
             </div>
           </div>
-          <div className="flex justify-end">
-            <button onClick={() => addMut.mutate({ ct_user_id: parseInt(form.ct_user_id), soustraitant_id: parseInt(form.soustraitant_id) })}
-              disabled={!form.ct_user_id || !form.soustraitant_id || addMut.isPending}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white text-sm rounded-lg hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
-              {addMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-              Assigner
-            </button>
-          </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
