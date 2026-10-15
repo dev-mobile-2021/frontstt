@@ -81,7 +81,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   const paramActive = PARAMETRAGE_GROUP.children.some(c => location.pathname.startsWith(c.to));
   return (
     <aside
-      className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300 overflow-hidden`}
+      className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300`}
     >
       {/* Logo + Brand */}
       <div className={`flex items-center border-b border-gray-100 ${collapsed ? "justify-center px-2 py-4" : "gap-3 px-5 py-5"}`}>
@@ -100,55 +100,55 @@ export default function Sidebar({ collapsed, onToggle }) {
         )}
       </div>
 
-      {/* Main navigation — scrollable */}
+      {/* Navigation scrollable — inclut Paramétrage en bas */}
       <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden">
         {NAV_ITEMS.filter(item => !item.roles || item.roles.includes(userRole)).map((item) => (
           <NavItem key={item.to} {...item} collapsed={collapsed} pendingCount={item.badge ? attachPending : 0} />
         ))}
+
+        {/* Paramétrage — dans la liste, séparé par un border-top */}
+        <div className="pt-2 mt-2 border-t border-gray-100">
+          <button
+            onClick={() => setParamOpen(v => !v)}
+            className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${paramActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
+          >
+            <Settings className={`w-5 h-5 flex-shrink-0 ${paramActive ? "text-[#087F3E]" : "text-gray-500"}`} />
+            {!collapsed && (
+              <>
+                <span className="flex-1 text-left">Paramétrage</span>
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${(paramOpen || paramActive) ? "rotate-180" : ""}`} />
+              </>
+            )}
+          </button>
+          {!collapsed && (paramOpen || paramActive) && (
+            <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
+              {PARAMETRAGE_GROUP.children.map(item => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-600 hover:bg-gray-50"}`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#087F3E] rounded-r-full" />}
+                      <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#087F3E]" : "text-gray-400"}`} />
+                      <span className="truncate">{item.label}</span>
+                    </>
+                  )}
+                </NavLink>
+              ))}
+            </div>
+          )}
+        </div>
       </nav>
 
-      {/* Paramétrage — fixed at bottom, border-top */}
-      <div className="shrink-0 border-t border-gray-100 px-2 py-3">
-        <button
-          onClick={() => setParamOpen(v => !v)}
-          className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${paramActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
-        >
-          <Settings className={`w-5 h-5 flex-shrink-0 ${paramActive ? "text-[#087F3E]" : "text-gray-500"}`} />
-          {!collapsed && (
-            <>
-              <span className="flex-1 text-left">Paramétrage</span>
-              <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${(paramOpen || paramActive) ? "rotate-180" : ""}`} />
-            </>
-          )}
-        </button>
-        {!collapsed && (paramOpen || paramActive) && (
-          <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
-            {PARAMETRAGE_GROUP.children.map(item => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-600 hover:bg-gray-50"}`
-                }
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#087F3E] rounded-r-full" />}
-                    <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#087F3E]" : "text-gray-400"}`} />
-                    <span className="truncate">{item.label}</span>
-                  </>
-                )}
-              </NavLink>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Toggle collapse — bouton absolu sur le bord droit comme GMAO */}
+      {/* Bouton collapse — absolu sur le bord droit */}
       <button
         onClick={onToggle}
         title={collapsed ? "Développer" : "Réduire"}
-        className="absolute -right-3 top-[26px] hidden h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-all duration-200 hover:text-[#087F3E] lg:flex"
+        className="absolute -right-3 top-[26px] hidden h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-all hover:text-[#087F3E] lg:flex"
       >
         <ChevronLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />
       </button>
