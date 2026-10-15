@@ -1,9 +1,10 @@
 import { useState, Fragment } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, ChevronDown, Calendar, MapPin, FileText, Hash,
   ExternalLink, RefreshCw, Info, Users, Wrench, Package, Truck, Layers, Building2, Loader2, Upload, Download,
-  UserCheck, History, Save,
+  UserCheck, History, Save, X,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import http from "../services/http";
@@ -303,7 +304,7 @@ function TabBareme({ chantierId }) {
 function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
   const qc = useQueryClient();
   const { addToast } = useToast();
-  const [editing, setEditing] = useState(null); // "DT" | "CT" | null
+  const [editing, setEditing] = useState(null); // "DT" | "CT" | null — pour le modal
   const [form, setForm] = useState({ user_id: "", note: "" });
   const [showHistory, setShowHistory] = useState(false);
 
@@ -342,6 +343,9 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
       colors: { avatar: "bg-[#E8F5EE] text-[#087F3E]", badge: "bg-[#E8F5EE] text-[#065A2C] border-[#b5ddc8]", ring: "ring-[#087F3E]", btn: "text-[#087F3E] hover:bg-[#E8F5EE] border-[#b5ddc8]" } },
   ];
 
+  const roleEditing = editing ? ROLES.find(r => r.badge === editing) : null;
+  const close = () => { setEditing(null); setForm({ user_id: "", note: "" }); };
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       {/* Header */}
@@ -358,9 +362,8 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
 
       {/* Cards CT + DT */}
       <div className="grid grid-cols-2 divide-x divide-gray-100">
-        {ROLES.map(({ badge, label, user, userList, colors }) => (
-          <div key={badge} className="p-5 space-y-4">
-            {/* Carte personne */}
+        {ROLES.map(({ badge, label, user, colors }) => (
+          <div key={badge} className="p-5">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ring-2 ${colors.avatar} ${user ? colors.ring : "ring-gray-200"}`}>
                 {initials(user) ?? <span className="text-gray-300 text-lg">?</span>}
@@ -375,49 +378,87 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
                   : <p className="text-sm text-gray-400 italic">Non affecté</p>}
               </div>
               {isDacc && (
-                <button onClick={() => { setEditing(editing === badge ? null : badge); setForm({ user_id: "", note: "" }); }}
-                  className={`flex-shrink-0 flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${editing === badge ? "bg-gray-100 text-gray-600 border-gray-200" : colors.btn}`}>
+                <button onClick={() => { setEditing(badge); setForm({ user_id: "", note: "" }); }}
+                  className={`flex-shrink-0 flex items-center gap-1 text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${colors.btn}`}>
                   <UserCheck size={12} /> {user ? "Changer" : "Affecter"}
                 </button>
               )}
             </div>
-
-            {/* Formulaire inline */}
-            {isDacc && editing === badge && (
-              <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-200">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Utilisateur</label>
-                  <select value={form.user_id} onChange={e => setForm(f => ({ ...f, user_id: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 bg-white">
-                    <option value="">— Sélectionner —</option>
-                    {userList.map(u => (
-                      <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Motif (optionnel)</label>
-                  <input type="text" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
-                    placeholder="Ex : remplacement, mutation…"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 bg-white" />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => { setEditing(null); setForm({ user_id: "", note: "" }); }}
-                    className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg">
-                    Annuler
-                  </button>
-                  <button onClick={() => affecterMut.mutate({ role: badge, user_id: parseInt(form.user_id), note: form.note || null })}
-                    disabled={!form.user_id || affecterMut.isPending}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#087F3E] text-white text-xs font-medium rounded-lg hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
-                    {affecterMut.isPending ? <Loader2 size={11} className="animate-spin" /> : <Save size={11} />}
-                    Confirmer
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         ))}
       </div>
+
+      {/* Modal affectation */}
+      {editing && roleEditing && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={close} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            {/* En-tête modal */}
+            <div className={`px-6 py-5 border-b border-gray-100 flex items-center gap-3`}>
+              <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${roleEditing.colors.avatar}`}>
+                {roleEditing.badge}
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {fmtUser(roleEditing.user) ? `Changer le ${roleEditing.badge}` : `Affecter un ${roleEditing.badge}`}
+                </h3>
+                <p className="text-xs text-gray-400">{roleEditing.label}</p>
+              </div>
+              <button onClick={close} className="ml-auto text-gray-400 hover:text-gray-600">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Corps */}
+            <div className="px-6 py-5 space-y-4">
+              {/* Actuel */}
+              {fmtUser(roleEditing.user) && (
+                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${roleEditing.colors.avatar}`}>
+                    {initials(roleEditing.user)}
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-400 uppercase tracking-wide">Actuel</p>
+                    <p className="text-sm font-semibold text-gray-700">{fmtUser(roleEditing.user)}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-gray-600">Nouveau {roleEditing.badge}</label>
+                <select value={form.user_id} onChange={e => setForm(f => ({ ...f, user_id: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 bg-white">
+                  <option value="">— Sélectionner un utilisateur —</option>
+                  {roleEditing.userList.map(u => (
+                    <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-gray-600">Motif <span className="font-normal text-gray-400">(optionnel)</span></label>
+                <input type="text" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+                  placeholder="Ex : remplacement, mutation, fin de mission…"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30" />
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+              <button onClick={close} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl">
+                Annuler
+              </button>
+              <button onClick={() => affecterMut.mutate({ role: editing, user_id: parseInt(form.user_id), note: form.note || null })}
+                disabled={!form.user_id || affecterMut.isPending}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white text-sm font-medium rounded-xl hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
+                {affecterMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <UserCheck size={13} />}
+                Confirmer l'affectation
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       {/* Historique timeline */}
       {showHistory && (
