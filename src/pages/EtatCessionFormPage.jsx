@@ -576,10 +576,10 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
               <TableRow>
                 <TableHead>Code article</TableHead>
                 <TableHead>Désignation</TableHead>
-                <TableHead>Unité</TableHead>
                 {poste === "MTX" && <TableHead>Date sortie</TableHead>}
                 {poste === "MTX" && <TableHead>Réf. BS</TableHead>}
                 {poste === "MTX" && <TableHead>Réf. BR</TableHead>}
+                <TableHead>Unité</TableHead>
                 <TableHead className="text-right">Quantité</TableHead>
                 <TableHead className="text-right">Prix unit.</TableHead>
                 <TableHead className="text-right">Montant</TableHead>
