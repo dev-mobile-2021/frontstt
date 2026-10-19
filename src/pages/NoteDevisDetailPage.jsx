@@ -85,7 +85,7 @@ export default function NoteDevisDetailPage() {
             </button>
             <button onClick={handlePdf}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
-              <FileDown size={14} /> Télécharger la facture
+              <FileDown size={14} /> Télécharger la note de débit
             </button>
           </div>
         }
