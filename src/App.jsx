@@ -82,7 +82,7 @@ export default function App() {
                 <Route path="/etats-cession/:id/modifier" element={<EtatCessionFormPage />} />
                 <Route path="/etats-cession/:id" element={<EtatCessionFormPage />} />
 
-                {/* Notes de devis */}
+                {/* Notes de débit */}
                 <Route path="/notes-devis" element={<NoteDevisListPage />} />
                 <Route path="/notes-devis/:id" element={<NoteDevisDetailPage />} />
 

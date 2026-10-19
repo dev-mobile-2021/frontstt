@@ -53,7 +53,7 @@ export default function NoteDevisListPage() {
     if (!selectedEcId) return addToast("Sélectionnez un état de cession.", "error");
     try {
       const res = await createMut.mutateAsync({ etat_cession_id: parseInt(selectedEcId) });
-      addToast("Note de devis générée.", "success");
+      addToast("Note de débit générée.", "success");
       setShowModal(false);
       setSelectedEcId("");
       const id = res?.data?.id;
@@ -103,12 +103,12 @@ export default function NoteDevisListPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Notes de devis"
+        title="Notes de débit"
         subtitle="Factures générées depuis les états de cession validés"
         action={
           <button onClick={() => { setShowModal(true); setSelectedEcId(""); }}
             className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
-            <Plus size={16} /> Nouvelle note de devis
+            <Plus size={16} /> Nouvelle note de débit
           </button>
         }
       />
@@ -117,7 +117,7 @@ export default function NoteDevisListPage() {
         <SkeletonTable rows={8} cols={7} />
       ) : isError ? (
         <div className="text-center py-16 text-red-500 text-sm bg-white rounded-xl border border-gray-200">
-          Impossible de charger les notes de devis.
+          Impossible de charger les notes de débit.
         </div>
       ) : (
         <div className="space-y-2">
@@ -136,7 +136,7 @@ export default function NoteDevisListPage() {
             </TableHeader>
             <TableBody>
               {rows.length === 0 ? (
-                <TableEmpty colSpan={8} icon={FileText} message="Aucune note de devis." />
+                <TableEmpty colSpan={8} icon={FileText} message="Aucune note de débit." />
               ) : rows.map(n => (
                 <TableRow key={n.id} clickable onClick={() => navigate(`/notes-devis/${n.id}`)}>
                   <TableCell className="text-xs text-gray-500">{fmtDate(n.created_at)}</TableCell>
@@ -204,7 +204,7 @@ export default function NoteDevisListPage() {
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-              <h2 className="text-base font-bold text-gray-900">Nouvelle note de devis</h2>
+              <h2 className="text-base font-bold text-gray-900">Nouvelle note de débit</h2>
               <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"><X size={18} /></button>
             </div>
             <div className="p-6 overflow-y-auto space-y-5">
@@ -301,7 +301,7 @@ export default function NoteDevisListPage() {
                 disabled={!selectedEcId || createMut.isPending}
                 className="flex-1 py-2.5 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
                 {createMut.isPending && <Loader2 size={14} className="animate-spin" />}
-                Générer la note de devis
+                Générer la note de débit
               </button>
             </div>
           </div>

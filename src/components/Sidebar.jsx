@@ -40,7 +40,7 @@ const CONTROLLER_GROUP = {
   icon: Layers,
   children: [
     { label: "États de cession", to: "/etats-cession", icon: Package,  permKey: "menu_etats_cession" },
-    { label: "Notes de devis",   to: "/notes-devis",   icon: FileText, permKey: "permission_voir_notes_devis" },
+    { label: "Notes de débit",   to: "/notes-devis",   icon: FileText, permKey: "permission_voir_notes_devis" },
     { label: "Consultation",     to: "/consultation",  icon: Eye,      permKey: "permission_consulter_articles" },
   ],
 };

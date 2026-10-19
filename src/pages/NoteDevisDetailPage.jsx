@@ -44,7 +44,7 @@ export default function NoteDevisDetailPage() {
   async function handleDelete() {
     try {
       await deleteMut.mutateAsync(parseInt(id));
-      addToast("Note de devis supprimée.", "success");
+      addToast("Note de débit supprimée.", "success");
       navigate("/notes-devis");
     } catch (err) {
       addToast(err?.error ?? "Erreur lors de la suppression.", "error");
@@ -55,7 +55,7 @@ export default function NoteDevisDetailPage() {
   if (isLoading) return <div className="space-y-4">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>;
   if (isError || !note) return (
     <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-      <p className="text-lg font-semibold">Note de devis introuvable</p>
+      <p className="text-lg font-semibold">Note de débit introuvable</p>
       <button onClick={() => navigate("/notes-devis")} className="mt-4 text-sm text-[#087F3E] hover:underline">Retour</button>
     </div>
   );
@@ -71,7 +71,7 @@ export default function NoteDevisDetailPage() {
   return (
     <div className="space-y-6">
       <button onClick={() => navigate("/notes-devis")} className="flex items-center gap-1 text-[13px] text-gray-500 hover:text-gray-900 transition-colors">
-        <ArrowLeft size={14} /> Retour aux notes de devis
+        <ArrowLeft size={14} /> Retour aux notes de débit
       </button>
 
       <PageHeader
