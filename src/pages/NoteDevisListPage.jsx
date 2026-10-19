@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, FileDown, Trash2, FileText, Loader2, X, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { Plus, FileDown, Trash2, FileText, Loader2, X, ChevronLeft, ChevronRight, Search, Filter } from "lucide-react";
 import { useNotesDevisPaginated, useCreateNoteDevis, useDeleteNoteDevis } from "../hooks/useNotesDevis";
 import { useEtatsCessionPaginated, useEtatCession } from "../hooks/useEtatsCession";
+import { useChantiersPaginated } from "../hooks/useChantiers";
 import { usePeutFaire } from "../hooks/useParametres";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
@@ -33,14 +34,41 @@ export default function NoteDevisListPage() {
   const [selectedEcId, setSelectedEcId] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(null);
 
+  // Filtres modal
+  const [ecCode, setEcCode]             = useState("");
+  const [ecContratCode, setEcContratCode] = useState("");
+  const [ecStt, setEcStt]               = useState("");
+  const [ecStatut, setEcStatut]         = useState("valide");
+  const [ecChantierId, setEcChantierId] = useState("");
+  const [ecCodeDebounced, setEcCodeDebounced]             = useState("");
+  const [ecContratDebounced, setEcContratDebounced]       = useState("");
+  const [ecSttDebounced, setEcSttDebounced]               = useState("");
+
+  useEffect(() => { const t = setTimeout(() => setEcCodeDebounced(ecCode.trim()), 350); return () => clearTimeout(t); }, [ecCode]);
+  useEffect(() => { const t = setTimeout(() => setEcContratDebounced(ecContratCode.trim()), 350); return () => clearTimeout(t); }, [ecContratCode]);
+  useEffect(() => { const t = setTimeout(() => setEcSttDebounced(ecStt.trim()), 350); return () => clearTimeout(t); }, [ecStt]);
+
+  const ecFilters = useMemo(() => ({
+    code:            ecCodeDebounced    || undefined,
+    contrat_code:    ecContratDebounced || undefined,
+    soustraitant_nom: ecSttDebounced   || undefined,
+    statut:          ecStatut          || undefined,
+    chantier_id:     ecChantierId ? parseInt(ecChantierId) : undefined,
+    count: 200,
+  }), [ecCodeDebounced, ecContratDebounced, ecSttDebounced, ecStatut, ecChantierId]);
+
   const { data, isLoading, isError } = useNotesDevisPaginated({ page, count: 15 });
   const rows = data?.data ?? [];
   const meta = data?.metadata ?? {};
   const totalPages = meta.last_page ?? 1;
 
-  // États de cession validés pour le modal (dropdown)
-  const { data: ecsData } = useEtatsCessionPaginated({ statut: "valide", count: 500 });
+  // États de cession filtrés pour le modal
+  const { data: ecsData, isLoading: ecsLoading } = useEtatsCessionPaginated(ecFilters);
   const ecsList = ecsData?.data ?? [];
+
+  // Chantiers pour le filtre
+  const { data: chantiersData } = useChantiersPaginated({ count: 500 });
+  const chantiersList = chantiersData?.data ?? [];
 
   // Chargement complet de l'état sélectionné (avec lignes)
   const { data: selectedEcData, isLoading: loadingEc } = useEtatCession(selectedEcId || null);
@@ -208,20 +236,62 @@ export default function NoteDevisListPage() {
               <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"><X size={18} /></button>
             </div>
             <div className="p-6 overflow-y-auto space-y-5">
+              {/* Filtres */}
+              <div className="space-y-3">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1.5">
+                  <Filter size={12} /> Filtrer les états de cession
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  <div className="relative">
+                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input type="text" placeholder="Code EC" value={ecCode} onChange={e => setEcCode(e.target.value)}
+                      className="w-full pl-7 pr-2 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+                  </div>
+                  <div className="relative">
+                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input type="text" placeholder="Code contrat" value={ecContratCode} onChange={e => setEcContratCode(e.target.value)}
+                      className="w-full pl-7 pr-2 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+                  </div>
+                  <div className="relative">
+                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input type="text" placeholder="Sous-traitant" value={ecStt} onChange={e => setEcStt(e.target.value)}
+                      className="w-full pl-7 pr-2 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+                  </div>
+                  <select value={ecStatut} onChange={e => { setEcStatut(e.target.value); setSelectedEcId(""); }}
+                    className="text-xs border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] text-gray-600">
+                    <option value="">Tous les statuts</option>
+                    <option value="brouillon">Brouillon</option>
+                    <option value="soumis">Soumis</option>
+                    <option value="valide">Validé</option>
+                    <option value="rejete">Rejeté</option>
+                  </select>
+                  <select value={ecChantierId} onChange={e => { setEcChantierId(e.target.value); setSelectedEcId(""); }}
+                    className="text-xs border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] text-gray-600 col-span-2 md:col-span-1">
+                    <option value="">Tous les chantiers</option>
+                    {chantiersList.map(c => <option key={c.id} value={c.id}>{c.designation}</option>)}
+                  </select>
+                </div>
+              </div>
+
               {/* Sélection état de cession */}
               <div>
                 <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1.5">
-                  État de cession (validé) <span className="text-red-500">*</span>
+                  État de cession <span className="text-red-500">*</span>
+                  <span className="ml-2 font-normal text-gray-400 normal-case">({ecsList.length} résultat{ecsList.length !== 1 ? "s" : ""})</span>
                 </label>
-                <select value={selectedEcId} onChange={e => setSelectedEcId(e.target.value)}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]">
-                  <option value="">— Sélectionner un état de cession validé —</option>
-                  {ecsList.map(ec => (
-                    <option key={ec.id} value={ec.id}>
-                      {ec.code} — {ec.contrat?.chantier?.designation ?? "?"} — {ec.contrat?.soustraitant?.raison_sociale ?? "?"}
-                    </option>
-                  ))}
-                </select>
+                {ecsLoading ? (
+                  <div className="text-xs text-gray-400 py-2">Chargement…</div>
+                ) : (
+                  <select value={selectedEcId} onChange={e => setSelectedEcId(e.target.value)}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]">
+                    <option value="">— Sélectionner un état de cession —</option>
+                    {ecsList.map(ec => (
+                      <option key={ec.id} value={ec.id}>
+                        {ec.code} — {ec.contrat?.chantier?.designation ?? "?"} — {ec.contrat?.soustraitant?.raison_sociale ?? "?"}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* Aperçu de l'état sélectionné */}
