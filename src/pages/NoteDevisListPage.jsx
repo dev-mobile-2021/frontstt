@@ -85,7 +85,7 @@ export default function NoteDevisListPage() {
       setShowModal(false);
       setSelectedEcId("");
       const id = res?.data?.id;
-      if (id) navigate(`/notes-devis/${id}`);
+      if (id) navigate(`/notes-debit/${id}`);
     } catch (err) {
       addToast(err?.errors?.[0] ?? err?.error ?? "Erreur lors de la génération.", "error");
     }
@@ -166,7 +166,7 @@ export default function NoteDevisListPage() {
               {rows.length === 0 ? (
                 <TableEmpty colSpan={8} icon={FileText} message="Aucune note de débit." />
               ) : rows.map(n => (
-                <TableRow key={n.id} clickable onClick={() => navigate(`/notes-devis/${n.id}`)}>
+                <TableRow key={n.id} clickable onClick={() => navigate(`/notes-debit/${n.id}`)}>
                   <TableCell className="text-xs text-gray-500">{fmtDate(n.created_at)}</TableCell>
                   <TableCell><span className="font-mono font-semibold">{n.code}</span></TableCell>
                   <TableCell>

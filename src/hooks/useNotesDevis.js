@@ -14,7 +14,7 @@ export function useNotesDevisPaginated(filters = {}) {
       Object.entries(filters).forEach(([k, v]) => {
         if (v !== undefined && v !== "") params.set(k, v);
       });
-      const r = await fetch(`${BASE}/notes-devis?${params}`, { headers: auth() });
+      const r = await fetch(`${BASE}/notes-debit?${params}`, { headers: auth() });
       return r.json();
     },
   });
@@ -24,7 +24,7 @@ export function useNoteDevis(id) {
   return useQuery({
     queryKey: ["note-devis", id],
     queryFn: async () => {
-      const r = await fetch(`${BASE}/notes-devis/${id}`, { headers: auth() });
+      const r = await fetch(`${BASE}/notes-debit/${id}`, { headers: auth() });
       return r.json();
     },
     enabled: !!id,
@@ -35,7 +35,7 @@ export function useCreateNoteDevis() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data) => {
-      const r = await fetch(`${BASE}/notes-devis`, {
+      const r = await fetch(`${BASE}/notes-debit`, {
         method: "POST",
         headers: { ...auth(), "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -52,7 +52,7 @@ export function useDeleteNoteDevis() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id) => {
-      const r = await fetch(`${BASE}/notes-devis/${id}`, {
+      const r = await fetch(`${BASE}/notes-debit/${id}`, {
         method: "DELETE",
         headers: auth(),
       });
