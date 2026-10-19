@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Trash2, Edit2, Save, X, Loader2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, Trash2, Edit2, Save, X, Loader2, Search } from "lucide-react";
 import PageHeader from "../../components/PageHeader";
 import SearchSelect from "../../components/SearchSelect";
 import { useToast } from "../../context/ToastContext";
@@ -23,6 +23,23 @@ export default function UtilisateursPage() {
   const [editUser, setEditUser] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [form, setForm] = useState(EMPTY_USER);
+  const [search, setSearch] = useState("");
+  const [filterRole, setFilterRole] = useState("");
+  const [filterStatut, setFilterStatut] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return users.filter(u => {
+      const matchSearch = !q ||
+        (u.login ?? "").toLowerCase().includes(q) ||
+        (u.nom ?? "").toLowerCase().includes(q) ||
+        (u.prenom ?? "").toLowerCase().includes(q) ||
+        (u.email ?? "").toLowerCase().includes(q);
+      const matchRole = !filterRole || String(u.role_id) === filterRole;
+      const matchStatut = filterStatut === "" || String(u.etat) === filterStatut;
+      return matchSearch && matchRole && matchStatut;
+    });
+  }, [users, search, filterRole, filterStatut]);
 
   function openNew() {
     setEditUser(null);
@@ -71,9 +88,39 @@ export default function UtilisateursPage() {
 
       <div className="bg-white rounded-xl border border-gray-200 px-6 pb-8">
         <div className="space-y-5 pt-4">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-500">{users.length} utilisateur(s)</p>
-            <button onClick={openNew} className="flex items-center gap-1.5 text-xs text-[#087F3E] font-medium border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Recherche */}
+            <div className="relative flex-1 min-w-[180px]">
+              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Rechercher nom, login, email…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+              />
+            </div>
+            {/* Filtre rôle */}
+            <select
+              value={filterRole}
+              onChange={e => setFilterRole(e.target.value)}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] text-gray-600"
+            >
+              <option value="">Tous les rôles</option>
+              {roles.map(r => <option key={r.id} value={String(r.id)}>{r.designation}</option>)}
+            </select>
+            {/* Filtre statut */}
+            <select
+              value={filterStatut}
+              onChange={e => setFilterStatut(e.target.value)}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] text-gray-600"
+            >
+              <option value="">Tous les statuts</option>
+              <option value="1">Actif</option>
+              <option value="0">Inactif</option>
+            </select>
+            <span className="text-sm text-gray-400 whitespace-nowrap">{filtered.length} / {users.length}</span>
+            <button onClick={openNew} className="ml-auto flex items-center gap-1.5 text-xs text-[#087F3E] font-medium border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors whitespace-nowrap">
               <Plus size={12} /> Nouvel utilisateur
             </button>
           </div>
@@ -91,10 +138,10 @@ export default function UtilisateursPage() {
                 {isLoading && (
                   <tr><td colSpan={6} className="px-4 py-6 text-center"><Spinner /></td></tr>
                 )}
-                {!isLoading && users.length === 0 && (
-                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400 text-sm">Aucun utilisateur</td></tr>
+                {!isLoading && filtered.length === 0 && (
+                  <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400 text-sm">Aucun utilisateur trouvé</td></tr>
                 )}
-                {users.map(u => (
+                {filtered.map(u => (
                   <tr key={u.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-mono text-xs text-gray-600">{u.login}</td>
                     <td className="px-4 py-3 font-medium text-gray-900">{[u.prenom, u.nom].filter(Boolean).join(" ") || "—"}</td>
