@@ -289,7 +289,9 @@ export default function NoteDevisListPage() {
                 {ecsLoading ? (
                   <div className="text-xs text-gray-400 py-2">Chargement…</div>
                 ) : (
-                  <select value={selectedEcId} onChange={e => setSelectedEcId(e.target.value)}
+                  <SearchSelect value={selectedEcId} onChange={e => setSelectedEcId(e.target.value)}
+                    placeholder="— Sélectionner un état de cession —"
+                    searchPlaceholder="Rechercher par code, chantier, sous-traitant…"
                     className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]">
                     <option value="">— Sélectionner un état de cession —</option>
                     {ecsList.map(ec => (
@@ -297,7 +299,7 @@ export default function NoteDevisListPage() {
                         {ec.code} — {ec.contrat?.chantier?.designation ?? "?"} — {ec.contrat?.soustraitant?.raison_sociale ?? "?"}
                       </option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 )}
               </div>
 
