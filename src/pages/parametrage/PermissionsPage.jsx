@@ -56,7 +56,6 @@ function PermRow({ perm, idx, allRoles, updateMut, toggleRole, hoveredRole, setH
           <td
             key={role}
             className={`py-2.5 text-center transition-colors ${isColHovered ? "bg-[#E8F5EE]/40" : ""}`}
-            style={{ width: 36 }}
             onMouseEnter={() => setHoveredRole(role)}
             onMouseLeave={() => setHoveredRole(null)}
           >
@@ -139,18 +138,18 @@ export default function PermissionsPage() {
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-        <table className="border-collapse text-sm" style={{ tableLayout: "fixed" }}>
+        <table className="w-full border-collapse text-sm" style={{ tableLayout: "fixed" }}>
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
               {/* Colonne libellé */}
-              <th className="sticky left-0 z-20 bg-gray-50 pl-4 pr-3 text-left align-bottom" style={{ width: 260, minWidth: 260, height: HEADER_H }}>
+              <th className="sticky left-0 z-20 bg-gray-50 pl-4 pr-3 text-left align-bottom" style={{ width: 280, minWidth: 280, height: HEADER_H }}>
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Élément</span>
               </th>
               {allRoles.map(role => (
                 <th
                   key={role}
                   className="px-0 align-bottom text-center"
-                  style={{ width: 36, height: HEADER_H }}
+                  style={{ height: HEADER_H }}
                   onMouseEnter={() => setHoveredRole(role)}
                   onMouseLeave={() => setHoveredRole(null)}
                 >
