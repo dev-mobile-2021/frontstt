@@ -2203,10 +2203,8 @@ export default function ContratFormPage() {
   const isNew     = !id || id === "nouveau";
   const { addToast } = useToast();
 
-  const { currentUser } = useUser();
-  const userRole = currentUser?.role?.designation;
-  const TABS_MASQUES_DACC_DEX = ["circuit", "attachements", "cessions", "decomptes"];
-  const masquerOnglets = ["Assistant DACC", "Assistant DEX"].includes(userRole);
+  const TABS_RESERVES = ["circuit", "attachements", "cessions", "decomptes"];
+  const { data: peutVoirOngletsComplets = false } = usePeutFaire("onglets_complets_contrat");
 
   const [activeTab, setActiveTab] = useState("info");
   const [motif, setMotif]         = useState("");
@@ -2370,7 +2368,7 @@ export default function ContratFormPage() {
     { id: "bonscommande", label: bcsList.length > 0 ? `BC (${bcsList.length})` : "BC", icon: FileText },
     { id: "factures",     label: "Factures",         icon: Hash },
     { id: "pieces",       label: "PJ",               icon: Upload },
-  ].filter(t => !masquerOnglets || !TABS_MASQUES_DACC_DEX.includes(t.id));
+  ].filter(t => peutVoirOngletsComplets || !TABS_RESERVES.includes(t.id));
 
   return (
     <div className="space-y-6">
