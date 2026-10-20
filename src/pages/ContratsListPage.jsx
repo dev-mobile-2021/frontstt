@@ -102,7 +102,7 @@ export default function ContratsListPage() {
   const totalPages = meta.last_page ?? 1;
   const hasFilter  = search || statut || sttFilter;
 
-  const { data: chantiersData } = useChantiersPaginated({ count: 100 });
+  const { data: chantiersData } = useChantiersPaginated({ count: 2000 });
   const chantiers = chantiersData?.data ?? [];
 
   const { data: sttData } = useSousTraitantsPaginated({ count: 500 });
