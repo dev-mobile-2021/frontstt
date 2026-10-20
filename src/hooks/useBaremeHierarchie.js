@@ -58,7 +58,7 @@ export function useAddBaremeContrat(contratId) {
 export function useBaremeContratActions(contratId) {
   const refresh = useRefresh();
   return {
-    setPrix: useMutation({ mutationFn: ({ baremeId, prix, motif }) => svc.setPrixContrat(contratId, baremeId, { prix, motif }), onSuccess: refresh }),
+    setPrix: useMutation({ mutationFn: ({ baremeId, prix, motif, date_effet }) => svc.setPrixContrat(contratId, baremeId, { prix, motif, date_effet }), onSuccess: refresh }),
     reset: useMutation({ mutationFn: (baremeId) => svc.resetContrat(contratId, baremeId), onSuccess: refresh }),
     valider: useMutation({ mutationFn: (contratBaremeId) => svc.validerContrat(contratBaremeId), onSuccess: refresh }),
     validerBulk: useMutation({ mutationFn: (ids) => svc.validerContratBulk(ids), onSuccess: refresh }),

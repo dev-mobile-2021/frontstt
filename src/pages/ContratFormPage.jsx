@@ -347,7 +347,7 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
   const { data: peutGererBareme = false } = usePeutFaire("gerer_bareme");
   const { data: peutValiderBareme = false } = usePeutFaire("valider_bareme");
   const [selected, setSelected] = useState([]); // contrat_bareme_ids en attente sélectionnés
-  const [nouveau, setNouveau] = useState({ code_article: "", designation: "", unite: "", prix: "" });
+  const [nouveau, setNouveau] = useState({ code_article: "", designation: "", unite: "", prix: "", date_effet: "" });
 
   if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer son barème.</p>;
   if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
@@ -362,8 +362,8 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
     if (!nouveau.code_article) return addToast("Choisissez un article Sage X3.", "error");
     if (isNaN(prix) || prix < 0) return addToast("Saisissez un prix valide.", "error");
     try {
-      await addMut.mutateAsync({ code_article: nouveau.code_article, prix_contrat: prix, unite: nouveau.unite || null });
-      setNouveau({ code_article: "", designation: "", unite: "", prix: "" });
+      await addMut.mutateAsync({ code_article: nouveau.code_article, prix_contrat: prix, unite: nouveau.unite || null, date_effet: nouveau.date_effet || null });
+      setNouveau({ code_article: "", designation: "", unite: "", prix: "", date_effet: "" });
       addToast("Article ajouté au barème du contrat.", "success");
     } catch (e) {
       const msg = err(e);
@@ -403,14 +403,14 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
       {!bloque && peutGererBareme && (
         <div className="border border-dashed border-gray-300 rounded-xl p-4 space-y-3">
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ajouter un article Sage X3</p>
-          <div className="grid md:grid-cols-[1fr_110px_140px_auto] gap-3 items-end">
+          <div className="grid md:grid-cols-[1fr_110px_140px_140px_auto] gap-3 items-end">
             <div>
               <label className="text-xs text-gray-500 block mb-1">Article (classes MTX, BAS, PRP)</label>
               <ArticleX3Select
                 value={nouveau.code_article}
                 classe="MTX,BAS,PRP"
                 onSelect={a => {
-                  if (!a) return setNouveau(n => ({ ...n, code_article: "", designation: "", unite: "", prix: "" }));
+                  if (!a) return setNouveau(n => ({ ...n, code_article: "", designation: "", unite: "", prix: "", date_effet: "" }));
                   const existant = lignes.find(l => l.code_article === a.code_article || l.code === a.code_article);
                   setNouveau(n => ({
                     ...n,
@@ -437,6 +437,12 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
               <input type="number" min="0" step="any" value={nouveau.prix}
                 onChange={e => setNouveau(n => ({ ...n, prix: e.target.value }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block mb-1">Date d'effet (option)</label>
+              <input type="date" value={nouveau.date_effet}
+                onChange={e => setNouveau(n => ({ ...n, date_effet: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
             </div>
             <button onClick={handleAdd} disabled={addMut.isPending}
               className="inline-flex items-center gap-1.5 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
@@ -496,7 +502,7 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
         busyId={busyId}
         selected={selected}
         onSelectChange={setSelected}
-        onSave={(r, prix) => run(r.bareme_id, () => setPrix.mutateAsync({ baremeId: r.bareme_id, prix }), "Prix enregistré.")}
+        onSave={(r, prix, date_effet) => run(r.bareme_id, () => setPrix.mutateAsync({ baremeId: r.bareme_id, prix, date_effet }), "Prix enregistré.")}
         onReset={(r) => run(r.bareme_id, () => reset.mutateAsync(r.bareme_id), "Prix hérité rétabli.")}
         onValider={(r) => run(r.bareme_id, () => valider.mutateAsync(r.contrat_bareme_id), "Prix validé.")}
       />

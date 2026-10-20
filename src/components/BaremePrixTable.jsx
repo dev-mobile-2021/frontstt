@@ -25,6 +25,7 @@ export default function BaremePrixTable({
   const [onlyEcarts, setOnlyEcarts] = useState(false);
   const [editing, setEditing] = useState(null);
   const [value, setValue] = useState("");
+  const [dateEffet, setDateEffet] = useState("");
 
   const isEcart = (r) => r.source === level || r.prix_propose != null;
 
@@ -38,12 +39,13 @@ export default function BaremePrixTable({
   function startEdit(r) {
     setEditing(r.bareme_id);
     setValue(String(r.prix_propose ?? r.prix_effectif ?? ""));
+    setDateEffet(r.date_effet ?? "");
   }
 
   async function commit(r) {
     const prix = parseFloat(value);
     if (isNaN(prix) || prix < 0) return;
-    await onSave(r, prix);
+    await onSave(r, prix, dateEffet || null);
     setEditing(null);
   }
 
@@ -140,13 +142,22 @@ export default function BaremePrixTable({
                   {level === "chantier" && <td className="px-3 py-3 text-right font-mono text-gray-600">{fmt(r.prix_base)}</td>}
                   <td className="px-3 py-3 text-right">
                     {isEditing ? (
-                      <div className="flex items-center justify-end gap-1.5">
-                        <input type="number" min="0" step="any" value={value} autoFocus
-                          onChange={(e) => setValue(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === "Enter") commit(r); if (e.key === "Escape") setEditing(null); }}
-                          onBlur={() => commit(r)}
-                          className="w-28 border border-gray-300 rounded-lg px-2 py-1 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none" />
-                        <span className="text-[10px] text-gray-400">↵</span>
+                      <div className="flex flex-col items-end gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <input type="number" min="0" step="any" value={value} autoFocus
+                            onChange={(e) => setValue(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") commit(r); if (e.key === "Escape") setEditing(null); }}
+                            className="w-28 border border-gray-300 rounded-lg px-2 py-1 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                          <span className="text-[10px] text-gray-400">↵</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <label className="text-[10px] text-gray-400 whitespace-nowrap">Date d'effet</label>
+                          <input type="date" value={dateEffet} onChange={(e) => setDateEffet(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") commit(r); if (e.key === "Escape") setEditing(null); }}
+                            className="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                        </div>
+                        <button onClick={() => commit(r)}
+                          className="text-xs font-medium text-white bg-[#087F3E] px-3 py-1 rounded-lg hover:bg-[#065A2C]">Enregistrer</button>
                       </div>
                     ) : (
                       <>
