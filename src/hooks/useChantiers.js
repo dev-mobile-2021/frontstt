@@ -1,6 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { chantierService } from "../services/chantierService";
 
+export function useChantiersList() {
+  return useQuery({
+    queryKey: ["chantiers_list"],
+    queryFn: () => chantierService.listDropdown(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useChantiersPaginated(filters = {}) {
   return useQuery({
     queryKey: ["chantiers", filters],

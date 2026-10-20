@@ -15,6 +15,18 @@ const FIELDS = `
 `;
 
 export const chantierService = {
+  async listDropdown({ count = 2000 } = {}) {
+    const data = await gql(
+      `query ListChantiersDropdown($count: Int) {
+        chantiersPaginated(page: 1, count: $count, order: "designation", direction: "asc") {
+          data { id code designation statut }
+        }
+      }`,
+      { count }
+    );
+    return data.chantiersPaginated.data ?? [];
+  },
+
   async list({ page = 1, count = 50, designation, statut } = {}) {
     const data = await gql(
       `query ListChantiers($page: Int, $count: Int, $designation: String, $statut: String) {
