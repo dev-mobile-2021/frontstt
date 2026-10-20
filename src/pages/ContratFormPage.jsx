@@ -2626,7 +2626,7 @@ export default function ContratFormPage() {
                     >
                       <option value="">Sélectionner un chantier…</option>
                       {chantiersList.map(c => (
-                        <option key={c.id} value={c.id}>{c.code} — {c.designation}</option>
+                        <option key={c.id} value={c.id}>{`${c.code} — ${c.designation}`}</option>
                       ))}
                     </SearchSelect>
                     {!isNew && contrat?.chantier_id && (
