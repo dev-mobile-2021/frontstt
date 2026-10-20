@@ -105,7 +105,6 @@ export default function BaremePrixTable({
               <th className="text-left px-4 py-3">Article</th>
               <th className="text-left px-3 py-3">Unité</th>
               {level === "chantier" && <th className="text-right px-3 py-3">Prix de base</th>}
-              {level === "contrat" && <th className="text-right px-3 py-3">Prix du chantier</th>}
               <th className="text-right px-3 py-3">Prix appliqué</th>
               <th className="text-left px-3 py-3">Statut</th>
               <th className="px-4 py-3 text-right">Actions</th>
@@ -139,12 +138,6 @@ export default function BaremePrixTable({
                   </td>
                   <td className="px-3 py-3 text-gray-600">{r.unite ?? "—"}</td>
                   {level === "chantier" && <td className="px-3 py-3 text-right font-mono text-gray-600">{fmt(r.prix_base)}</td>}
-                  {level === "contrat" && (
-                    <td className="px-3 py-3 text-right">
-                      <span className="font-mono text-gray-600">{fmt(r.prix_herite)}</span>
-                      <span className="ml-1.5"><SourceBadge source={r.source_herite} level={level} /></span>
-                    </td>
-                  )}
                   <td className="px-3 py-3 text-right">
                     {isEditing ? (
                       <div className="flex items-center justify-end gap-1.5">
@@ -158,7 +151,6 @@ export default function BaremePrixTable({
                     ) : (
                       <>
                         <span className={`font-mono font-semibold ${ecart ? "text-[#065A2C]" : "text-gray-800"}`}>{fmt(r.prix_effectif)}</span>
-                        <span className="ml-1.5"><SourceBadge source={r.source} level={level} /></span>
                         {enAttente && r.prix_propose != null && (
                           <p className="text-xs text-amber-600 mt-0.5">Proposé : {fmt(r.prix_propose)}</p>
                         )}

@@ -282,8 +282,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
   const [confirmDel, setConfirmDel] = useState(null);
   const [x3Loading, setX3Loading]     = useState(false);
   const [gmaoLoading, setGmaoLoading] = useState(false);
-  const [editingLigne, setEditingLigne] = useState(null);
-  const [editLignePrix, setEditLignePrix] = useState("");
+  const [reloadingId, setReloadingId] = useState(null);
 
   const saveMut          = useSaveLigneEC();
   const deleteMut        = useDeleteLigneEC();
@@ -444,14 +443,13 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
     }
   }
 
-  async function handleUpdateLignePrix(ligneId) {
-    const prix = parseFloat(editLignePrix);
-    if (isNaN(prix) || prix < 0) return addToast("Prix invalide.", "error");
-    const l = lignes.find(l => l.id === ligneId);
-    if (!l) return;
+  async function handleReloadPrix(l) {
+    const prix = getPrixBareme(l.code_article);
+    if (prix == null) return addToast("Article introuvable dans le barème du contrat.", "error");
+    setReloadingId(l.id);
     try {
       await saveMut.mutateAsync({
-        id:              ligneId,
+        id:              l.id,
         etat_cession_id: parseInt(etatId, 10),
         poste,
         code_article:    l.code_article ?? null,
@@ -461,12 +459,13 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
         designation:     l.designation  ?? "",
         unite:           l.unite        ?? "",
         quantite:        l.quantite     ?? 0,
-        prix_unitaire:   prix,
+        prix_unitaire:   parseFloat(prix),
       });
-      setEditingLigne(null);
-      addToast("Prix mis à jour.", "success");
+      addToast("Prix rechargé depuis le barème contrat.", "success");
     } catch (err) {
       addToast(err?.response?.data?.error ?? "Erreur.", "error");
+    } finally {
+      setReloadingId(null);
     }
   }
 
@@ -601,34 +600,26 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                   <TableCell className="text-xs text-gray-500 uppercase">{l.unite || "—"}</TableCell>
                   <TableCell className="text-right text-gray-700">{fmtNum(l.quantite)}</TableCell>
                   <TableCell className="text-right text-xs">
-                    {canEdit && editingLigne === l.id ? (
-                      <input type="number" min="0" step="any" value={editLignePrix}
-                        onChange={e => setEditLignePrix(e.target.value)}
-                        onBlur={() => handleUpdateLignePrix(l.id)}
-                        onKeyDown={e => { if (e.key === "Enter") handleUpdateLignePrix(l.id); if (e.key === "Escape") setEditingLigne(null); }}
-                        className="w-28 border border-[#087F3E] rounded px-1.5 py-1 text-xs text-right focus:ring-1 focus:ring-[#087F3E] outline-none"
-                        autoFocus />
-                    ) : canEdit ? (
-                      <button onClick={() => { setEditingLigne(l.id); setEditLignePrix(String(l.prix_unitaire)); }}
-                        className={`hover:text-[#087F3E] transition-colors tabular-nums ${!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0 ? "text-amber-600 font-semibold" : "text-gray-600"}`}>
-                        {!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0
-                          ? <span title="Prix manquant — validez dans le barème du contrat">⚠ 0 FCFA</span>
-                          : <>{fmtNum(l.prix_unitaire)} FCFA</>}
-                      </button>
-                    ) : (
-                      <span className={`tabular-nums ${!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0 ? "text-amber-600 font-semibold" : "text-gray-600"}`}>
-                        {!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0
-                          ? <span title="Prix manquant">⚠ 0 FCFA</span>
-                          : <>{fmtNum(l.prix_unitaire)} FCFA</>}
-                      </span>
-                    )}
+                    <span className={`tabular-nums ${!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0 ? "text-amber-600 font-semibold" : "text-gray-600"}`}>
+                      {!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0
+                        ? <span title="Prix manquant">⚠ 0 FCFA</span>
+                        : <>{fmtNum(l.prix_unitaire)} FCFA</>}
+                    </span>
                   </TableCell>
                   <TableCell className="text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</TableCell>
                   {canEdit && (
                     <TableCell className="text-right">
-                      <button onClick={() => setConfirmDel(l.id)} className="text-gray-300 hover:text-red-500 transition-colors">
-                        <Trash2 size={13} />
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        {l.code_article && (
+                          <button onClick={() => handleReloadPrix(l)} disabled={reloadingId === l.id} title="Recharger le prix depuis le barème contrat"
+                            className="text-gray-300 hover:text-blue-500 transition-colors disabled:opacity-40">
+                            {reloadingId === l.id ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />}
+                          </button>
+                        )}
+                        <button onClick={() => setConfirmDel(l.id)} className="text-gray-300 hover:text-red-500 transition-colors">
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </TableCell>
                   )}
                 </TableRow>

@@ -4,7 +4,10 @@ import { Plus, FileDown, Trash2, FileText, Loader2, X, ChevronLeft, ChevronRight
 import { useNotesDevisPaginated, useCreateNoteDevis, useDeleteNoteDevis } from "../hooks/useNotesDevis";
 import { useEtatsCessionPaginated, useEtatCession } from "../hooks/useEtatsCession";
 import { useChantiersPaginated } from "../hooks/useChantiers";
+import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
+import { useContratsPaginated } from "../hooks/useContrats";
 import { usePeutFaire } from "../hooks/useParametres";
+import SearchSelect from "../components/SearchSelect";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
 import { SkeletonTable } from "../components/Skeleton";
@@ -36,26 +39,22 @@ export default function NoteDevisListPage() {
 
   // Filtres modal
   const [ecCode, setEcCode]             = useState("");
-  const [ecContratCode, setEcContratCode] = useState("");
-  const [ecStt, setEcStt]               = useState("");
   const [ecStatut, setEcStatut]         = useState("valide");
+  const [ecSttId, setEcSttId]           = useState("");
+  const [ecContratId, setEcContratId]   = useState("");
   const [ecChantierId, setEcChantierId] = useState("");
-  const [ecCodeDebounced, setEcCodeDebounced]             = useState("");
-  const [ecContratDebounced, setEcContratDebounced]       = useState("");
-  const [ecSttDebounced, setEcSttDebounced]               = useState("");
+  const [ecCodeDebounced, setEcCodeDebounced] = useState("");
 
   useEffect(() => { const t = setTimeout(() => setEcCodeDebounced(ecCode.trim()), 350); return () => clearTimeout(t); }, [ecCode]);
-  useEffect(() => { const t = setTimeout(() => setEcContratDebounced(ecContratCode.trim()), 350); return () => clearTimeout(t); }, [ecContratCode]);
-  useEffect(() => { const t = setTimeout(() => setEcSttDebounced(ecStt.trim()), 350); return () => clearTimeout(t); }, [ecStt]);
 
   const ecFilters = useMemo(() => ({
-    code:            ecCodeDebounced    || undefined,
-    contrat_code:    ecContratDebounced || undefined,
-    soustraitant_nom: ecSttDebounced   || undefined,
-    statut:          ecStatut          || undefined,
-    chantier_id:     ecChantierId ? parseInt(ecChantierId) : undefined,
+    code:           ecCodeDebounced           || undefined,
+    contrat_id:     ecContratId ? parseInt(ecContratId) : undefined,
+    soustraitant_id: ecSttId ? parseInt(ecSttId) : undefined,
+    statut:         ecStatut                  || undefined,
+    chantier_id:    ecChantierId ? parseInt(ecChantierId) : undefined,
     count: 200,
-  }), [ecCodeDebounced, ecContratDebounced, ecSttDebounced, ecStatut, ecChantierId]);
+  }), [ecCodeDebounced, ecContratId, ecSttId, ecStatut, ecChantierId]);
 
   const { data, isLoading, isError } = useNotesDevisPaginated({ page, count: 15 });
   const rows = data?.data ?? [];
@@ -66,9 +65,13 @@ export default function NoteDevisListPage() {
   const { data: ecsData, isLoading: ecsLoading } = useEtatsCessionPaginated(ecFilters);
   const ecsList = ecsData?.data ?? [];
 
-  // Chantiers pour le filtre
+  // Listes pour les SearchSelect
   const { data: chantiersData } = useChantiersPaginated({ count: 500 });
   const chantiersList = chantiersData?.data ?? [];
+  const { data: sttsData } = useSousTraitantsPaginated({ count: 500 });
+  const sttsList = sttsData?.data ?? [];
+  const { data: contratsData } = useContratsPaginated({ count: 500 });
+  const contratsList = contratsData?.data ?? [];
 
   // Chargement complet de l'état sélectionné (avec lignes)
   const { data: selectedEcData, isLoading: loadingEc } = useEtatCession(selectedEcId || null);
@@ -247,29 +250,33 @@ export default function NoteDevisListPage() {
                     <input type="text" placeholder="Code EC" value={ecCode} onChange={e => setEcCode(e.target.value)}
                       className="w-full pl-7 pr-2 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
                   </div>
-                  <div className="relative">
-                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type="text" placeholder="Code contrat" value={ecContratCode} onChange={e => setEcContratCode(e.target.value)}
-                      className="w-full pl-7 pr-2 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
-                  </div>
-                  <div className="relative">
-                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input type="text" placeholder="Sous-traitant" value={ecStt} onChange={e => setEcStt(e.target.value)}
-                      className="w-full pl-7 pr-2 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
-                  </div>
-                  <select value={ecStatut} onChange={e => { setEcStatut(e.target.value); setSelectedEcId(""); }}
-                    className="text-xs border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] text-gray-600">
+                  <SearchSelect value={ecContratId} onChange={e => { setEcContratId(e.target.value); setSelectedEcId(""); }}
+                    placeholder="Contrat" searchPlaceholder="Rechercher un contrat…"
+                    className="w-full text-xs border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] text-gray-600">
+                    <option value="">Tous les contrats</option>
+                    {contratsList.map(c => <option key={c.id} value={c.id}>{c.code}{c.chantier?.designation ? ` — ${c.chantier.designation}` : ""}</option>)}
+                  </SearchSelect>
+                  <SearchSelect value={ecSttId} onChange={e => { setEcSttId(e.target.value); setSelectedEcId(""); }}
+                    placeholder="Sous-traitant" searchPlaceholder="Rechercher un sous-traitant…"
+                    className="w-full text-xs border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] text-gray-600">
+                    <option value="">Tous les sous-traitants</option>
+                    {sttsList.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
+                  </SearchSelect>
+                  <SearchSelect value={ecStatut} onChange={e => { setEcStatut(e.target.value); setSelectedEcId(""); }}
+                    placeholder="Statut" searchPlaceholder="Rechercher…"
+                    className="w-full text-xs border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] text-gray-600">
                     <option value="">Tous les statuts</option>
                     <option value="brouillon">Brouillon</option>
                     <option value="soumis">Soumis</option>
                     <option value="valide">Validé</option>
                     <option value="rejete">Rejeté</option>
-                  </select>
-                  <select value={ecChantierId} onChange={e => { setEcChantierId(e.target.value); setSelectedEcId(""); }}
-                    className="text-xs border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] text-gray-600 col-span-2 md:col-span-1">
+                  </SearchSelect>
+                  <SearchSelect value={ecChantierId} onChange={e => { setEcChantierId(e.target.value); setSelectedEcId(""); }}
+                    placeholder="Chantier" searchPlaceholder="Rechercher un chantier…"
+                    className="w-full text-xs border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] text-gray-600 col-span-2 md:col-span-1">
                     <option value="">Tous les chantiers</option>
                     {chantiersList.map(c => <option key={c.id} value={c.id}>{c.designation}</option>)}
-                  </select>
+                  </SearchSelect>
                 </div>
               </div>
 
