@@ -2206,7 +2206,7 @@ export default function ContratFormPage() {
   const { currentUser } = useUser();
   const userRole = currentUser?.role?.designation;
   const TABS_MASQUES_DACC_DEX = ["circuit", "attachements", "cessions", "decomptes"];
-  const masquerOnglets = ["DACC", "Assistant DEX"].includes(userRole);
+  const masquerOnglets = ["Assistant DACC", "Assistant DEX"].includes(userRole);
 
   const [activeTab, setActiveTab] = useState("info");
   const [motif, setMotif]         = useState("");
