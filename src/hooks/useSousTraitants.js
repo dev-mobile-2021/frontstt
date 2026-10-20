@@ -1,6 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { soustraitantService } from "../services/soustraitantService";
 
+export function useSousTraitantsList() {
+  return useQuery({
+    queryKey: ["soustraitants_list"],
+    queryFn: () => soustraitantService.listDropdown(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useSousTraitantsPaginated(filters = {}) {
   return useQuery({
     queryKey: ["soustraitants", filters],

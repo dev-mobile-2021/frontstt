@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { useContrat, useSaveContrat, useContratStatut, useContratCircuit, useSoumettreContrat, useValiderContrat, useRejeterContrat, useDeleteContrat } from "../hooks/useContrats";
 import { useChantiersList } from "../hooks/useChantiers";
-import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
+import { useSousTraitantsList } from "../hooks/useSousTraitants";
 import { useDecomptesPaginated } from "../hooks/useDecomptes";
 import { useAvenantsByContrat, useSaveAvenant, useValiderAvenant, useDeleteAvenant } from "../hooks/useAvenants";
 import { useAttachements } from "../hooks/useAttachements";
@@ -2226,14 +2226,14 @@ export default function ContratFormPage() {
   // ── Remote data ─────────────────────────────────────────────
   const { data: contrat, isLoading, isError } = useContrat(!isNew ? id : null);
   const { data: chantiersData }   = useChantiersList();
-  const { data: sttData }         = useSousTraitantsPaginated({ count: 500 });
+  const { data: sttData }         = useSousTraitantsList();
   const contratIdInt = !isNew && id ? parseInt(id, 10) : null;
   const { data: decomptesData }   = useDecomptesPaginated({ contrat_id: contratIdInt, count: 100 });
   const { data: avenantsList = [] } = useAvenantsByContrat(contratIdInt);
   const { data: bcsList = [], isSuccess: bcsLoaded } = useBonCommandesByContrat(contratIdInt);
 
   const chantiersList = chantiersData ?? [];
-  const sttList       = sttData?.data?.filter(s => s.statut !== "blackliste") ?? [];
+  const sttList       = (sttData ?? []).filter(s => s.statut !== "blackliste");
 
   const saveMut      = useSaveContrat();
   const statutMut    = useContratStatut();
