@@ -403,9 +403,9 @@ export default function NoteDevisListPage() {
               </button>
               <button onClick={handleGenerer}
                 disabled={!selectedEcId || createMut.isPending}
-                className="flex-1 py-2.5 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+                className="px-6 py-2.5 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60 flex items-center gap-2">
                 {createMut.isPending && <Loader2 size={14} className="animate-spin" />}
-                {selectedEcId && selectedEc ? `Générer la note pour ${selectedEc.code}` : "Générer la note de débit"}
+                {selectedEcId && selectedEc ? `Générer — ${selectedEc.code}` : "Générer la note de débit"}
               </button>
             </div>
           </div>
