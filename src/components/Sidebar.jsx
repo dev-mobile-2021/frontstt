@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { usePermissions } from "../hooks/useParametres";
+import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 
 const NAV_ITEMS = [
   { label: "Tableau de bord", to: "/dashboard",      icon: LayoutDashboard, permKey: "menu_dashboard" },
@@ -107,6 +108,9 @@ export default function Sidebar({ collapsed, onToggle }) {
     if (!perm) return true;
     return perm.roles.some(r => r.designation === userRole && r.actif);
   }
+
+  const { data: pretsData } = useEtatsCessionPaginated({ statut: "pret", count: 500 });
+  const nbPrets = pretsData?.data?.length ?? 0;
 
   const location = useLocation();
   const paramActive = PARAMETRAGE_GROUP.children.some(c => location.pathname.startsWith(c.to));
@@ -234,23 +238,29 @@ export default function Sidebar({ collapsed, onToggle }) {
           </button>
           {!collapsed && controllerOpen && (
             <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
-              {CONTROLLER_GROUP.children.filter(item => canSeeMenu(item.permKey)).map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-600 hover:bg-gray-50"}`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#087F3E] rounded-r-full" />}
-                      <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#087F3E]" : "text-gray-400"}`} />
-                      <span className="truncate">{item.label}</span>
-                    </>
-                  )}
-                </NavLink>
-              ))}
+              {CONTROLLER_GROUP.children.filter(item => canSeeMenu(item.permKey)).map(item => {
+                const isNotesDebit = item.to === "/notes-debit";
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-600 hover:bg-gray-50"}`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#087F3E] rounded-r-full" />}
+                        <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#087F3E]" : "text-gray-400"}`} />
+                        <span className="flex-1 truncate">{item.label}</span>
+                        {isNotesDebit && nbPrets > 0 && (
+                          <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full">{nbPrets}</span>
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                );
+              })}
             </div>
           )}
         </div>}
