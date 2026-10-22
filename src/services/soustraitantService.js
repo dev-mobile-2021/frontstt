@@ -13,6 +13,18 @@ const FIELDS = `
 `;
 
 export const soustraitantService = {
+  async listDropdown({ count = 2000 } = {}) {
+    const data = await gql(
+      `query ListSTTDropdown($count: Int) {
+        soustraitantsPaginated(page: 1, count: $count, order: "raison_sociale", direction: "asc") {
+          data { id code raison_sociale statut }
+        }
+      }`,
+      { count }
+    );
+    return data.soustraitantsPaginated.data ?? [];
+  },
+
   async list({ page = 1, count = 15, raison_sociale, statut, chantier_id } = {}) {
     const data = await gql(
       `query ListSTT($page: Int, $count: Int, $raison_sociale: String, $statut: String, $chantier_id: Int) {

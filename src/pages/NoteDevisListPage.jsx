@@ -39,7 +39,7 @@ export default function NoteDevisListPage() {
 
   // Filtres modal
   const [ecCode, setEcCode]             = useState("");
-  const [ecStatut, setEcStatut]         = useState("valide");
+  const [ecStatut, setEcStatut]         = useState("pret");
   const [ecSttId, setEcSttId]           = useState("");
   const [ecContratId, setEcContratId]   = useState("");
   const [ecChantierId, setEcChantierId] = useState("");
@@ -64,6 +64,10 @@ export default function NoteDevisListPage() {
   // États de cession filtrés pour le modal
   const { data: ecsData, isLoading: ecsLoading } = useEtatsCessionPaginated(ecFilters);
   const ecsList = ecsData?.data ?? [];
+
+  // Badge : EC prêtes à transformer
+  const { data: pretsData } = useEtatsCessionPaginated({ statut: "pret", count: 500 });
+  const nbPrets = pretsData?.data?.length ?? 0;
 
   // Listes pour les SearchSelect
   const { data: chantiersData } = useChantiersPaginated({ count: 500 });
@@ -138,8 +142,13 @@ export default function NoteDevisListPage() {
         subtitle="Factures générées depuis les états de cession validés"
         action={
           <button onClick={() => { setShowModal(true); setSelectedEcId(""); }}
-            className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
+            className="relative inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
             <Plus size={16} /> Nouvelle note de débit
+            {nbPrets > 0 && (
+              <span className="absolute -top-2 -right-2 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-blue-500 text-white rounded-full">
+                {nbPrets}
+              </span>
+            )}
           </button>
         }
       />
@@ -266,6 +275,7 @@ export default function NoteDevisListPage() {
                     placeholder="Statut" searchPlaceholder="Rechercher…"
                     className="w-full text-xs border border-gray-200 rounded-lg px-2 py-2 focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] text-gray-600">
                     <option value="">Tous les statuts</option>
+                    <option value="pret">Prêt · ND</option>
                     <option value="brouillon">Brouillon</option>
                     <option value="soumis">Soumis</option>
                     <option value="valide">Validé</option>

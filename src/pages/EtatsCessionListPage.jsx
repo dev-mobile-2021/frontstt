@@ -7,7 +7,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
 function getAuthHeader() { const t = localStorage.getItem("stt_token"); return t ? { Authorization: `Bearer ${t}` } : {}; }
-import { useEtatsCessionPaginated, useSaveEtatCession, useDeleteEtatCession } from "../hooks/useEtatsCession";
+import { useEtatsCessionPaginated, useSaveEtatCession, useDeleteEtatCession, useEtatCessionStatut } from "../hooks/useEtatsCession";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useChantiersPaginated } from "../hooks/useChantiers";
@@ -91,6 +91,7 @@ const STATUTS = [
   { value: "brouillon", label: "Brouillon" },
   { value: "soumis",    label: "Soumis" },
   { value: "valide",    label: "Validé / Arrêté" },
+  { value: "pret",      label: "Prêt · ND" },
   { value: "rejete",    label: "Rejeté" },
 ];
 
@@ -125,8 +126,11 @@ export default function EtatsCessionListPage() {
   const navigate     = useNavigate();
   const { addToast }             = useToast();
   const { data: peutCreer }      = usePeutFaire("creer_etat_cession");
+  const { data: peutValider }    = usePeutFaire("valider_etat_cession");
   const saveMut      = useSaveEtatCession();
   const deleteMut    = useDeleteEtatCession();
+  const statutMut    = useEtatCessionStatut();
+  const [marquantId, setMarquantId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null); // { id, code }
 
   const [search,         setSearch]        = useState("");
@@ -223,6 +227,18 @@ export default function EtatsCessionListPage() {
       addToast(err?.response?.data?.errors?.[0] ?? err?.response?.data?.error ?? "Erreur lors de la suppression.", "error");
     } finally {
       setConfirmDelete(null);
+    }
+  }
+
+  async function handleMarquerPret(e) {
+    setMarquantId(e.id);
+    try {
+      await statutMut.mutateAsync({ id: e.id, statut: "pret" });
+      addToast(`${e.code} marqué comme prêt — le comptable peut générer la note de débit.`, "success");
+    } catch (err) {
+      addToast(err?.response?.data?.error ?? "Erreur lors du marquage.", "error");
+    } finally {
+      setMarquantId(null);
     }
   }
 
@@ -384,13 +400,26 @@ export default function EtatsCessionListPage() {
                     </div>
                   </TableCell>
                   <TableCell onClick={ev => ev.stopPropagation()}>
-                    <button
-                      onClick={() => setConfirmDelete({ id: e.id, code: e.code })}
-                      className="p-1.5 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"
-                      title="Supprimer"
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      {peutValider && e.statut === "valide" && (
+                        <button
+                          onClick={() => handleMarquerPret(e)}
+                          disabled={marquantId === e.id}
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700 border border-blue-200 bg-blue-50 px-2 py-1 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                          title="Marquer comme prête pour génération note de débit"
+                        >
+                          {marquantId === e.id ? <Loader2 size={11} className="animate-spin" /> : <FileText size={11} />}
+                          Prête · ND
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setConfirmDelete({ id: e.id, code: e.code })}
+                        className="p-1.5 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

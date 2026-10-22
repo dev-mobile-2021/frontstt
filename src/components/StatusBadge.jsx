@@ -10,6 +10,7 @@ const CONFIGS = {
   "brouillon":    { cls: "bg-gray-100 text-gray-700",   label: "Brouillon",  icon: null },
   "en_cours":     { cls: "bg-blue-50 text-blue-700",    label: "En cours",   icon: null },
   "valide":       { cls: "bg-[#E8F5EE] text-[#065A2C]",label: "Validé",     icon: Check },
+  "pret":         { cls: "bg-blue-50 text-blue-700",   label: "Prêt · ND",  icon: null },
   "rejete":       { cls: "bg-red-50 text-red-700",      label: "Rejeté",     icon: null },
   "soumis":       { cls: "bg-yellow-50 text-yellow-800",label: "Soumis",     icon: null },
   "valide_ct":    { cls: "bg-amber-50 text-amber-700",  label: "Validé CT",  icon: null },
