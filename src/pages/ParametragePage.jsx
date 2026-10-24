@@ -159,13 +159,13 @@ function TabCircuit() {
       {/* Module selector */}
       <div className="flex items-center gap-3">
         <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Module :</label>
-        <SearchSelect
+        <select
           value={selectedModule ?? ""}
           onChange={e => { setSelectedModule(e.target.value); setShowForm(false); setEditId(null); }}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
         >
           {APP_MODULES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
-        </SearchSelect>
+        </select>
       </div>
 
       {/* Info banner */}
