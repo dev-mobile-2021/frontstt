@@ -12,7 +12,7 @@ import { Spinner, ConfirmDelete, MODULES, MODULE_STATUTS } from "./shared";
 
 export default function CircuitPage() {
   const { addToast } = useToast();
-  const [selectedModule, setSelectedModule] = useState("decompte");
+  const [selectedModule, setSelectedModule] = useState("attachement");
   const { data, isLoading } = useCircuitEtapes({ module: selectedModule, count: 50 });
   const { data: rolesData } = useRolesPaginated({ count: 100 });
   const saveMut = useSaveCircuitEtape();

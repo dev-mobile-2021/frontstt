@@ -23,16 +23,18 @@ export function ConfirmDelete({ onConfirm, onCancel, loading }) {
 }
 
 export const MODULES = [
-  { value: "decompte",     label: "Décompte" },
-  { value: "avenant",      label: "Avenant" },
-  { value: "contrat",      label: "Contrat" },
-  { value: "bon_commande", label: "Bon de commande" },
-  { value: "etat_cession", label: "État de cession" },
-  { value: "facture",      label: "Facture" },
-  { value: "releve",       label: "Relevé" },
+  { value: "attachement",   label: "Attachement" },
+  { value: "decompte",      label: "Décompte" },
+  { value: "avenant",       label: "Avenant" },
+  { value: "contrat",       label: "Contrat" },
+  { value: "bon_commande",  label: "Bon de commande" },
+  { value: "etat_cession",  label: "État de cession" },
+  { value: "facture",       label: "Facture" },
+  { value: "releve",        label: "Relevé" },
 ];
 
 export const MODULE_STATUTS = {
+  attachement:  ["brouillon", "Soumis à l'Asst DACC", "Soumis au DT", "Soumis au DACC", "Validé", "Rejeté"],
   decompte:     ["brouillon", "soumis", "valide_dacc", "valide_dex", "valide_dga", "valide_dg", "paye", "rejete"],
   avenant:      ["brouillon", "soumis", "valide_dacc", "valide", "rejete"],
   contrat:      ["brouillon", "actif", "suspendu", "resilie", "termine", "cloture"],
