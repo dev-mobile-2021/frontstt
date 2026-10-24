@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment, useMemo } from "react";
 import {
   Plus, Trash2, Edit2, Save, X, GripVertical,
   CheckCircle, ChevronUp, ChevronDown, Loader2, Users, Settings, GitBranch, Tags, Shield, Search,
@@ -48,32 +48,38 @@ function ConfirmDelete({ onConfirm, onCancel, loading }) {
 }
 
 // ─── Tab Circuit ─────────────────────────────────────────────────────────────
-const MODULES = [
-  { value: "attachement",  label: "Attachement" },
-  { value: "decompte",     label: "Décompte" },
-  { value: "etat_cession", label: "État de cession" },
-  { value: "avenant",      label: "Avenant" },
-  { value: "contrat",      label: "Contrat" },
-  { value: "bon_commande", label: "Bon de commande" },
-  { value: "facture",      label: "Facture" },
-  { value: "releve",       label: "Relevé" },
-];
-
-const MODULE_STATUTS = {
-  attachement:  ["Ouvert", "En cours", "Soumis à l'Asst DACC", "Soumis au DT", "En rapprochement", "Soumis au DACC", "Validé", "Rejeté"],
-  decompte:     ["brouillon", "soumis", "valide_dacc", "valide_dex", "valide_dga", "valide_dg", "paye", "rejete"],
-  avenant:      ["brouillon", "soumis", "valide_dacc", "valide", "rejete"],
-  contrat:      ["brouillon", "actif", "suspendu", "resilie", "termine", "cloture"],
-  bon_commande: ["brouillon", "valide", "envoye", "receptionne", "cloture", "annule"],
-  etat_cession: ["brouillon", "soumis", "valide", "rejete"],
-  facture:      ["brouillon", "emise", "payee", "annulee"],
-  releve:       ["genere", "envoye", "accepte", "conteste"],
-};
-
 function TabCircuit() {
   const { addToast } = useToast();
-  const [selectedModule, setSelectedModule] = useState("decompte");
+
+  // Fetch tous les modules distincts depuis la table
+  const { data: allData } = useCircuitEtapes({ count: 500 });
+  const allEtapes = allData?.data ?? [];
+  const modules = useMemo(() => {
+    const seen = new Set();
+    return allEtapes
+      .map(e => e.module)
+      .filter(m => m && !seen.has(m) && seen.add(m))
+      .sort()
+      .map(m => ({ value: m, label: m.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) }));
+  }, [allEtapes]);
+
+  const [selectedModule, setSelectedModule] = useState(null);
+  // Sélectionne le premier module dispo quand les données arrivent
+  useEffect(() => {
+    if (!selectedModule && modules.length > 0) setSelectedModule(modules[0].value);
+  }, [modules, selectedModule]);
+
   const { data, isLoading } = useCircuitEtapes({ module: selectedModule, count: 50 });
+
+  // Statuts distincts du module sélectionné (avant + après)
+  const statutsDisponibles = useMemo(() => {
+    const set = new Set();
+    allEtapes.filter(e => e.module === selectedModule).forEach(e => {
+      if (e.statut_avant) set.add(e.statut_avant);
+      if (e.statut_apres) set.add(e.statut_apres);
+    });
+    return [...set].sort();
+  }, [allEtapes, selectedModule]);
   const { data: rolesData } = useRolesPaginated({ count: 100 });
   const saveMut = useSaveCircuitEtape();
   const deleteMut = useDeleteCircuitEtape();
@@ -167,18 +173,18 @@ function TabCircuit() {
       <div className="flex items-center gap-3">
         <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Module :</label>
         <SearchSelect
-          value={selectedModule}
+          value={selectedModule ?? ""}
           onChange={e => { setSelectedModule(e.target.value); setShowForm(false); setEditId(null); }}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
         >
-          {MODULES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          {modules.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
         </SearchSelect>
       </div>
 
       {/* Info banner */}
       <div className="bg-blue-50 border-l-4 border-blue-400 px-5 py-3 rounded-r-xl">
         <p className="text-sm text-blue-700">
-          Circuit du module <strong>{MODULES.find(m => m.value === selectedModule)?.label}</strong>. Toute modification prend effet immédiatement.
+          Circuit du module <strong>{modules.find(m => m.value === selectedModule)?.label ?? selectedModule}</strong>. Toute modification prend effet immédiatement.
         </p>
       </div>
 
@@ -301,29 +307,29 @@ function TabCircuit() {
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">Statut avant</label>
-                  <SearchSelect
+                  <input
+                    list={`statuts-${selectedModule}-avant`}
                     value={form.statut_avant}
                     onChange={e => setForm(f => ({ ...f, statut_avant: e.target.value }))}
+                    placeholder="Ex. brouillon"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-                  >
-                    <option value="">— Choisir —</option>
-                    {(MODULE_STATUTS[selectedModule] ?? []).map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </SearchSelect>
+                  />
+                  <datalist id={`statuts-${selectedModule}-avant`}>
+                    {statutsDisponibles.map(s => <option key={s} value={s} />)}
+                  </datalist>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">Statut après</label>
-                  <SearchSelect
+                  <input
+                    list={`statuts-${selectedModule}-apres`}
                     value={form.statut_apres}
                     onChange={e => setForm(f => ({ ...f, statut_apres: e.target.value }))}
+                    placeholder="Ex. soumis"
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
-                  >
-                    <option value="">— Choisir —</option>
-                    {(MODULE_STATUTS[selectedModule] ?? []).map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </SearchSelect>
+                  />
+                  <datalist id={`statuts-${selectedModule}-apres`}>
+                    {statutsDisponibles.map(s => <option key={s} value={s} />)}
+                  </datalist>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-gray-500 block mb-1">Rôle lié</label>
