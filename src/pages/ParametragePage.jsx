@@ -54,13 +54,24 @@ function TabCircuit() {
   // Fetch tous les modules distincts depuis la table
   const { data: allData } = useCircuitEtapes({ count: 500 });
   const allEtapes = allData?.data ?? [];
+  const MODULE_LABELS = {
+    attachement:  "Attachement",
+    decompte:     "Décompte",
+    etat_cession: "État de cession",
+    avenant:      "Avenant",
+    contrat:      "Contrat",
+    bon_commande: "Bon de commande",
+    facture:      "Facture",
+    releve:       "Relevé",
+  };
+
   const modules = useMemo(() => {
     const seen = new Set();
     return allEtapes
       .map(e => e.module)
       .filter(m => m && !seen.has(m) && seen.add(m))
       .sort()
-      .map(m => ({ value: m, label: m.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase()) }));
+      .map(m => ({ value: m, label: MODULE_LABELS[m] ?? m }));
   }, [allEtapes]);
 
   const [selectedModule, setSelectedModule] = useState(null);
