@@ -271,7 +271,7 @@ function TabCircuit() {
             </div>
             <div className="p-6 space-y-4">
               <span className="inline-block text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
-                Module : {MODULES.find(m => m.value === selectedModule)?.label}
+                Module : {moduleConfig?.label ?? selectedModule}
               </span>
               <div className="grid grid-cols-2 gap-4">
                 <div>
