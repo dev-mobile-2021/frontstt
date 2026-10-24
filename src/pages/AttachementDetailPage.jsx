@@ -988,6 +988,7 @@ function VueAssistantDACC({ att, updateAttachement, soumettreAttachement, rejete
   const [commentaireRejet, setCommentaireRejet] = useState("");
   const [validatingDirect, setValidatingDirect] = useState(false);
   const [submittingToDT, setSubmittingToDT] = useState(false);
+  const importRef = useRef(null);
   const total = useMemo(() => lignes.reduce((s, l) => s + (l.montant || 0), 0), [lignes]);
 
   useEffect(() => { setLignes(att.voletCSE.lignes.map(l => ({ ...l }))); }, [att.id]);
@@ -1067,10 +1068,23 @@ function VueAssistantDACC({ att, updateAttachement, soumettreAttachement, rejete
             <h3 className="font-semibold text-gray-800 text-sm">Volet CSE — Constat terrain</h3>
             <p className="text-xs text-gray-500 mt-0.5">Contrôle ligne par ligne — modifications tracées</p>
           </div>
-          <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
-            {savedFlag ? <CheckCircle size={12} className="text-green-500" /> : <Save size={12} />}
-            {savedFlag ? "Enregistré" : "Enregistrer"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => exportCSE(lignes, att.reference)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+              <Download size={12} /> Exporter
+            </button>
+            <input ref={importRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => {
+              const file = e.target.files?.[0]; if (!file) return;
+              importCSELignes(file, lignes, updated => { setLignes(updated); addToast("Quantités importées depuis Excel.", "success"); }, () => addToast("Erreur de lecture du fichier Excel.", "error"));
+              e.target.value = "";
+            }} />
+            <button onClick={() => importRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+              <Upload size={12} /> Importer
+            </button>
+            <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+              {savedFlag ? <CheckCircle size={12} className="text-green-500" /> : <Save size={12} />}
+              {savedFlag ? "Enregistré" : "Enregistrer"}
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
