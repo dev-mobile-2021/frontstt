@@ -49,16 +49,18 @@ function ConfirmDelete({ onConfirm, onCancel, loading }) {
 
 // ─── Tab Circuit ─────────────────────────────────────────────────────────────
 const MODULES = [
+  { value: "attachement",  label: "Attachement" },
   { value: "decompte",     label: "Décompte" },
+  { value: "etat_cession", label: "État de cession" },
   { value: "avenant",      label: "Avenant" },
   { value: "contrat",      label: "Contrat" },
   { value: "bon_commande", label: "Bon de commande" },
-  { value: "etat_cession", label: "État de cession" },
   { value: "facture",      label: "Facture" },
   { value: "releve",       label: "Relevé" },
 ];
 
 const MODULE_STATUTS = {
+  attachement:  ["Ouvert", "En cours", "Soumis à l'Asst DACC", "Soumis au DT", "En rapprochement", "Soumis au DACC", "Validé", "Rejeté"],
   decompte:     ["brouillon", "soumis", "valide_dacc", "valide_dex", "valide_dga", "valide_dg", "paye", "rejete"],
   avenant:      ["brouillon", "soumis", "valide_dacc", "valide", "rejete"],
   contrat:      ["brouillon", "actif", "suspendu", "resilie", "termine", "cloture"],
