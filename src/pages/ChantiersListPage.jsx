@@ -10,6 +10,7 @@ import { SkeletonCard } from "../components/Skeleton";
 import SyncBadge from "../components/SyncBadge";
 import AjouterX3Modal from "../components/AjouterX3Modal";
 import { useAjouterDepuisX3 } from "../hooks/useX3Sync";
+import { usePeutFaire } from "../hooks/useParametres";
 import SearchSelect from "../components/SearchSelect";
 
 const STATUTS = [
@@ -110,6 +111,7 @@ export default function ChantiersListPage() {
     return () => clearTimeout(t);
   }, [search]);
 
+  const { data: peutSynchro = false } = usePeutFaire("synchro_x3");
   const filters = { designation: debounced || undefined, statut: statut || undefined, page, count: 15 };
   const { data, isLoading, isError } = useChantiersPaginated(filters);
   const chantiers  = data?.data ?? [];
@@ -139,7 +141,7 @@ export default function ChantiersListPage() {
       />
 
       {/* Synchronisation Sage X3 */}
-      <SyncBadge module="chantiers" label="Chantiers" invalidate={["chantiers", "chantier"]} />
+      <SyncBadge module="chantiers" label="Chantiers" invalidate={["chantiers", "chantier"]} canSync={peutSynchro} />
 
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-200 p-4">

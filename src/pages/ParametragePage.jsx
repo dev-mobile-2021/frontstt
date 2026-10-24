@@ -1102,11 +1102,12 @@ function TabArticlesX3() {
     return () => clearTimeout(t);
   }, [search]);
 
+  const { data: peutSynchro = false } = usePeutFaire("synchro_x3");
   const { data: articles = [], isLoading } = useArticlesX3({ search: debounced, classe, limit: 200 });
 
   return (
     <div className="space-y-5 pt-4">
-      <SyncBadge module="articles" label="Articles" invalidate={["articles-x3"]} />
+      <SyncBadge module="articles" label="Articles" invalidate={["articles-x3"]} canSync={peutSynchro} />
 
       <div className="flex flex-wrap gap-3 items-center">
         <input

@@ -3,6 +3,7 @@ import PageHeader from "../../components/PageHeader";
 import SearchSelect from "../../components/SearchSelect";
 import SyncBadge from "../../components/SyncBadge";
 import { useArticlesX3 } from "../../hooks/useArticlesX3";
+import { usePeutFaire } from "../../hooks/useParametres";
 import { Spinner } from "./shared";
 
 const CLASSES_X3 = ["TCE", "EHA", "MTX", "PVC", "BAS", "PRP"];
@@ -17,6 +18,7 @@ export default function ArticlesX3Page() {
     return () => clearTimeout(t);
   }, [search]);
 
+  const { data: peutSynchro = false } = usePeutFaire("synchro_x3");
   const { data: articles = [], isLoading } = useArticlesX3({ search: debounced, classe, limit: 200 });
 
   return (
@@ -25,7 +27,7 @@ export default function ArticlesX3Page() {
 
       <div className="bg-white rounded-xl border border-gray-200 px-6 pb-8">
         <div className="space-y-5 pt-4">
-          <SyncBadge module="articles" label="Articles" invalidate={["articles-x3"]} />
+          <SyncBadge module="articles" label="Articles" invalidate={["articles-x3"]} canSync={peutSynchro} />
 
           <div className="flex flex-wrap gap-3 items-center">
             <input

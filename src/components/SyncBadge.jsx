@@ -22,7 +22,7 @@ function bilanMessage(label, b) {
  * Bandeau "Référentiel synchronisé depuis Sage X3" avec bouton de synchronisation réelle.
  * module : chantiers | soustraitants | articles
  */
-export default function SyncBadge({ module, label, invalidate = [], buttonLabel = "Synchroniser depuis Sage X3" }) {
+export default function SyncBadge({ module, label, invalidate = [], buttonLabel = "Synchroniser depuis Sage X3", canSync = true }) {
   const { addToast } = useToast();
   const { data: status } = useX3SyncStatus();
   const syncMut = useX3Sync(module, invalidate);
@@ -61,14 +61,16 @@ export default function SyncBadge({ module, label, invalidate = [], buttonLabel 
           <span className="block mt-0.5 text-red-600">Dernière tentative en erreur : {dernierMessage}</span>
         )}
       </span>
-      <button
-        onClick={handleSync}
-        disabled={loading}
-        className="ml-1 flex items-center gap-1.5 text-[#087F3E] font-medium border border-[#087F3E]/30 px-2.5 py-1 rounded-md hover:bg-[#E8F5EE] disabled:opacity-60 transition-colors"
-      >
-        {loading ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
-        {loading ? "Synchronisation…" : buttonLabel}
-      </button>
+      {canSync && (
+        <button
+          onClick={handleSync}
+          disabled={loading}
+          className="ml-1 flex items-center gap-1.5 text-[#087F3E] font-medium border border-[#087F3E]/30 px-2.5 py-1 rounded-md hover:bg-[#E8F5EE] disabled:opacity-60 transition-colors"
+        >
+          {loading ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
+          {loading ? "Synchronisation…" : buttonLabel}
+        </button>
+      )}
     </div>
   );
 }

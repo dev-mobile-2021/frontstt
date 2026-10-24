@@ -85,8 +85,8 @@ export const attachementService = {
     return data;
   },
 
-  async changerStatut(code, statut) {
-    const { data } = await http.post("/attachement/statut", { code, statut });
+  async changerStatut(code, statut, commentaire = "") {
+    const { data } = await http.post("/attachement/statut", { code, statut, commentaire });
     return data;
   },
 };

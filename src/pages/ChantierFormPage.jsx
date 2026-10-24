@@ -699,6 +699,7 @@ export default function ChantierFormPage() {
   const [activeTab, setActiveTab] = useState("contrats");
   const { currentUser } = useUser();
   const { data: peutAffecterResponsable } = usePeutFaire("affecter_responsable");
+  const { data: peutSynchro = false }     = usePeutFaire("synchro_x3");
   const isDacc = peutAffecterResponsable === true;
 
   const { data: chantier, isLoading, isError } = useChantier(id);
@@ -778,12 +779,14 @@ export default function ChantierFormPage() {
             <> · Dernière synchronisation : {new Date(chantier.synced_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</>
           ) : null}
         </p>
-        <button onClick={handleSync} disabled={syncMut.isPending || !chantier.code_x3}
-          title={chantier.code_x3 ? undefined : "Ce chantier n'a pas de code Sage X3"}
-          className="inline-flex items-center gap-1.5 text-xs text-[#087F3E] border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors font-medium disabled:opacity-60">
-          {syncMut.isPending ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-          {syncMut.isPending ? "Synchronisation…" : "Synchroniser depuis Sage X3"}
-        </button>
+        {peutSynchro && (
+          <button onClick={handleSync} disabled={syncMut.isPending || !chantier.code_x3}
+            title={chantier.code_x3 ? undefined : "Ce chantier n'a pas de code Sage X3"}
+            className="inline-flex items-center gap-1.5 text-xs text-[#087F3E] border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors font-medium disabled:opacity-60">
+            {syncMut.isPending ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+            {syncMut.isPending ? "Synchronisation…" : "Synchroniser depuis Sage X3"}
+          </button>
+        )}
       </div>
 
       {/* Info band */}

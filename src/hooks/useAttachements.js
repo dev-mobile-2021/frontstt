@@ -97,7 +97,7 @@ export function useAttachements() {
   [attachements]);
 
   const getAttachementForPeriodeRange = useCallback((contratId, dateFin) => {
-    const STATUTS = ["Validé","Soumis au DACC","En cours","Soumis au DT","Ouvert","Rejeté"];
+    const STATUTS = ["Validé","Soumis au DACC","Soumis à l'Asst DACC","En cours","Soumis au DT","Ouvert","Rejeté"];
     return attachements
       .filter(a => a.contratId === contratId && a.periodeFin <= dateFin && STATUTS.includes(a.statut))
       .sort((a, b) => b.periodeFin.localeCompare(a.periodeFin))[0] ?? null;
@@ -111,9 +111,10 @@ export function useAttachements() {
 
   const getPendingCount = useCallback((roleId) =>
     attachements.filter(a => {
-      if (roleId === "CT")   return a.statut === "Ouvert" || a.statut === "En cours";
-      if (roleId === "DT")   return a.statut === "Soumis au DT" || a.statut === "En rapprochement";
-      if (roleId === "DACC") return a.statut === "Soumis au DACC";
+      if (roleId === "CT")             return a.statut === "Ouvert" || a.statut === "En cours";
+      if (roleId === "Assistant DACC") return a.statut === "Soumis à l'Asst DACC";
+      if (roleId === "DT")             return a.statut === "Soumis au DT" || a.statut === "En rapprochement";
+      if (roleId === "DACC")           return a.statut === "Soumis au DACC";
       return false;
     }).length,
   [attachements]);

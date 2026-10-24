@@ -9,6 +9,7 @@ import { SkeletonTable } from "../components/Skeleton";
 import SyncBadge from "../components/SyncBadge";
 import AjouterX3Modal from "../components/AjouterX3Modal";
 import { useAjouterDepuisX3 } from "../hooks/useX3Sync";
+import { usePeutFaire } from "../hooks/useParametres";
 import SearchSelect from "../components/SearchSelect";
 
 const fmtNum = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
@@ -54,6 +55,7 @@ export default function SousTraitantsListPage() {
     return () => clearTimeout(t);
   }, [search]);
 
+  const { data: peutSynchro = false } = usePeutFaire("synchro_x3");
   const filters = { raison_sociale: debounced || undefined, statut: statut || undefined, page, count: 15 };
   const { data, isLoading, isError } = useSousTraitantsPaginated(filters);
   const rows       = data?.data ?? [];
@@ -86,7 +88,7 @@ export default function SousTraitantsListPage() {
       />
 
       {/* Synchronisation Sage X3 */}
-      <SyncBadge module="soustraitants" label="Sous-traitants" invalidate={["soustraitants", "soustraitant"]} />
+      <SyncBadge module="soustraitants" label="Sous-traitants" invalidate={["soustraitants", "soustraitant"]} canSync={peutSynchro} />
 
       <div className="bg-white rounded-xl border border-gray-200 p-4">
         <div className="flex flex-wrap gap-3 items-center">

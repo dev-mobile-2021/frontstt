@@ -10,6 +10,7 @@ import { useAttachements } from "../hooks/useAttachements";
 import { useUser } from "../context/UserContext";
 import { useToast } from "../context/ToastContext";
 import { pieceJointeService } from "../services/pieceJointeService";
+import { attachementService } from "../services/attachementService";
 import { fmtNum } from "../utils/formatters";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -22,18 +23,20 @@ const fmtPeriode = (d) => {
   return new Date(dateOnly + "T00:00").toLocaleDateString("fr-FR", { month:"long", year:"numeric" });
 };
 const STATUT_COLORS = {
-  "Validé":          "bg-green-100 text-green-700 border-green-200",
-  "Soumis au DACC":  "bg-purple-100 text-purple-700 border-purple-200",
-  "Soumis au DT":    "bg-blue-100 text-blue-700 border-blue-200",
-  "En rapprochement":"bg-orange-100 text-orange-700 border-orange-200",
-  "En cours":        "bg-yellow-100 text-yellow-700 border-yellow-200",
-  "Ouvert":          "bg-gray-100 text-gray-600 border-gray-200",
-  "Rejeté":          "bg-red-100 text-red-700 border-red-200",
+  "Validé":                "bg-green-100 text-green-700 border-green-200",
+  "Soumis au DACC":        "bg-purple-100 text-purple-700 border-purple-200",
+  "Soumis à l'Asst DACC": "bg-indigo-100 text-indigo-700 border-indigo-200",
+  "Soumis au DT":          "bg-blue-100 text-blue-700 border-blue-200",
+  "En rapprochement":      "bg-orange-100 text-orange-700 border-orange-200",
+  "En cours":              "bg-yellow-100 text-yellow-700 border-yellow-200",
+  "Ouvert":                "bg-gray-100 text-gray-600 border-gray-200",
+  "Rejeté":                "bg-red-100 text-red-700 border-red-200",
 };
 const ROLE_PILL = {
-  CT:   "bg-emerald-100 text-emerald-700",
-  DT:   "bg-blue-100 text-blue-700",
-  DACC: "bg-purple-100 text-purple-700",
+  CT:              "bg-emerald-100 text-emerald-700",
+  DT:              "bg-blue-100 text-blue-700",
+  DACC:            "bg-purple-100 text-purple-700",
+  "Assistant DACC":"bg-indigo-100 text-indigo-700",
 };
 
 // ─── AnimatedTotal ──────────────────────────────────────────────────────────
@@ -647,7 +650,7 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
         setTimeout(resolve, 300);
       });
       await soumettreAttachement(att.id);
-      addToast(att.statut === "Rejeté" ? "Dossier resoumis au DT avec succès." : "Dossier soumis au DT.", "success");
+      addToast(att.statut === "Rejeté" ? "Dossier resoumis pour vérification." : "Dossier soumis pour vérification.", "success");
       navigate("/attachements");
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message;
@@ -672,7 +675,7 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
             </button>
             <button onClick={handleSoumettre} disabled={total === 0 || submitting} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] disabled:opacity-40">
               {submitting ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={13} />}
-              {att.statut === "Rejeté" ? "Resoumettre au DT" : "Soumettre au DT"}
+              {att.statut === "Rejeté" ? "Resoumettre" : "Soumettre"}
             </button>
           </div>
         )}
@@ -903,6 +906,175 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
         {/* Panneau droit — Devis STT */}
         <div className="flex-[2] min-w-0 min-h-[200px]">
           <ZoneSTT att={att} canEdit={editable} updateAttachement={updateAttachement} currentUser={currentUser} compact={true} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Vue Assistant DACC ──────────────────────────────────────────────────────
+function VueAssistantDACC({ att, updateAttachement, soumettreAttachement, rejeterAttachement, currentUser }) {
+  const navigate = useNavigate();
+  const { addToast } = useToast();
+  const [lignes, setLignes] = useState(() => att.voletCSE.lignes.map(l => ({ ...l })));
+  const [savedFlag, setSavedFlag] = useState(false);
+  const [showRejet, setShowRejet] = useState(false);
+  const [commentaireRejet, setCommentaireRejet] = useState("");
+  const [validatingDirect, setValidatingDirect] = useState(false);
+  const [submittingToDT, setSubmittingToDT] = useState(false);
+  const total = useMemo(() => lignes.reduce((s, l) => s + (l.montant || 0), 0), [lignes]);
+
+  useEffect(() => { setLignes(att.voletCSE.lignes.map(l => ({ ...l }))); }, [att.id]);
+
+  function handleQteChange(id, raw) {
+    const qte = parseFloat(raw) || 0;
+    setLignes(prev => prev.map(l => l.id !== id ? l : { ...l, quantiteRealisee: qte, montant: Math.round(qte * l.prixUnitaireHT) }));
+  }
+  function handleLibreChange(id, field, raw) {
+    setLignes(prev => prev.map(l => {
+      if (l.id !== id) return l;
+      const value = (field === "quantiteRealisee" || field === "prixUnitaireHT") ? (parseFloat(raw) || 0) : raw;
+      const updated = { ...l, [field]: value };
+      if (field === "quantiteRealisee" || field === "prixUnitaireHT") updated.montant = Math.round(updated.quantiteRealisee * updated.prixUnitaireHT);
+      return updated;
+    }));
+  }
+  function handleDeleteLibre(id) { setLignes(prev => prev.filter(l => l.id !== id)); }
+
+  function handleEnregistrer() {
+    updateAttachement(att.id, a => ({ ...a, voletCSE: { ...a.voletCSE, lignes, totalValorise: total } }));
+    setSavedFlag(true); setTimeout(() => setSavedFlag(false), 2500);
+    addToast("Modifications enregistrées.", "success");
+  }
+
+  async function handleValiderDirect() {
+    setValidatingDirect(true);
+    try {
+      updateAttachement(att.id, a => ({ ...a, voletCSE: { ...a.voletCSE, lignes, totalValorise: total } }));
+      await new Promise(r => setTimeout(r, 300));
+      await attachementService.changerStatut(att.code, "Validé", `Dossier validé directement par l'Asst DACC. Montant : ${num(total)} FCFA.`);
+      addToast(`Dossier validé directement — ${num(total)} FCFA.`, "success");
+      navigate("/attachements");
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message;
+      addToast(msg ? `Erreur : ${msg}` : "Erreur lors de la validation.", "error");
+    } finally { setValidatingDirect(false); }
+  }
+
+  async function handleSoumettreAuDT() {
+    setSubmittingToDT(true);
+    try {
+      updateAttachement(att.id, a => ({ ...a, voletCSE: { ...a.voletCSE, lignes, totalValorise: total } }));
+      await new Promise(r => setTimeout(r, 300));
+      await soumettreAttachement(att.id);
+      addToast("Dossier transmis au DT pour révision.", "success");
+      navigate("/attachements");
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message;
+      addToast(msg ? `Erreur : ${msg}` : "Erreur lors de la soumission.", "error");
+    } finally { setSubmittingToDT(false); }
+  }
+
+  async function handleRenvoyer() {
+    if (!commentaireRejet.trim()) { addToast("Commentaire obligatoire pour renvoyer.", "error"); return; }
+    try {
+      await rejeterAttachement(att.id, commentaireRejet.trim());
+      addToast("Dossier renvoyé au CT pour correction.", "info");
+      navigate("/attachements");
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message;
+      addToast(msg ? `Erreur : ${msg}` : "Erreur lors du renvoi.", "error");
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3 px-4 py-2.5 bg-indigo-50 border border-indigo-200 rounded-xl">
+        <Edit3 size={14} className="text-indigo-500 flex-shrink-0" />
+        <p className="text-xs text-indigo-800 font-medium">Mode contrôle Asst DACC — vérifiez et corrigez les lignes avant de valider ou transmettre au DT</p>
+      </div>
+
+      {/* Tableau CSE éditable */}
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+          <div>
+            <h3 className="font-semibold text-gray-800 text-sm">Volet CSE — Constat terrain</h3>
+            <p className="text-xs text-gray-500 mt-0.5">Contrôle ligne par ligne — modifications tracées</p>
+          </div>
+          <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+            {savedFlag ? <CheckCircle size={12} className="text-green-500" /> : <Save size={12} />}
+            {savedFlag ? "Enregistré" : "Enregistrer"}
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                <th className="text-left px-3 py-2.5 w-16">Réf</th>
+                <th className="text-left px-2 py-2.5">Désignation</th>
+                <th className="text-center px-2 py-2.5 w-12">Unité</th>
+                <th className="text-right px-2 py-2.5 w-16">Qté DQE</th>
+                <th className="text-right px-2 py-2.5 w-20 text-indigo-500">Qté réalisée</th>
+                <th className="text-right px-2 py-2.5 w-24">PU HT</th>
+                <th className="text-right px-3 py-2.5 w-24">Montant</th>
+                <th className="w-5" />
+              </tr>
+            </thead>
+            <tbody>
+              <TableauRows lignes={lignes} editable={true} isDTMode={false} onQteChange={handleQteChange} onLibreChange={handleLibreChange} onDeleteLibre={handleDeleteLibre} />
+            </tbody>
+            <tfoot>
+              <tr className="border-t-2 border-gray-200 bg-gray-50">
+                <td colSpan={7} className="px-3 py-3 text-right font-bold text-gray-700 text-sm">Total CSE</td>
+                <td className="px-3 py-3 text-right">
+                  <span className="font-bold text-[#087F3E]"><AnimatedTotal value={total} /></span>
+                </td>
+                <td />
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        {/* Actions */}
+        <div className="border-t border-gray-100 px-4 py-4 space-y-3">
+          {!showRejet ? (
+            <div className="flex items-center gap-3 flex-wrap">
+              <button onClick={() => setShowRejet(true)} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
+                <RotateCcw size={13} /> Renvoyer au CT
+              </button>
+              <button
+                onClick={handleSoumettreAuDT}
+                disabled={submittingToDT}
+                className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-blue-700 border border-blue-200 bg-blue-50 rounded-xl hover:bg-blue-100 disabled:opacity-40">
+                {submittingToDT ? <div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" /> : <Send size={13} />}
+                Soumettre au DT
+              </button>
+              <button
+                onClick={handleValiderDirect}
+                disabled={validatingDirect || total === 0}
+                className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-bold bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] disabled:opacity-40 shadow-sm">
+                {validatingDirect ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle size={14} />}
+                Valider directement
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-gray-700">Motif de renvoi au CT (obligatoire) :</p>
+              <textarea
+                value={commentaireRejet}
+                onChange={e => setCommentaireRejet(e.target.value)}
+                rows={2}
+                placeholder="Expliquez les corrections attendues…"
+                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-orange-200"
+              />
+              <div className="flex gap-2">
+                <button onClick={() => setShowRejet(false)} className="px-3 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Annuler</button>
+                <button onClick={handleRenvoyer} disabled={!commentaireRejet.trim()} className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-40">
+                  <RotateCcw size={12} /> Confirmer le renvoi
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1234,21 +1406,24 @@ export default function AttachementDetailPage() {
   }
 
   // Rôle utilisateur courant
-  const roleCode = currentUser?.role?.designation ?? "";
-  const isCT    = roleCode === "CT"   || roleCode === "Admin";
-  const isDT    = roleCode === "DT"   || roleCode === "Admin";
-  const isDACC  = roleCode === "DACC" || roleCode === "Admin";
+  const roleCode        = currentUser?.role?.designation ?? "";
+  const isCT            = roleCode === "CT"             || roleCode === "Admin";
+  const isDT            = roleCode === "DT"             || roleCode === "Admin";
+  const isDACC          = roleCode === "DACC"           || roleCode === "Admin";
+  const isAssistantDACC = roleCode === "Assistant DACC" || roleCode === "Admin";
 
   // Vue active selon rôle + statut
-  const isCTEditable = isCT   && (att.statut === "Ouvert" || att.statut === "En cours" || att.statut === "Rejeté");
-  const isDTView     = isDT   && (att.statut === "Soumis au DT"   || att.statut === "En rapprochement");
-  const isDTEditable = isDTView;
-  const isDACCView   = isDACC && (att.statut === "Soumis au DACC" || att.statut === "Validé");
+  const isCTEditable        = isCT            && (att.statut === "Ouvert" || att.statut === "En cours" || att.statut === "Rejeté");
+  const isAsstDACCView      = isAssistantDACC && att.statut === "Soumis à l'Asst DACC";
+  const isDTView            = isDT            && (att.statut === "Soumis au DT" || att.statut === "En rapprochement");
+  const isDTEditable        = isDTView;
+  const isDACCView          = isDACC          && (att.statut === "Soumis au DACC" || att.statut === "Validé");
 
   // Accès en lecture seule : chaque rôle peut voir les dossiers dans d'autres étapes
-  const canView = isCTEditable || isDTView || isDACCView
-    || (isCT   && ["Soumis au DT","Soumis au DACC","Validé","Rejeté"].includes(att.statut))
-    || (isDT   && ["Validé","Soumis au DACC"].includes(att.statut))
+  const canView = isCTEditable || isAsstDACCView || isDTView || isDACCView
+    || (isCT            && ["Soumis à l'Asst DACC","Soumis au DT","Soumis au DACC","Validé","Rejeté"].includes(att.statut))
+    || (isAssistantDACC && ["Soumis au DT","Soumis au DACC","Validé"].includes(att.statut))
+    || (isDT            && ["Validé","Soumis au DACC"].includes(att.statut))
     || roleCode === "Admin";
   const statutColor = STATUT_COLORS[att.statut] || "bg-gray-100 text-gray-600 border-gray-200";
 
@@ -1302,6 +1477,15 @@ export default function AttachementDetailPage() {
           </div>
         </div>
       )}
+      {att.statut === "Soumis à l'Asst DACC" && !isAsstDACCView && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-4 flex items-start gap-3">
+          <Clock size={16} className="text-indigo-500 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-indigo-800">En attente de contrôle — Asst DACC</p>
+            <p className="text-xs text-indigo-700 mt-0.5">Le dossier est en cours de vérification par l'Assistant DACC.</p>
+          </div>
+        </div>
+      )}
       {att.statut === "Soumis au DT" && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4 flex items-start gap-3">
           <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
@@ -1331,6 +1515,8 @@ export default function AttachementDetailPage() {
         <VueDacc att={att} updateAttachement={updateAttachement} validerAttachement={validerAttachement} rejeterAttachement={rejeterAttachement} currentUser={currentUser} />
       ) : isDTView ? (
         <VueDT att={att} updateAttachement={updateAttachement} soumettreAttachement={soumettreAttachement} rejeterAttachement={rejeterAttachement} currentUser={currentUser} editable={isDTEditable} />
+      ) : isAsstDACCView ? (
+        <VueAssistantDACC att={att} updateAttachement={updateAttachement} soumettreAttachement={soumettreAttachement} rejeterAttachement={rejeterAttachement} currentUser={currentUser} />
       ) : (
         /* Vue CT — éditable si isCTEditable, lecture seule sinon (ex. DT qui consulte un dossier Ouvert) */
         <div className="flex gap-4 items-start">
