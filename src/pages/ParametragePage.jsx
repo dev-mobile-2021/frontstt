@@ -47,50 +47,26 @@ function ConfirmDelete({ onConfirm, onCancel, loading }) {
   );
 }
 
+// ─── Modules applicatifs (fixe — correspond aux fonctionnalités de l'app) ────
+const APP_MODULES = [
+  { value: "attachement",  label: "Attachement",       statuts: ["Ouvert","En cours","Soumis à l'Asst DACC","Soumis au DT","En rapprochement","Soumis au DACC","Validé","Rejeté"] },
+  { value: "decompte",     label: "Décompte",           statuts: ["brouillon","soumis","valide_dacc","valide_dex","valide_dga","valide_dg","paye","rejete"] },
+  { value: "etat_cession", label: "État de cession",    statuts: ["brouillon","soumis","valide","rejete","pret"] },
+  { value: "avenant",      label: "Avenant",            statuts: ["brouillon","soumis","valide_dacc","valide","rejete"] },
+  { value: "contrat",      label: "Contrat",            statuts: ["brouillon","actif","suspendu","resilie","termine","cloture"] },
+  { value: "bon_commande", label: "Bon de commande",    statuts: ["brouillon","valide","envoye","receptionne","cloture","annule"] },
+  { value: "facture",      label: "Facture",            statuts: ["brouillon","emise","payee","annulee"] },
+  { value: "releve",       label: "Relevé",             statuts: ["genere","envoye","accepte","conteste"] },
+];
+
 // ─── Tab Circuit ─────────────────────────────────────────────────────────────
 function TabCircuit() {
   const { addToast } = useToast();
-
-  // Fetch tous les modules distincts depuis la table
-  const { data: allData } = useCircuitEtapes({ count: 500 });
-  const allEtapes = allData?.data ?? [];
-  const MODULE_LABELS = {
-    attachement:  "Attachement",
-    decompte:     "Décompte",
-    etat_cession: "État de cession",
-    avenant:      "Avenant",
-    contrat:      "Contrat",
-    bon_commande: "Bon de commande",
-    facture:      "Facture",
-    releve:       "Relevé",
-  };
-
-  const modules = useMemo(() => {
-    const seen = new Set();
-    return allEtapes
-      .map(e => e.module)
-      .filter(m => m && !seen.has(m) && seen.add(m))
-      .sort()
-      .map(m => ({ value: m, label: MODULE_LABELS[m] ?? m }));
-  }, [allEtapes]);
-
-  const [selectedModule, setSelectedModule] = useState(null);
-  // Sélectionne le premier module dispo quand les données arrivent
-  useEffect(() => {
-    if (!selectedModule && modules.length > 0) setSelectedModule(modules[0].value);
-  }, [modules, selectedModule]);
-
+  const [selectedModule, setSelectedModule] = useState(APP_MODULES[0].value);
   const { data, isLoading } = useCircuitEtapes({ module: selectedModule, count: 50 });
 
-  // Statuts distincts du module sélectionné (avant + après)
-  const statutsDisponibles = useMemo(() => {
-    const set = new Set();
-    allEtapes.filter(e => e.module === selectedModule).forEach(e => {
-      if (e.statut_avant) set.add(e.statut_avant);
-      if (e.statut_apres) set.add(e.statut_apres);
-    });
-    return [...set].sort();
-  }, [allEtapes, selectedModule]);
+  const moduleConfig = APP_MODULES.find(m => m.value === selectedModule);
+  const statutsDisponibles = moduleConfig?.statuts ?? [];
   const { data: rolesData } = useRolesPaginated({ count: 100 });
   const saveMut = useSaveCircuitEtape();
   const deleteMut = useDeleteCircuitEtape();
@@ -188,14 +164,14 @@ function TabCircuit() {
           onChange={e => { setSelectedModule(e.target.value); setShowForm(false); setEditId(null); }}
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
         >
-          {modules.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          {APP_MODULES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
         </SearchSelect>
       </div>
 
       {/* Info banner */}
       <div className="bg-blue-50 border-l-4 border-blue-400 px-5 py-3 rounded-r-xl">
         <p className="text-sm text-blue-700">
-          Circuit du module <strong>{modules.find(m => m.value === selectedModule)?.label ?? selectedModule}</strong>. Toute modification prend effet immédiatement.
+          Circuit du module <strong>{moduleConfig?.label ?? selectedModule}</strong>. Toute modification prend effet immédiatement.
         </p>
       </div>
 
