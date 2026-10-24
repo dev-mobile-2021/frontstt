@@ -581,7 +581,7 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
                         type="number" min={0} step={l.unite === "ff" ? 0.01 : 1}
                         value={l.quantiteRealisee}
                         onChange={e => onQteChange(l.id, e.target.value)}
-                        className={`w-20 text-right px-2 py-1.5 rounded-lg border text-sm font-medium focus:outline-none focus:ring-2 tabular-nums
+                        className={`w-24 text-right px-2 py-1.5 rounded-lg border text-sm font-medium focus:outline-none focus:ring-2 tabular-nums
                           ${isDTMode
                             ? "border-orange-200 bg-orange-50 text-orange-800 focus:ring-orange-300"
                             : "border-blue-200 bg-blue-50 text-blue-800 focus:ring-blue-300"}`}
