@@ -6,17 +6,24 @@ import { fmtNum } from "../utils/formatters";
 
 const num = (v) => fmtNum(Math.round(v || 0));
 
-const STATUT_COLORS = {
-  "Validé":            "bg-green-100 text-green-700",
-  "En rapprochement":  "bg-orange-100 text-orange-700",
-  "Soumis au DACC":    "bg-purple-100 text-purple-700",
-  "Soumis au DT":      "bg-blue-100 text-blue-700",
-  "En cours":          "bg-yellow-100 text-yellow-700",
-  "Rejeté":            "bg-red-100 text-red-700",
-  "Ouvert":            "bg-gray-100 text-gray-500",
+const fmtPeriode = (debut, fin) => {
+  const fmt = d => d ? new Date(String(d).slice(0,10) + "T00:00").toLocaleDateString("fr-FR", { month:"long", year:"numeric" }) : null;
+  const d = fmt(debut); const f = fmt(fin);
+  return d === f ? (d ?? "—") : `${d ?? "—"} → ${f ?? "—"}`;
 };
 
-const STATUT_ORDER = ["Soumis au DACC", "Soumis au DT", "En rapprochement", "En cours", "Validé", "Rejeté", "Ouvert"];
+const STATUT_COLORS = {
+  "Validé":                "bg-green-100 text-green-700",
+  "En rapprochement":      "bg-orange-100 text-orange-700",
+  "Soumis au DACC":        "bg-purple-100 text-purple-700",
+  "Soumis à l'Asst DACC": "bg-indigo-100 text-indigo-700",
+  "Soumis au DT":          "bg-blue-100 text-blue-700",
+  "En cours":              "bg-yellow-100 text-yellow-700",
+  "Rejeté":                "bg-red-100 text-red-700",
+  "Ouvert":                "bg-gray-100 text-gray-500",
+};
+
+const STATUT_ORDER = ["Soumis au DACC", "Soumis à l'Asst DACC", "Soumis au DT", "En rapprochement", "En cours", "Validé", "Rejeté", "Ouvert"];
 
 export default function AttachementsListPage() {
   const navigate = useNavigate();
@@ -38,9 +45,9 @@ export default function AttachementsListPage() {
       return (b.periodeDebut ?? "").localeCompare(a.periodeDebut ?? "");
     });
 
-  const pendingCount = attachements.filter(a => {
-    return a.statut === "Ouvert" || a.statut === "En cours" || a.statut === "Soumis au DT" || a.statut === "En rapprochement" || a.statut === "Soumis au DACC";
-  }).length;
+  const pendingCount = attachements.filter(a =>
+    ["Ouvert","En cours","Soumis à l'Asst DACC","Soumis au DT","En rapprochement","Soumis au DACC"].includes(a.statut)
+  ).length;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -95,7 +102,7 @@ export default function AttachementsListPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filtered.map(a => {
-                const isPending = ["Ouvert", "En cours", "Soumis au DT", "En rapprochement", "Soumis au DACC"].includes(a.statut);
+                const isPending = ["Ouvert","En cours","Soumis à l'Asst DACC","Soumis au DT","En rapprochement","Soumis au DACC"].includes(a.statut);
                 return (
                   <tr key={a.id} onClick={() => navigate(`/attachements/${a.id}`)} className={`cursor-pointer hover:bg-gray-50 even:bg-gray-50/40 group transition-colors ${isPending ? "bg-amber-50/40" : ""}`}>
                     <td className="px-5 py-3.5">
@@ -105,7 +112,7 @@ export default function AttachementsListPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3.5 text-gray-600">{a.contratId}</td>
-                    <td className="px-4 py-3.5 text-gray-500 text-xs">{a.periodeDebut} → {a.periodeFin}</td>
+                    <td className="px-4 py-3.5 text-gray-500 text-xs">{fmtPeriode(a.periodeDebut, a.periodeFin)}</td>
                     <td className="px-3 py-3.5 text-center">
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUT_COLORS[a.statut] || "bg-gray-100 text-gray-500"}`}>{a.statut}</span>
                     </td>
