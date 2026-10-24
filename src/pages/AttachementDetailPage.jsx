@@ -58,6 +58,42 @@ function AnimatedTotal({ value }) {
   );
 }
 
+// ─── CSE Export / Import ─────────────────────────────────────────────────────
+function exportCSE(lignes, ref) {
+  const rows = lignes.map(l => ({
+    "Réf DQE":       l.refDQE ?? "",
+    "Désignation":   l.designation ?? "",
+    "Unité":         l.unite ?? "",
+    "Qté DQE":       l.quantitePrevueDQE ?? "",
+    "Qté réalisée":  l.quantiteRealisee ?? 0,
+    "PU HT":         l.prixUnitaireHT ?? 0,
+    "Montant":       l.montant ?? 0,
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = [{ wch: 14 }, { wch: 50 }, { wch: 8 }, { wch: 10 }, { wch: 13 }, { wch: 12 }, { wch: 14 }];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "CSE");
+  XLSX.writeFile(wb, `CSE_${ref ?? "attachement"}.xlsx`);
+}
+
+function importCSELignes(file, lignes, onResult, onError) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: "array" });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      const updated = lignes.map(l => {
+        const row = rows.find(r => r["Réf DQE"] && String(r["Réf DQE"]).trim() === String(l.refDQE ?? "").trim());
+        if (!row) return l;
+        const qte = parseFloat(row["Qté réalisée"]) || 0;
+        return { ...l, quantiteRealisee: qte, montant: Math.round(qte * l.prixUnitaireHT) };
+      });
+      onResult(updated);
+    } catch { onError(); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 // ─── STT Document Modal ─────────────────────────────────────────────────────
 function STTDocumentModal({ fichier, att, onClose }) {
   const lignes = att.voletCSE.lignes;
@@ -616,6 +652,7 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
   const [lignes, setLignes] = useState(() => att.voletCSE.lignes.map(l => ({ ...l })));
   const [savedFlag, setSavedFlag] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const importRef = useRef(null);
   const total = useMemo(() => lignes.reduce((s, l) => s + (l.montant || 0), 0), [lignes]);
 
   useEffect(() => { setLignes(att.voletCSE.lignes.map(l => ({ ...l }))); }, [att.id]);
@@ -667,18 +704,31 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
           <h3 className="font-semibold text-gray-800">Volet CSE — Constat terrain</h3>
           <p className="text-xs text-gray-500 mt-0.5">{readOnly ? "Tableau en lecture seule" : "Saisir les quantités réalisées"}</p>
         </div>
-        {!readOnly && (
-          <div className="flex items-center gap-2">
-            <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50">
-              {savedFlag ? <CheckCircle size={13} className="text-green-500" /> : <Save size={13} />}
-              {savedFlag ? "Enregistré" : "Enregistrer"}
-            </button>
-            <button onClick={handleSoumettre} disabled={total === 0 || submitting} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] disabled:opacity-40">
-              {submitting ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={13} />}
-              {att.statut === "Rejeté" ? "Resoumettre" : "Soumettre"}
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <button onClick={() => exportCSE(lignes, att.reference)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50">
+            <Download size={13} /> Exporter
+          </button>
+          {!readOnly && (
+            <>
+              <input ref={importRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => {
+                const file = e.target.files?.[0]; if (!file) return;
+                importCSELignes(file, lignes, updated => { setLignes(updated); addToast("Quantités importées depuis Excel.", "success"); }, () => addToast("Erreur de lecture du fichier Excel.", "error"));
+                e.target.value = "";
+              }} />
+              <button onClick={() => importRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50">
+                <Upload size={13} /> Importer
+              </button>
+              <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50">
+                {savedFlag ? <CheckCircle size={13} className="text-green-500" /> : <Save size={13} />}
+                {savedFlag ? "Enregistré" : "Enregistrer"}
+              </button>
+              <button onClick={handleSoumettre} disabled={total === 0 || submitting} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] disabled:opacity-40">
+                {submitting ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={13} />}
+                {att.statut === "Rejeté" ? "Resoumettre" : "Soumettre"}
+              </button>
+            </>
+          )}
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
@@ -729,6 +779,7 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
   const [savedFlag, setSavedFlag] = useState(false);
   const [showRejet, setShowRejet] = useState(false);
   const [commentaireRejet, setCommentaireRejet] = useState("");
+  const importRef = useRef(null);
   const total = useMemo(() => lignes.reduce((s, l) => s + (l.montant || 0), 0), [lignes]);
 
   useEffect(() => { setLignes(att.voletCSE.lignes.map(l => ({ ...l }))); }, [att.id]);
@@ -819,12 +870,27 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
                 {editable ? "Les modifications DT sont tracées" : "Lecture seule"}
               </p>
             </div>
-            {editable && (
-              <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
-                {savedFlag ? <CheckCircle size={12} className="text-green-500" /> : <Save size={12} />}
-                {savedFlag ? "Enregistré" : "Enregistrer"}
+            <div className="flex items-center gap-2">
+              <button onClick={() => exportCSE(lignes, att.reference)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+                <Download size={12} /> Exporter
               </button>
-            )}
+              {editable && (
+                <>
+                  <input ref={importRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    importCSELignes(file, lignes, updated => { setLignes(updated); addToast("Quantités importées depuis Excel.", "success"); }, () => addToast("Erreur de lecture du fichier Excel.", "error"));
+                    e.target.value = "";
+                  }} />
+                  <button onClick={() => importRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <Upload size={12} /> Importer
+                  </button>
+                  <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    {savedFlag ? <CheckCircle size={12} className="text-green-500" /> : <Save size={12} />}
+                    {savedFlag ? "Enregistré" : "Enregistrer"}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
