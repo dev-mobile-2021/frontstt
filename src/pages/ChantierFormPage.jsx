@@ -388,6 +388,30 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
         ))}
       </div>
 
+      {/* Validateur final attachement */}
+      <div className="border-t border-gray-100 px-5 py-4 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold text-gray-800">Validateur final — Attachements</p>
+          <p className="text-xs text-gray-400 mt-0.5">Qui soumet au DACC après l'Asst DACC : DT ou Asst DACC</p>
+        </div>
+        {isDacc ? (
+          <select
+            value={chantier.validateur_final ?? "asst_dacc"}
+            onChange={e => http.patch(`/chantier/${chantierId}/validateur-final`, { validateur_final: e.target.value })
+              .then(() => qc.invalidateQueries({ queryKey: ["chantier", String(chantierId)] }))
+            }
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] bg-white"
+          >
+            <option value="asst_dacc">Assistant DACC</option>
+            <option value="DT">DT</option>
+          </select>
+        ) : (
+          <span className="text-sm font-medium text-gray-700 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
+            {chantier.validateur_final === "DT" ? "DT" : "Assistant DACC"}
+          </span>
+        )}
+      </div>
+
       {/* Modal affectation */}
       {editing && roleEditing && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

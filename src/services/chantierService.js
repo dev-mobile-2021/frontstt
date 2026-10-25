@@ -4,7 +4,7 @@ import { gql } from "./gql";
 const FIELDS = `
   id code designation localisation description statut
   date_debut date_fin_prevue chef_projet conducteur_travaux
-  dt_user_id ct_user_id
+  dt_user_id ct_user_id validateur_final
   dt_user { id nom prenom }
   ct_user { id nom prenom }
   budget_personnel budget_materiel budget_fournitures
