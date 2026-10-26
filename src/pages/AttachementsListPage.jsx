@@ -111,7 +111,7 @@ export default function AttachementsListPage() {
                         <span className="font-semibold text-gray-900">{a.code}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-gray-600">{a.contratId}</td>
+                    <td className="px-4 py-3.5 text-gray-600">{a.contratCode ?? a.contratId}</td>
                     <td className="px-4 py-3.5 text-gray-500 text-xs">{fmtPeriode(a.periodeDebut, a.periodeFin)}</td>
                     <td className="px-3 py-3.5 text-center">
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUT_COLORS[a.statut] || "bg-gray-100 text-gray-500"}`}>{a.statut}</span>
