@@ -61,16 +61,15 @@ function AnimatedTotal({ value }) {
 // ─── CSE Export / Import ─────────────────────────────────────────────────────
 function exportCSE(lignes, ref) {
   const rows = lignes.map(l => ({
-    "Réf DQE":       l.refDQE ?? "",
+    "Rubrique":      l.rubriqueDesignation ?? "",
+    "Poste":         l.posteDesignation ?? "",
     "Désignation":   l.designation ?? "",
     "Unité":         l.unite ?? "",
     "Qté DQE":       l.quantitePrevueDQE ?? "",
     "Qté réalisée":  l.quantiteRealisee ?? 0,
-    "PU HT":         l.prixUnitaireHT ?? 0,
-    "Montant":       l.montant ?? 0,
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws["!cols"] = [{ wch: 14 }, { wch: 50 }, { wch: 8 }, { wch: 10 }, { wch: 13 }, { wch: 12 }, { wch: 14 }];
+  ws["!cols"] = [{ wch: 22 }, { wch: 28 }, { wch: 40 }, { wch: 8 }, { wch: 10 }, { wch: 13 }];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "CSE");
   XLSX.writeFile(wb, `CSE_${ref ?? "attachement"}.xlsx`);
@@ -83,7 +82,11 @@ function importCSELignes(file, lignes, onResult, onError) {
       const wb = XLSX.read(e.target.result, { type: "array" });
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
       const updated = lignes.map(l => {
-        const row = rows.find(r => r["Réf DQE"] && String(r["Réf DQE"]).trim() === String(l.refDQE ?? "").trim());
+        const row = rows.find(r =>
+          String(r["Désignation"] ?? "").trim() === String(l.designation ?? "").trim() &&
+          String(r["Rubrique"] ?? "").trim() === String(l.rubriqueDesignation ?? "").trim() &&
+          String(r["Poste"] ?? "").trim() === String(l.posteDesignation ?? "").trim()
+        );
         if (!row) return l;
         const qte = parseFloat(row["Qté réalisée"]) || 0;
         return { ...l, quantiteRealisee: qte, montant: Math.round(qte * l.prixUnitaireHT) };
