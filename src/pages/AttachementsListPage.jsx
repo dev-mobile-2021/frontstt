@@ -90,11 +90,13 @@ export default function AttachementsListPage() {
         </div>
       ) : (
         <div className="rounded-2xl border border-gray-200 overflow-x-auto">
-          <table className="w-full min-w-[800px] text-sm">
+          <table className="w-full min-w-[900px] text-sm">
             <thead className="sticky top-0 z-10">
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="text-left px-5 py-3 font-semibold text-gray-600">Code</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">Chantier</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Contrat</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">STT</th>
                 <th className="text-left px-4 py-3 font-semibold text-gray-600">Période</th>
                 <th className="text-center px-3 py-3 font-semibold text-gray-600">Statut</th>
                 <th className="text-right px-5 py-3 font-semibold text-gray-600">Montant final</th>
@@ -111,7 +113,12 @@ export default function AttachementsListPage() {
                         <span className="font-semibold text-gray-900">{a.code}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3.5 text-gray-600">{a.contratCode ?? a.contratId}</td>
+                    <td className="px-4 py-3.5">
+                      <span className="text-gray-800 font-medium text-xs">{a.chantierCode ?? "—"}</span>
+                      {a.chantierDesignation && <p className="text-[10px] text-gray-400 truncate max-w-[140px]">{a.chantierDesignation}</p>}
+                    </td>
+                    <td className="px-4 py-3.5 text-gray-600 font-mono text-xs">{a.contratCode ?? "—"}</td>
+                    <td className="px-4 py-3.5 text-gray-500 text-xs max-w-[160px] truncate">{a.sttNom ?? "—"}</td>
                     <td className="px-4 py-3.5 text-gray-500 text-xs">{fmtPeriode(a.periodeDebut, a.periodeFin)}</td>
                     <td className="px-3 py-3.5 text-center">
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${STATUT_COLORS[a.statut] || "bg-gray-100 text-gray-500"}`}>{a.statut}</span>

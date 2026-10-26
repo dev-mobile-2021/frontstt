@@ -4,7 +4,8 @@ import { gql } from "./gql";
 const FIELDS = `
   id code contrat_id chantier_id periode_debut periode_fin
   statut montant_final payload created_at updated_at
-  contrat { id code }
+  contrat { id code soustraitant { id raison_sociale } }
+  chantier { id code designation }
 `;
 
 function normalize(r) {
@@ -20,6 +21,9 @@ function normalize(r) {
     _dbId:        r.id,
     contratId:    r.contrat_id != null ? String(r.contrat_id) : null,
     contratCode:  r.contrat?.code ?? null,
+    sttNom:       r.contrat?.soustraitant?.raison_sociale ?? null,
+    chantierCode: r.chantier?.code ?? null,
+    chantierDesignation: r.chantier?.designation ?? null,
     chantierId:   r.chantier_id != null ? String(r.chantier_id) : null,
     periodeDebut: r.periode_debut,
     periodeFin:   r.periode_fin,
