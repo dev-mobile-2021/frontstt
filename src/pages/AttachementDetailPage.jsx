@@ -835,11 +835,6 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
   }
 
   async function handleSoumettreAuDacc() {
-    const lignesSTT = att.voletSTT?.lignesSTT ?? [];
-    if (lignesSTT.length === 0) {
-      addToast("Impossible de soumettre : le volet STT est vide. Importez le devis STT avant de valider.", "error");
-      return;
-    }
     try {
       updateAttachement(att.id, a => ({ ...a, voletCSE: { ...a.voletCSE, lignes, totalValorise: total } }));
       await new Promise(r => setTimeout(r, 300));
@@ -940,9 +935,7 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
                   </button>
                   <button
                     onClick={handleSoumettreAuDacc}
-                    disabled={(att.voletSTT?.lignesSTT ?? []).length === 0}
-                    title={(att.voletSTT?.lignesSTT ?? []).length === 0 ? "Importez le devis STT avant de soumettre" : ""}
-                    className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C]"
                   >
                     <Send size={13} /> Soumettre au DACC
                   </button>
