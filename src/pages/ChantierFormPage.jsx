@@ -794,152 +794,131 @@ export default function ChantierFormPage() {
     { id: "decomptes", label: "Décomptes récents", icon: Hash },
   ];
 
+  const decomptesEnCours = decomptesChantier.filter(d => d.statut === "soumis");
+
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <button onClick={() => navigate("/chantiers")} className="hover:text-[#087F3E] flex items-center gap-1 transition-colors">
-          <ArrowLeft size={14} /> Chantiers
-        </button>
-        <ChevronRight size={14} />
-        <span className="text-gray-900 font-medium">{chantier.designation}</span>
-      </div>
+    <div className="space-y-5">
 
-      <PageHeader
-        title={`${chantier.code} — ${chantier.designation}`}
-        subtitle={chantier.localisation || ""}
-        action={<StatusBadge statut={chantier.statut} />}
-      />
-
-      {/* Sync banner */}
-      <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-5 py-3">
-        <Info size={14} className="text-gray-400 flex-shrink-0" />
-        <p className="text-xs text-gray-500 flex-1">
-          Référentiel synchronisé depuis Sage X3{chantier.code_x3 ? <> · Code X3 : <span className="font-mono font-semibold text-gray-700">{chantier.code_x3}</span></> : null}
-          {chantier.synced_at ? (
-            <> · Dernière synchronisation : {new Date(chantier.synced_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}</>
-          ) : null}
-        </p>
-        {peutSynchro && (
-          <button onClick={handleSync} disabled={syncMut.isPending || !chantier.code_x3}
-            title={chantier.code_x3 ? undefined : "Ce chantier n'a pas de code Sage X3"}
-            className="inline-flex items-center gap-1.5 text-xs text-[#087F3E] border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors font-medium disabled:opacity-60">
-            {syncMut.isPending ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-            {syncMut.isPending ? "Synchronisation…" : "Synchroniser depuis Sage X3"}
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="bg-white border border-gray-200 rounded-2xl px-6 py-5">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
+          <button onClick={() => navigate("/chantiers")} className="hover:text-[#087F3E] flex items-center gap-1 transition-colors">
+            <ArrowLeft size={12} /> Chantiers
           </button>
-        )}
-      </div>
+          <ChevronRight size={12} />
+          <span className="text-gray-500">{chantier.code}</span>
+        </div>
 
-      {/* Info band */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
-        <div className="flex flex-wrap gap-x-8 gap-y-3">
-          {chantier.date_debut && (
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar size={14} className="text-gray-400" />
-              <span className="text-gray-500">Début :</span>
-              <span className="font-medium text-gray-800">{fmtDate(chantier.date_debut)}</span>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold text-gray-900 leading-tight">{chantier.designation}</h1>
+              <StatusBadge statut={chantier.statut} />
+              {chantier.code_x3 && (
+                <span className="text-xs font-mono bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg border border-gray-200">{chantier.code_x3}</span>
+              )}
             </div>
-          )}
-          {chantier.date_fin_prevue && (
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar size={14} className="text-gray-400" />
-              <span className="text-gray-500">Fin prévisionnelle :</span>
-              <span className="font-medium text-gray-800">{fmtDate(chantier.date_fin_prevue)}</span>
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-2">
+              {chantier.localisation && (
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  <MapPin size={11} className="text-gray-400" /> {chantier.localisation}
+                </span>
+              )}
+              {chantier.date_debut && (
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  <Calendar size={11} className="text-gray-400" /> Début : {fmtDate(chantier.date_debut)}
+                </span>
+              )}
+              {chantier.date_fin_prevue && (
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  <Calendar size={11} className="text-gray-400" /> Fin prév. : {fmtDate(chantier.date_fin_prevue)}
+                </span>
+              )}
+              {dureeJours && (
+                <span className="text-xs text-gray-400">{dureeJours} jours</span>
+              )}
+              {chantier.synced_at && (
+                <span className="text-xs text-gray-400">
+                  Sync X3 : {new Date(chantier.synced_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                </span>
+              )}
             </div>
-          )}
-          {dureeJours && (
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar size={14} className="text-gray-400" />
-              <span className="text-gray-500">Durée :</span>
-              <span className="font-medium text-gray-800">{dureeJours} jours</span>
-            </div>
-          )}
-          {chantier.localisation && (
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar size={14} className="text-gray-400" />
-              <span className="text-gray-500">Région :</span>
-              <span className="font-medium text-gray-800">{chantier.localisation.split(/[,—\-]/)[0].trim()}</span>
-            </div>
+          </div>
+
+          {peutSynchro && (
+            <button onClick={handleSync} disabled={syncMut.isPending || !chantier.code_x3}
+              title={chantier.code_x3 ? undefined : "Ce chantier n'a pas de code Sage X3"}
+              className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs text-[#087F3E] border border-[#087F3E] px-3 py-2 rounded-xl hover:bg-[#E8F5EE] transition-colors font-medium disabled:opacity-50">
+              {syncMut.isPending ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              {syncMut.isPending ? "Synchronisation…" : "Sync Sage X3"}
+            </button>
           )}
         </div>
       </div>
 
-      {/* Responsables DT / CT */}
-      <SectionAffectationDTCT chantierId={id} chantier={chantier} isDacc={isDacc} />
+      {/* ── KPIs ───────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: "Budget", value: budgetTotal, sub: null, color: "text-gray-800", icon: "💰" },
+          { label: "Contrats STT", value: sttEngage, sub: `${contrats.length} contrat${contrats.length > 1 ? "s" : ""}`, color: "text-[#087F3E]", icon: "📋" },
+          { label: "Réalisé", value: realise, sub: `${nbRealise} décompte${nbRealise > 1 ? "s" : ""} validé${nbRealise > 1 ? "s" : ""}`, color: "text-blue-600", icon: "✅" },
+          { label: "En cours", value: decomptesEnCours.reduce((s,d) => s + parseFloat(d.montant_ht ?? 0), 0), sub: `${decomptesEnCours.length} décompte${decomptesEnCours.length > 1 ? "s" : ""}`, color: "text-amber-600", icon: "⏳" },
+        ].map(({ label, value, sub, color, icon }) => (
+          <div key={label} className="bg-white border border-gray-200 rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</span>
+              <span className="text-base">{icon}</span>
+            </div>
+            <p className={`text-xl font-bold ${color} tabular-nums`}>{fmtNum(Math.round(value))}</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">FCFA</p>
+            {sub && <p className="text-xs text-gray-500 mt-2 font-medium border-t border-gray-100 pt-2">{sub}</p>}
+          </div>
+        ))}
+      </div>
 
-      {/* Portefeuilles CT → STT */}
-      <SectionPortefeuillesCT chantierId={id} isDacc={isDacc} />
+      {/* ── Contenu principal 2 colonnes ───────────────────────────────────── */}
+      <div className="flex gap-5 items-start">
 
-      {/* KPIs */}
-      {(() => {
-        const decomptesEnCours = decomptesChantier.filter(d => d.statut === "soumis");
-        const kpis = [
-          {
-            label: "Budget total",
-            nombre: null,
-            montant: fmt(budgetTotal),
-            color: "text-gray-900",
-          },
-          {
-            label: "Total Contrat",
-            nombre: `${contrats.length} contrat${contrats.length > 1 ? "s" : ""}`,
-            montant: fmt(sttEngage),
-            color: "text-[#087F3E]",
-          },
-          {
-            label: "Réalisé",
-            nombre: `${nbRealise} décompte${nbRealise > 1 ? "s" : ""} validé${nbRealise > 1 ? "s" : ""}`,
-            montant: fmt(realise),
-            color: "text-blue-600",
-          },
-          {
-            label: "En cours de validation",
-            nombre: `${decomptesEnCours.length} décompte${decomptesEnCours.length > 1 ? "s" : ""}`,
-            montant: fmt(decomptesEnCours.reduce((s,d) => s + parseFloat(d.montant_ht ?? 0), 0)),
-            color: "text-amber-600",
-          },
-          {
-            label: "Contrats sous-trait.",
-            nombre: `${contrats.length} contrat${contrats.length > 1 ? "s" : ""}`,
-            montant: fmt(sttEngage),
-            color: "text-violet-600",
-          },
-        ];
-        return (
-          <div className="grid grid-cols-5 gap-4">
-            {kpis.map(({ label, nombre, montant, color }) => (
-              <div key={label} className="bg-white border border-gray-200 rounded-xl p-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">{label}</p>
-                <p className={`text-base font-bold ${color}`}>{montant} <span className="text-xs font-normal text-gray-400">FCFA</span></p>
-                {nombre && <p className="text-xs text-gray-500 mt-1 font-medium">{nombre}</p>}
+        {/* Colonne gauche — Contrats / Décomptes */}
+        <div className="flex-[3] min-w-0 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="border-b border-gray-200 px-5 pt-2">
+            <Tabs items={tabs} activeTab={activeTab} onChange={setActiveTab} />
+          </div>
+          <div className="p-5">
+            {activeTab === "contrats"  && <TabContrats chantierId={id} />}
+            {activeTab === "decomptes" && <TabDecomptes chantierId={id} />}
+          </div>
+        </div>
+
+        {/* Colonne droite — Équipe + Portefeuilles */}
+        <div className="flex-[2] min-w-0 space-y-4">
+          {/* Équipe */}
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-900">Équipe du chantier</h3>
+            </div>
+            <div className="p-5">
+              <SectionAffectationDTCT chantierId={id} chantier={chantier} isDacc={isDacc} />
+            </div>
+          </div>
+
+          {/* Portefeuilles CT */}
+          <SectionPortefeuillesCT chantierId={id} isDacc={isDacc} />
+
+          {/* Budget par famille (si renseigné) */}
+          {totalBudget > 0 && (
+            <div className="bg-white border border-gray-200 rounded-2xl p-5">
+              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Budget par famille</h3>
+              {familles.filter(f => f.budget > 0 || f.depense > 0).map(f => (
+                <BudgetFamille key={f.label} {...f} />
+              ))}
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 text-xs font-semibold text-gray-700">
+                <span>Total</span>
+                <span>{fmt(totalDepense)} / {fmt(totalBudget)}</span>
               </div>
-            ))}
-          </div>
-        );
-      })()}
-
-      {/* Budget par famille */}
-      {totalBudget > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Budget par famille RAM</h3>
-          {familles.filter(f => f.budget > 0 || f.depense > 0).map(f => (
-            <BudgetFamille key={f.label} {...f} />
-          ))}
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-200 text-sm font-semibold text-gray-700">
-            <span>Total</span>
-            <span>{fmt(totalDepense)} engagé sur {fmt(totalBudget)}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200 px-5 pt-2">
-          <Tabs items={tabs} activeTab={activeTab} onChange={setActiveTab} />
-        </div>
-        <div className="p-5">
-          {activeTab === "contrats"  && <TabContrats chantierId={id} />}
-          {activeTab === "decomptes" && <TabDecomptes chantierId={id} />}
+            </div>
+          )}
         </div>
       </div>
     </div>
