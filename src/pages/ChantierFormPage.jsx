@@ -777,7 +777,6 @@ export default function ChantierFormPage() {
   const tabs = [
     { id: "contrats",  label: `Contrats de sous-traitance${contrats.length > 0 ? ` (${contrats.length})` : ""}`, icon: FileText },
     { id: "decomptes", label: "Décomptes récents", icon: Hash },
-    { id: "bareme",    label: "Barème", icon: Layers },
   ];
 
   return (
@@ -926,7 +925,6 @@ export default function ChantierFormPage() {
         <div className="p-5">
           {activeTab === "contrats"  && <TabContrats chantierId={id} />}
           {activeTab === "decomptes" && <TabDecomptes chantierId={id} />}
-          {activeTab === "bareme"    && <TabBareme chantierId={id} />}
         </div>
       </div>
     </div>
