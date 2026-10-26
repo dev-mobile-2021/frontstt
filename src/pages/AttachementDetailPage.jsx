@@ -1319,34 +1319,49 @@ function VueDacc({ att, updateAttachement, validerAttachement, rejeterAttachemen
 function ZoneDocuments({ att, canEdit, updateAttachement }) {
   const { addToast } = useToast();
   const [uploading, setUploading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [libelle, setLibelle] = useState("");
+  const [pendingFile, setPendingFile] = useState(null);
   const uploadRef = useRef(null);
   const docs = att.documents ?? [];
 
   const contratIdInt = parseInt(att.contratId, 10);
 
-  async function handleUpload(file) {
+  function handleFileChange(e) {
+    const file = e.target.files?.[0];
     if (!file) return;
+    setPendingFile(file);
+    setLibelle("");
+    setShowForm(true);
+    if (uploadRef.current) uploadRef.current.value = "";
+  }
+
+  async function handleUpload() {
+    if (!pendingFile) return;
     if (!contratIdInt) { addToast("Contrat introuvable pour l'upload.", "error"); return; }
     setUploading(true);
     try {
-      const pj = await pieceJointeService.upload(contratIdInt, "autre", file);
+      const pj = await pieceJointeService.upload(contratIdInt, "autre", pendingFile);
       updateAttachement(att.id, a => ({
         ...a,
         documents: [...(a.documents ?? []), {
           id:       pj.id,
           nom:      pj.nom_original,
+          libelle:  libelle.trim() || pj.nom_original,
           taille:   pj.taille_fmt,
           mime:     pj.mime_type,
           date:     pj.created_at,
           uploadBy: pj.uploaded_by,
         }],
       }));
-      addToast(`Document "${pj.nom_original}" ajouté.`, "success");
+      addToast(`Document "${libelle.trim() || pj.nom_original}" ajouté.`, "success");
+      setShowForm(false);
+      setLibelle("");
+      setPendingFile(null);
     } catch {
       addToast("Erreur lors de l'upload.", "error");
     } finally {
       setUploading(false);
-      if (uploadRef.current) uploadRef.current.value = "";
     }
   }
 
@@ -1411,9 +1426,9 @@ function ZoneDocuments({ att, canEdit, updateAttachement }) {
           <div key={doc.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50/60">
             <div className="flex-shrink-0">{mimeIcon(doc.mime)}</div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 truncate">{doc.nom}</p>
+              <p className="text-sm font-medium text-gray-800 truncate">{doc.libelle || doc.nom}</p>
               <p className="text-[10px] text-gray-400 mt-0.5">
-                {doc.taille}{doc.date ? ` · ${doc.date}` : ""}{doc.uploadBy ? ` · ${doc.uploadBy}` : ""}
+                {doc.nom}{doc.taille ? ` · ${doc.taille}` : ""}{doc.date ? ` · ${doc.date}` : ""}{doc.uploadBy ? ` · ${doc.uploadBy}` : ""}
               </p>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
@@ -1444,25 +1459,39 @@ function ZoneDocuments({ att, canEdit, updateAttachement }) {
         ))}
       </div>
 
-      {canEdit && (
-        <div className="px-5 py-4 border-t border-gray-100">
-          <input
-            ref={uploadRef}
-            type="file"
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
-            className="sr-only"
-            onChange={e => handleUpload(e.target.files?.[0])}
-          />
+      <div className="px-5 py-4 border-t border-gray-100 space-y-3">
+        <input
+          ref={uploadRef}
+          type="file"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+          className="sr-only"
+          onChange={handleFileChange}
+        />
+        {showForm ? (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-gray-700">Fichier : <span className="font-normal text-gray-500">{pendingFile?.name}</span></p>
+            <input
+              type="text"
+              value={libelle}
+              onChange={e => setLibelle(e.target.value)}
+              placeholder="Libellé du document (ex: Devis STT, PV de réception…)"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-green-300 outline-none"
+            />
+            <div className="flex gap-2">
+              <button onClick={() => { setShowForm(false); setPendingFile(null); setLibelle(""); }} className="px-3 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Annuler</button>
+              <button onClick={handleUpload} disabled={uploading} className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-[#087F3E] text-white rounded-lg hover:bg-[#065A2C] disabled:opacity-40">
+                {uploading ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Upload…</> : <><Upload size={12} /> Joindre</>}
+              </button>
+            </div>
+          </div>
+        ) : (
           <button
             onClick={() => uploadRef.current?.click()}
-            disabled={uploading}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-xs font-medium hover:border-[#087F3E] hover:text-[#087F3E] hover:bg-[#087F3E]/5 transition-colors disabled:opacity-60">
-            {uploading
-              ? <><div className="w-3.5 h-3.5 border-2 border-[#087F3E] border-t-transparent rounded-full animate-spin" /> Upload en cours…</>
-              : <><Upload size={13} /> Joindre un document (PDF, Word, Excel, image)</>}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-xs font-medium hover:border-[#087F3E] hover:text-[#087F3E] hover:bg-[#087F3E]/5 transition-colors">
+            <Upload size={13} /> Joindre un document (PDF, Word, Excel, image)
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
