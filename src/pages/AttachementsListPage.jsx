@@ -45,10 +45,6 @@ export default function AttachementsListPage() {
       return (b.periodeDebut ?? "").localeCompare(a.periodeDebut ?? "");
     });
 
-  const pendingCount = attachements.filter(a =>
-    ["Ouvert","En cours","Soumis à l'Asst DACC","Soumis au DT","En rapprochement","Soumis au DACC"].includes(a.statut)
-  ).length;
-
   return (
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
@@ -60,13 +56,6 @@ export default function AttachementsListPage() {
           <Plus size={15} /> Nouvel attachement
         </Link>
       </div>
-
-      {/* Pending banner */}
-      {pendingCount > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
-          <span className="font-semibold">{pendingCount} dossier{pendingCount > 1 ? "s" : ""}</span> en attente de votre action.
-        </div>
-      )}
 
       {/* Filtres */}
       <div className="flex flex-wrap items-center gap-3">
