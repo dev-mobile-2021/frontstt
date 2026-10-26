@@ -556,9 +556,11 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
 
   const groups = portefeuilles ?? [];
   const fmtUser = u => u ? `${u.prenom ?? ""} ${u.nom ?? ""}`.trim() : "—";
+  const fmtDate2 = d => d ? new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }) : "";
 
+  // Seuls les marchés actifs bloquent la réassignation
   const assignedContratIds = new Set(
-    groups.flatMap(g => g.portefeuille?.map(p => String(p.contrat?.id)) ?? [])
+    groups.flatMap(g => g.portefeuille?.filter(p => p.actif !== false).map(p => String(p.contrat?.id)) ?? [])
   );
   const availableContrats = contrats.filter(c => !assignedContratIds.has(String(c.id)));
 
@@ -594,21 +596,34 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
                   </div>
                   <span className="text-sm font-semibold text-gray-800">{fmtUser(g.ct)}</span>
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300 ml-1">CT</span>
-                  <span className="text-xs text-gray-400 ml-auto">{g.portefeuille?.length ?? 0} marché{(g.portefeuille?.length ?? 0) > 1 ? "s" : ""} assigné{(g.portefeuille?.length ?? 0) > 1 ? "s" : ""}</span>
+                  <span className="text-xs text-gray-400 ml-auto">{g.portefeuille?.filter(p => p.actif !== false).length ?? 0} marché(s) actif(s)</span>
                 </div>
                 {!g.portefeuille?.length ? (
                   <p className="px-4 py-3 text-xs text-gray-400 italic">Aucun marché assigné</p>
                 ) : (
                   <ul className="divide-y divide-gray-50">
                     {g.portefeuille.map(p => (
-                      <li key={p.id} className="px-4 py-2.5 flex items-center justify-between hover:bg-gray-50/60 transition-colors">
-                        <div>
-                          <span className="text-sm font-medium text-gray-700 font-mono">{p.contrat?.code}</span>
-                          {p.contrat?.soustraitant && <span className="text-xs text-gray-400 ml-2">{p.contrat.soustraitant.raison_sociale}</span>}
+                      <li key={p.id} className={`px-4 py-2.5 flex items-center justify-between transition-colors ${p.actif === false ? "bg-gray-50/60 opacity-60" : "hover:bg-gray-50/60"}`}>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-sm font-medium font-mono ${p.actif === false ? "text-gray-400 line-through" : "text-gray-700"}`}>{p.contrat?.code}</span>
+                            {p.contrat?.soustraitant && <span className="text-xs text-gray-400">{p.contrat.soustraitant.raison_sociale}</span>}
+                            {p.actif === false && (
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-600 border border-red-200">Retiré</span>
+                            )}
+                          </div>
+                          {p.actif === false && p.removed_at && (
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                              Retiré le {fmtDate2(p.removed_at)}{p.removed_by ? ` par ${p.removed_by.prenom} ${p.removed_by.nom}` : ""}
+                            </p>
+                          )}
+                          {p.actif !== false && p.assigned_by && (
+                            <p className="text-[10px] text-gray-400 mt-0.5">Assigné le {fmtDate2(p.created_at)}{p.assigned_by ? ` par ${p.assigned_by.prenom} ${p.assigned_by.nom}` : ""}</p>
+                          )}
                         </div>
-                        {isDacc && (
+                        {isDacc && p.actif !== false && (
                           <button onClick={() => setConfirmDel({ id: p.id, name: `${p.contrat?.code} — ${p.contrat?.soustraitant?.raison_sociale ?? ""}` })} disabled={delMut.isPending}
-                            className="text-gray-300 hover:text-red-500 transition-colors p-1 rounded">
+                            className="text-gray-300 hover:text-red-500 transition-colors p-1 rounded flex-shrink-0">
                             <X size={13} />
                           </button>
                         )}
