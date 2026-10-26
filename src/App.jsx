@@ -43,6 +43,7 @@ import NoteDevisListPage from "./pages/NoteDevisListPage";
 import NoteDevisDetailPage from "./pages/NoteDevisDetailPage";
 import AttachementsListPage from "./pages/AttachementsListPage";
 import AttachementDetailPage from "./pages/AttachementDetailPage";
+import AttachementNewPage from "./pages/AttachementNewPage";
 
 export default function App() {
   return (
@@ -105,6 +106,7 @@ export default function App() {
 
                 {/* Attachements */}
                 <Route path="/attachements" element={<AttachementsListPage />} />
+                <Route path="/attachements/nouveau" element={<AttachementNewPage />} />
                 <Route path="/attachements/:id" element={<AttachementDetailPage />} />
 
                 {/* Paramétrage — ancienne route (tab) conservée */}
