@@ -1446,148 +1446,22 @@ function nextPeriode(contratAtts, dateDebut) {
   return { periode_debut: debut, periode_fin: fin };
 }
 
-function AttachementsTab({ contratId, chantierId, isNew, contrat }) {
+function AttachementsTab({ contratId, isNew }) {
   const navigate = useNavigate();
-  const { addToast } = useToast();
-  const { attachements, addAttachement } = useAttachements();
-  const contratIdInt = contratId ? parseInt(contratId, 10) : null;
-  const { data: dqeData } = useDqe(contratIdInt);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ periode_debut: "", periode_fin: "" });
-  const [loading, setLoading] = useState(false);
+  const { attachements } = useAttachements();
 
   const numFmt = v => fmtNum(Math.round(v || 0));
   const contratAtts = attachements
     .filter(a => a.contratId === String(contratId))
     .sort((a, b) => (b.periodeDebut ?? "").localeCompare(a.periodeDebut ?? ""));
 
-  function handleShowForm() {
-    try {
-      const suggestion = nextPeriode(contratAtts, contrat?.date_debut);
-      setForm(suggestion);
-      setShowForm(true);
-    } catch (e) {
-      console.error("handleShowForm error:", e);
-      setForm({ periode_debut: "", periode_fin: "" });
-      setShowForm(true);
-    }
-  }
-
   if (isNew) return (
     <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer les attachements.</p>
   );
 
-  async function handleInitier() {
-    if (!form.periode_debut || !form.periode_fin) {
-      addToast("Renseignez la période de début et de fin.", "error");
-      return;
-    }
-    if (form.periode_fin < form.periode_debut) {
-      addToast("La date de fin doit être après le début.", "error");
-      return;
-    }
-    const overlap = contratAtts.find(a =>
-      (a.periodeDebut ?? "") <= form.periode_fin && (a.periodeFin ?? "") >= form.periode_debut
-    );
-    if (overlap) {
-      addToast(`Un attachement (${overlap.code}) couvre déjà cette période.`, "error");
-      return;
-    }
-    setLoading(true);
-    try {
-      const rubriques = dqeData?.data ?? [];
-      const lignesCSE = [];
-      for (const rubrique of rubriques) {
-        for (const poste of rubrique.postes ?? []) {
-          for (const ligne of poste.lignes ?? []) {
-            lignesCSE.push({
-              id: `dqe-ligne-${ligne.id}`,
-              source: "DQE",
-              refDQE: ligne.code || (rubrique.code ? String(rubrique.code) : `R${rubrique.id}`),
-              rubriqueDesignation: rubrique.designation,
-              posteDesignation: poste.designation,
-              designation: ligne.designation,
-              unite: ligne.unite ?? "",
-              quantitePrevueDQE: parseFloat(ligne.quantite_prevue ?? 0),
-              prixUnitaireHT: parseFloat(ligne.prix_unitaire ?? 0),
-              quantiteRealisee: 0,
-              montant: 0,
-            });
-          }
-        }
-      }
-      const nouveau = await addAttachement({
-        contratId: String(contratId),
-        chantierId: chantierId ? String(chantierId) : null,
-        periodeDebut: form.periode_debut,
-        periodeFin: form.periode_fin,
-        lignesCSE,
-        initiePar: { nom: "CT", roleId: "CT" },
-      });
-      addToast("Dossier d'attachement initié.", "success");
-      navigate(`/attachements/${nouveau.code}`);
-    } catch (err) {
-      addToast("Erreur lors de la création du dossier.", "error");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const dqeEmpty = !dqeData?.data?.length || dqeData.data.every(r => !r.postes?.length || r.postes.every(p => !p.lignes?.length));
-
   return (
     <div className="space-y-4">
-      {dqeEmpty && (
-        <div className="flex items-center gap-2.5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">
-          <AlertTriangle size={14} className="flex-shrink-0 text-amber-500" />
-          <span>Le DQE de ce contrat est vide. Renseignez les rubriques/postes/lignes dans l'onglet DQE avant d'initier un attachement.</span>
-        </div>
-      )}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{contratAtts.length} dossier{contratAtts.length !== 1 ? "s" : ""}</p>
-        {!showForm && (
-          <button onClick={handleShowForm} className="flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors">
-            <Plus size={12} /> Initier un attachement
-          </button>
-        )}
-      </div>
-
-      {showForm && (
-        <div className="bg-[#E8F5EE]/60 border border-[#087F3E]/30 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-800">Nouvel attachement</p>
-            <span className="text-[10px] text-[#087F3E] bg-[#087F3E]/10 px-2 py-0.5 rounded-full">Période suggérée automatiquement</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs text-gray-500 font-medium">Début de période</label>
-              <input
-                type="date"
-                value={form.periode_debut}
-                onChange={e => setForm(f => ({ ...f, periode_debut: e.target.value, periode_fin: "" }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-300 outline-none"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-gray-500 font-medium">Fin de période</label>
-              <input
-                type="date"
-                value={form.periode_fin}
-                min={form.periode_debut || undefined}
-                disabled={!form.periode_debut}
-                onChange={e => setForm(f => ({ ...f, periode_fin: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-green-300 outline-none disabled:bg-gray-50 disabled:text-gray-400"
-              />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={() => setShowForm(false)} className="px-3 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Annuler</button>
-            <button onClick={handleInitier} disabled={loading} className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-[#087F3E] text-white rounded-lg hover:bg-[#065A2C] disabled:opacity-40">
-              {loading ? "Création…" : "Initier"}
-            </button>
-          </div>
-        </div>
-      )}
+      <p className="text-sm text-gray-500">{contratAtts.length} dossier{contratAtts.length !== 1 ? "s" : ""}</p>
 
       {contratAtts.length === 0 ? (
         <p className="text-center text-gray-400 text-sm py-8">Aucun dossier d'attachement pour ce contrat.</p>
@@ -2735,7 +2609,7 @@ export default function ContratFormPage() {
 
           {/* Tab: Attachements */}
           {activeTab === "attachements" && (
-            <AttachementsTab contratId={id} chantierId={contrat?.chantier_id} isNew={isNew} contrat={contrat} />
+            <AttachementsTab contratId={id} isNew={isNew} />
           )}
 
           {/* Tab: Pièces jointes */}
