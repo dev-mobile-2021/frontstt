@@ -518,28 +518,28 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
   const qc = useQueryClient();
   const { addToast } = useToast();
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ ct_user_id: "", soustraitant_id: "" });
+  const [form, setForm] = useState({ ct_user_id: "", contrat_id: "" });
   const [confirmDel, setConfirmDel] = useState(null); // { id, name }
 
   const { data: usersData } = useUsersPaginated({ count: 200 });
   const users    = usersData?.data ?? [];
   const ctUsers  = users.filter(u => u.role?.designation === "CT");
 
-  const { data: sttData } = useSousTraitantsPaginated({ count: 500 });
-  const soustraitants = sttData?.data ?? [];
+  const { data: contratsData } = useContratsPaginated({ chantier_id: Number(chantierId), count: 200 });
+  const contrats = contratsData?.data ?? [];
 
   const { data: portefeuilles, isLoading } = useQuery({
     queryKey: ["ct_portefeuilles", chantierId],
     queryFn: () => http.get(`/chantiers/${chantierId}/ct-portefeuilles`).then(r => r.data.data ?? r.data),
   });
 
-  const closeModal = () => { setShowModal(false); setForm({ ct_user_id: "", soustraitant_id: "" }); };
+  const closeModal = () => { setShowModal(false); setForm({ ct_user_id: "", contrat_id: "" }); };
 
   const addMut = useMutation({
     mutationFn: (p) => http.post(`/chantiers/${chantierId}/ct-portefeuilles`, p).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ct_portefeuilles", chantierId] });
-      addToast("STT ajouté au portefeuille.", "success");
+      addToast("Marché ajouté au portefeuille.", "success");
       closeModal();
     },
     onError: (e) => addToast(e?.response?.data?.error ?? "Erreur.", "error"),
@@ -549,7 +549,7 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
     mutationFn: (id) => http.delete(`/chantiers/${chantierId}/ct-portefeuilles/${id}`).then(r => r.data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["ct_portefeuilles", chantierId] });
-      addToast("STT retiré du portefeuille.", "success");
+      addToast("Marché retiré du portefeuille.", "success");
     },
     onError: (e) => addToast(e?.response?.data?.error ?? "Erreur.", "error"),
   });
@@ -557,10 +557,10 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
   const groups = portefeuilles ?? [];
   const fmtUser = u => u ? `${u.prenom ?? ""} ${u.nom ?? ""}`.trim() : "—";
 
-  const assignedSttIds = new Set(
-    groups.flatMap(g => g.portefeuille?.map(p => String(p.soustraitant?.id)) ?? [])
+  const assignedContratIds = new Set(
+    groups.flatMap(g => g.portefeuille?.map(p => String(p.contrat?.id)) ?? [])
   );
-  const availableStt = soustraitants.filter(s => !assignedSttIds.has(String(s.id)));
+  const availableContrats = contrats.filter(c => !assignedContratIds.has(String(c.id)));
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -568,12 +568,12 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
         <div>
           <h3 className="text-sm font-semibold text-gray-900">Portefeuilles CT</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Chaque CT est responsable des sous-traitants qui lui sont assignés</p>
+          <p className="text-xs text-gray-400 mt-0.5">Chaque CT est responsable des marchés (contrats) qui lui sont assignés</p>
         </div>
         {isDacc && (
           <button onClick={() => setShowModal(true)}
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-[#087F3E] text-[#087F3E] hover:bg-[#E8F5EE] transition-colors">
-            <UserCheck size={13} /> Assigner un STT
+            <UserCheck size={13} /> Assigner un marché
           </button>
         )}
       </div>
@@ -594,17 +594,20 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
                   </div>
                   <span className="text-sm font-semibold text-gray-800">{fmtUser(g.ct)}</span>
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300 ml-1">CT</span>
-                  <span className="text-xs text-gray-400 ml-auto">{g.portefeuille?.length ?? 0} STT assigné{(g.portefeuille?.length ?? 0) > 1 ? "s" : ""}</span>
+                  <span className="text-xs text-gray-400 ml-auto">{g.portefeuille?.length ?? 0} marché{(g.portefeuille?.length ?? 0) > 1 ? "s" : ""} assigné{(g.portefeuille?.length ?? 0) > 1 ? "s" : ""}</span>
                 </div>
                 {!g.portefeuille?.length ? (
-                  <p className="px-4 py-3 text-xs text-gray-400 italic">Aucun sous-traitant assigné</p>
+                  <p className="px-4 py-3 text-xs text-gray-400 italic">Aucun marché assigné</p>
                 ) : (
                   <ul className="divide-y divide-gray-50">
                     {g.portefeuille.map(p => (
                       <li key={p.id} className="px-4 py-2.5 flex items-center justify-between hover:bg-gray-50/60 transition-colors">
-                        <span className="text-sm text-gray-700">{p.soustraitant?.raison_sociale}</span>
+                        <div>
+                          <span className="text-sm font-medium text-gray-700 font-mono">{p.contrat?.code}</span>
+                          {p.contrat?.soustraitant && <span className="text-xs text-gray-400 ml-2">{p.contrat.soustraitant.raison_sociale}</span>}
+                        </div>
                         {isDacc && (
-                          <button onClick={() => setConfirmDel({ id: p.id, name: p.soustraitant?.raison_sociale })} disabled={delMut.isPending}
+                          <button onClick={() => setConfirmDel({ id: p.id, name: `${p.contrat?.code} — ${p.contrat?.soustraitant?.raison_sociale ?? ""}` })} disabled={delMut.isPending}
                             className="text-gray-300 hover:text-red-500 transition-colors p-1 rounded">
                             <X size={13} />
                           </button>
@@ -627,7 +630,7 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
             <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">CT</div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-900">Assigner un STT à un CT</h3>
+                <h3 className="text-sm font-semibold text-gray-900">Assigner un marché à un CT</h3>
                 <p className="text-xs text-gray-400">Portefeuille conducteur de travaux</p>
               </div>
               <button onClick={closeModal} className="ml-auto text-gray-400 hover:text-gray-600"><X size={16} /></button>
@@ -644,12 +647,12 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
                 </SearchSelect>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-600">Sous-traitant</label>
-                <SearchSelect value={form.soustraitant_id} onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
-                  placeholder="— Sélectionner un STT —"
+                <label className="text-xs font-semibold text-gray-600">Marché (contrat)</label>
+                <SearchSelect value={form.contrat_id} onChange={e => setForm(f => ({ ...f, contrat_id: e.target.value }))}
+                  placeholder="— Sélectionner un contrat —"
                   className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
-                  <option value="">— Sélectionner un STT —</option>
-                  {availableStt.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
+                  <option value="">— Sélectionner un contrat —</option>
+                  {availableContrats.map(c => <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale ?? ""}</option>)}
                 </SearchSelect>
               </div>
             </div>
@@ -658,8 +661,8 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
               <button onClick={closeModal} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl">
                 Annuler
               </button>
-              <button onClick={() => addMut.mutate({ ct_user_id: parseInt(form.ct_user_id), soustraitant_id: parseInt(form.soustraitant_id) })}
-                disabled={!form.ct_user_id || !form.soustraitant_id || addMut.isPending}
+              <button onClick={() => addMut.mutate({ ct_user_id: parseInt(form.ct_user_id), contrat_id: parseInt(form.contrat_id) })}
+                disabled={!form.ct_user_id || !form.contrat_id || addMut.isPending}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white text-sm font-medium rounded-xl hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
                 {addMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                 Assigner
