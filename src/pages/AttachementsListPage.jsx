@@ -55,7 +55,6 @@ export default function AttachementsListPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dossiers d'attachement</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gestion des dossiers d'attachement</p>
         </div>
         <Link to="/attachements/nouveau" className="flex items-center gap-2 bg-[#087F3E] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#065A2C] transition-colors">
           <Plus size={15} /> Nouvel attachement
