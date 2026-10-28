@@ -38,19 +38,27 @@ export default function AttachementNewPage() {
     const last = sorted[sorted.length - 1];
     const contrat = contrats.find(c => String(c.id) === String(contratId));
 
+    const safeDate = (val) => {
+      if (!val) return null;
+      const s = String(val).slice(0, 10);
+      const d = new Date(s + "T00:00");
+      return isNaN(d.getTime()) ? null : s;
+    };
+
     let debut;
     if (!last) {
-      debut = contrat?.date_debut ? contrat.date_debut.slice(0, 10) : today();
+      debut = safeDate(contrat?.date_debut) ?? today();
     } else {
       if (!last.periodeFin) {
-        debut = contrat?.date_debut ? contrat.date_debut.slice(0, 10) : today();
+        debut = safeDate(contrat?.date_debut) ?? today();
       } else {
-        const d = new Date(last.periodeFin + "T00:00");
-        d.setDate(d.getDate() + 1);
-        debut = d.toISOString().slice(0, 10);
+        const d = new Date(last.periodeFin.slice(0, 10) + "T00:00");
+        if (isNaN(d.getTime())) { debut = today(); }
+        else { d.setDate(d.getDate() + 1); debut = d.toISOString().slice(0, 10); }
       }
     }
     const d = new Date(debut + "T00:00");
+    if (isNaN(d.getTime())) { setPeriodeDebut(today()); setPeriodeFin(""); return; }
     const finDate = new Date(d.getFullYear(), d.getMonth(), 25);
     if (finDate <= d) finDate.setMonth(finDate.getMonth() + 1);
     setPeriodeDebut(debut);
