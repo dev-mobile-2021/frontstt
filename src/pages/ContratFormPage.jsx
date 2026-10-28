@@ -1896,14 +1896,14 @@ function DqeTab({ contratId, contrat }) {
                                             className="w-full px-2 py-1 border border-gray-200 rounded text-xs" maxLength={20} />
                                         </td>
                                         <td className="pr-2">
-                                          <input type="number" step="0.001" value={editLigneForm.quantite_prevue}
-                                            onChange={e => setEditLigneForm(s => ({ ...s, quantite_prevue: e.target.value }))}
+                                          <input type="text" inputMode="decimal" value={editLigneForm.quantite_prevue}
+                                            onChange={e => setEditLigneForm(s => ({ ...s, quantite_prevue: e.target.value.replace(/[^0-9.]/g, "") }))}
                                             onKeyDown={handleKey}
                                             className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
                                         </td>
                                         <td className="pr-2">
-                                          <input type="number" step="0.01" value={editLigneForm.prix_unitaire}
-                                            onChange={e => setEditLigneForm(s => ({ ...s, prix_unitaire: e.target.value }))}
+                                          <input type="text" inputMode="decimal" value={editLigneForm.prix_unitaire}
+                                            onChange={e => setEditLigneForm(s => ({ ...s, prix_unitaire: e.target.value.replace(/[^0-9.]/g, "") }))}
                                             onKeyDown={handleKey}
                                             className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
                                         </td>
@@ -1963,15 +1963,15 @@ function DqeTab({ contratId, contrat }) {
                                       className="w-full px-2 py-1 border border-gray-200 rounded text-xs" maxLength={20} />
                                   </td>
                                   <td className="pr-2">
-                                    <input type="number" step="0.001" value={ligneForm.quantite_prevue}
-                                      onChange={e => setLigneForm(s => ({ ...s, quantite_prevue: e.target.value }))}
-                                      placeholder="0"
+                                    <input type="text" inputMode="decimal" value={ligneForm.quantite_prevue}
+                                      onChange={e => setLigneForm(s => ({ ...s, quantite_prevue: e.target.value.replace(/[^0-9.]/g, "") }))}
+                                      placeholder="Qté"
                                       className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
                                   </td>
                                   <td className="pr-2">
-                                    <input type="number" step="0.01" value={ligneForm.prix_unitaire}
-                                      onChange={e => setLigneForm(s => ({ ...s, prix_unitaire: e.target.value }))}
-                                      placeholder="0"
+                                    <input type="text" inputMode="decimal" value={ligneForm.prix_unitaire}
+                                      onChange={e => setLigneForm(s => ({ ...s, prix_unitaire: e.target.value.replace(/[^0-9.]/g, "") }))}
+                                      placeholder="PU"
                                       className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
                                   </td>
                                   <td className="text-right pr-2 font-semibold text-[#087F3E]">{fmtMontantDqe(liveLigneMontant)}</td>
