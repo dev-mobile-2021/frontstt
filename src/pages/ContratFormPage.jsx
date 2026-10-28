@@ -1890,8 +1890,8 @@ function DqeTab({ contratId, contrat }) {
                                             className="w-full px-2 py-1 border border-gray-200 rounded text-xs" />
                                         </td>
                                         <td className="pr-2">
-                                          <input value={editLigneForm.unite || ""}
-                                            onChange={e => setEditLigneForm(s => ({ ...s, unite: e.target.value }))}
+                                          <input list="unites-dqe-ligne" value={editLigneForm.unite || ""}
+                                            onChange={e => setEditLigneForm(s => ({ ...s, unite: e.target.value.toUpperCase() }))}
                                             onKeyDown={handleKey}
                                             className="w-full px-2 py-1 border border-gray-200 rounded text-xs" maxLength={20} />
                                         </td>
@@ -1957,10 +1957,13 @@ function DqeTab({ contratId, contrat }) {
                                       className="w-full px-2 py-1 border border-gray-200 rounded text-xs" />
                                   </td>
                                   <td className="pr-2">
-                                    <input value={ligneForm.unite}
-                                      onChange={e => setLigneForm(s => ({ ...s, unite: e.target.value }))}
-                                      placeholder="U"
+                                    <input list="unites-dqe-ligne" value={ligneForm.unite}
+                                      onChange={e => setLigneForm(s => ({ ...s, unite: e.target.value.toUpperCase() }))}
+                                      placeholder="Unité"
                                       className="w-full px-2 py-1 border border-gray-200 rounded text-xs" maxLength={20} />
+                                    <datalist id="unites-dqe-ligne">
+                                      {["M²","M³","ML","M","T","KG","L","SAC","U","PC","BARRE","H","JOUR","MOIS","FF"].map(u => <option key={u} value={u} />)}
+                                    </datalist>
                                   </td>
                                   <td className="pr-2">
                                     <input type="text" inputMode="decimal" value={ligneForm.quantite_prevue}
