@@ -1863,7 +1863,7 @@ function DqeTab({ contratId, contrat }) {
                               <tr className="text-gray-500 border-b border-gray-100">
                                 <th className="text-left font-medium py-1 w-10">Réf</th>
                                 <th className="text-left font-medium py-1">Désignation</th>
-                                <th className="text-left font-medium py-1 w-16">U</th>
+                                <th className="text-left font-medium py-1 w-20">U</th>
                                 <th className="text-right font-medium py-1 w-24">Qté prévue</th>
                                 <th className="text-right font-medium py-1 w-28">PU</th>
                                 <th className="text-right font-medium py-1 w-32">Montant</th>
@@ -1893,7 +1893,7 @@ function DqeTab({ contratId, contrat }) {
                                           <input list="unites-dqe-ligne" value={editLigneForm.unite || ""}
                                             onChange={e => setEditLigneForm(s => ({ ...s, unite: e.target.value.toUpperCase() }))}
                                             onKeyDown={handleKey}
-                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs" maxLength={20} />
+                                            className="w-20 px-2 py-1 border border-gray-200 rounded text-xs" maxLength={10} />
                                         </td>
                                         <td className="pr-2">
                                           <input type="text" inputMode="decimal" value={editLigneForm.quantite_prevue}
@@ -1956,11 +1956,11 @@ function DqeTab({ contratId, contrat }) {
                                       placeholder="Désignation *"
                                       className="w-full px-2 py-1 border border-gray-200 rounded text-xs" />
                                   </td>
-                                  <td className="pr-2">
+                                  <td className="pr-2 w-20">
                                     <input list="unites-dqe-ligne" value={ligneForm.unite}
                                       onChange={e => setLigneForm(s => ({ ...s, unite: e.target.value.toUpperCase() }))}
-                                      placeholder="Unité"
-                                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs" maxLength={20} />
+                                      placeholder="U"
+                                      className="w-20 px-2 py-1 border border-gray-200 rounded text-xs" maxLength={10} />
                                     <datalist id="unites-dqe-ligne">
                                       {["M²","M³","ML","M","T","KG","L","SAC","U","PC","BARRE","H","JOUR","MOIS","FF"].map(u => <option key={u} value={u} />)}
                                     </datalist>
