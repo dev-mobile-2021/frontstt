@@ -6,6 +6,7 @@ import { useChantiersList } from "../hooks/useChantiers";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useDqe } from "../hooks/useDqe";
 import { useToast } from "../context/ToastContext";
+import SearchSelect from "../components/SearchSelect";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -139,32 +140,34 @@ export default function AttachementNewPage() {
           {/* Chantier */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-gray-700">Chantier</label>
-            <select
+            <SearchSelect
               value={chantierId}
               onChange={e => setChantierId(e.target.value)}
+              placeholder="— Sélectionner un chantier —"
               className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-300 outline-none bg-white"
             >
               <option value="">— Sélectionner un chantier —</option>
               {chantiers.map(c => (
                 <option key={c.id} value={c.id}>{c.code} — {c.designation}</option>
               ))}
-            </select>
+            </SearchSelect>
           </div>
 
           {/* Contrat */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-gray-700">Contrat</label>
-            <select
+            <SearchSelect
               value={contratId}
               onChange={e => setContratId(e.target.value)}
               disabled={!chantierId}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-300 outline-none bg-white disabled:bg-gray-50 disabled:text-gray-400"
+              placeholder="— Sélectionner un contrat —"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-300 outline-none bg-white"
             >
               <option value="">— Sélectionner un contrat —</option>
               {contrats.map(c => (
                 <option key={c.id} value={c.id}>{c.code}{c.soustraitant?.raison_sociale ? ` — ${c.soustraitant.raison_sociale}` : ""}</option>
               ))}
-            </select>
+            </SearchSelect>
           </div>
 
           {/* Période début */}
