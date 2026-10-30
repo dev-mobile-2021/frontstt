@@ -1427,16 +1427,17 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
               {bcs.length > 0 && (
                 <div className="col-span-2 space-y-1.5">
                   <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">BC associé</label>
-                  <select
+                  <SearchSelect
                     value={form.bon_commande_id}
                     onChange={e => setForm(f => ({ ...f, bon_commande_id: e.target.value }))}
+                    placeholder="— Aucun BC —"
                     className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none bg-white"
                   >
                     <option value="">— Aucun BC —</option>
                     {bcs.map(bc => (
                       <option key={bc.id} value={bc.id}>{bc.code_x3 ?? bc.code}{bc.objet ? ` — ${bc.objet}` : ""}</option>
                     ))}
-                  </select>
+                  </SearchSelect>
                 </div>
               )}
               <div className="col-span-2 space-y-1.5">
