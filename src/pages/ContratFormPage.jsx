@@ -1556,7 +1556,7 @@ function DqeTab({ contratId, contrat }) {
 
   const rubriques = data?.data || [];
   const total     = data?.total ?? 0;
-  const activeDqeReadonly = readonly || (data?.dqe?.statut === "en_validation");
+  const activeDqeReadonly = readonly || data?.dqe?.type === "actualise" || (data?.dqe?.statut === "en_validation");
 
   // Formulaires inline
   const [addingRubrique, setAddingRubrique] = useState(false);
@@ -1666,8 +1666,9 @@ function DqeTab({ contratId, contrat }) {
   }
 
   const labelDqe = (dqe) => {
-    if (dqe.type === "base") return "DQE Marché de base";
-    if (dqe.type === "avenant") return `DQE Avenant${dqe.avenant ? ` — ${dqe.avenant.code ?? dqe.avenant_id}` : ` #${dqe.id}`}`;
+    if (dqe.type === "base")      return "DQE Base";
+    if (dqe.type === "actualise") return "DQE Actualisé";
+    if (dqe.type === "avenant")   return `DQE Avenant${dqe.avenant ? ` — ${dqe.avenant.code ?? dqe.avenant_id}` : ` #${dqe.id}`}`;
     return `DQE #${dqe.id}`;
   };
 
@@ -1718,7 +1719,11 @@ function DqeTab({ contratId, contrat }) {
           </div>
         ) : (
           <div className="text-xs text-gray-500 italic">
-            {readonly ? `Contrat ${contrat?.statut} — lecture seule` : "DQE en cours de validation — lecture seule"}
+            {readonly
+              ? `Contrat ${contrat?.statut} — lecture seule`
+              : data?.dqe?.type === "actualise"
+              ? "DQE Actualisé — vue en vigueur (lecture seule)"
+              : "DQE en cours de validation — lecture seule"}
           </div>
         )}
 
