@@ -1061,7 +1061,7 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
                 <td className="py-2.5 pr-3 font-mono text-xs font-medium text-gray-900">{a.code}</td>
                 <td className="py-2.5 pr-3 text-xs">
                   {a.bon_commande
-                    ? <span className="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full font-medium">{a.bon_commande.numero ?? a.bon_commande.code_x3}</span>
+                    ? <span className="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full font-medium">{a.bon_commande.code_x3 ?? a.bon_commande.code}</span>
                     : <span className="text-gray-300">—</span>}
                 </td>
                 <td className="py-2.5 pr-3 text-gray-700 max-w-[200px] truncate">{a.objet}</td>
@@ -1153,7 +1153,7 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
                   >
                     <option value="">— Aucun BC —</option>
                     {bcs.map(bc => (
-                      <option key={bc.id} value={bc.id}>{bc.numero ?? bc.code_x3}{bc.libelle ? ` — ${bc.libelle}` : ""}</option>
+                      <option key={bc.id} value={bc.id}>{bc.code_x3 ?? bc.code}{bc.objet ? ` — ${bc.objet}` : ""}</option>
                     ))}
                   </select>
                 </div>
