@@ -47,6 +47,13 @@ import { telechargerModeleBareme } from "../utils/baremeModele";
 import { baremeHierarchieService } from "../services/baremeHierarchieService";
 import { useBaremeContrat, useBaremeContratActions, useRefreshBareme, useAddBaremeContrat } from "../hooks/useBaremeHierarchie";
 import ArticleX3Select from "../components/ArticleX3Select";
+import {
+  useCircuitModules,
+  useContratCircuitConfig,
+  useSaveContratCircuit,
+  useCopierDefautCircuit,
+  useDeleteContratEtape,
+} from "../hooks/useCircuit";
 
 // ─── Workflow transitions ────────────────────────────────────────
 const TRANSITIONS = {
@@ -572,6 +579,279 @@ function CessionsTab({ contratId, isNew }) {
             ))}
           </tbody>
         </table>
+      )}
+    </div>
+  );
+}
+
+// ─── Sub-tab: Configuration des circuits par module ──────────────
+
+const ROLES_DEFAUT = [
+  "CT", "DT", "DACC", "DCG", "DEX-A", "DEX", "DGA", "DG", "ADEX", "ADAC", "ADCG", "DP", "DPA", "RAF", "DF",
+];
+
+const MODULE_LABELS = {
+  contrat: "Contrat",
+  decompte: "Décompte",
+  attachement: "Attachement",
+  dqe: "DQE",
+  facture: "Facture",
+  avenant: "Avenant",
+};
+
+function CircuitConfigTab({ contratId, isNew }) {
+  const { addToast } = useToast();
+  const [activeModule, setActiveModule] = useState(null);
+
+  const { data: modulesData, isLoading: modulesLoading } = useCircuitModules();
+  const modules = Array.isArray(modulesData) ? modulesData : [];
+
+  // set default module once loaded
+  const [moduleInit, setModuleInit] = useState(false);
+  if (!moduleInit && modules.length > 0) {
+    setActiveModule(modules[0]);
+    setModuleInit(true);
+  }
+
+  const {
+    data: circuitData,
+    isLoading: circuitLoading,
+    isError: circuitError,
+  } = useContratCircuitConfig(contratId, activeModule);
+
+  const saveM   = useSaveContratCircuit(contratId, activeModule);
+  const copierM = useCopierDefautCircuit(contratId, activeModule);
+  const deleteM = useDeleteContratEtape(contratId, activeModule);
+
+  // local etapes state
+  const [etapes, setEtapes] = useState([]);
+  const [circuitId, setCircuitId] = useState(null);
+
+  // sync from server
+  useEffect(() => {
+    if (circuitData && circuitData.etapes) {
+      setCircuitId(circuitData.id ?? null);
+      setEtapes(
+        [...circuitData.etapes].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)).map((e) => ({ ...e, _key: e.id ?? Math.random() }))
+      );
+    } else if (circuitError || (circuitData && !circuitData.etapes)) {
+      setCircuitId(null);
+      setEtapes([]);
+    }
+  }, [circuitData, circuitError, activeModule]);
+
+  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour configurer les circuits.</p>;
+
+  const hasCircuit = circuitData && circuitData.etapes;
+
+  function addEtape() {
+    setEtapes((prev) => [
+      ...prev,
+      { _key: Math.random(), libelle: "", role_id: null, profil_code: "", obligatoire: true, ordre: prev.length + 1 },
+    ]);
+  }
+
+  function removeEtape(key) {
+    const etape = etapes.find((e) => e._key === key);
+    if (etape?.id) {
+      deleteM.mutate(etape.id, {
+        onSuccess: () => setEtapes((prev) => prev.filter((e) => e._key !== key)),
+        onError: () => addToast("Erreur lors de la suppression.", "error"),
+      });
+    } else {
+      setEtapes((prev) => prev.filter((e) => e._key !== key));
+    }
+  }
+
+  function moveEtape(key, dir) {
+    setEtapes((prev) => {
+      const idx = prev.findIndex((e) => e._key === key);
+      const next = [...prev];
+      const swapIdx = idx + dir;
+      if (swapIdx < 0 || swapIdx >= next.length) return prev;
+      [next[idx], next[swapIdx]] = [next[swapIdx], next[idx]];
+      return next.map((e, i) => ({ ...e, ordre: i + 1 }));
+    });
+  }
+
+  function updateEtape(key, field, value) {
+    setEtapes((prev) =>
+      prev.map((e) => (e._key === key ? { ...e, [field]: value } : e))
+    );
+  }
+
+  async function handleSave() {
+    try {
+      const payload = {
+        contrat_id: contratId,
+        module: activeModule,
+        etapes: etapes.map((e, i) => ({
+          ...(e.id ? { id: e.id } : {}),
+          ordre: i + 1,
+          libelle: e.libelle,
+          role_id: e.role_id ?? null,
+          profil_code: e.profil_code,
+          obligatoire: e.obligatoire,
+        })),
+      };
+      await saveM.mutateAsync(payload);
+      addToast("Circuit enregistré.", "success");
+    } catch {
+      addToast("Erreur lors de l'enregistrement.", "error");
+    }
+  }
+
+  async function handleCopier() {
+    try {
+      await copierM.mutateAsync({ contrat_id: contratId, module: activeModule });
+      addToast("Circuit copié depuis le défaut.", "success");
+    } catch {
+      addToast("Erreur lors de la copie.", "error");
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Module tabs */}
+      {modulesLoading ? (
+        <div className="h-9 bg-gray-100 rounded-lg animate-pulse w-64" />
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {modules.map((m) => (
+            <button
+              key={m}
+              onClick={() => setActiveModule(m)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                activeModule === m
+                  ? "bg-[#087F3E] text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              {MODULE_LABELS[m] ?? m}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Circuit body */}
+      {activeModule && (
+        <div className="border border-gray-200 rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-700">
+              Circuit — {MODULE_LABELS[activeModule] ?? activeModule}
+            </h3>
+            <button
+              onClick={handleCopier}
+              disabled={copierM.isPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#087F3E] text-[#087F3E] rounded-lg hover:bg-green-50 transition-colors disabled:opacity-50"
+            >
+              {copierM.isPending ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              Copier depuis défaut
+            </button>
+          </div>
+
+          {circuitLoading ? (
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />
+              ))}
+            </div>
+          ) : !hasCircuit && etapes.length === 0 ? (
+            <div className="text-center py-6 text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
+              <p>Aucun circuit configuré — utilise le circuit par défaut.</p>
+              <button
+                onClick={handleCopier}
+                disabled={copierM.isPending}
+                className="mt-2 text-xs text-[#087F3E] hover:underline font-medium"
+              >
+                Copier depuis défaut →
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {etapes.map((etape, idx) => (
+                <div
+                  key={etape._key}
+                  className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5"
+                >
+                  <span className="text-xs font-semibold text-gray-400 w-12 shrink-0">
+                    Étape {idx + 1}
+                  </span>
+                  <input
+                    type="text"
+                    value={etape.libelle ?? ""}
+                    onChange={(e) => updateEtape(etape._key, "libelle", e.target.value)}
+                    placeholder="Libellé…"
+                    className="flex-1 min-w-0 border border-gray-300 rounded-md px-2.5 py-1.5 text-sm focus:ring-1 focus:ring-[#087F3E] outline-none"
+                  />
+                  <select
+                    value={etape.profil_code ?? ""}
+                    onChange={(e) => updateEtape(etape._key, "profil_code", e.target.value)}
+                    className="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#087F3E] outline-none bg-white"
+                  >
+                    <option value="">— Rôle —</option>
+                    {ROLES_DEFAUT.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => updateEtape(etape._key, "obligatoire", !etape.obligatoire)}
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors shrink-0 ${
+                      etape.obligatoire
+                        ? "bg-red-50 border-red-200 text-red-600"
+                        : "bg-gray-100 border-gray-200 text-gray-500"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${etape.obligatoire ? "bg-red-500" : "bg-gray-400"}`} />
+                    {etape.obligatoire ? "Bloquant" : "Facultatif"}
+                  </button>
+                  <div className="flex gap-1 shrink-0">
+                    <button
+                      onClick={() => moveEtape(etape._key, -1)}
+                      disabled={idx === 0}
+                      className="p-1.5 rounded-md text-gray-400 hover:bg-gray-200 disabled:opacity-30 transition-colors"
+                      title="Monter"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      onClick={() => moveEtape(etape._key, 1)}
+                      disabled={idx === etapes.length - 1}
+                      className="p-1.5 rounded-md text-gray-400 hover:bg-gray-200 disabled:opacity-30 transition-colors"
+                      title="Descendre"
+                    >
+                      ↓
+                    </button>
+                    <button
+                      onClick={() => removeEtape(etape._key)}
+                      className="p-1.5 rounded-md text-red-400 hover:bg-red-50 transition-colors"
+                      title="Supprimer"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-1">
+            <button
+              onClick={addEtape}
+              className="flex items-center gap-1.5 text-sm text-[#087F3E] hover:text-[#065A2C] font-medium transition-colors"
+            >
+              <Plus size={15} /> Ajouter une étape
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saveM.isPending || etapes.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              {saveM.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              Enregistrer
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -2734,9 +3014,9 @@ export default function ContratFormPage() {
             <BonCommandeTab contratId={id} isNew={isNew} />
           )}
 
-          {/* Tab: Circuit de validation */}
+          {/* Tab: Circuit — configuration par module */}
           {activeTab === "circuit" && (
-            <CircuitContratTab contrat={contrat} contratId={id} isNew={isNew} />
+            <CircuitConfigTab contratId={parseInt(id, 10)} isNew={isNew} />
           )}
 
           {/* Tab: Factures — placeholder (no contrat_id filter in factureService list) */}
