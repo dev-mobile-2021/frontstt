@@ -6,7 +6,7 @@ import {
   ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle, RefreshCw,
   Hash, FileText, Info, FilePlus, CheckCircle, Trash2, Plus, X, Paperclip,
   Upload, Download, File, Circle, Clock, CheckCircle2, XCircle, Archive,
-  Pencil, ChevronDown,
+  Pencil, ChevronDown, Lock, ShieldCheck,
 } from "lucide-react";
 import { useContrat, useSaveContrat, useContratStatut, useContratCircuit, useSoumettreContrat, useValiderContrat, useRejeterContrat, useDeleteContrat } from "../hooks/useContrats";
 import { useChantiersList } from "../hooks/useChantiers";
@@ -26,6 +26,7 @@ import {
   useDeletePoste as useDeletePosteDqe,
   useSaveLigneDqe,
   useDeleteLigneDqe,
+  useValiderDqe,
 } from "../hooks/useDqe";
 import { pieceJointeService } from "../services/pieceJointeService";
 import { useToast } from "../context/ToastContext";
@@ -1817,6 +1818,11 @@ function fmtQte(v) {
 function DqeTab({ contratId, contrat }) {
   const readonly = contrat?.statut === "cloture" || contrat?.statut === "resilie";
 
+  // Utilisateur connecté
+  const { currentUser } = useUser();
+  const userRole = currentUser?.role?.designation ?? "";
+  const isDT = userRole === "DT";
+
   // Liste des DQE du contrat
   const { data: dqeListData, isLoading: dqeListLoading } = useDqeList(contratId);
   const dqeList = dqeListData?.data ?? [];
@@ -1833,6 +1839,15 @@ function DqeTab({ contratId, contrat }) {
   const deletePoste    = useDeletePosteDqe(contratId, activeDqeId);
   const saveLigne      = useSaveLigneDqe(contratId, activeDqeId);
   const deleteLigne    = useDeleteLigneDqe(contratId, activeDqeId);
+  const validerDqe     = useValiderDqe(contratId, activeDqeId);
+
+  // Circuit de validation DQE
+  const { data: circuitData } = useContratCircuitConfig(contratId, "dqe");
+  const circuitEtapes = circuitData?.etapes ?? circuitData ?? [];
+
+  // Etat local pour le panneau de validation
+  const [validObs, setValidObs] = useState("");
+  const [validLoading, setValidLoading] = useState(false);
 
   const rubriques = data?.data || [];
   const total     = data?.total ?? 0;
@@ -1977,6 +1992,97 @@ function DqeTab({ contratId, contrat }) {
               {statutBadge(dqe)}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Panneau de validation DQE — uniquement pour type base ou avenant */}
+      {data?.dqe && (data.dqe.type === "base" || data.dqe.type === "avenant") && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={16} className="text-blue-600" />
+            <span className="text-sm font-semibold text-blue-800">Circuit de validation DQE</span>
+          </div>
+
+          {circuitEtapes.length === 0 ? (
+            <p className="text-xs text-gray-500 italic">Aucun circuit de validation configuré pour ce contrat.</p>
+          ) : (
+            <div className="space-y-2">
+              {circuitEtapes.map((etape) => {
+                const profilCode = etape.profil_code ?? etape.profil?.code ?? etape.code;
+                const validations = data?.dqe?.validations ?? [];
+                const val = validations.find(v => v.profil_code === profilCode);
+                const deja_valide = !!val;
+                const peut_valider = !deja_valide && !readonly && userRole === profilCode;
+
+                return (
+                  <div key={etape.id ?? profilCode} className="flex items-center gap-3 flex-wrap">
+                    <span className="w-16 text-xs font-mono font-semibold text-gray-700 uppercase">{profilCode}</span>
+                    {deja_valide ? (
+                      <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+                        <CheckCircle2 size={11} />
+                        Validé{val.validated_at ? ` le ${formatDate(val.validated_at)}` : ""}
+                        {val.observations ? ` — ${val.observations}` : ""}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400 italic">En attente</span>
+                    )}
+                    {peut_valider && (
+                      <div className="flex items-center gap-2 ml-auto">
+                        <input
+                          type="text"
+                          value={validObs}
+                          onChange={e => setValidObs(e.target.value)}
+                          placeholder="Observations (optionnel)"
+                          className="px-2 py-1 border border-gray-200 rounded text-xs w-48"
+                        />
+                        <button
+                          disabled={validLoading}
+                          onClick={async () => {
+                            setValidLoading(true);
+                            try {
+                              await validerDqe.mutateAsync({ profil_code: profilCode, observations: validObs.trim() || null });
+                              setValidObs("");
+                            } finally {
+                              setValidLoading(false);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                        >
+                          {validLoading ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
+                          Valider
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Validations hors circuit (profils supplémentaires) */}
+          {(() => {
+            const validations = data?.dqe?.validations ?? [];
+            const etapesCodes = circuitEtapes.map(e => e.profil_code ?? e.profil?.code ?? e.code);
+            const extras = validations.filter(v => !etapesCodes.includes(v.profil_code));
+            return extras.length > 0 ? (
+              <div className="pt-1 border-t border-blue-100">
+                {extras.map(v => (
+                  <span key={v.id} className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium mr-2">
+                    <CheckCircle2 size={11} /> {v.profil_code} — Validé{v.validated_at ? ` le ${formatDate(v.validated_at)}` : ""}
+                  </span>
+                ))}
+              </div>
+            ) : null;
+          })()}
+
+          <p className="text-[11px] text-blue-600 italic">
+            Au moins 1 validation suffit pour que le DQE soit utilisable.
+            {(data?.dqe?.validations ?? []).length > 0 && (
+              <span className="ml-2 font-semibold text-green-700">
+                {(data.dqe.validations ?? []).length} validation(s) enregistrée(s).
+              </span>
+            )}
+          </p>
         </div>
       )}
 
@@ -2267,10 +2373,17 @@ function DqeTab({ contratId, contrat }) {
                                             className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
                                         </td>
                                         <td className="pr-2">
-                                          <input type="text" inputMode="decimal" value={editLigneForm.prix_unitaire}
-                                            onChange={e => setEditLigneForm(s => ({ ...s, prix_unitaire: e.target.value.replace(/[^0-9.]/g, "") }))}
-                                            onKeyDown={handleKey}
-                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                          {isDT ? (
+                                            <div className="flex items-center gap-1 w-full px-2 py-1 border border-gray-100 rounded text-xs text-right bg-gray-50 text-gray-400 justify-end">
+                                              <Lock size={9} className="shrink-0" />
+                                              <span>{editLigneForm.prix_unitaire || "0"}</span>
+                                            </div>
+                                          ) : (
+                                            <input type="text" inputMode="decimal" value={editLigneForm.prix_unitaire}
+                                              onChange={e => setEditLigneForm(s => ({ ...s, prix_unitaire: e.target.value.replace(/[^0-9.]/g, "") }))}
+                                              onKeyDown={handleKey}
+                                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                          )}
                                         </td>
                                         <td className="text-right pr-2 font-semibold">{fmtMontantDqe(liveEditLigneMontant)}</td>
                                         <td className="text-[10px] text-gray-400 pl-1">↵ Entrée</td>
@@ -2339,10 +2452,17 @@ function DqeTab({ contratId, contrat }) {
                                       className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
                                   </td>
                                   <td className="pr-2">
-                                    <input type="text" inputMode="decimal" value={ligneForm.prix_unitaire}
-                                      onChange={e => setLigneForm(s => ({ ...s, prix_unitaire: e.target.value.replace(/[^0-9.]/g, "") }))}
-                                      placeholder="PU"
-                                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                    {isDT ? (
+                                      <div className="flex items-center gap-1 w-full px-2 py-1 border border-gray-100 rounded text-xs text-right bg-gray-50 text-gray-400 justify-end" title="DT : quantités uniquement">
+                                        <Lock size={9} className="shrink-0" />
+                                        <span>DT: qté uniquement</span>
+                                      </div>
+                                    ) : (
+                                      <input type="text" inputMode="decimal" value={ligneForm.prix_unitaire}
+                                        onChange={e => setLigneForm(s => ({ ...s, prix_unitaire: e.target.value.replace(/[^0-9.]/g, "") }))}
+                                        placeholder="PU"
+                                        className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                    )}
                                   </td>
                                   <td className="text-right pr-2 font-semibold text-[#087F3E]">{fmtMontantDqe(liveLigneMontant)}</td>
                                   <td>

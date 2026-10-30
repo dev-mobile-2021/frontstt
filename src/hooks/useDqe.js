@@ -87,3 +87,15 @@ export function useDeleteLigneDqe(contratId, dqeId) {
     },
   });
 }
+
+export function useValiderDqe(contratId, dqeId) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ profil_code, observations }) =>
+      http.post(`/dqe/${dqeId}/valider`, { profil_code, observations }).then((r) => r.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["dqe", dqeId] });
+      qc.invalidateQueries({ queryKey: ["dqe-list", contratId] });
+    },
+  });
+}
