@@ -58,37 +58,108 @@ function AnimatedTotal({ value }) {
   );
 }
 
-// ─── CSE Export / Import ─────────────────────────────────────────────────────
+// ─── CSE Export / Import — format X3 DQE_ATT ────────────────────────────────
 function exportCSE(lignes, ref) {
-  const rows = lignes.map(l => ({
-    "Rubrique":      l.rubriqueDesignation ?? "",
-    "Poste":         l.posteDesignation ?? "",
-    "Désignation":   l.designation ?? "",
-    "Unité":         l.unite ?? "",
-    "Qté DQE":       l.quantitePrevueDQE ?? "",
-    "Qté réalisée":  l.quantiteRealisee ?? 0,
-  }));
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws["!cols"] = [{ wch: 22 }, { wch: 28 }, { wch: 40 }, { wch: 8 }, { wch: 10 }, { wch: 13 }];
+  const dqeLignes = lignes.filter(l => l.source === "DQE");
+
+  // Grouper par rubrique → poste
+  const groups = [];
+  for (const l of dqeLignes) {
+    const rubKey   = l.rubriqueCode ?? l.refDQE ?? "";
+    const rubLabel = l.rubriqueDesignation ?? "";
+    const posteKey = l.posteCode ?? l.posteDesignation ?? "";
+    const posteLabel = l.posteDesignation ?? "";
+    let rub = groups.find(g => g.rubKey === rubKey);
+    if (!rub) { rub = { rubKey, rubLabel, postes: [] }; groups.push(rub); }
+    let poste = rub.postes.find(p => p.posteKey === posteKey);
+    if (!poste) { poste = { posteKey, posteLabel, lignes: [] }; rub.postes.push(poste); }
+    poste.lignes.push(l);
+  }
+
+  const totalGeneral = dqeLignes.reduce((s, l) => s + (l.montant || 0), 0);
+
+  // Construction manuelle des lignes AOA (array of arrays)
+  const aoa = [];
+
+  // Ligne 1 : titre
+  aoa.push(["", "DQE ATTACHEMENT TRAVAUX REALISES", "", "", "", "", "", ""]);
+  // Ligne 2 : vide
+  aoa.push(["", "", "", "", "", "", "", ""]);
+  // Ligne 3 : en-têtes
+  aoa.push(["Rubriques analytiques", "", "N° Item", "Désignation", "U", "PU", "Qté\nCumulée", "Montants\nCumulés"]);
+  // Ligne 4 : sous-en-têtes
+  aoa.push(["RA", "Désignation", "", "", "", "Renseignée par la plateforme", "", "Calculé par la plateforme"]);
+  // Ligne 5 : vide
+  aoa.push(["", "", "", "", "", "", "", ""]);
+  // Ligne 6 : total général
+  aoa.push(["", "", "", "Montant Total", "", "", "", totalGeneral]);
+
+  // Sous-totaux par rubrique
+  for (const rub of groups) {
+    const rubTotal = rub.postes.flatMap(p => p.lignes).reduce((s, l) => s + (l.montant || 0), 0);
+    aoa.push([rub.rubKey, rub.rubLabel, "", "", "", "", "", rubTotal]);
+  }
+
+  aoa.push(["", "", "", "", "", "", "", ""]);
+
+  // Lignes de détail groupées par poste
+  for (const rub of groups) {
+    for (const poste of rub.postes) {
+      const posteTotal = poste.lignes.reduce((s, l) => s + (l.montant || 0), 0);
+      aoa.push(["", "", poste.posteKey, poste.posteLabel, "", "", "", posteTotal]);
+      for (const l of poste.lignes) {
+        aoa.push([
+          rub.rubKey,
+          rub.rubLabel,
+          l.refDQE ?? "",
+          l.designation ?? "",
+          l.unite ?? "",
+          l.prixUnitaireHT ?? 0,
+          l.quantiteRealisee ?? 0,
+          l.montant ?? 0,
+        ]);
+      }
+    }
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Largeurs colonnes
+  ws["!cols"] = [
+    { wch: 10 }, { wch: 28 }, { wch: 12 }, { wch: 40 },
+    { wch: 6  }, { wch: 14 }, { wch: 14 }, { wch: 18 },
+  ];
+
+  // Hauteur ligne 3 (en-tête multi-ligne)
+  ws["!rows"] = [];
+  ws["!rows"][2] = { hpt: 30 };
+
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "CSE");
-  XLSX.writeFile(wb, `CSE_${ref ?? "attachement"}.xlsx`);
+  XLSX.utils.book_append_sheet(wb, ws, "DQE_ATT");
+  XLSX.writeFile(wb, `DQE_ATT_${ref ?? "attachement"}.xlsx`);
 }
 
 function importCSELignes(file, lignes, onResult, onError) {
   const reader = new FileReader();
   reader.onload = e => {
     try {
-      const wb = XLSX.read(e.target.result, { type: "array" });
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+      const wb   = XLSX.read(e.target.result, { type: "array" });
+      const ws   = wb.Sheets["DQE_ATT"] ?? wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
+
+      // Les lignes de données commencent après la ligne 6 (index 6)
+      // Une ligne de donnée a col[2] (N° Item) non vide et col[0] (RA) non vide
+      const dataRows = rows.slice(6).filter(r => String(r[2] ?? "").trim() && String(r[0] ?? "").trim());
+
       const updated = lignes.map(l => {
-        const row = rows.find(r =>
-          String(r["Désignation"] ?? "").trim() === String(l.designation ?? "").trim() &&
-          String(r["Rubrique"] ?? "").trim() === String(l.rubriqueDesignation ?? "").trim() &&
-          String(r["Poste"] ?? "").trim() === String(l.posteDesignation ?? "").trim()
+        const match = dataRows.find(r =>
+          String(r[2] ?? "").trim() === String(l.refDQE ?? "").trim()
+        ) ?? dataRows.find(r =>
+          String(r[3] ?? "").trim().toLowerCase() === String(l.designation ?? "").trim().toLowerCase()
         );
-        if (!row) return l;
-        const qte = parseFloat(row["Qté réalisée"]) || 0;
+        if (!match) return l;
+        const raw = String(match[6] ?? "").replace(/\s/g, "").replace(",", ".");
+        const qte = parseFloat(raw) || 0;
         return { ...l, quantiteRealisee: qte, montant: Math.round(qte * l.prixUnitaireHT) };
       });
       onResult(updated);
