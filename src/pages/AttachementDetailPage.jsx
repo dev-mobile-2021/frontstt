@@ -65,9 +65,9 @@ function exportCSE(lignes, ref) {
   // Grouper par rubrique → poste
   const groups = [];
   for (const l of dqeLignes) {
-    const rubKey   = l.rubriqueCode ?? l.refDQE ?? "";
+    const rubKey   = l.refDQE ?? "";
     const rubLabel = l.rubriqueDesignation ?? "";
-    const posteKey = l.posteCode ?? l.posteDesignation ?? "";
+    const posteKey = l.posteDesignation ?? "";
     const posteLabel = l.posteDesignation ?? "";
     let rub = groups.find(g => g.rubKey === rubKey);
     if (!rub) { rub = { rubKey, rubLabel, postes: [] }; groups.push(rub); }
@@ -108,10 +108,12 @@ function exportCSE(lignes, ref) {
       const posteTotal = poste.lignes.reduce((s, l) => s + (l.montant || 0), 0);
       aoa.push(["", "", poste.posteKey, poste.posteLabel, "", "", "", posteTotal]);
       for (const l of poste.lignes) {
+        const itemMatch = String(l.designation ?? "").match(/^\[([^\]]+)\]/);
+        const itemNo    = itemMatch ? itemMatch[1] : "";
         aoa.push([
           rub.rubKey,
           rub.rubLabel,
-          l.refDQE ?? "",
+          itemNo,
           l.designation ?? "",
           l.unite ?? "",
           l.prixUnitaireHT ?? 0,
@@ -152,11 +154,10 @@ function importCSELignes(file, lignes, onResult, onError) {
       const dataRows = rows.slice(6).filter(r => String(r[2] ?? "").trim() && String(r[0] ?? "").trim());
 
       const updated = lignes.map(l => {
-        const match = dataRows.find(r =>
-          String(r[2] ?? "").trim() === String(l.refDQE ?? "").trim()
-        ) ?? dataRows.find(r =>
-          String(r[3] ?? "").trim().toLowerCase() === String(l.designation ?? "").trim().toLowerCase()
-        );
+        const itemMatch = String(l.designation ?? "").match(/^\[([^\]]+)\]/);
+        const itemNo    = itemMatch ? itemMatch[1] : "";
+        const match = (itemNo ? dataRows.find(r => String(r[2] ?? "").trim() === itemNo) : null)
+          ?? dataRows.find(r => String(r[3] ?? "").trim().toLowerCase() === String(l.designation ?? "").trim().toLowerCase());
         if (!match) return l;
         const raw = String(match[6] ?? "").replace(/\s/g, "").replace(",", ".");
         const qte = parseFloat(raw) || 0;
