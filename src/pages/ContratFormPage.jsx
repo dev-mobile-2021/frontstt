@@ -1817,6 +1817,7 @@ function fmtQte(v) {
 
 function DqeTab({ contratId, contrat }) {
   const readonly = contrat?.statut === "cloture" || contrat?.statut === "resilie";
+  const { addToast } = useToast();
 
   // Utilisateur connecté
   const { currentUser } = useUser();
@@ -1932,7 +1933,7 @@ function DqeTab({ contratId, contrat }) {
   };
   const submitEditLigne = async (id) => {
     if (!editLigneForm.designation.trim()) return;
-    await saveLigne.mutateAsync({
+    const res = await saveLigne.mutateAsync({
       posteId: 0,
       data: {
         id,
@@ -1942,6 +1943,9 @@ function DqeTab({ contratId, contrat }) {
         prix_unitaire: Number(editLigneForm.prix_unitaire) || 0,
       },
     });
+    if (res?.is_new_bis) {
+      addToast("Le prix a changé sur une ligne utilisée dans un décompte — une nouvelle ligne BIS a été créée.", "info");
+    }
     setEditLigneId(null);
   };
 
