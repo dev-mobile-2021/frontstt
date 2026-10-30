@@ -65,6 +65,11 @@ export const attachementService = {
     return data.attachementsPaginated.data.map(normalize);
   },
 
+  async getById(id) {
+    const { data } = await http.get(`/attachement/${id}`);
+    return normalize(data.data);
+  },
+
   async save(att) {
     const { data } = await http.post("/attachement", denormalize(att));
     return data;

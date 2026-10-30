@@ -1109,7 +1109,14 @@ export default function AttachementDetailPage() {
   const navigate = useNavigate();
   const { attachements, updateAttachement, soumettreAttachement, validerAttachement, rejeterAttachement } = useAttachements();
   const { currentUser, hasRole } = useUser();
-  const att = attachements.find(a => a.id === id);
+  const attBase = attachements.find(a => a.id === id);
+  const [attDetail, setAttDetail] = useState(null);
+  useEffect(() => {
+    if (attBase?._dbId) {
+      attachementService.getById(attBase._dbId).then(setAttDetail).catch(() => {});
+    }
+  }, [attBase?._dbId]);
+  const att = attDetail ? { ...attBase, ...attDetail } : attBase;
 
   if (!att) {
     return (
