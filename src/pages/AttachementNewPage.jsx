@@ -93,15 +93,19 @@ export default function AttachementNewPage() {
             lignesCSE.push({
               id: `dqe-ligne-${ligne.id}`,
               source: "DQE",
-              refDQE: ligne.code || (rubrique.code ? String(rubrique.code) : `R${rubrique.id}`),
+              refDQE:             ligne.code ?? "",
+              refDQEX3:           ligne.code_x3 ?? "",
+              rubriqueCode:       rubrique.code ?? `R${rubrique.id}`,
+              rubriqueCodeX3:     rubrique.code_x3 ?? "",
               rubriqueDesignation: rubrique.designation,
-              posteDesignation: poste.designation,
-              designation: ligne.designation,
-              unite: ligne.unite ?? "",
-              quantitePrevueDQE: parseFloat(ligne.quantite_prevue ?? 0),
-              prixUnitaireHT: parseFloat(ligne.prix_unitaire ?? 0),
-              quantiteRealisee: 0,
-              montant: 0,
+              posteNumero:        poste.numero ?? "",
+              posteDesignation:   poste.designation,
+              designation:        ligne.designation,
+              unite:              ligne.unite ?? "",
+              quantitePrevueDQE:  parseFloat(ligne.quantite_prevue ?? 0),
+              prixUnitaireHT:     parseFloat(ligne.prix_unitaire ?? 0),
+              quantiteRealisee:   0,
+              montant:            0,
             });
           }
         }

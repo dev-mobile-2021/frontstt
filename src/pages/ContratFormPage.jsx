@@ -1883,7 +1883,7 @@ function DqeTab({ contratId, contrat }) {
   // Confirm delete
   const [confirmDel, setConfirmDel] = useState(null); // { type, id, label }
 
-  const resetAddRub = () => { setAddingRubrique(false); setRubForm({ designation: "", code: "", bon_commande_id: null }); };
+  const resetAddRub = () => { setAddingRubrique(false); setRubForm({ designation: "", code: "", code_x3: "", bon_commande_id: null }); };
   const resetAddPoste = () => { setAddingPosteFor(null); setPosteForm({ numero: "", designation: "" }); };
   const resetAddLigne = () => { setAddingLigneFor(null); setLigneForm({ designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" }); };
 
@@ -1892,6 +1892,7 @@ function DqeTab({ contratId, contrat }) {
     await saveRubrique.mutateAsync({
       designation:     rubForm.designation.trim(),
       code:            rubForm.code.trim() || null,
+      code_x3:         rubForm.code_x3.trim() || null,
       bon_commande_id: rubForm.bon_commande_id ? Number(rubForm.bon_commande_id) : null,
     });
     resetAddRub();
@@ -1902,6 +1903,7 @@ function DqeTab({ contratId, contrat }) {
       id,
       designation:     editRubForm.designation.trim(),
       code:            editRubForm.code?.trim() || null,
+      code_x3:         editRubForm.code_x3?.trim() || null,
       bon_commande_id: editRubForm.bon_commande_id ? Number(editRubForm.bon_commande_id) : null,
     });
     setEditRubId(null);
@@ -2124,13 +2126,23 @@ function DqeTab({ contratId, contrat }) {
       {/* Formulaire ajout rubrique inline */}
       {addingRubrique && (
         <div className="rounded-xl border border-[#087F3E]/30 bg-[#087F3E]/5 p-3 flex items-end gap-2 flex-wrap">
-          <div className="flex-1 min-w-[180px]">
-            <label className="block text-[11px] text-gray-600 mb-1">Code (optionnel)</label>
+          <div className="min-w-[120px]">
+            <label className="block text-[11px] text-gray-600 mb-1">Code interne</label>
             <input
               value={rubForm.code}
               onChange={e => setRubForm(s => ({ ...s, code: e.target.value }))}
               className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm"
               placeholder="RA-01"
+              maxLength={20}
+            />
+          </div>
+          <div className="min-w-[120px]">
+            <label className="block text-[11px] text-gray-600 mb-1">Code X3</label>
+            <input
+              value={rubForm.code_x3}
+              onChange={e => setRubForm(s => ({ ...s, code_x3: e.target.value }))}
+              className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm"
+              placeholder="6A40"
               maxLength={20}
             />
           </div>
@@ -2202,8 +2214,15 @@ function DqeTab({ contratId, contrat }) {
                   <input
                     value={editRubForm.code || ""}
                     onChange={e => setEditRubForm(s => ({ ...s, code: e.target.value }))}
-                    className="px-2 py-1 border border-gray-200 rounded text-xs w-24"
-                    placeholder="Code"
+                    className="px-2 py-1 border border-gray-200 rounded text-xs w-20"
+                    placeholder="RA-01"
+                    maxLength={20}
+                  />
+                  <input
+                    value={editRubForm.code_x3 || ""}
+                    onChange={e => setEditRubForm(s => ({ ...s, code_x3: e.target.value }))}
+                    className="px-2 py-1 border border-blue-200 rounded text-xs w-20"
+                    placeholder="6A40"
                     maxLength={20}
                   />
                   <input
@@ -2232,6 +2251,7 @@ function DqeTab({ contratId, contrat }) {
                 <>
                   <div className="flex-1 font-semibold text-[#087F3E] text-sm">
                     {rub.code && <span className="text-xs text-gray-500 font-mono mr-2">{rub.code}</span>}
+                    {rub.code_x3 && <span className="text-xs text-blue-600 font-mono mr-2 bg-blue-50 px-1 rounded">{rub.code_x3}</span>}
                     RA : {rub.designation}
                     {rub.bon_commande && (
                       <span className="ml-2 text-[11px] font-normal bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full">

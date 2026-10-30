@@ -65,9 +65,9 @@ function exportCSE(lignes, ref) {
   // Grouper par rubrique → poste
   const groups = [];
   for (const l of dqeLignes) {
-    const rubKey   = l.refDQE ?? "";
+    const rubKey   = l.rubriqueCodeX3 || l.rubriqueCode || l.refDQE || "";
     const rubLabel = l.rubriqueDesignation ?? "";
-    const posteKey = l.posteDesignation ?? "";
+    const posteKey = l.posteNumero || l.posteDesignation || "";
     const posteLabel = l.posteDesignation ?? "";
     let rub = groups.find(g => g.rubKey === rubKey);
     if (!rub) { rub = { rubKey, rubLabel, postes: [] }; groups.push(rub); }
@@ -108,8 +108,7 @@ function exportCSE(lignes, ref) {
       const posteTotal = poste.lignes.reduce((s, l) => s + (l.montant || 0), 0);
       aoa.push(["", "", poste.posteKey, poste.posteLabel, "", "", "", posteTotal]);
       for (const l of poste.lignes) {
-        const itemMatch = String(l.designation ?? "").match(/^\[([^\]]+)\]/);
-        const itemNo    = itemMatch ? itemMatch[1] : "";
+        const itemNo = l.refDQEX3 || l.refDQE || "";
         aoa.push([
           rub.rubKey,
           rub.rubLabel,
