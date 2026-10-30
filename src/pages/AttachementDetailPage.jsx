@@ -1184,12 +1184,12 @@ export default function AttachementDetailPage() {
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
           <p className="text-xs uppercase tracking-wide font-medium text-gray-400 mb-1">Montant partiel</p>
-          <p className="text-lg font-bold text-gray-900">{att.montantFinal != null ? `${num(att.montantFinal)} FCFA` : "—"}</p>
+          <p className="text-lg font-bold text-gray-900">{num(att.montantFinal ?? att.voletCSE?.totalValorise ?? 0)} FCFA</p>
           <p className="text-xs text-gray-400 mt-0.5">Cet attachement</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
           <p className="text-xs uppercase tracking-wide font-medium text-gray-400 mb-1">Montant cumulé</p>
-          <p className="text-lg font-bold text-[#087F3E]">{att.montantCumule != null ? `${num(att.montantCumule)} FCFA` : "—"}</p>
+          <p className="text-lg font-bold text-[#087F3E]">{num(att.montantCumule ?? 0)} FCFA</p>
           <p className="text-xs text-gray-400 mt-0.5">Attachements validés</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
