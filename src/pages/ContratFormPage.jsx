@@ -932,12 +932,14 @@ function PiecesJointesTab({ contratId, isNew }) {
 }
 
 // ─── Sub-tab: Avenants ───────────────────────────────────────────
-const AVENANT_INIT = { objet: "", montant: "", date_signature: "", observations: "" };
+const AVENANT_INIT = { objet: "", montant: "", date_signature: "", observations: "", bon_commande_id: "" };
 
 function AvenantsTab({ contratId, isNew, montantInitial }) {
   const { addToast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(AVENANT_INIT);
+  const { data: bcsData } = useBonCommandesByContrat(!isNew ? contratId : null);
+  const bcs = bcsData ?? [];
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmValider, setConfirmValider] = useState(null);
 
@@ -976,11 +978,12 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
     }
     try {
       await saveMut.mutateAsync({
-        contrat_id:     parseInt(contratId, 10),
-        objet:          form.objet.trim(),
-        montant:        parseFloat(form.montant),
-        date_signature: form.date_signature || null,
-        observations:   form.observations || null,
+        contrat_id:       parseInt(contratId, 10),
+        bon_commande_id:  form.bon_commande_id ? parseInt(form.bon_commande_id, 10) : null,
+        objet:            form.objet.trim(),
+        montant:          parseFloat(form.montant),
+        date_signature:   form.date_signature || null,
+        observations:     form.observations || null,
       });
       addToast("Avenant créé.", "success");
       setForm(AVENANT_INIT);
@@ -1044,6 +1047,7 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
           <thead>
             <tr className="border-b border-gray-100">
               <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Code</th>
+              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">BC</th>
               <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Objet</th>
               <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Montant</th>
               <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Signature</th>
@@ -1055,6 +1059,11 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
             {avenants.map(a => (
               <tr key={a.id} className="hover:bg-gray-50 transition-colors">
                 <td className="py-2.5 pr-3 font-mono text-xs font-medium text-gray-900">{a.code}</td>
+                <td className="py-2.5 pr-3 text-xs">
+                  {a.bon_commande
+                    ? <span className="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full font-medium">{a.bon_commande.numero ?? a.bon_commande.code_x3}</span>
+                    : <span className="text-gray-300">—</span>}
+                </td>
                 <td className="py-2.5 pr-3 text-gray-700 max-w-[200px] truncate">{a.objet}</td>
                 <td className={`py-2.5 pr-3 font-semibold whitespace-nowrap ${a.statut === "valide" ? "text-violet-700" : "text-gray-700"}`}>
                   {formatMontant(parseFloat(a.montant ?? 0))}
@@ -1134,6 +1143,21 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
               </button>
             </div>
             <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
+              {bcs.length > 0 && (
+                <div className="col-span-2 space-y-1.5">
+                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">BC associé</label>
+                  <select
+                    value={form.bon_commande_id}
+                    onChange={e => setForm(f => ({ ...f, bon_commande_id: e.target.value }))}
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none bg-white"
+                  >
+                    <option value="">— Aucun BC —</option>
+                    {bcs.map(bc => (
+                      <option key={bc.id} value={bc.id}>{bc.numero ?? bc.code_x3}{bc.libelle ? ` — ${bc.libelle}` : ""}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="col-span-2 space-y-1.5">
                 <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Objet *</label>
                 <input
