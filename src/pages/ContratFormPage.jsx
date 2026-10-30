@@ -18,6 +18,7 @@ import { useBonCommandesByContrat, useRechercheBonsCommandeX3, useLierBonsComman
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 import { usePiecesJointes, useUploadPieceJointe, useDeletePieceJointe } from "../hooks/usePiecesJointes";
 import {
+  useDqeList,
   useDqe,
   useSaveRubrique as useSaveRubriqueDqe,
   useDeleteRubrique as useDeleteRubriqueDqe,
@@ -1511,16 +1512,27 @@ function fmtQte(v) {
 
 function DqeTab({ contratId, contrat }) {
   const readonly = contrat?.statut === "cloture" || contrat?.statut === "resilie";
-  const { data, isLoading } = useDqe(contratId);
-  const saveRubrique   = useSaveRubriqueDqe(contratId);
-  const deleteRubrique = useDeleteRubriqueDqe(contratId);
-  const savePoste      = useSavePosteDqe(contratId);
-  const deletePoste    = useDeletePosteDqe(contratId);
-  const saveLigne      = useSaveLigneDqe(contratId);
-  const deleteLigne    = useDeleteLigneDqe(contratId);
+
+  // Liste des DQE du contrat
+  const { data: dqeListData, isLoading: dqeListLoading } = useDqeList(contratId);
+  const dqeList = dqeListData?.data ?? [];
+
+  // DQE sélectionné (par défaut le DQE base)
+  const dqeBase = dqeList.find(d => d.type === "base");
+  const [selectedDqeId, setSelectedDqeId] = useState(null);
+  const activeDqeId = selectedDqeId ?? dqeBase?.id ?? null;
+
+  const { data, isLoading } = useDqe(activeDqeId);
+  const saveRubrique   = useSaveRubriqueDqe(contratId, activeDqeId);
+  const deleteRubrique = useDeleteRubriqueDqe(contratId, activeDqeId);
+  const savePoste      = useSavePosteDqe(contratId, activeDqeId);
+  const deletePoste    = useDeletePosteDqe(contratId, activeDqeId);
+  const saveLigne      = useSaveLigneDqe(contratId, activeDqeId);
+  const deleteLigne    = useDeleteLigneDqe(contratId, activeDqeId);
 
   const rubriques = data?.data || [];
   const total     = data?.total ?? 0;
+  const activeDqeReadonly = readonly || (data?.dqe?.statut === "en_validation");
 
   // Formulaires inline
   const [addingRubrique, setAddingRubrique] = useState(false);
@@ -1625,15 +1637,47 @@ function DqeTab({ contratId, contrat }) {
   const liveLigneMontant = (Number(ligneForm.quantite_prevue) || 0) * (Number(ligneForm.prix_unitaire) || 0);
   const liveEditLigneMontant = (Number(editLigneForm.quantite_prevue) || 0) * (Number(editLigneForm.prix_unitaire) || 0);
 
-  if (isLoading) {
+  if (dqeListLoading) {
     return <div className="text-sm text-gray-500 py-10 text-center">Chargement du DQE…</div>;
   }
 
+  const labelDqe = (dqe) => {
+    if (dqe.type === "base") return "DQE Marché de base";
+    if (dqe.type === "avenant") return `DQE Avenant${dqe.avenant ? ` — ${dqe.avenant.code ?? dqe.avenant_id}` : ` #${dqe.id}`}`;
+    return `DQE #${dqe.id}`;
+  };
+
+  const statutBadge = (dqe) => {
+    if (dqe.statut === "valide") return <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium">Validé</span>;
+    if (dqe.statut === "en_validation") return <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">En validation</span>;
+    return <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full font-medium">Brouillon</span>;
+  };
+
   return (
     <div className="space-y-4">
+      {/* Onglets DQE */}
+      {dqeList.length > 0 && (
+        <div className="flex gap-2 flex-wrap border-b border-gray-200 pb-0">
+          {dqeList.map(dqe => (
+            <button
+              key={dqe.id}
+              onClick={() => setSelectedDqeId(dqe.id)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                activeDqeId === dqe.id
+                  ? "border-[#087F3E] text-[#087F3E]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {labelDqe(dqe)}
+              {statutBadge(dqe)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Header actions + Total */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        {!readonly ? (
+        {!activeDqeReadonly ? (
           <div className="flex items-center gap-2">
             <button
               onClick={() => setAddingRubrique(true)}
@@ -1649,7 +1693,9 @@ function DqeTab({ contratId, contrat }) {
             </button>
           </div>
         ) : (
-          <div className="text-xs text-gray-500 italic">Contrat {contrat?.statut} — lecture seule</div>
+          <div className="text-xs text-gray-500 italic">
+            {readonly ? `Contrat ${contrat?.statut} — lecture seule` : "DQE en cours de validation — lecture seule"}
+          </div>
         )}
 
         <div className="text-right">
@@ -1715,7 +1761,7 @@ function DqeTab({ contratId, contrat }) {
       {/* Liste des rubriques */}
       {rubriques.length === 0 && !addingRubrique && (
         <div className="text-center py-10 text-sm text-gray-400">
-          Aucune rubrique DQE. {!readonly && "Cliquez sur « Ajouter une rubrique » pour commencer."}
+          Aucune rubrique DQE. {!activeDqeReadonly && "Cliquez sur « Ajouter une rubrique » pour commencer."}
         </div>
       )}
 
@@ -1777,7 +1823,7 @@ function DqeTab({ contratId, contrat }) {
                     )}
                   </div>
                   <div className="text-sm font-bold text-[#087F3E]">{fmtMontantDqe(rubMontant)} FCFA</div>
-                  {!readonly && (
+                  {!activeDqeReadonly && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => { setEditRubId(rub.id); setEditRubForm({ designation: rub.designation, code: rub.code || "", bon_commande_id: rub.bon_commande_id || "" }); }}
@@ -1836,7 +1882,7 @@ function DqeTab({ contratId, contrat }) {
                               {poste.numero && <span className="font-mono text-gray-500 mr-1.5">{poste.numero}</span>}
                               {poste.designation}
                             </div>
-                            {!readonly && (
+                            {!activeDqeReadonly && (
                               <button
                                 onClick={() => { setAddingLigneFor(poste.id); setCollapsedPoste(s => ({ ...s, [poste.id]: false })); }}
                                 className="inline-flex items-center gap-1 px-2 py-1 rounded border border-[#087F3E] text-[#087F3E] text-xs hover:bg-[#087F3E]/10"
@@ -1845,7 +1891,7 @@ function DqeTab({ contratId, contrat }) {
                               </button>
                             )}
                             <div className="text-sm font-semibold text-gray-700">{fmtMontantDqe(posteMontant)} FCFA</div>
-                            {!readonly && (
+                            {!activeDqeReadonly && (
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => { setEditPosteId(poste.id); setEditPosteForm({ numero: poste.numero || "", designation: poste.designation }); }}
@@ -1877,12 +1923,12 @@ function DqeTab({ contratId, contrat }) {
                                 <th className="text-right font-medium py-1 w-24">Qté prévue</th>
                                 <th className="text-right font-medium py-1 w-28">PU</th>
                                 <th className="text-right font-medium py-1 w-32">Montant</th>
-                                {!readonly && <th className="w-16"></th>}
+                                {!activeDqeReadonly && <th className="w-16"></th>}
                               </tr>
                             </thead>
                             <tbody>
                               {(poste.lignes || []).length === 0 && (
-                                <tr><td colSpan={readonly ? 6 : 7} className="text-center text-gray-400 italic py-2">Aucune ligne</td></tr>
+                                <tr><td colSpan={activeDqeReadonly ? 6 : 7} className="text-center text-gray-400 italic py-2">Aucune ligne</td></tr>
                               )}
                               {(poste.lignes || []).map((ligne, ligneIdx) => (
                                 editLigneId === ligne.id ? (
@@ -1937,7 +1983,7 @@ function DqeTab({ contratId, contrat }) {
                                     <td className="text-right pr-2">{fmtQte(ligne.quantite_prevue)}</td>
                                     <td className="text-right pr-2">{fmtMontantDqe(ligne.prix_unitaire)}</td>
                                     <td className="text-right pr-2 font-medium">{fmtMontantDqe(ligne.montant)}</td>
-                                    {!readonly && (
+                                    {!activeDqeReadonly && (
                                       <td>
                                         <div className="flex items-center gap-1 justify-end">
                                           <button
@@ -1960,7 +2006,7 @@ function DqeTab({ contratId, contrat }) {
                               ))}
 
                               {/* Formulaire ajout ligne inline */}
-                              {addingLigneFor === poste.id && !readonly && (
+                              {addingLigneFor === poste.id && !activeDqeReadonly && (
                                 <tr className="bg-[#087F3E]/5">
                                   <td className="py-1 pr-2">
                                     <input autoFocus value={ligneForm.designation}
@@ -2011,7 +2057,7 @@ function DqeTab({ contratId, contrat }) {
                 })}
 
                 {/* Ajouter poste inline */}
-                {!readonly && (
+                {!activeDqeReadonly && (
                   <div className="bg-white px-3 py-2 pl-6">
                     {addingPosteFor === rub.id ? (
                       <div className="flex items-center gap-2">
@@ -2088,7 +2134,8 @@ function DqeTab({ contratId, contrat }) {
         <ImportDqeModal
           contratId={contratId}
           onImported={() => {
-            qc.invalidateQueries(["dqe", contratId]);
+            qc.invalidateQueries({ queryKey: ["dqe", activeDqeId] });
+            qc.invalidateQueries({ queryKey: ["dqe-list", contratId] });
             setShowImportDqe(false);
           }}
           onClose={() => setShowImportDqe(false)}
