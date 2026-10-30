@@ -1356,37 +1356,25 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
                   <StatusBadge statut={a.statut} />
                 </td>
                 <td className="py-2.5 text-right">
-                  {confirmDelete === a.id ? (
-                    <span className="inline-flex items-center gap-2">
-                      <span className="text-xs text-red-600">Confirmer ?</span>
+                  <span className="inline-flex items-center gap-3">
+                    {a.statut === "brouillon" && (
                       <button
-                        onClick={() => handleDelete(a.id)}
-                        disabled={deleteMut.isPending}
-                        className="text-xs text-red-600 hover:text-red-800 font-medium"
-                      >Oui</button>
-                      <button onClick={() => setConfirmDelete(null)} className="text-xs text-gray-400 hover:text-gray-600">Non</button>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-3">
-                      {a.statut === "brouillon" && (
-                        <button
-                          onClick={() => setConfirmValider(a.id)}
-                          disabled={validerMut.isPending}
-                          title="Valider l'avenant"
-                          className="text-[#087F3E] hover:text-[#065A2C] transition-colors disabled:opacity-40"
-                        >
-                          <CheckCircle size={15} />
-                        </button>
-                      )}
-                      <button
-                        onClick={() => setConfirmDelete(a.id)}
-                        title="Supprimer"
-                        className="text-red-400 hover:text-red-600 transition-colors"
+                        onClick={() => setConfirmValider(a.id)}
+                        disabled={validerMut.isPending}
+                        title="Valider l'avenant"
+                        className="text-[#087F3E] hover:text-[#065A2C] transition-colors disabled:opacity-40"
                       >
-                        <Trash2 size={15} />
+                        <CheckCircle size={15} />
                       </button>
-                    </span>
-                  )}
+                    )}
+                    <button
+                      onClick={() => setConfirmDelete(a.id)}
+                      title="Supprimer"
+                      className="text-red-400 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </span>
                 </td>
               </tr>
             ))}
@@ -1411,6 +1399,15 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
         confirmLabel="Valider l'avenant"
         onConfirm={() => { handleValider(confirmValider); setConfirmValider(null); }}
         onCancel={() => setConfirmValider(null)}
+      />
+
+      <ConfirmModal
+        open={!!confirmDelete}
+        title="Supprimer l'avenant"
+        message="Cette action est irréversible. L'avenant sera définitivement supprimé. Confirmer ?"
+        confirmLabel="Supprimer"
+        onConfirm={() => { handleDelete(confirmDelete); setConfirmDelete(null); }}
+        onCancel={() => setConfirmDelete(null)}
       />
 
       {/* Modal overlay */}
