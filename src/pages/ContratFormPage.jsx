@@ -2416,7 +2416,7 @@ function DqeTab({ contratId, contrat }) {
                                   <tr key={ligne.id} className="border-b border-gray-50 hover:bg-gray-50/50">
                                     <td className="py-1 pr-2">
                                       {(() => {
-                                        const ref = poste.numero ? `${poste.numero}-${ligneIdx + 1}` : ligne.code;
+                                        const ref = ligne.code_x3 || (poste.numero ? `${poste.numero}-${ligneIdx + 1}` : ligne.code);
                                         return ref
                                           ? <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{ref}</span>
                                           : <span className="text-gray-300">—</span>;

@@ -86,7 +86,7 @@ function parseFormatX3(rows, headerRowIdx) {
       // Créer/récupérer la rubrique via le code RA
       const raKey = ra || "__default__";
       if (!rubriquesMap[raKey]) {
-        const rub = { code: ra || null, designation: dra || ra || "Rubrique", postes: [] };
+        const rub = { code: null, code_x3: ra || null, designation: dra || ra || "Rubrique", postes: [] };
         rubriquesMap[raKey] = rub;
         rubriques.push(rub);
       }
@@ -100,6 +100,7 @@ function parseFormatX3(rows, headerRowIdx) {
       const qte = parseFloat(String(row[colQte] ?? "").replace(",", ".")) || 0;
       const pu  = parseFloat(String(row[colPU]  ?? "").replace(",", ".")) || 0;
       postesByNum[posteNum].lignes.push({
+        code_x3:         item,
         designation:     des,
         unite:           String(row[colU] ?? "").trim() || null,
         quantite_prevue: qte,
@@ -179,7 +180,7 @@ async function parseFichier(file) {
 
       if (type === "rubrique") {
         if (!desig) continue;
-        curRub = { code: code || null, designation: desig, postes: [] };
+        curRub = { code: code || null, code_x3: null, designation: desig, postes: [] };
         rubriques.push(curRub);
         curPoste = null;
       } else if (type === "poste") {
