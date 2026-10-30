@@ -1435,7 +1435,7 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
                   >
                     <option value="">— Aucun BC —</option>
                     {bcs.map(bc => (
-                      <option key={bc.id} value={bc.id}>{bc.code_x3 ?? bc.code}{bc.objet ? ` — ${bc.objet}` : ""}</option>
+                      <option key={bc.id} value={bc.id}>{bc.numero ?? bc.code_x3 ?? bc.code}</option>
                     ))}
                   </SearchSelect>
                 </div>
