@@ -1529,9 +1529,9 @@ function DqeTab({ contratId, contrat }) {
   const [editRubForm, setEditRubForm] = useState({ designation: "", code: "" });
 
   const [addingPosteFor, setAddingPosteFor] = useState(null);  // rubriqueId
-  const [posteForm, setPosteForm] = useState({ designation: "" });
+  const [posteForm, setPosteForm] = useState({ numero: "", designation: "" });
   const [editPosteId, setEditPosteId] = useState(null);
-  const [editPosteForm, setEditPosteForm] = useState({ designation: "" });
+  const [editPosteForm, setEditPosteForm] = useState({ numero: "", designation: "" });
 
   const [addingLigneFor, setAddingLigneFor] = useState(null);  // posteId
   const [ligneForm, setLigneForm] = useState({ designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" });
@@ -1554,7 +1554,7 @@ function DqeTab({ contratId, contrat }) {
   const [confirmDel, setConfirmDel] = useState(null); // { type, id, label }
 
   const resetAddRub = () => { setAddingRubrique(false); setRubForm({ designation: "", code: "", bon_commande_id: null }); };
-  const resetAddPoste = () => { setAddingPosteFor(null); setPosteForm({ designation: "" }); };
+  const resetAddPoste = () => { setAddingPosteFor(null); setPosteForm({ numero: "", designation: "" }); };
   const resetAddLigne = () => { setAddingLigneFor(null); setLigneForm({ designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" }); };
 
   const submitAddRub = async () => {
@@ -1578,12 +1578,12 @@ function DqeTab({ contratId, contrat }) {
   };
   const submitAddPoste = async (rubriqueId) => {
     if (!posteForm.designation.trim()) return;
-    await savePoste.mutateAsync({ rubriqueId, data: { designation: posteForm.designation.trim() } });
+    await savePoste.mutateAsync({ rubriqueId, data: { numero: posteForm.numero.trim() || null, designation: posteForm.designation.trim() } });
     resetAddPoste();
   };
   const submitEditPoste = async (id) => {
     if (!editPosteForm.designation.trim()) return;
-    await savePoste.mutateAsync({ rubriqueId: 0, data: { id, designation: editPosteForm.designation.trim() } });
+    await savePoste.mutateAsync({ rubriqueId: 0, data: { id, numero: editPosteForm.numero?.trim() || null, designation: editPosteForm.designation.trim() } });
     setEditPosteId(null);
   };
   const submitAddLigne = async (posteId) => {
@@ -1815,9 +1815,16 @@ function DqeTab({ contratId, contrat }) {
                         {editPosteId === poste.id ? (
                           <div className="flex-1 flex items-center gap-2">
                             <input
+                              value={editPosteForm.numero}
+                              onChange={e => setEditPosteForm(s => ({ ...s, numero: e.target.value }))}
+                              className="px-2 py-1 border border-gray-200 rounded text-sm w-20"
+                              placeholder="N° (100)"
+                              maxLength={20}
+                            />
+                            <input
                               autoFocus
                               value={editPosteForm.designation}
-                              onChange={e => setEditPosteForm({ designation: e.target.value })}
+                              onChange={e => setEditPosteForm(s => ({ ...s, designation: e.target.value }))}
                               className="flex-1 px-2 py-1 border border-gray-200 rounded text-sm"
                             />
                             <button onClick={() => submitEditPoste(poste.id)} className="px-2 py-1 rounded bg-[#087F3E] text-white text-xs hover:bg-[#076a34]">OK</button>
@@ -1825,7 +1832,10 @@ function DqeTab({ contratId, contrat }) {
                           </div>
                         ) : (
                           <>
-                            <div className="flex-1 font-medium text-gray-700 text-sm">Poste : {poste.designation}</div>
+                            <div className="flex-1 font-medium text-gray-700 text-sm">
+                              {poste.numero && <span className="font-mono text-gray-500 mr-1.5">{poste.numero}</span>}
+                              {poste.designation}
+                            </div>
                             {!readonly && (
                               <button
                                 onClick={() => { setAddingLigneFor(poste.id); setCollapsedPoste(s => ({ ...s, [poste.id]: false })); }}
@@ -1838,7 +1848,7 @@ function DqeTab({ contratId, contrat }) {
                             {!readonly && (
                               <div className="flex items-center gap-1">
                                 <button
-                                  onClick={() => { setEditPosteId(poste.id); setEditPosteForm({ designation: poste.designation }); }}
+                                  onClick={() => { setEditPosteId(poste.id); setEditPosteForm({ numero: poste.numero || "", designation: poste.designation }); }}
                                   className="p-1 rounded hover:bg-gray-200 text-gray-600" title="Modifier"
                                 >
                                   <Pencil size={12} />
@@ -1874,7 +1884,7 @@ function DqeTab({ contratId, contrat }) {
                               {(poste.lignes || []).length === 0 && (
                                 <tr><td colSpan={readonly ? 6 : 7} className="text-center text-gray-400 italic py-2">Aucune ligne</td></tr>
                               )}
-                              {(poste.lignes || []).map((ligne) => (
+                              {(poste.lignes || []).map((ligne, ligneIdx) => (
                                 editLigneId === ligne.id ? (
                                   <tr key={ligne.id} className="bg-amber-50/40">
                                     {(() => {
@@ -1915,10 +1925,12 @@ function DqeTab({ contratId, contrat }) {
                                 ) : (
                                   <tr key={ligne.id} className="border-b border-gray-50 hover:bg-gray-50/50">
                                     <td className="py-1 pr-2">
-                                      {ligne.code
-                                        ? <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{ligne.code}</span>
-                                        : <span className="text-gray-300">—</span>
-                                      }
+                                      {(() => {
+                                        const ref = poste.numero ? `${poste.numero}-${ligneIdx + 1}` : ligne.code;
+                                        return ref
+                                          ? <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{ref}</span>
+                                          : <span className="text-gray-300">—</span>;
+                                      })()}
                                     </td>
                                     <td className="py-1 pr-2">{ligne.designation}</td>
                                     <td className="pr-2">{ligne.unite || "—"}</td>
@@ -2004,9 +2016,16 @@ function DqeTab({ contratId, contrat }) {
                     {addingPosteFor === rub.id ? (
                       <div className="flex items-center gap-2">
                         <input
+                          value={posteForm.numero}
+                          onChange={e => setPosteForm(s => ({ ...s, numero: e.target.value }))}
+                          placeholder="N° (100)"
+                          className="px-2 py-1.5 border border-gray-200 rounded text-sm w-20"
+                          maxLength={20}
+                        />
+                        <input
                           autoFocus
                           value={posteForm.designation}
-                          onChange={e => setPosteForm({ designation: e.target.value })}
+                          onChange={e => setPosteForm(s => ({ ...s, designation: e.target.value }))}
                           placeholder="Désignation du poste"
                           className="flex-1 px-2 py-1.5 border border-gray-200 rounded text-sm"
                         />
