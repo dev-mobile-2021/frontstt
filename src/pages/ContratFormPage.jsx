@@ -2097,6 +2097,7 @@ export default function ContratFormPage() {
 
   // ── Formulaire ──────────────────────────────────────────────
   const [form, setForm] = useState({
+    libelle:         "",
     objet:           "",
     type_contrat:    "",
     montant_initial: "",
@@ -2126,6 +2127,7 @@ export default function ContratFormPage() {
   useEffect(() => {
     if (contrat) {
       setForm({
+        libelle:         contrat.libelle          ?? "",
         objet:           contrat.objet           ?? "",
         type_contrat:    contrat.type_contrat     ?? "",
         montant_initial: contrat.montant_initial  ?? "",
@@ -2162,7 +2164,7 @@ export default function ContratFormPage() {
 
   // ── Save ────────────────────────────────────────────────────
   async function handleSave() {
-    if (!form.objet.trim() || !form.chantier_id || !form.soustraitant_id) {
+    if (!form.libelle.trim() || !form.objet.trim() || !form.chantier_id || !form.soustraitant_id) {
       addToast("Veuillez remplir les champs obligatoires.", "error");
       return;
     }
@@ -2261,10 +2263,10 @@ export default function ContratFormPage() {
       </button>
 
       <PageHeader
-        title={isNew ? "Nouveau contrat" : (contrat.objet || contrat.code)}
+        title={isNew ? "Nouveau contrat" : (contrat.libelle || contrat.objet || contrat.code)}
         subtitle={isNew
           ? "Remplir les informations du contrat"
-          : [contrat.chantier?.designation, contrat.soustraitant?.raison_sociale].filter(Boolean).join(" · ")}
+          : [contrat.code, contrat.chantier?.designation, contrat.soustraitant?.raison_sociale].filter(Boolean).join(" · ")}
         action={!isNew && (
           <div className="flex items-center gap-2 flex-wrap">
             {["brouillon","soumis","resilie","cloture"].includes(contrat.statut) && (
@@ -2472,6 +2474,13 @@ export default function ContratFormPage() {
                       <ReadonlyVal value={contrat.code} highlight />
                     </Field>
                   )}
+                  <Field label="Libellé" required>
+                    <Input
+                      value={form.libelle}
+                      onChange={v => setForm(f => ({ ...f, libelle: v }))}
+                      placeholder="Ex: Terrassement gros œuvre Bâtiment A"
+                    />
+                  </Field>
                   <Field label="Objet" required>
                     <Input
                       value={form.objet}
