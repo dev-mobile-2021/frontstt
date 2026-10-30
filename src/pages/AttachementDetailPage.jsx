@@ -1173,6 +1173,25 @@ export default function AttachementDetailPage() {
         </div>
       </div>
 
+      {/* Cards montants */}
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
+          <p className="text-xs uppercase tracking-wide font-medium text-gray-400 mb-1">Montant partiel</p>
+          <p className="text-lg font-bold text-gray-900">{att.montantFinal != null ? `${num(att.montantFinal)} FCFA` : "—"}</p>
+          <p className="text-xs text-gray-400 mt-0.5">Cet attachement</p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
+          <p className="text-xs uppercase tracking-wide font-medium text-gray-400 mb-1">Montant cumulé</p>
+          <p className="text-lg font-bold text-[#087F3E]">{att.montantCumule != null ? `${num(att.montantCumule)} FCFA` : "—"}</p>
+          <p className="text-xs text-gray-400 mt-0.5">Attachements validés</p>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
+          <p className="text-xs uppercase tracking-wide font-medium text-gray-400 mb-1">Montant occasionné</p>
+          <p className="text-lg font-bold text-gray-400">—</p>
+          <p className="text-xs text-gray-400 mt-0.5">À définir</p>
+        </div>
+      </div>
+
       {/* Bandeaux informatifs */}
       {att.statut === "Validé" && att.visaDacc && (
         <div className="bg-green-50 border border-green-200 rounded-2xl px-5 py-4 flex items-start gap-3">

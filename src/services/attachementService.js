@@ -28,7 +28,8 @@ function normalize(r) {
     periodeDebut: r.periode_debut,
     periodeFin:   r.periode_fin,
     statut:       r.statut,
-    montantFinal: r.montant_final,
+    montantFinal:  r.montant_final,
+    montantCumule: r.montant_cumule ?? null,
     ...payload,
   };
 }
