@@ -687,9 +687,9 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
   const cumulD   = p.D?.cumulM ?? Math.round(cumulA * tauxRG / 100);
   const mensuelD = cumulD - cM1("D");
 
-  // Poste B — auto (tauxRevisionPrix × A)
-  const tauxRevisionPrix = p.B?.tauxRevision ?? d.contrat?.taux_revision_prix ?? 0;
-  const cumulB   = p.B?.cumulM ?? Math.round(cumulA * tauxRevisionPrix / 100);
+  // Poste B — taux toujours depuis le contrat (source de vérité), fallback payload
+  const tauxRevisionPrix = d.contrat?.taux_revision_prix ?? p.B?.tauxRevision ?? 0;
+  const cumulB   = Math.round(cumulA * tauxRevisionPrix / 100);
   const mensuelB = cumulB - cM1("B");
 
   // Postes saisissables
