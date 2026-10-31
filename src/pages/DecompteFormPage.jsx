@@ -108,131 +108,173 @@ function ChecklistEtape({ profil }) {
 }
 
 // ─── Circuit Stepper ─────────────────────────────────────────────────────────
-function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider = false }) {
-  const [showRejet, setShowRejet] = useState(false);
-  const [motif, setMotif]         = useState("");
+// ─── Logique circuit partagée ────────────────────────────────────────────────
+function useCircuitState(decompte, circuit, peutValider) {
   const { currentUser } = useUser();
-
   const statut      = decompte?.statut ?? "brouillon";
   const validations = decompte?.validations ?? [];
   const etapes      = [...circuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
-
-  // Progression depuis la table validations (pas statut_avant/statut_apres)
   const validatedProfils = validations.filter(v => v.action === "valide").map(v => v.profil_code);
-  const findVal  = profil => validations.find(v => v.profil_code === profil && v.action === "valide");
   const currentEtape  = etapes.find(e => !validatedProfils.includes(e.profil_code));
   const allValidated  = etapes.length > 0 && etapes.every(e => validatedProfils.includes(e.profil_code));
   const isTerminal    = statut === "paye" || statut === "rejete";
   const isBrouillon   = statut === "brouillon";
-
-  const userRole   = currentUser?.role?.designation?.toLowerCase() ?? "";
-  const isAdmin    = userRole === "admin";
-  const canValidate = peutValider && !isBrouillon && !isTerminal
+  const userRole      = currentUser?.role?.designation?.toLowerCase() ?? "";
+  const isAdmin       = userRole === "admin";
+  const canValidate   = peutValider && !isBrouillon && !isTerminal
     && (isAdmin || !currentEtape || userRole === currentEtape.profil_code?.toLowerCase());
+  return { statut, validations, etapes, validatedProfils, currentEtape, allValidated, isTerminal, isBrouillon, canValidate };
+}
 
-  // Steps : Création → Soumis → [étapes] → Payé
-  const steps = [
-    { key: "creation", label: "Création",   done: !isBrouillon,         current: isBrouillon,   profil: null },
-    { key: "soumis",   label: "Soumis",     done: !isBrouillon && validatedProfils.length > 0 || allValidated,
-                                             current: !isBrouillon && validatedProfils.length === 0 && !allValidated, profil: null },
-    ...etapes.map(e => {
-      const val     = findVal(e.profil_code);
-      const done    = !!val;
-      const current = !done && !isBrouillon && e.profil_code === currentEtape?.profil_code;
-      return { key: e.profil_code, label: e.profil_code?.toUpperCase(), profil: e.profil_code, done, current, val };
-    }),
-    { key: "paye", label: "Payé", done: statut === "paye", current: allValidated && statut !== "paye", profil: null },
-  ];
+// ─── Barre d'actions (haut de Structure) ────────────────────────────────────
+function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider }) {
+  const [showRejet, setShowRejet] = useState(false);
+  const [motif, setMotif]         = useState("");
+  const { statut, currentEtape, allValidated, isTerminal, isBrouillon, canValidate } = useCircuitState(decompte, circuit, peutValider);
+
+  if (isTerminal && statut !== "paye") return null;
+  if (statut === "paye") return (
+    <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700 font-medium">
+      <CheckCircle2 size={14} /> Décompte payé
+    </div>
+  );
 
   return (
-    <div className="space-y-5">
-      {statut === "rejete" ? (
-        <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
-          <XCircle size={16} /> Rejeté
-          {decompte?.motif_rejet && (
-            <span className="ml-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded px-2 py-0.5">{decompte.motif_rejet}</span>
-          )}
+    <div className="flex items-center gap-2 flex-wrap">
+      {isBrouillon && (
+        <button onClick={onSoumettre}
+          className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold">
+          <Send size={13} /> Soumettre au circuit
+        </button>
+      )}
+      {!isBrouillon && !allValidated && currentEtape && canValidate && !showRejet && (
+        <>
+          <button onClick={onValider}
+            className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold">
+            <CheckCircle2 size={13} /> Approuver — {currentEtape.profil_code?.toUpperCase()}
+          </button>
+          <button onClick={() => setShowRejet(true)}
+            className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50">
+            <XCircle size={13} /> Refuser
+          </button>
+        </>
+      )}
+      {showRejet && (
+        <div className="flex items-center gap-2 flex-wrap w-full">
+          <input autoFocus placeholder="Motif du refus (obligatoire)…" value={motif}
+            onChange={e => setMotif(e.target.value)}
+            className="flex-1 min-w-48 border border-red-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-red-200 outline-none" />
+          <button onClick={() => { onRejeter(motif); setShowRejet(false); setMotif(""); }}
+            disabled={!motif.trim()}
+            className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-medium disabled:opacity-50">
+            Confirmer
+          </button>
+          <button onClick={() => { setShowRejet(false); setMotif(""); }}
+            className="px-3 py-2 text-gray-500 border border-gray-200 rounded-xl text-sm">
+            Annuler
+          </button>
         </div>
-      ) : (
-        <div className="flex items-start gap-0">
-          {steps.map((step, idx) => (
-            <div key={step.key} className="flex-1 flex flex-col items-center">
-              <div className="flex items-center w-full">
-                <div className={`flex-1 h-0.5 ${idx === 0 ? "opacity-0" : step.done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-colors text-xs
-                  ${step.done ? "bg-[#087F3E] border-[#087F3E] text-white" : step.current ? "bg-white border-[#087F3E] text-[#087F3E]" : "bg-white border-gray-200 text-gray-300"}`}>
-                  {step.done ? <CheckCircle2 size={13} /> : step.current ? <Clock size={11} /> : <Circle size={11} />}
-                </div>
-                <div className={`flex-1 h-0.5 ${idx === steps.length - 1 ? "opacity-0" : step.done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
-              </div>
-              <div className="mt-1.5 text-center px-0.5 w-full">
-                <p className={`text-[10px] font-semibold ${step.done ? "text-[#087F3E]" : step.current ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
-                {step.val && <p className="text-[10px] text-[#087F3E]">{fmtD(step.val.validated_at?.slice(0,10))}</p>}
-                {step.val?.user && <p className="text-[10px] text-gray-400 truncate">{step.val.user.prenom} {step.val.user.nom}</p>}
-                {step.current && step.profil && <p className="text-[10px] text-amber-500">En attente</p>}
-              </div>
-            </div>
-          ))}
+      )}
+      {!isBrouillon && !allValidated && currentEtape && !canValidate && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+          <Clock size={12} /> En attente de <strong>{currentEtape.libelle ?? currentEtape.profil_code?.toUpperCase()}</strong>
+        </div>
+      )}
+      {allValidated && statut !== "paye" && (
+        <button onClick={onPayer}
+          className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold">
+          <CheckCircle2 size={13} /> Marquer comme payé
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Workflow tab style Odoo ─────────────────────────────────────────────────
+function WorkflowTab({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider }) {
+  const { statut, validations, etapes, validatedProfils, currentEtape, allValidated, isTerminal, isBrouillon } =
+    useCircuitState(decompte, circuit, peutValider);
+
+  const findVal = profil => validations.find(v => v.profil_code === profil && v.action === "valide");
+  const findRej = profil => validations.find(v => v.profil_code === profil && v.action === "rejete");
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      {/* Rejeté */}
+      {statut === "rejete" && (
+        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <XCircle size={18} className="text-red-500 mt-0.5 flex-shrink-0" />
+          <div>
+            <p className="text-sm font-semibold text-red-700">Décompte rejeté</p>
+            {decompte?.motif_rejet && <p className="text-xs text-red-600 mt-1">{decompte.motif_rejet}</p>}
+          </div>
         </div>
       )}
 
-      <div className="text-xs text-gray-400 text-right">Étape {validatedProfils.length}/{etapes.length}</div>
+      {/* Brouillon */}
+      {isBrouillon && (
+        <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl">
+          <Circle size={16} className="text-gray-400 flex-shrink-0" />
+          <p className="text-sm text-gray-500">Ce décompte est en brouillon. Soumettez-le au circuit pour démarrer l'approbation.</p>
+        </div>
+      )}
 
-      {!isTerminal && (
-        <div className="border-t border-gray-100 pt-4 space-y-3">
-          {isBrouillon && (
-            <button onClick={onSoumettre} className="w-full px-4 py-2.5 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-medium">
-              Soumettre au circuit
-            </button>
-          )}
-          {!isBrouillon && !allValidated && currentEtape && (
-            <>
-              <div className="text-xs text-gray-500 flex items-center gap-1.5">
-                <Clock size={11} className="text-amber-400" />
-                En attente de validation par <strong className="text-gray-800">{currentEtape.profil_code?.toUpperCase()}</strong>
+      {/* Parcours d'approbation */}
+      <div>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Parcours d'approbation</p>
+        <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+          {etapes.map(etape => {
+            const val = findVal(etape.profil_code);
+            const rej = !val ? findRej(etape.profil_code) : null;
+            const isCurrent = !isBrouillon && etape.profil_code === currentEtape?.profil_code;
+            const isPending = !isBrouillon && !val && !rej && !isCurrent;
+
+            return (
+              <div key={etape.profil_code} className={`flex items-start gap-4 px-5 py-4 ${isCurrent ? "bg-amber-50" : val ? "bg-white" : "bg-white"}`}>
+                {/* Icône statut */}
+                <div className="flex-shrink-0 mt-0.5">
+                  {val   ? <CheckCircle2 size={18} className="text-[#087F3E]" />
+                  : rej  ? <XCircle size={18} className="text-red-500" />
+                  : isCurrent ? <Clock size={18} className="text-amber-500" />
+                  : <Circle size={18} className="text-gray-300" />}
+                </div>
+
+                {/* Contenu */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-800">{etape.libelle ?? etape.profil_code?.toUpperCase()}</p>
+                  {val && (
+                    <p className="text-xs text-[#087F3E] mt-0.5">
+                      ✓ {val.user ? `${val.user.prenom} ${val.user.nom}` : etape.profil_code} — approuvé le {fmtD(val.validated_at?.slice(0,10))}
+                    </p>
+                  )}
+                  {rej && (
+                    <p className="text-xs text-red-600 mt-0.5">
+                      ✗ {rej.user ? `${rej.user.prenom} ${rej.user.nom}` : etape.profil_code} — refusé le {fmtD(rej.validated_at?.slice(0,10))}
+                      {rej.motif && <span className="ml-1 italic">"{rej.motif}"</span>}
+                    </p>
+                  )}
+                  {isCurrent && <p className="text-xs text-amber-600 mt-0.5">En attente d'approbation</p>}
+                  {isPending  && <p className="text-xs text-gray-400 mt-0.5">En attente</p>}
+                </div>
+
+                {/* Badge */}
+                <div className="flex-shrink-0">
+                  {val       && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Approuvé</span>}
+                  {rej       && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">Refusé</span>}
+                  {isCurrent && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">En cours</span>}
+                  {isPending  && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">En attente</span>}
+                </div>
               </div>
-              {canValidate && !showRejet && (
-                <div className="flex gap-2">
-                  <button onClick={onValider} className="flex-1 px-3 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C]">
-                    Valider — {currentEtape.profil_code?.toUpperCase()}
-                  </button>
-                  <button onClick={() => setShowRejet(true)} className="px-3 py-2 text-red-600 border border-red-200 rounded-lg text-sm hover:bg-red-50">
-                    Rejeter
-                  </button>
-                </div>
-              )}
-              {canValidate && showRejet && (
-                <div className="space-y-2">
-                  <input autoFocus placeholder="Motif du rejet (obligatoire)…" value={motif}
-                    onChange={e => setMotif(e.target.value)}
-                    className="w-full border border-red-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-200 outline-none" />
-                  <div className="flex gap-2">
-                    <button onClick={() => { onRejeter(motif); setShowRejet(false); setMotif(""); }}
-                      disabled={!motif.trim()}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium disabled:opacity-50">
-                      Confirmer le rejet
-                    </button>
-                    <button onClick={() => { setShowRejet(false); setMotif(""); }}
-                      className="px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm">
-                      Annuler
-                    </button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-          {allValidated && statut !== "paye" && (
-            <button onClick={onPayer} className="w-full px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-medium hover:bg-violet-700">
-              Marquer comme payé
-            </button>
-          )}
+            );
+          })}
         </div>
-      )}
-      {statut === "paye" && (
-        <div className="border-t border-gray-100 pt-3">
-          <p className="text-sm text-[#087F3E] font-medium flex items-center gap-1.5"><CheckCircle2 size={14} /> Décompte payé</p>
+
+        <div className="flex justify-between text-[10px] text-gray-400 mt-2 px-1">
+          <span>{validatedProfils.length}/{etapes.length} approbation(s)</span>
+          {allValidated && statut !== "paye" && <span className="text-violet-600 font-medium">✓ Toutes les approbations obtenues</span>}
+          {statut === "paye" && <span className="text-emerald-600 font-medium">✓ Payé</span>}
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -1590,6 +1632,16 @@ export default function DecompteFormPage() {
                 ))}
               </div>
 
+              {/* Barre d'actions — visible sur tous les onglets sauf nouveau */}
+              <div className="px-5 pt-4 pb-0">
+                <ActionBar
+                  decompte={d} circuit={circuit}
+                  onValider={handleValider} onRejeter={handleRejeter}
+                  onPayer={handlePayer} onSoumettre={handleValider}
+                  peutValider={peutValiderDecompte}
+                />
+              </div>
+
               <div className="p-5">
                 {activeTab === "structure" && (
                   <StructureTab decompte={d} canEdit={canEdit} onSave={handleSavePayload} saving={saveMut.isPending} />
@@ -1600,25 +1652,12 @@ export default function DecompteFormPage() {
                 )}
 
                 {activeTab === "workflow" && (
-                  <div className="max-w-xl">
-                    {(() => {
-                      const etapes = [...circuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
-                      const currentEtape = etapes.find(e => e.statut_avant === d.statut);
-                      const userRole = currentUser?.role?.designation?.toLowerCase() ?? "";
-                      const isAdmin  = userRole === "admin";
-                      const canVal   = currentEtape && (isAdmin || userRole === currentEtape.profil_code?.toLowerCase());
-                      return canVal ? <ChecklistEtape profil={currentEtape.profil_code} /> : null;
-                    })()}
-                    <CircuitStepper
-                      decompte={d}
-                      circuit={circuit}
-                      onValider={handleValider}
-                      onRejeter={handleRejeter}
-                      onPayer={handlePayer}
-                      onSoumettre={handleValider}
-                      peutValider={peutValiderDecompte}
-                    />
-                  </div>
+                  <WorkflowTab
+                    decompte={d} circuit={circuit}
+                    onValider={handleValider} onRejeter={handleRejeter}
+                    onPayer={handlePayer} onSoumettre={handleValider}
+                    peutValider={peutValiderDecompte}
+                  />
                 )}
 
                 {activeTab === "pieces" && (
