@@ -153,8 +153,7 @@ function importCSELignes(file, lignes, onResult, onError) {
       const dataRows = rows.slice(6).filter(r => String(r[2] ?? "").trim() && String(r[0] ?? "").trim());
 
       const updated = lignes.map(l => {
-        const itemMatch = String(l.designation ?? "").match(/^\[([^\]]+)\]/);
-        const itemNo    = itemMatch ? itemMatch[1] : "";
+        const itemNo = l.refDQEX3 || l.refDQE || "";
         const match = (itemNo ? dataRows.find(r => String(r[2] ?? "").trim() === itemNo) : null)
           ?? dataRows.find(r => String(r[3] ?? "").trim().toLowerCase() === String(l.designation ?? "").trim().toLowerCase());
         if (!match) return l;
