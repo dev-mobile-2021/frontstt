@@ -234,7 +234,7 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
     poste.lignes.push(l);
   }
 
-  const colCount = editable ? 8 : 7;
+  const colCount = editable ? 9 : 8;
 
   return (
     <>
@@ -268,12 +268,11 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
               </tr>
               {posteGroup.lignes.map(l => (
                 <tr key={l.id} className="border-b border-gray-100 hover:bg-blue-50/20 transition-colors">
-                  <td className="pl-6 pr-3 py-2.5">
-                    {(l.refDQEX3 || l.refDQE) && (
-                      <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">
-                        {l.refDQEX3 || l.refDQE}
-                      </span>
-                    )}
+                  <td className="pl-6 pr-2 py-2.5">
+                    {l.refDQE && <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{l.refDQE}</span>}
+                  </td>
+                  <td className="pr-3 py-2.5">
+                    {l.refDQEX3 && <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{l.refDQEX3}</span>}
                   </td>
                   <td className="px-3 py-2.5">
                     <span className="text-gray-800 text-sm">{l.designation}</span>
@@ -442,7 +441,8 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-              <th className="text-left px-3 py-3 w-20">Réf DQE</th>
+              <th className="text-left px-3 py-3 w-16">Réf</th>
+              <th className="text-left px-2 py-3 w-20">N° Item</th>
               <th className="text-left px-3 py-3">Désignation</th>
               <th className="text-center px-2 py-3 w-14">Unité</th>
               <th className="text-right px-2 py-3 w-20">Qté DQE</th>
@@ -599,7 +599,8 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
-                  <th className="text-left px-3 py-2.5 w-16">Réf</th>
+                  <th className="text-left px-3 py-2.5 w-14">Réf</th>
+                  <th className="text-left px-2 py-2.5 w-20">N° Item</th>
                   <th className="text-left px-2 py-2.5">Désignation</th>
                   <th className="text-center px-2 py-2.5 w-12">Unité</th>
                   <th className="text-right px-2 py-2.5 w-16">Qté DQE</th>
@@ -925,7 +926,8 @@ function VueDacc({ att, updateAttachement, validerAttachement, rejeterAttachemen
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
-                  <th className="text-left px-3 py-2.5 w-16">Réf</th>
+                  <th className="text-left px-3 py-2.5 w-14">Réf</th>
+                  <th className="text-left px-2 py-2.5 w-20">N° Item</th>
                   <th className="text-left px-2 py-2.5">Désignation</th>
                   <th className="text-center px-2 py-2.5 w-12">Unité</th>
                   <th className="text-right px-2 py-2.5 w-16">Qté DQE</th>
