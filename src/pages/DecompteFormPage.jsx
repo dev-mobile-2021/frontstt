@@ -1104,6 +1104,128 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
 }
 
 // ─── Onglet Cessions ─────────────────────────────────────────────────────────
+// ─── Pièces jointes ─────────────────────────────────────────────────────────
+const MIME_ICONS = {
+  "application/pdf": "📄",
+  "image/jpeg": "🖼️", "image/png": "🖼️",
+  "application/vnd.ms-excel": "📊",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "📊",
+  "application/msword": "📝",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "📝",
+  "application/zip": "🗜️",
+};
+
+function PiecesJointesTab({ decompteId }) {
+  const [docs, setDocs]           = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [libelle, setLibelle]     = useState("");
+  const [fichier, setFichier]     = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError]         = useState(null);
+  const { addToast } = useToast();
+
+  async function fetchDocs() {
+    setLoading(true);
+    try {
+      const { data } = await http.get(`/decompte/${decompteId}/documents`);
+      setDocs(data.data ?? []);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { fetchDocs(); }, [decompteId]);
+
+  async function handleUpload(e) {
+    e.preventDefault();
+    if (!libelle.trim() || !fichier) return;
+    setError(null);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("decompte_id", decompteId);
+      fd.append("libelle", libelle.trim());
+      fd.append("fichier", fichier);
+      await http.post("/decompte/documents/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setLibelle(""); setFichier(null);
+      e.target.reset();
+      addToast("Document ajouté", "success");
+      fetchDocs();
+    } catch (err) {
+      setError(err?.response?.data?.error ?? "Erreur lors de l'upload.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleDelete(id, nom) {
+    if (!window.confirm(`Supprimer "${nom}" ?`)) return;
+    await http.delete(`/decompte/documents/${id}`);
+    addToast("Document supprimé", "success");
+    fetchDocs();
+  }
+
+  function handleDownload(id) {
+    window.open(`${http.defaults.baseURL}/decompte/documents/${id}/download`, "_blank");
+  }
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      {/* Formulaire upload */}
+      <form onSubmit={handleUpload} className="border border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Joindre un document</p>
+        <div className="flex gap-3 flex-wrap">
+          <input
+            type="text" placeholder="Libellé du document…" value={libelle}
+            onChange={e => setLibelle(e.target.value)}
+            className="flex-1 min-w-48 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 outline-none bg-white"
+          />
+          <input
+            type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.zip"
+            onChange={e => setFichier(e.target.files[0] ?? null)}
+            className="flex-1 min-w-48 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white file:mr-2 file:text-xs file:border-0 file:bg-[#087F3E]/10 file:text-[#087F3E] file:rounded-lg file:px-2 file:py-1"
+          />
+        </div>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+        <button type="submit" disabled={!libelle.trim() || !fichier || uploading}
+          className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50">
+          {uploading
+            ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : <Plus size={13} />}
+          Joindre
+        </button>
+      </form>
+
+      {/* Liste */}
+      {loading ? (
+        <div className="text-sm text-gray-400 text-center py-6">Chargement…</div>
+      ) : docs.length === 0 ? (
+        <div className="text-sm text-gray-400 text-center py-6">Aucune pièce jointe.</div>
+      ) : (
+        <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+          {docs.map(doc => (
+            <div key={doc.id} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50">
+              <span className="text-xl flex-shrink-0">{MIME_ICONS[doc.mime_type] ?? "📎"}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-800 truncate">{doc.libelle}</p>
+                <p className="text-[10px] text-gray-400">{doc.nom_original} · {doc.taille_fmt} · {doc.uploaded_by} · {doc.created_at}</p>
+              </div>
+              <button onClick={() => handleDownload(doc.id)}
+                className="flex-shrink-0 px-2.5 py-1.5 text-xs text-[#087F3E] border border-[#087F3E]/30 rounded-lg hover:bg-[#087F3E]/10">
+                Télécharger
+              </button>
+              <button onClick={() => handleDelete(doc.id, doc.libelle)}
+                className="flex-shrink-0 px-2.5 py-1.5 text-xs text-red-600 border border-red-200 rounded-lg hover:bg-red-50">
+                <Trash2 size={12} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const POSTE_LABELS = { MTX: "Matériaux", MTL: "Matériel", RH: "Ressources humaines" };
 const POSTE_COLORS = {
   MTX: "bg-amber-50 text-amber-700 border-amber-200",
@@ -1665,7 +1787,7 @@ export default function DecompteFormPage() {
                 )}
 
                 {activeTab === "pieces" && (
-                  <div className="text-sm text-gray-400 text-center py-8">Pièces jointes — à venir.</div>
+                  <PiecesJointesTab decompteId={d.id} />
                 )}
               </div>
             </div>
