@@ -572,7 +572,7 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
 
   const [mode, setMode]     = useState(payload.mode ?? "cumulatif");
   const [libelleM, setLibelleM] = useState(() => (decompte.payload?.postes?.M?.libelle ?? ""));
-  const [lignesA, setLignesA] = useState(() => p.A?.lignes ?? []);
+  const [lignesA, setLignesA] = useState(() => payload.postes?.A?.lignes ?? []);
   const [postes, setPostes] = useState(() => {
     const p = payload.postes ?? {};
     return {
