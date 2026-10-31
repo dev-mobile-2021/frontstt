@@ -298,7 +298,7 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
                     )}
                   </td>
                   <td className="px-2 py-2.5 text-right tabular-nums text-gray-500 text-xs">{num(l.prixUnitaireHT)}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-gray-900 text-sm">{num(l.montant)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-gray-900 text-sm whitespace-nowrap">{num(l.montant)}</td>
                   {editable && <td />}
                 </tr>
               ))}
