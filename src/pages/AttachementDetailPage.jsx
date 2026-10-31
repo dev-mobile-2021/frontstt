@@ -466,7 +466,7 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
               </tr>
             )}
             <tr className="border-t-2 border-gray-200 bg-gray-50">
-              <td colSpan={readOnly ? 6 : 7} className="px-3 py-3.5 text-right font-bold text-gray-700">Total valorisé</td>
+              <td colSpan={readOnly ? 7 : 8} className="px-3 py-3.5 text-right font-bold text-gray-700">Total valorisé</td>
               <td className="px-3 py-3.5 text-right whitespace-nowrap">
                 <span className="font-bold text-lg text-[#087F3E]"><AnimatedTotal value={total} /></span>
               </td>
@@ -624,7 +624,7 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
                   </tr>
                 )}
                 <tr className="border-t-2 border-gray-200 bg-gray-50">
-                  <td colSpan={editable ? 7 : 6} className="px-3 py-3 text-right font-bold text-gray-700 text-sm">Total CSE</td>
+                  <td colSpan={editable ? 8 : 7} className="px-3 py-3 text-right font-bold text-gray-700 text-sm">Total CSE</td>
                   <td className="px-3 py-3 text-right whitespace-nowrap">
                     <span className="font-bold text-[#087F3E]"><AnimatedTotal value={total} /></span>
                   </td>
@@ -803,8 +803,8 @@ function VueAssistantDACC({ att, updateAttachement, soumettreAttachement, rejete
             </tbody>
             <tfoot>
               <tr className="border-t-2 border-gray-200 bg-gray-50">
-                <td colSpan={7} className="px-3 py-3 text-right font-bold text-gray-700 text-sm">Total CSE</td>
-                <td className="px-3 py-3 text-right">
+                <td colSpan={8} className="px-3 py-3 text-right font-bold text-gray-700 text-sm">Total CSE</td>
+                <td className="px-3 py-3 text-right whitespace-nowrap">
                   <span className="font-bold text-[#087F3E]"><AnimatedTotal value={total} /></span>
                 </td>
                 <td />
