@@ -2378,7 +2378,7 @@ function DqeTab({ contratId, contrat }) {
                                         if (e.key === "Escape") setEditLigneId(null);
                                       };
                                       return <>
-                                        <td className="py-1 pr-2 w-10">
+                                        <td className="py-1 pr-2 w-24">
                                           <input value={editLigneForm.code_x3 || ""}
                                             onChange={e => setEditLigneForm(s => ({ ...s, code_x3: e.target.value }))}
                                             onKeyDown={handleKey}
@@ -2461,7 +2461,7 @@ function DqeTab({ contratId, contrat }) {
                               {/* Formulaire ajout ligne inline */}
                               {addingLigneFor === poste.id && !activeDqeReadonly && (
                                 <tr className="bg-[#087F3E]/5">
-                                  <td className="py-1 pr-2 w-10">
+                                  <td className="py-1 pr-2 w-24">
                                     <input value={ligneForm.code_x3}
                                       onChange={e => setLigneForm(s => ({ ...s, code_x3: e.target.value }))}
                                       placeholder="N° Item"
