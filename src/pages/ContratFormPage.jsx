@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import ConfirmModal from "../components/ConfirmModal";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, Link, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle, RefreshCw,
   Hash, FileText, Info, FilePlus, CheckCircle, Trash2, Plus, X, Paperclip,
@@ -2630,7 +2630,8 @@ export default function ContratFormPage() {
   const TABS_RESERVES = ["circuit", "attachements", "cessions", "decomptes"];
   const { data: peutVoirOngletsComplets = false } = usePeutFaire("onglets_complets_contrat");
 
-  const [activeTab, setActiveTab] = useState("info");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "info");
   const [motif, setMotif]         = useState("");
   const [pendingStatut, setPendingStatut]   = useState(null);
   const [confirmDelContrat, setConfirmDelContrat]   = useState(false);

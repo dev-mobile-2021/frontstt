@@ -445,7 +445,7 @@ function SousLigne({ label, cumulM1, mensuelM, cumulM, highlight }) {
 
 // ─── Onglet Structure ────────────────────────────────────────────────────────
 // ─── Poste A accordion ───────────────────────────────────────────────────────
-function PosteLigneA({ lignes, cumulM1, cumulM, mensuelM, canEdit, onChange, attachementCode }) {
+function PosteLigneA({ lignes, cumulM1, cumulM, mensuelM, canEdit, onChange, attachementCode, attachementId }) {
   const [open, setOpen] = useState(false);
   const hasLines = lignes.length > 0;
 
@@ -476,7 +476,9 @@ function PosteLigneA({ lignes, cumulM1, cumulM, mensuelM, canEdit, onChange, att
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-medium text-gray-800">Travaux exécutés</span>
             {attachementCode && (
-              <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-mono">{attachementCode}</span>
+              attachementId
+                ? <Link to={`/attachements/${attachementId}`} target="_blank" className="text-[10px] text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded font-mono hover:underline">{attachementCode} ↗</Link>
+                : <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-mono">{attachementCode}</span>
             )}
             {hasLines ? (
               <button onClick={() => setOpen(o => !o)} className="text-[10px] text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded hover:bg-[#087F3E]/20 transition-colors">
@@ -713,6 +715,7 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
   }
 
   const attachementCode = p.A?.attachementCode;
+  const attachementId   = p.A?.attachementId ?? null;
   const nbCessionsCourants = (p.G?.cessionsIds ?? []).length + (p.I?.cessionsIds ?? []).length + (p.K?.cessionsIds ?? []).length;
 
   return (
@@ -751,11 +754,12 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
                 canEdit={canEdit}
                 onChange={setLignesA}
                 attachementCode={attachementCode}
+                attachementId={attachementId}
               />
 
               <PosteLigne code="B" type="plus"
                 label={`Révisions de prix${tauxRevisionPrix > 0 ? ` (${tauxRevisionPrix}% × A)` : " — taux non configuré"}`}
-                extra={tauxRevisionPrix === 0 ? "Configurer le taux dans l'onglet Paramétrage du contrat" : null}
+                extra={tauxRevisionPrix === 0 ? <Link to={`/contrats/${d.contrat_id}?tab=parametrage`} target="_blank" className="text-[#087F3E] hover:underline">Configurer le taux dans l'onglet Paramétrage du contrat ↗</Link> : null}
                 cumulM1={cM1("B")} mensuelM={mensuelB} cumulM={cumulB} editable={false} />
 
               <PosteLigne code="B2" type="plus" label="Sommes à faire valoir"
@@ -1054,6 +1058,65 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
 }
 
 // ─── Onglet Cessions ─────────────────────────────────────────────────────────
+const POSTE_LABELS = { MTX: "Matériaux", MTL: "Matériel", RH: "Ressources humaines" };
+const POSTE_COLORS = {
+  MTX: "bg-amber-50 text-amber-700 border-amber-200",
+  MTL: "bg-blue-50 text-blue-700 border-blue-200",
+  RH:  "bg-purple-50 text-purple-700 border-purple-200",
+};
+
+function EcRow({ ec, canEdit, selected, onToggle, fmtPeriode }) {
+  const [open, setOpen] = useState(false);
+  const lignes = ec.lignes ?? [];
+  const grouped = lignes.reduce((acc, l) => {
+    const p = l.poste || "MTX";
+    if (!acc[p]) acc[p] = [];
+    acc[p].push(l);
+    return acc;
+  }, {});
+  const postes = Object.keys(grouped);
+
+  return (
+    <>
+      <tr className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer" onClick={() => lignes.length > 0 && setOpen(o => !o)}>
+        {canEdit && (
+          <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
+            <input type="checkbox" checked={selected} onChange={() => onToggle(ec.id)} className="accent-[#087F3E]" />
+          </td>
+        )}
+        <td className="px-3 py-2">
+          <div className="flex items-center gap-1.5">
+            {lignes.length > 0 && (
+              <span className="text-gray-400">{open ? "▼" : "▶"}</span>
+            )}
+            <span className="font-mono text-xs text-gray-700">{ec.code}</span>
+          </div>
+        </td>
+        <td className="px-3 py-2 text-xs text-gray-500">{fmtPeriode(ec.periode_debut, ec.periode_fin)}</td>
+        <td className="px-3 py-2 text-right text-xs font-medium text-gray-800 tabular-nums">{num(ec.montant_total)} FCFA</td>
+      </tr>
+      {open && postes.map(poste => (
+        <React.Fragment key={poste}>
+          <tr className="bg-gray-50 border-b border-gray-100">
+            <td colSpan={canEdit ? 4 : 3} className="px-4 py-1">
+              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${POSTE_COLORS[poste] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+                {POSTE_LABELS[poste] ?? poste} — {num(grouped[poste].reduce((s, l) => s + (l.montant ?? 0), 0))} FCFA
+              </span>
+            </td>
+          </tr>
+          {grouped[poste].map((l, i) => (
+            <tr key={i} className="border-b border-gray-50 bg-white">
+              {canEdit && <td />}
+              <td colSpan={2} className="px-6 py-1.5 text-[11px] text-gray-600">{l.designation}</td>
+              <td className="px-3 py-1.5 text-right text-[11px] text-gray-700 tabular-nums">{num(l.montant)} FCFA</td>
+            </tr>
+          ))}
+        </React.Fragment>
+      ))}
+    </>
+  );
+}
+
 function CessionsTab({ decompte, canEdit, onSave, saving }) {
   const { data, isLoading, refetch } = useDecompteCessions(decompte?.id);
   const attachees     = data?.attachees     ?? [];
@@ -1136,17 +1199,7 @@ function CessionsTab({ decompte, canEdit, onSave, saving }) {
               </thead>
               <tbody>
                 {attachees.map(ec => (
-                  <tr key={ec.id} className="border-b border-gray-50 hover:bg-gray-50">
-                    {canEdit && (
-                      <td className="px-3 py-2">
-                        <input type="checkbox" checked={selected.has(ec.id)} onChange={() => toggle(ec.id)}
-                          className="accent-[#087F3E]" />
-                      </td>
-                    )}
-                    <td className="px-3 py-2 font-mono text-xs text-gray-700">{ec.code}</td>
-                    <td className="px-3 py-2 text-xs text-gray-500">{fmtPeriode(ec.periode_debut, ec.periode_fin)}</td>
-                    <td className="px-3 py-2 text-right text-xs font-medium text-gray-800 tabular-nums">{num(ec.montant_total)} FCFA</td>
-                  </tr>
+                  <EcRow key={ec.id} ec={ec} canEdit={canEdit} selected={selected.has(ec.id)} onToggle={toggle} fmtPeriode={fmtPeriode} />
                 ))}
               </tbody>
             </table>
@@ -1172,15 +1225,7 @@ function CessionsTab({ decompte, canEdit, onSave, saving }) {
               </thead>
               <tbody>
                 {disponibles.map(ec => (
-                  <tr key={ec.id} className="border-b border-blue-50 hover:bg-blue-50">
-                    <td className="px-3 py-2">
-                      <input type="checkbox" checked={selected.has(ec.id)} onChange={() => toggle(ec.id)}
-                        className="accent-[#087F3E]" />
-                    </td>
-                    <td className="px-3 py-2 font-mono text-xs text-gray-700">{ec.code}</td>
-                    <td className="px-3 py-2 text-xs text-gray-500">{fmtPeriode(ec.periode_debut, ec.periode_fin)}</td>
-                    <td className="px-3 py-2 text-right text-xs font-medium text-gray-800 tabular-nums">{num(ec.montant_total)} FCFA</td>
-                  </tr>
+                  <EcRow key={ec.id} ec={ec} canEdit={true} selected={selected.has(ec.id)} onToggle={toggle} fmtPeriode={fmtPeriode} />
                 ))}
               </tbody>
             </table>
