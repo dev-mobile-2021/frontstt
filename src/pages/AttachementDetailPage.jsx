@@ -242,27 +242,27 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
         <React.Fragment key={group.rubrique}>
           {/* Rubrique header */}
           <tr className="bg-[#087F3E]/8 border-b border-[#087F3E]/20">
-            <td colSpan={colCount} className="px-3 py-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#087F3E]">
-                {(group.rubriqueCodeX3 || group.rubriqueCode || group.refDQE) && (
-                  <span className="font-mono bg-[#087F3E]/10 px-1 rounded mr-1.5">
-                    {group.rubriqueCodeX3 || group.rubriqueCode || group.refDQE}
-                  </span>
-                )}
-                {group.rubrique}
-              </span>
+            <td className="px-3 py-1.5">
+              {group.rubriqueCode && <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{group.rubriqueCode}</span>}
+            </td>
+            <td className="py-1.5 pr-2">
+              {group.rubriqueCodeX3 && <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{group.rubriqueCodeX3}</span>}
+            </td>
+            <td colSpan={colCount - 2} className="py-1.5 pr-3">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[#087F3E]">{group.rubrique}</span>
             </td>
           </tr>
           {group.postes.map(posteGroup => (
             <React.Fragment key={posteGroup.poste}>
               {/* Poste sub-header */}
               <tr className="bg-gray-50/80 border-b border-gray-100">
-                <td className="pl-5 pr-3 py-1">
+                <td className="pl-5 pr-2 py-1" />
+                <td className="pr-2 py-1">
                   {posteGroup.lignes[0]?.posteNumero && (
-                    <span className="font-mono text-[10px] text-gray-400">{posteGroup.lignes[0].posteNumero}</span>
+                    <span className="font-mono text-[10px] text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded">{posteGroup.lignes[0].posteNumero}</span>
                   )}
                 </td>
-                <td colSpan={colCount - 1} className="px-1 py-1">
+                <td colSpan={colCount - 2} className="px-1 py-1">
                   <span className="text-[11px] font-semibold text-gray-600 italic">{posteGroup.poste}</span>
                 </td>
               </tr>
