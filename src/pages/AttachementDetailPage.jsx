@@ -676,8 +676,8 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
   );
 }
 
-// ─── Vue Assistant DACC ──────────────────────────────────────────────────────
-function VueAssistantDACC({ att, updateAttachement, soumettreAttachement, rejeterAttachement, currentUser }) {
+// ─── Vue Assistant DACC (supprimée — Asst DACC = lecture seule) ──────────────
+function _VueAssistantDACC_UNUSED({ att, updateAttachement, soumettreAttachement, rejeterAttachement, currentUser }) {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [lignes, setLignes] = useState(() => att.voletCSE.lignes.map(l => ({ ...l })));
@@ -1217,20 +1217,21 @@ export default function AttachementDetailPage() {
   const isCT            = roleCode === "CT"             || roleCode === "Admin";
   const isDT            = roleCode === "DT"             || roleCode === "Admin";
   const isDACC          = roleCode === "DACC"           || roleCode === "Admin";
-  const isAssistantDACC = roleCode === "Assistant DACC" || roleCode === "Admin";
+  const isAssistantDACC = roleCode === "Assistant DACC";
 
   // Vue active selon rôle + statut
-  const isCTEditable        = isCT            && (att.statut === "Ouvert" || att.statut === "En cours" || att.statut === "Rejeté");
-  const isAsstDACCView      = isAssistantDACC && att.statut === "Soumis à l'Asst DACC";
-  const isDTView            = isDT            && (att.statut === "Soumis au DT" || att.statut === "En rapprochement");
-  const isDTEditable        = isDTView;
-  const isDACCView          = isDACC          && (att.statut === "Soumis au DACC" || att.statut === "Validé");
+  const isCTEditable = isCT && (att.statut === "Ouvert" || att.statut === "En cours" || att.statut === "Rejeté");
+  const isDTView     = isDT && (att.statut === "Soumis au DT" || att.statut === "En rapprochement");
+  const isDTEditable = isDTView;
+  const isDACCView   = isDACC && (att.statut === "Soumis au DACC" || att.statut === "Validé");
 
-  // Accès en lecture seule : chaque rôle peut voir les dossiers dans d'autres étapes
-  const canView = isCTEditable || isAsstDACCView || isDTView || isDACCView
-    || (isCT            && ["Soumis à l'Asst DACC","Soumis au DT","Soumis au DACC","Validé","Rejeté"].includes(att.statut))
-    || (isAssistantDACC && ["Soumis au DT","Soumis au DACC","Validé"].includes(att.statut))
-    || (isDT            && ["Validé","Soumis au DACC"].includes(att.statut))
+  // Asst DACC : lecture seule sur tous les statuts sauf Ouvert/En cours
+  const isAsstDACCReadOnly = isAssistantDACC && !["Ouvert", "En cours"].includes(att.statut);
+
+  // Accès global
+  const canView = isCTEditable || isDTView || isDACCView || isAsstDACCReadOnly
+    || (isCT && ["Soumis au DT","Soumis au DACC","Validé","Rejeté"].includes(att.statut))
+    || (isDT && ["Validé","Soumis au DACC"].includes(att.statut))
     || roleCode === "Admin";
   const statutColor = STATUT_COLORS[att.statut] || "bg-gray-100 text-gray-600 border-gray-200";
 
@@ -1303,15 +1304,6 @@ export default function AttachementDetailPage() {
           </div>
         </div>
       )}
-      {att.statut === "Soumis à l'Asst DACC" && !isAsstDACCView && (
-        <div className="bg-indigo-50 border border-indigo-200 rounded-2xl px-5 py-4 flex items-start gap-3">
-          <Clock size={16} className="text-indigo-500 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-indigo-800">En attente de contrôle — Asst DACC</p>
-            <p className="text-xs text-indigo-700 mt-0.5">Le dossier est en cours de vérification par l'Assistant DACC.</p>
-          </div>
-        </div>
-      )}
       {att.statut === "Soumis au DT" && (
         <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4 flex items-start gap-3">
           <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
@@ -1341,15 +1333,13 @@ export default function AttachementDetailPage() {
         <VueDacc att={att} updateAttachement={updateAttachement} validerAttachement={validerAttachement} rejeterAttachement={rejeterAttachement} currentUser={currentUser} />
       ) : isDTView ? (
         <VueDT att={att} updateAttachement={updateAttachement} soumettreAttachement={soumettreAttachement} rejeterAttachement={rejeterAttachement} currentUser={currentUser} editable={isDTEditable} />
-      ) : isAsstDACCView ? (
-        <VueAssistantDACC att={att} updateAttachement={updateAttachement} soumettreAttachement={soumettreAttachement} rejeterAttachement={rejeterAttachement} currentUser={currentUser} />
       ) : (
-        /* Vue CT — éditable si isCTEditable, lecture seule sinon (ex. DT qui consulte un dossier Ouvert) */
+        /* Vue CT — éditable si isCTEditable, lecture seule sinon (Asst DACC, DT en consultation…) */
         <VueCT att={att} updateAttachement={updateAttachement} soumettreAttachement={soumettreAttachement} currentUser={currentUser} readOnly={!isCTEditable} />
       )}
 
-      {/* Documents joints */}
-      <ZoneDocuments att={att} canEdit={isCTEditable} updateAttachement={updateAttachement} />
+      {/* Documents joints — CT (édition) + Asst DACC (peut joindre des docs) */}
+      <ZoneDocuments att={att} canEdit={isCTEditable || isAsstDACCReadOnly} updateAttachement={updateAttachement} />
 
       {/* Fil de discussion — toujours visible */}
       <FilDiscussion att={att} currentUser={currentUser} updateAttachement={updateAttachement} />
