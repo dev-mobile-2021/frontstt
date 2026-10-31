@@ -430,8 +430,8 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
                 {savedFlag ? "Enregistré" : "Enregistrer"}
               </button>
               <button onClick={handleSoumettre} disabled={total === 0 || submitting} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] disabled:opacity-40">
-                {submitting ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={13} />}
-                {att.statut === "Rejeté" ? "Resoumettre" : "Soumettre"}
+                {submitting ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle size={13} />}
+                {att.statut === "Rejeté" ? "Resoumettre" : "Approuver"}
               </button>
             </>
           )}
