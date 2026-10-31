@@ -2379,11 +2379,14 @@ function DqeTab({ contratId, contrat }) {
                                       };
                                       return <>
                                         <td className="py-1 pr-2 w-24">
-                                          <input value={editLigneForm.code_x3 || ""}
-                                            onChange={e => setEditLigneForm(s => ({ ...s, code_x3: e.target.value }))}
-                                            onKeyDown={handleKey}
-                                            placeholder="N° Item"
-                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs font-mono" maxLength={30} />
+                                          <div className="flex flex-col gap-0.5">
+                                            <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded w-fit">{ligne.code}</span>
+                                            <input value={editLigneForm.code_x3 || ""}
+                                              onChange={e => setEditLigneForm(s => ({ ...s, code_x3: e.target.value }))}
+                                              onKeyDown={handleKey}
+                                              placeholder="N° Item X3"
+                                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs font-mono" maxLength={30} />
+                                          </div>
                                         </td>
                                         <td className="py-1 pr-2">
                                           <input autoFocus value={editLigneForm.designation}
@@ -2424,12 +2427,12 @@ function DqeTab({ contratId, contrat }) {
                                 ) : (
                                   <tr key={ligne.id} className="border-b border-gray-50 hover:bg-gray-50/50">
                                     <td className="py-1 pr-2">
-                                      {(() => {
-                                        const ref = ligne.code_x3 || (poste.numero ? `${poste.numero}-${ligneIdx + 1}` : ligne.code);
-                                        return ref
-                                          ? <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{ref}</span>
-                                          : <span className="text-gray-300">—</span>;
-                                      })()}
+                                      <div className="flex flex-col gap-0.5">
+                                        <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded w-fit">{ligne.code}</span>
+                                        {ligne.code_x3
+                                          ? <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded w-fit">{ligne.code_x3}</span>
+                                          : <span className="text-[10px] text-gray-300">—</span>}
+                                      </div>
                                     </td>
                                     <td className="py-1 pr-2">{ligne.designation}</td>
                                     <td className="pr-2">{ligne.unite || "—"}</td>
