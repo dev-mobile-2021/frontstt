@@ -41,22 +41,21 @@ function parseFormatX3(rows, headerRowIdx) {
   const entetes = rows[headerRowIdx].map(norm);
   const col = (...noms) => entetes.findIndex((h) => noms.some(n => h.includes(n)));
 
-  const iRA      = col("ra", "rubrique");
-  const iDesigRA = col("designation", "libelle");
-  const iItem    = col("item", "no");
-  const iDesig4  = entetes.findIndex((h, i) => i !== iDesigRA && (h.includes("designation") || h.includes("libelle")));
-  const iUnite   = col("unite", " u");
-  const iPU      = col("pu", "prixunit", "prix");
-  const iQte     = col("qte", "quantite");
+  // Format officiel : col0=RA | col1=Désig RA (sans titre) | col2=N° Item | col3=Désignation | col4=U | col5=PU | col6=Qté | col7=Montant
+  const iRA   = col("ra", "rubrique");
+  const iItem = col("item", "no");
+  const iDes  = col("designation", "libelle");
+  const iU    = col("unite", " u");
+  const iPU   = col("pu", "prixunit", "prix");
+  const iQte  = col("qte", "quantite");
 
-  // Indices effectifs
-  const colRA   = iRA >= 0 ? iRA : 0;
-  const colDRA  = iDesigRA >= 0 ? iDesigRA : 1;
+  const colRA   = iRA   >= 0 ? iRA   : 0;
+  const colDRA  = colRA + 1;                          // Désig RA : toujours juste après RA (sans titre)
   const colItem = iItem >= 0 ? iItem : 2;
-  const colDes  = iDesig4 >= 0 ? iDesig4 : (iDesigRA >= 0 ? iDesigRA + 1 : 3);
-  const colU    = iUnite >= 0 ? iUnite : 4;
-  const colPU   = iPU >= 0 ? iPU : 5;
-  const colQte  = iQte >= 0 ? iQte : 6;
+  const colDes  = iDes  >= 0 ? iDes  : 3;            // Désignation ligne : colonne labelisée
+  const colU    = iU    >= 0 ? iU    : 4;
+  const colPU   = iPU   >= 0 ? iPU   : 5;
+  const colQte  = iQte  >= 0 ? iQte  : 6;
 
   const postesByNum  = {}; // "100" → poste obj
   const rubriquesMap = {}; // "6A83" → rubrique obj
