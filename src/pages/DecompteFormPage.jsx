@@ -109,35 +109,40 @@ function ChecklistEtape({ profil }) {
 
 // ─── Circuit Stepper ─────────────────────────────────────────────────────────
 function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider = false }) {
-  const [showRejet, setShowRejet]   = useState(false);
-  const [motif, setMotif]           = useState("");
+  const [showRejet, setShowRejet] = useState(false);
+  const [motif, setMotif]         = useState("");
   const { currentUser } = useUser();
 
   const statut      = decompte?.statut ?? "brouillon";
   const validations = decompte?.validations ?? [];
   const etapes      = [...circuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
-  const lastEtape   = etapes[etapes.length - 1];
 
-  const steps = [
-    { statut: "brouillon", label: "Création", profil: null },
-    ...(etapes.length > 0 ? [{ statut: etapes[0].statut_avant, label: "Soumis", profil: null }] : []),
-    ...etapes.map(e => ({ statut: e.statut_apres, label: e.profil_code?.toUpperCase(), profil: e.profil_code, etape: e })),
-    { statut: "paye", label: "Payé", profil: null },
-  ];
-
-  const currentIdx    = steps.findIndex(s => s.statut === statut);
-  const currentEtape  = etapes.find(e => e.statut_avant === statut);
-  const isAfterLast   = !!(lastEtape && statut === lastEtape.statut_apres);
+  // Progression depuis la table validations (pas statut_avant/statut_apres)
+  const validatedProfils = validations.filter(v => v.action === "valide").map(v => v.profil_code);
+  const findVal  = profil => validations.find(v => v.profil_code === profil && v.action === "valide");
+  const currentEtape  = etapes.find(e => !validatedProfils.includes(e.profil_code));
+  const allValidated  = etapes.length > 0 && etapes.every(e => validatedProfils.includes(e.profil_code));
   const isTerminal    = statut === "paye" || statut === "rejete";
+  const isBrouillon   = statut === "brouillon";
 
   const userRole   = currentUser?.role?.designation?.toLowerCase() ?? "";
   const isAdmin    = userRole === "admin";
-  const canValidate = peutValider && (isAdmin || !currentEtape || userRole === currentEtape.profil_code?.toLowerCase());
+  const canValidate = peutValider && !isBrouillon && !isTerminal
+    && (isAdmin || !currentEtape || userRole === currentEtape.profil_code?.toLowerCase());
 
-  const findVal = profil => validations.find(v => v.profil_code === profil && v.action === "valide");
-
-  const nbEtapesDone = steps.filter((s, i) => i < currentIdx && s.profil).length;
-  const nbEtapesTotal = steps.filter(s => s.profil).length;
+  // Steps : Création → Soumis → [étapes] → Payé
+  const steps = [
+    { key: "creation", label: "Création",   done: !isBrouillon,         current: isBrouillon,   profil: null },
+    { key: "soumis",   label: "Soumis",     done: !isBrouillon && validatedProfils.length > 0 || allValidated,
+                                             current: !isBrouillon && validatedProfils.length === 0 && !allValidated, profil: null },
+    ...etapes.map(e => {
+      const val     = findVal(e.profil_code);
+      const done    = !!val;
+      const current = !done && !isBrouillon && e.profil_code === currentEtape?.profil_code;
+      return { key: e.profil_code, label: e.profil_code?.toUpperCase(), profil: e.profil_code, done, current, val };
+    }),
+    { key: "paye", label: "Payé", done: statut === "paye", current: allValidated && statut !== "paye", profil: null },
+  ];
 
   return (
     <div className="space-y-5">
@@ -150,51 +155,46 @@ function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSo
         </div>
       ) : (
         <div className="flex items-start gap-0">
-          {steps.map((step, idx) => {
-            const done    = idx < currentIdx;
-            const current = idx === currentIdx;
-            const val     = step.profil ? findVal(step.profil) : null;
-            return (
-              <div key={step.statut + idx} className="flex-1 flex flex-col items-center">
-                <div className="flex items-center w-full">
-                  <div className={`flex-1 h-0.5 ${idx === 0 ? "opacity-0" : done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-colors text-xs
-                    ${done ? "bg-[#087F3E] border-[#087F3E] text-white" : current ? "bg-white border-[#087F3E] text-[#087F3E]" : "bg-white border-gray-200 text-gray-300"}`}>
-                    {done ? <CheckCircle2 size={13} /> : current ? <Clock size={11} /> : <Circle size={11} />}
-                  </div>
-                  <div className={`flex-1 h-0.5 ${idx === steps.length - 1 ? "opacity-0" : done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
+          {steps.map((step, idx) => (
+            <div key={step.key} className="flex-1 flex flex-col items-center">
+              <div className="flex items-center w-full">
+                <div className={`flex-1 h-0.5 ${idx === 0 ? "opacity-0" : step.done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-colors text-xs
+                  ${step.done ? "bg-[#087F3E] border-[#087F3E] text-white" : step.current ? "bg-white border-[#087F3E] text-[#087F3E]" : "bg-white border-gray-200 text-gray-300"}`}>
+                  {step.done ? <CheckCircle2 size={13} /> : step.current ? <Clock size={11} /> : <Circle size={11} />}
                 </div>
-                <div className="mt-1.5 text-center px-0.5 w-full">
-                  <p className={`text-[10px] font-semibold ${done ? "text-[#087F3E]" : current ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
-                  {val && <p className="text-[10px] text-[#087F3E]">{fmtD(val.validated_at?.slice(0,10))}</p>}
-                  {val?.user && <p className="text-[10px] text-gray-400 truncate">{val.user.prenom} {val.user.nom}</p>}
-                  {current && step.profil && !val && <p className="text-[10px] text-amber-500">En attente</p>}
-                </div>
+                <div className={`flex-1 h-0.5 ${idx === steps.length - 1 ? "opacity-0" : step.done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
               </div>
-            );
-          })}
+              <div className="mt-1.5 text-center px-0.5 w-full">
+                <p className={`text-[10px] font-semibold ${step.done ? "text-[#087F3E]" : step.current ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
+                {step.val && <p className="text-[10px] text-[#087F3E]">{fmtD(step.val.validated_at?.slice(0,10))}</p>}
+                {step.val?.user && <p className="text-[10px] text-gray-400 truncate">{step.val.user.prenom} {step.val.user.nom}</p>}
+                {step.current && step.profil && <p className="text-[10px] text-amber-500">En attente</p>}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
-      <div className="text-xs text-gray-400 text-right">Étape {Math.max(nbEtapesDone, 0)}/{nbEtapesTotal}</div>
+      <div className="text-xs text-gray-400 text-right">Étape {validatedProfils.length}/{etapes.length}</div>
 
       {!isTerminal && (
         <div className="border-t border-gray-100 pt-4 space-y-3">
-          {statut === "brouillon" && (
+          {isBrouillon && (
             <button onClick={onSoumettre} className="w-full px-4 py-2.5 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-medium">
               Soumettre au circuit
             </button>
           )}
-          {statut !== "brouillon" && !isAfterLast && (
+          {!isBrouillon && !allValidated && currentEtape && (
             <>
               <div className="text-xs text-gray-500 flex items-center gap-1.5">
                 <Clock size={11} className="text-amber-400" />
-                En attente de validation par <strong className="text-gray-800">{currentEtape?.profil_code?.toUpperCase() ?? "—"}</strong>
+                En attente de validation par <strong className="text-gray-800">{currentEtape.profil_code?.toUpperCase()}</strong>
               </div>
               {canValidate && !showRejet && (
                 <div className="flex gap-2">
                   <button onClick={onValider} className="flex-1 px-3 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C]">
-                    Valider — {currentEtape?.profil_code?.toUpperCase()}
+                    Valider — {currentEtape.profil_code?.toUpperCase()}
                   </button>
                   <button onClick={() => setShowRejet(true)} className="px-3 py-2 text-red-600 border border-red-200 rounded-lg text-sm hover:bg-red-50">
                     Rejeter
@@ -221,7 +221,7 @@ function CircuitStepper({ decompte, circuit, onValider, onRejeter, onPayer, onSo
               )}
             </>
           )}
-          {isAfterLast && (
+          {allValidated && statut !== "paye" && (
             <button onClick={onPayer} className="w-full px-4 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-medium hover:bg-violet-700">
               Marquer comme payé
             </button>
@@ -1309,7 +1309,7 @@ export default function DecompteFormPage() {
   const [activeTab, setActiveTab] = useState("cessions");
 
   const { data: decompte, isLoading, isError } = useDecompte(!isNew ? id : null);
-  const { data: circuit = [] } = useDecompteCircuit();
+  const { data: circuit = [] } = useDecompteCircuit(decompte?.contrat_id ?? null);
 
   const saveMut    = useSaveDecompte();
   const validerMut = useValiderDecompte();

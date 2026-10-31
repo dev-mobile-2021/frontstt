@@ -66,8 +66,9 @@ export const decompteService = {
     return data;
   },
 
-  async getCircuit() {
-    const { data } = await http.get("/decompte/circuit");
+  async getCircuit(contratId = null) {
+    const url = contratId ? `/decompte/circuit?contrat_id=${contratId}` : "/decompte/circuit";
+    const { data } = await http.get(url);
     return data.data ?? [];
   },
 };

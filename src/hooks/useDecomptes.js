@@ -70,10 +70,11 @@ export function useDeleteDecompte() {
   });
 }
 
-export function useDecompteCircuit() {
+export function useDecompteCircuit(contratId = null) {
   return useQuery({
-    queryKey: ["decompte_circuit"],
-    queryFn: () => decompteService.getCircuit(),
+    queryKey: ["decompte_circuit", contratId],
+    queryFn: () => decompteService.getCircuit(contratId),
+    enabled: !!contratId,
     staleTime: 5 * 60 * 1000,
   });
 }
