@@ -2356,7 +2356,8 @@ function DqeTab({ contratId, contrat }) {
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="text-gray-500 border-b border-gray-100">
-                                <th className="text-left font-medium py-1 w-24">N° Item</th>
+                                <th className="text-left font-medium py-1 w-16">Réf</th>
+                                <th className="text-left font-medium py-1 w-24">N° Item X3</th>
                                 <th className="text-left font-medium py-1">Désignation</th>
                                 <th className="text-left font-medium py-1 w-20">U</th>
                                 <th className="text-right font-medium py-1 w-24">Qté prévue</th>
@@ -2367,7 +2368,7 @@ function DqeTab({ contratId, contrat }) {
                             </thead>
                             <tbody>
                               {(poste.lignes || []).length === 0 && (
-                                <tr><td colSpan={activeDqeReadonly ? 6 : 7} className="text-center text-gray-400 italic py-2">Aucune ligne</td></tr>
+                                <tr><td colSpan={activeDqeReadonly ? 7 : 8} className="text-center text-gray-400 italic py-2">Aucune ligne</td></tr>
                               )}
                               {(poste.lignes || []).map((ligne, ligneIdx) => (
                                 editLigneId === ligne.id ? (
@@ -2378,15 +2379,15 @@ function DqeTab({ contratId, contrat }) {
                                         if (e.key === "Escape") setEditLigneId(null);
                                       };
                                       return <>
+                                        <td className="py-1 pr-2 w-16">
+                                          <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{ligne.code}</span>
+                                        </td>
                                         <td className="py-1 pr-2 w-24">
-                                          <div className="flex flex-col gap-0.5">
-                                            <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded w-fit">{ligne.code}</span>
-                                            <input value={editLigneForm.code_x3 || ""}
-                                              onChange={e => setEditLigneForm(s => ({ ...s, code_x3: e.target.value }))}
-                                              onKeyDown={handleKey}
-                                              placeholder="N° Item X3"
-                                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs font-mono" maxLength={30} />
-                                          </div>
+                                          <input value={editLigneForm.code_x3 || ""}
+                                            onChange={e => setEditLigneForm(s => ({ ...s, code_x3: e.target.value }))}
+                                            onKeyDown={handleKey}
+                                            placeholder="N° Item X3"
+                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs font-mono" maxLength={30} />
                                         </td>
                                         <td className="py-1 pr-2">
                                           <input autoFocus value={editLigneForm.designation}
@@ -2426,13 +2427,13 @@ function DqeTab({ contratId, contrat }) {
                                   </tr>
                                 ) : (
                                   <tr key={ligne.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                                    <td className="py-1 pr-2">
-                                      <div className="flex flex-col gap-0.5">
-                                        <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded w-fit">{ligne.code}</span>
-                                        {ligne.code_x3
-                                          ? <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded w-fit">{ligne.code_x3}</span>
-                                          : <span className="text-[10px] text-gray-300">—</span>}
-                                      </div>
+                                    <td className="py-1 pr-2 w-16">
+                                      <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{ligne.code}</span>
+                                    </td>
+                                    <td className="py-1 pr-2 w-24">
+                                      {ligne.code_x3
+                                        ? <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{ligne.code_x3}</span>
+                                        : <span className="text-[10px] text-gray-300">—</span>}
                                     </td>
                                     <td className="py-1 pr-2">{ligne.designation}</td>
                                     <td className="pr-2">{ligne.unite || "—"}</td>
@@ -2464,10 +2465,13 @@ function DqeTab({ contratId, contrat }) {
                               {/* Formulaire ajout ligne inline */}
                               {addingLigneFor === poste.id && !activeDqeReadonly && (
                                 <tr className="bg-[#087F3E]/5">
+                                  <td className="py-1 pr-2 w-16">
+                                    <span className="text-[10px] text-gray-300 italic">auto</span>
+                                  </td>
                                   <td className="py-1 pr-2 w-24">
                                     <input value={ligneForm.code_x3}
                                       onChange={e => setLigneForm(s => ({ ...s, code_x3: e.target.value }))}
-                                      placeholder="N° Item"
+                                      placeholder="N° Item X3"
                                       className="w-full px-2 py-1 border border-gray-200 rounded text-xs font-mono" maxLength={30} />
                                   </td>
                                   <td className="py-1 pr-2">
