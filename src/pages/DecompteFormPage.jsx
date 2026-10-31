@@ -662,29 +662,29 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
     : (p.A?.cumulM ?? d.montant_brut ?? 0);
   const mensuelA = cumulA - cM1("A");
 
-  // Poste C — Avance démarrage (depuis payload backend)
-  const tauxAD          = p.C?.tauxAD          ?? d.contrat?.taux_avance               ?? 20;
-  const tauxRembAD      = p.C?.tauxRembAD       ?? d.contrat?.taux_remboursement_avance ?? 6.25;
-  // C1 — montant avance accordée
-  const montantAvance   = p.C?.montant_avance   ?? 0;
+  // Poste C — taux toujours depuis le contrat (source de vérité)
+  const tauxAD          = d.contrat?.taux_avance               ?? p.C?.tauxAD     ?? 20;
+  const tauxRembAD      = d.contrat?.taux_remboursement_avance ?? p.C?.tauxRembAD ?? 6.25;
+  // C1 — montant avance = tauxAD% × montant_initial (recalculé depuis contrat)
+  const montantAvance   = Math.round((d.contrat?.montant_initial ?? 0) * tauxAD / 100);
   // C2 — cumul avances M-1
   const prevCumulAvance = p.C?.prev_cumul_avance ?? montantAvance;
   // C3 — cumul avances M (= C1)
-  const cumulAvanceM    = p.C?.cumul_avance_m   ?? montantAvance;
-  // C4 — remboursement mensuel
+  const cumulAvanceM    = montantAvance;
+  // C4 — remboursement mensuel plafonné (depuis backend, fiable)
   const rembMensuelC    = p.C?.remb_mensuel     ?? 0;
   // C5 — cumul remb M-1
   const prevCumulRembAD = p.C?.prev_cumul_remb  ?? 0;
   // C6 — cumul remb M
   const cumulRembAD     = p.C?.cumul_remboursements ?? 0;
   // C7 — restant
-  const restantAD       = p.C?.restant          ?? montantAvance;
+  const restantAD       = Math.max(0, montantAvance - cumulRembAD);
   const mensuelC        = rembMensuelC;
   const cumulC          = cumulRembAD;
 
-  // Poste D (RG = tauxRG% × A) — négatif
-  const tauxRG   = p.D?.tauxRG ?? (d.taux_retenue_garantie ?? 5);
-  const cumulD   = p.D?.cumulM ?? Math.round(cumulA * tauxRG / 100);
+  // Poste D — taux depuis le contrat
+  const tauxRG   = d.contrat?.taux_rg ?? p.D?.tauxRG ?? d.taux_retenue_garantie ?? 5;
+  const cumulD   = Math.round(cumulA * tauxRG / 100);
   const mensuelD = cumulD - cM1("D");
 
   // Poste B — taux toujours depuis le contrat (source de vérité), fallback payload
