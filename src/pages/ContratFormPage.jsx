@@ -2356,7 +2356,7 @@ function DqeTab({ contratId, contrat }) {
                           <table className="w-full text-xs">
                             <thead>
                               <tr className="text-gray-500 border-b border-gray-100">
-                                <th className="text-left font-medium py-1 w-10">Réf</th>
+                                <th className="text-left font-medium py-1 w-24">N° Item</th>
                                 <th className="text-left font-medium py-1">Désignation</th>
                                 <th className="text-left font-medium py-1 w-20">U</th>
                                 <th className="text-right font-medium py-1 w-24">Qté prévue</th>
