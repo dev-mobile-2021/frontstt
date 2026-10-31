@@ -1864,9 +1864,9 @@ function DqeTab({ contratId, contrat }) {
   const [editPosteForm, setEditPosteForm] = useState({ numero: "", designation: "" });
 
   const [addingLigneFor, setAddingLigneFor] = useState(null);  // posteId
-  const [ligneForm, setLigneForm] = useState({ designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" });
+  const [ligneForm, setLigneForm] = useState({ code_x3: "", designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" });
   const [editLigneId, setEditLigneId] = useState(null);
-  const [editLigneForm, setEditLigneForm] = useState({ designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" });
+  const [editLigneForm, setEditLigneForm] = useState({ code_x3: "", designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" });
 
   // Collapse state
   const [collapsedRub, setCollapsedRub] = useState({});
@@ -1885,7 +1885,7 @@ function DqeTab({ contratId, contrat }) {
 
   const resetAddRub = () => { setAddingRubrique(false); setRubForm({ designation: "", code: "", code_x3: "", bon_commande_id: null }); };
   const resetAddPoste = () => { setAddingPosteFor(null); setPosteForm({ numero: "", designation: "" }); };
-  const resetAddLigne = () => { setAddingLigneFor(null); setLigneForm({ designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" }); };
+  const resetAddLigne = () => { setAddingLigneFor(null); setLigneForm({ code_x3: "", designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" }); };
 
   const submitAddRub = async () => {
     if (!rubForm.designation.trim()) return;
@@ -1923,6 +1923,7 @@ function DqeTab({ contratId, contrat }) {
     await saveLigne.mutateAsync({
       posteId,
       data: {
+        code_x3: ligneForm.code_x3.trim() || null,
         designation: ligneForm.designation.trim(),
         unite: ligneForm.unite.trim() || null,
         quantite_prevue: Number(ligneForm.quantite_prevue) || 0,
@@ -1937,6 +1938,7 @@ function DqeTab({ contratId, contrat }) {
       posteId: 0,
       data: {
         id,
+        code_x3: editLigneForm.code_x3?.trim() || null,
         designation: editLigneForm.designation.trim(),
         unite: editLigneForm.unite?.trim() || null,
         quantite_prevue: Number(editLigneForm.quantite_prevue) || 0,
@@ -2376,6 +2378,13 @@ function DqeTab({ contratId, contrat }) {
                                         if (e.key === "Escape") setEditLigneId(null);
                                       };
                                       return <>
+                                        <td className="py-1 pr-2 w-10">
+                                          <input value={editLigneForm.code_x3 || ""}
+                                            onChange={e => setEditLigneForm(s => ({ ...s, code_x3: e.target.value }))}
+                                            onKeyDown={handleKey}
+                                            placeholder="N° Item"
+                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs font-mono" maxLength={30} />
+                                        </td>
                                         <td className="py-1 pr-2">
                                           <input autoFocus value={editLigneForm.designation}
                                             onChange={e => setEditLigneForm(s => ({ ...s, designation: e.target.value }))}
@@ -2431,7 +2440,7 @@ function DqeTab({ contratId, contrat }) {
                                       <td>
                                         <div className="flex items-center gap-1 justify-end">
                                           <button
-                                            onClick={() => { setEditLigneId(ligne.id); setEditLigneForm({ designation: ligne.designation, unite: ligne.unite || "", quantite_prevue: ligne.quantite_prevue, prix_unitaire: ligne.prix_unitaire }); }}
+                                            onClick={() => { setEditLigneId(ligne.id); setEditLigneForm({ code_x3: ligne.code_x3 || "", designation: ligne.designation, unite: ligne.unite || "", quantite_prevue: ligne.quantite_prevue, prix_unitaire: ligne.prix_unitaire }); }}
                                             className="p-0.5 rounded hover:bg-gray-200 text-gray-600" title="Modifier"
                                           >
                                             <Pencil size={11} />
@@ -2452,6 +2461,12 @@ function DqeTab({ contratId, contrat }) {
                               {/* Formulaire ajout ligne inline */}
                               {addingLigneFor === poste.id && !activeDqeReadonly && (
                                 <tr className="bg-[#087F3E]/5">
+                                  <td className="py-1 pr-2 w-10">
+                                    <input value={ligneForm.code_x3}
+                                      onChange={e => setLigneForm(s => ({ ...s, code_x3: e.target.value }))}
+                                      placeholder="N° Item"
+                                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs font-mono" maxLength={30} />
+                                  </td>
                                   <td className="py-1 pr-2">
                                     <input autoFocus value={ligneForm.designation}
                                       onChange={e => setLigneForm(s => ({ ...s, designation: e.target.value }))}
