@@ -130,7 +130,16 @@ function useCircuitState(decompte, circuit, peutValider) {
 function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider }) {
   const [showRejet, setShowRejet] = useState(false);
   const [motif, setMotif]         = useState("");
-  const { statut, currentEtape, allValidated, isTerminal, isBrouillon, canValidate } = useCircuitState(decompte, circuit, peutValider);
+  const { currentUser } = useUser();
+  const { statut, etapes, currentEtape, allValidated, isTerminal, isBrouillon, canValidate } = useCircuitState(decompte, circuit, peutValider);
+
+  // Le CT est l'initiateur : en brouillon, son "Approuver" = soumettre + valider en une fois
+  const firstEtape    = etapes[0];
+  const isCTInitiator = firstEtape?.profil_code === "CT";
+  const userRole      = currentUser?.role?.designation?.toLowerCase() ?? "";
+  const isAdmin       = userRole === "admin";
+  const isCT          = isAdmin || userRole === "ct";
+  const ctCanApprove  = isBrouillon && isCTInitiator && isCT && peutValider;
 
   if (isTerminal && statut !== "paye") return null;
   if (statut === "paye") return (
@@ -141,7 +150,21 @@ function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumett
 
   return (
     <div className="flex items-center gap-2 flex-wrap">
-      {isBrouillon && (
+      {/* CT en brouillon → Approuver directement (soumettre + valider) */}
+      {ctCanApprove && !showRejet && (
+        <>
+          <button onClick={onValider}
+            className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold">
+            <CheckCircle2 size={13} /> Approuver — CT
+          </button>
+          <button onClick={() => setShowRejet(true)}
+            className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50">
+            <XCircle size={13} /> Refuser
+          </button>
+        </>
+      )}
+      {/* Autres profils en brouillon → Soumettre */}
+      {isBrouillon && !ctCanApprove && (
         <button onClick={onSoumettre}
           className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold">
           <Send size={13} /> Soumettre au circuit
@@ -223,10 +246,12 @@ function WorkflowTab({ decompte, circuit, onValider, onRejeter, onPayer, onSoume
       <div>
         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Parcours d'approbation</p>
         <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
-          {etapes.map(etape => {
+          {etapes.map((etape, idx) => {
             const val = findVal(etape.profil_code);
             const rej = !val ? findRej(etape.profil_code) : null;
-            const isCurrent = !isBrouillon && !val && !rej && etape.profil_code === currentEtape?.profil_code;
+            // CT (étape 1) en brouillon = initiateur qui doit approuver
+            const isCTBrouillon = isBrouillon && idx === 0 && etape.profil_code === "CT";
+            const isCurrent = (!isBrouillon && !val && !rej && etape.profil_code === currentEtape?.profil_code) || isCTBrouillon;
             const isPending  = !val && !rej && !isCurrent;
 
             return (
