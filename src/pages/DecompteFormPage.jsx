@@ -226,17 +226,17 @@ function WorkflowTab({ decompte, circuit, onValider, onRejeter, onPayer, onSoume
           {etapes.map(etape => {
             const val = findVal(etape.profil_code);
             const rej = !val ? findRej(etape.profil_code) : null;
-            const isCurrent = !isBrouillon && etape.profil_code === currentEtape?.profil_code;
-            const isPending = !isBrouillon && !val && !rej && !isCurrent;
+            const isCurrent = !isBrouillon && !val && !rej && etape.profil_code === currentEtape?.profil_code;
+            const isPending  = !val && !rej && !isCurrent;
 
             return (
-              <div key={etape.profil_code} className={`flex items-start gap-4 px-5 py-4 ${isCurrent ? "bg-amber-50" : val ? "bg-white" : "bg-white"}`}>
+              <div key={etape.profil_code} className={`flex items-start gap-4 px-5 py-4 ${isCurrent ? "bg-amber-50" : "bg-white"}`}>
                 {/* Icône statut */}
                 <div className="flex-shrink-0 mt-0.5">
-                  {val   ? <CheckCircle2 size={18} className="text-[#087F3E]" />
-                  : rej  ? <XCircle size={18} className="text-red-500" />
+                  {val        ? <CheckCircle2 size={18} className="text-[#087F3E]" />
+                  : rej       ? <XCircle size={18} className="text-red-500" />
                   : isCurrent ? <Clock size={18} className="text-amber-500" />
-                  : <Circle size={18} className="text-gray-300" />}
+                  :             <Circle size={18} className="text-gray-300" />}
                 </div>
 
                 {/* Contenu */}
@@ -253,16 +253,20 @@ function WorkflowTab({ decompte, circuit, onValider, onRejeter, onPayer, onSoume
                       {rej.motif && <span className="ml-1 italic">"{rej.motif}"</span>}
                     </p>
                   )}
-                  {isCurrent && <p className="text-xs text-amber-600 mt-0.5">En attente d'approbation</p>}
-                  {isPending  && <p className="text-xs text-gray-400 mt-0.5">En attente</p>}
+                  {isCurrent && (
+                    <p className="text-xs text-amber-700 font-medium mt-0.5">
+                      En attente de validation — {etape.libelle ?? etape.profil_code?.toUpperCase()}
+                    </p>
+                  )}
+                  {isPending && <p className="text-xs text-gray-400 mt-0.5">En attente</p>}
                 </div>
 
                 {/* Badge */}
                 <div className="flex-shrink-0">
-                  {val       && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Approuvé</span>}
-                  {rej       && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">Refusé</span>}
-                  {isCurrent && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">En cours</span>}
-                  {isPending  && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">En attente</span>}
+                  {val        && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Approuvé</span>}
+                  {rej        && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">Refusé</span>}
+                  {isCurrent  && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">À valider</span>}
+                  {isPending   && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">En attente</span>}
                 </div>
               </div>
             );
