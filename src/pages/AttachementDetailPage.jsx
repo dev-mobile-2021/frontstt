@@ -228,7 +228,7 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
     const rubKey = l.rubriqueDesignation ?? l.refDQE ?? "—";
     const posteKey = l.posteDesignation ?? "—";
     let rub = groups.find(g => g.rubrique === rubKey);
-    if (!rub) { rub = { rubrique: rubKey, refDQE: l.refDQE, postes: [] }; groups.push(rub); }
+    if (!rub) { rub = { rubrique: rubKey, refDQE: l.refDQE, rubriqueCodeX3: l.rubriqueCodeX3, rubriqueCode: l.rubriqueCode, postes: [] }; groups.push(rub); }
     let poste = rub.postes.find(p => p.poste === posteKey);
     if (!poste) { poste = { poste: posteKey, lignes: [] }; rub.postes.push(poste); }
     poste.lignes.push(l);
@@ -244,7 +244,11 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
           <tr className="bg-[#087F3E]/8 border-b border-[#087F3E]/20">
             <td colSpan={colCount} className="px-3 py-1.5">
               <span className="text-[10px] font-bold uppercase tracking-widest text-[#087F3E]">
-                {group.refDQE && <span className="font-mono bg-[#087F3E]/10 px-1 rounded mr-1.5">{group.refDQE}</span>}
+                {(group.rubriqueCodeX3 || group.rubriqueCode || group.refDQE) && (
+                  <span className="font-mono bg-[#087F3E]/10 px-1 rounded mr-1.5">
+                    {group.rubriqueCodeX3 || group.rubriqueCode || group.refDQE}
+                  </span>
+                )}
                 {group.rubrique}
               </span>
             </td>
@@ -253,7 +257,11 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
             <React.Fragment key={posteGroup.poste}>
               {/* Poste sub-header */}
               <tr className="bg-gray-50/80 border-b border-gray-100">
-                <td className="pl-5 pr-3 py-1" />
+                <td className="pl-5 pr-3 py-1">
+                  {posteGroup.lignes[0]?.posteNumero && (
+                    <span className="font-mono text-[10px] text-gray-400">{posteGroup.lignes[0].posteNumero}</span>
+                  )}
+                </td>
                 <td colSpan={colCount - 1} className="px-1 py-1">
                   <span className="text-[11px] font-semibold text-gray-600 italic">{posteGroup.poste}</span>
                 </td>
@@ -261,7 +269,11 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
               {posteGroup.lignes.map(l => (
                 <tr key={l.id} className="border-b border-gray-100 hover:bg-blue-50/20 transition-colors">
                   <td className="pl-6 pr-3 py-2.5">
-                    <span className="text-[10px] text-gray-400">↳</span>
+                    {(l.refDQEX3 || l.refDQE) && (
+                      <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">
+                        {l.refDQEX3 || l.refDQE}
+                      </span>
+                    )}
                   </td>
                   <td className="px-3 py-2.5">
                     <span className="text-gray-800 text-sm">{l.designation}</span>
