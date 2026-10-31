@@ -482,6 +482,8 @@ function PosteLigneA({ lignes, cumulM1, cumulM, mensuelM, canEdit, onChange, att
               <button onClick={() => setOpen(o => !o)} className="text-[10px] text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded hover:bg-[#087F3E]/20 transition-colors">
                 {open ? "▲" : "▼"} {lignes.length} ligne{lignes.length > 1 ? "s" : ""}
               </button>
+            ) : attachementCode ? (
+              <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Enregistrer pour charger les lignes</span>
             ) : (
               <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Aucun attachement validé</span>
             )}
