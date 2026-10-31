@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
-  ArrowLeft, Save, Send, ChevronRight, FileDown, Info, CheckCircle2,
+  ArrowLeft, Save, Send, ChevronRight, ChevronDown, FileDown, Info, CheckCircle2,
   Clock, XCircle, Circle, RotateCcw, AlertTriangle, Plus, Trash2, RefreshCw,
 } from "lucide-react";
 import { useDecompte, useSaveDecompte, useValiderDecompte, useRejeterDecompte, usePayerDecompte, useDecompteCircuit, useDecompteCessions, useDeleteDecompte } from "../hooks/useDecomptes";
@@ -444,6 +444,124 @@ function SousLigne({ label, cumulM1, mensuelM, cumulM, highlight }) {
 }
 
 // ─── Onglet Structure ────────────────────────────────────────────────────────
+// ─── Poste A accordion ───────────────────────────────────────────────────────
+function PosteLigneA({ lignes, cumulM1, cumulM, mensuelM, canEdit, onChange, attachementCode }) {
+  const [open, setOpen] = useState(false);
+  const hasLines = lignes.length > 0;
+
+  function handleQteChange(idx, raw) {
+    const qteCumuleeM = parseFloat(raw) || 0;
+    const updated = lignes.map((l, i) => {
+      if (i !== idx) return l;
+      const partiel = qteCumuleeM - l.qteCumuleeM1;
+      return { ...l, qteCumuleeM, partiel, montant: Math.round(partiel * l.pu) };
+    });
+    onChange(updated);
+  }
+
+  return (
+    <>
+      <tr className="border-b border-gray-100 hover:bg-gray-50/50">
+        <td className="px-4 py-2.5 w-12">
+          <div className="flex items-center gap-1">
+            <span className="text-xs font-bold text-gray-500 w-4">A</span>
+            {hasLines && (
+              <button onClick={() => setOpen(o => !o)} className="text-gray-400 hover:text-[#087F3E] transition-colors">
+                {open ? <ChevronDown size={13}/> : <ChevronRight size={13}/>}
+              </button>
+            )}
+          </div>
+        </td>
+        <td className="px-2 py-2.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-medium text-gray-800">Travaux exécutés</span>
+            {attachementCode && (
+              <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-mono">{attachementCode}</span>
+            )}
+            {hasLines ? (
+              <button onClick={() => setOpen(o => !o)} className="text-[10px] text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded hover:bg-[#087F3E]/20 transition-colors">
+                {open ? "▲" : "▼"} {lignes.length} ligne{lignes.length > 1 ? "s" : ""}
+              </button>
+            ) : (
+              <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Aucun attachement validé</span>
+            )}
+          </div>
+        </td>
+        <td className="px-3 py-2.5 text-right text-sm tabular-nums text-gray-600">{num(cumulM1)}</td>
+        <td className="px-3 py-2.5 text-right text-sm tabular-nums text-gray-800">{num(mensuelM)}</td>
+        <td className="px-4 py-2.5 text-right text-sm font-semibold tabular-nums text-gray-900">{num(cumulM)}</td>
+      </tr>
+
+      {open && hasLines && (
+        <tr>
+          <td colSpan={5} className="p-0">
+            <div className="border-b border-[#087F3E]/20 bg-[#087F3E]/5">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-[#087F3E]/10 text-[10px] text-[#087F3E] uppercase tracking-wide font-semibold">
+                    <th className="px-4 py-2 text-left w-24">Réf</th>
+                    <th className="px-2 py-2 text-left">Désignation</th>
+                    <th className="px-2 py-2 text-center w-10">U</th>
+                    <th className="px-2 py-2 text-right w-28">PU HT</th>
+                    <th className="px-2 py-2 text-right w-24">Cum. M-1</th>
+                    <th className="px-2 py-2 text-right w-28 text-blue-600">Cum. M {canEdit && "✎"}</th>
+                    <th className="px-2 py-2 text-right w-20">Partiel</th>
+                    <th className="px-4 py-2 text-right w-32">Montant HT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lignes.map((l, idx) => (
+                    <tr key={idx} className={`border-b border-[#087F3E]/10 ${l.partiel < 0 ? "bg-orange-50" : "hover:bg-[#087F3E]/5"}`}>
+                      <td className="px-4 py-1.5">
+                        {l.refDQEX3
+                          ? <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{l.refDQEX3}</span>
+                          : l.refDQE
+                            ? <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{l.refDQE}</span>
+                            : <span className="text-gray-300">—</span>}
+                      </td>
+                      <td className="px-2 py-1.5 text-gray-700 max-w-xs truncate">{l.designation}</td>
+                      <td className="px-2 py-1.5 text-center text-gray-500">{l.unite}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums text-gray-600">{num(l.pu)}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums text-gray-400">{l.qteCumuleeM1 ?? 0}</td>
+                      <td className="px-2 py-1.5 text-right">
+                        {canEdit ? (
+                          <input
+                            type="number"
+                            min={0}
+                            step="any"
+                            value={l.qteCumuleeM ?? 0}
+                            onChange={e => handleQteChange(idx, e.target.value)}
+                            className="w-24 text-right px-1.5 py-0.5 rounded border border-blue-200 bg-white text-blue-800 font-medium focus:outline-none focus:ring-1 focus:ring-blue-300 text-xs"
+                          />
+                        ) : (
+                          <span className="tabular-nums">{l.qteCumuleeM ?? 0}</span>
+                        )}
+                      </td>
+                      <td className={`px-2 py-1.5 text-right tabular-nums font-medium ${l.partiel < 0 ? "text-orange-600" : "text-gray-700"}`}>
+                        {l.partiel ?? 0}
+                        {l.partiel < 0 && <span className="ml-1 text-orange-400" title="Partiel négatif">⚠</span>}
+                      </td>
+                      <td className="px-4 py-1.5 text-right tabular-nums font-semibold text-gray-800 whitespace-nowrap">
+                        {num(l.montant)} FCFA
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-[#087F3E]/10 font-bold">
+                    <td colSpan={7} className="px-4 py-2 text-right text-xs text-[#087F3E]">Total Poste A</td>
+                    <td className="px-4 py-2 text-right tabular-nums text-[#087F3E] whitespace-nowrap">{num(cumulM)} FCFA</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
+  );
+}
+
 function StructureTab({ decompte, canEdit, onSave, saving }) {
   const d       = decompte;
   const payload = d.payload ?? {};
@@ -454,6 +572,7 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
 
   const [mode, setMode]     = useState(payload.mode ?? "cumulatif");
   const [libelleM, setLibelleM] = useState(() => (decompte.payload?.postes?.M?.libelle ?? ""));
+  const [lignesA, setLignesA] = useState(() => p.A?.lignes ?? []);
   const [postes, setPostes] = useState(() => {
     const p = payload.postes ?? {};
     return {
@@ -470,6 +589,7 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
   useEffect(() => {
     const p = (decompte.payload?.postes) ?? {};
     setLibelleM(p.M?.libelle ?? "");
+    setLignesA(p.A?.lignes ?? []);
     setPostes({
       B2:   p.B2?.cumulM ?? 0,
       tauxE: p.E?.tauxE  ?? 0,
@@ -486,8 +606,10 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
   // Computed cumuls M-1
   const cM1 = code => prev[code]?.cumulM ?? 0;
 
-  // Poste A
-  const cumulA   = p.A?.cumulM ?? d.montant_brut ?? 0;
+  // Poste A — calculé ligne par ligne si lignes disponibles
+  const cumulA   = lignesA.length > 0
+    ? lignesA.reduce((s, l) => s + (l.montant ?? 0), 0)
+    : (p.A?.cumulM ?? d.montant_brut ?? 0);
   const mensuelA = cumulA - cM1("A");
 
   // Poste C — Avance démarrage (depuis payload backend)
@@ -568,6 +690,7 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
     return {
       mode,
       postes: {
+        A:  { lignes: lignesA },
         B2: { cumulM: postes.B2 },
         E:  { tauxE: postes.tauxE },
         H:  { tauxH: postes.tauxH },
@@ -618,9 +741,15 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
               </tr>
             </thead>
             <tbody>
-              <PosteLigne code="A" type="plus" label="Travaux exécutés"
-                extra={attachementCode ? `Dossier ${attachementCode}` : "Aucun attachement — initier depuis le contrat"}
-                cumulM1={cM1("A")} mensuelM={mensuelA} cumulM={cumulA} editable={false} />
+              <PosteLigneA
+                lignes={lignesA}
+                cumulM1={cM1("A")}
+                mensuelM={mensuelA}
+                cumulM={cumulA}
+                canEdit={canEdit}
+                onChange={setLignesA}
+                attachementCode={attachementCode}
+              />
 
               <PosteLigne code="B" type="plus"
                 label={`Révisions de prix${tauxRevisionPrix > 0 ? ` (${tauxRevisionPrix}% × A)` : " — taux non configuré"}`}
