@@ -445,7 +445,7 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
               <th className="text-left px-2 py-3 w-20">N° Item</th>
               <th className="text-left px-3 py-3">Désignation</th>
               <th className="text-center px-2 py-3 w-14">Unité</th>
-              <th className="text-right px-2 py-3 w-20">Qté DQE</th>
+              <th className="text-right px-2 py-3 w-20">Qté Marché</th>
               <th className="text-right px-2 py-3 w-24 text-blue-500">Qté réalisée</th>
               <th className="text-right px-2 py-3 w-28">PU HT (FCFA)</th>
               <th className="text-right px-3 py-3 w-28">Montant</th>
@@ -603,7 +603,7 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
                   <th className="text-left px-2 py-2.5 w-20">N° Item</th>
                   <th className="text-left px-2 py-2.5">Désignation</th>
                   <th className="text-center px-2 py-2.5 w-12">Unité</th>
-                  <th className="text-right px-2 py-2.5 w-16">Qté DQE</th>
+                  <th className="text-right px-2 py-2.5 w-16">Qté Marché</th>
                   <th className={`text-right px-2 py-2.5 w-20 ${editable ? "text-orange-500" : ""}`}>Qté réalisée</th>
                   <th className="text-right px-2 py-2.5 w-24">PU HT</th>
                   <th className="text-right px-3 py-2.5 w-24">Montant</th>
@@ -791,7 +791,7 @@ function _VueAssistantDACC_UNUSED({ att, updateAttachement, soumettreAttachement
                 <th className="text-left px-3 py-2.5 w-16">Réf</th>
                 <th className="text-left px-2 py-2.5">Désignation</th>
                 <th className="text-center px-2 py-2.5 w-12">Unité</th>
-                <th className="text-right px-2 py-2.5 w-16">Qté DQE</th>
+                <th className="text-right px-2 py-2.5 w-16">Qté Marché</th>
                 <th className="text-right px-2 py-2.5 w-20 text-indigo-500">Qté réalisée</th>
                 <th className="text-right px-2 py-2.5 w-24">PU HT</th>
                 <th className="text-right px-3 py-2.5 w-24">Montant</th>
@@ -930,7 +930,7 @@ function VueDacc({ att, updateAttachement, validerAttachement, rejeterAttachemen
                   <th className="text-left px-2 py-2.5 w-20">N° Item</th>
                   <th className="text-left px-2 py-2.5">Désignation</th>
                   <th className="text-center px-2 py-2.5 w-12">Unité</th>
-                  <th className="text-right px-2 py-2.5 w-16">Qté DQE</th>
+                  <th className="text-right px-2 py-2.5 w-16">Qté Marché</th>
                   <th className="text-right px-2 py-2.5 w-20">Qté réalisée</th>
                   <th className="text-right px-2 py-2.5 w-24">PU HT</th>
                   <th className="text-right px-3 py-2.5 w-24">Montant</th>
