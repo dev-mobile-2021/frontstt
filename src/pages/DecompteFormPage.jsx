@@ -1699,6 +1699,331 @@ function NouveauForm({ onSave, saving, initialContratId }) {
   );
 }
 
+// ─── Facture STT ─────────────────────────────────────────────────────────────
+function FactureSttTab({ decompte }) {
+  const { addToast } = useToast();
+  const { currentUser } = useUser();
+  const { data: peutUploader = false } = usePeutFaire("upload_facture_stt");
+
+  const [factures,   setFactures]   = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [creating,   setCreating]   = useState(false);
+  const [uploading,  setUploading]  = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [fichier,    setFichier]    = useState(null);
+  const [note,       setNote]       = useState("");
+  const [showRejet,  setShowRejet]  = useState(false);
+  const [motifRejet, setMotifRejet] = useState("");
+  const [showConfirmApprove, setShowConfirmApprove] = useState(false);
+
+  const factureCourante = factures.find(f => f.statut !== "annulee") ?? null;
+  const facturesAnnulees = factures.filter(f => f.statut === "annulee");
+
+  async function fetchFactures() {
+    setLoading(true);
+    try {
+      const { data } = await http.get(`/facture/decompte/${decompte.id}`);
+      setFactures(data.data ?? []);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { fetchFactures(); }, [decompte.id]);
+
+  async function handleCreer() {
+    setCreating(true);
+    try {
+      await http.post("/facture/depuis-decompte", { decompte_id: decompte.id });
+      addToast("Facture STT créée", "success");
+      fetchFactures();
+    } catch (err) {
+      addToast(err?.response?.data?.error ?? "Erreur", "error");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleUpload(e) {
+    e.preventDefault();
+    if (!fichier || !factureCourante) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("facture_id", factureCourante.id);
+      fd.append("fichier", fichier);
+      if (note.trim()) fd.append("note", note.trim());
+      await http.post("/facture/scan", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setFichier(null); setNote("");
+      e.target.reset();
+      addToast("Scan uploadé", "success");
+      fetchFactures();
+    } catch (err) {
+      addToast(err?.response?.data?.error ?? "Erreur upload", "error");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleValider() {
+    setValidating(true);
+    setShowConfirmApprove(false);
+    try {
+      await http.post("/facture/valider", { facture_id: factureCourante.id });
+      addToast("Facture approuvée", "success");
+      fetchFactures();
+    } catch (err) {
+      addToast(err?.response?.data?.error ?? "Erreur validation", "error");
+    } finally {
+      setValidating(false);
+    }
+  }
+
+  async function handleRejeter() {
+    if (!motifRejet.trim()) return;
+    try {
+      await http.post("/facture/rejeter", { facture_id: factureCourante.id, motif: motifRejet.trim() });
+      addToast("Facture rejetée", "success");
+      setShowRejet(false); setMotifRejet("");
+      fetchFactures();
+    } catch (err) {
+      addToast(err?.response?.data?.error ?? "Erreur rejet", "error");
+    }
+  }
+
+  const num = v => new Intl.NumberFormat("fr-FR").format(Math.round(Math.abs(v ?? 0)));
+
+  if (loading) return <div className="flex justify-center py-12"><div className="w-5 h-5 border-2 border-[#087F3E] border-t-transparent rounded-full animate-spin" /></div>;
+
+  return (
+    <div className="space-y-6">
+      {/* Pas encore de facture */}
+      {!factureCourante && (
+        <div className="flex flex-col items-center justify-center py-12 gap-4">
+          <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center">
+            <FileDown size={24} className="text-[#087F3E]" />
+          </div>
+          <div className="text-center">
+            <p className="font-semibold text-gray-800">Aucune facture STT</p>
+            <p className="text-sm text-gray-400 mt-1">Créez la facture STT pré-remplie avec les données du décompte</p>
+          </div>
+          <button onClick={handleCreer} disabled={creating}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] text-white rounded-xl text-sm font-semibold hover:bg-[#065A2C] disabled:opacity-50">
+            {creating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus size={14} />}
+            Créer la facture STT
+          </button>
+        </div>
+      )}
+
+      {/* Facture courante */}
+      {factureCourante && (
+        <div className="space-y-5">
+          {/* En-tête facture */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-semibold text-gray-900">{factureCourante.code}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{factureCourante.objet}</p>
+            </div>
+            <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${
+              factureCourante.statut === "validee"   ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+              factureCourante.statut === "annulee"   ? "bg-red-50 text-red-600 border-red-200" :
+              factureCourante.statut === "en_circuit"? "bg-blue-50 text-blue-700 border-blue-200" :
+              factureCourante.statut === "deposee"   ? "bg-amber-50 text-amber-700 border-amber-200" :
+              "bg-gray-100 text-gray-600 border-gray-200"
+            }`}>
+              {factureCourante.statut === "brouillon"  ? "Brouillon" :
+               factureCourante.statut === "deposee"    ? "Déposée" :
+               factureCourante.statut === "en_circuit" ? "En circuit" :
+               factureCourante.statut === "validee"    ? "Validée" : "—"}
+            </span>
+          </div>
+
+          {/* Montants */}
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              { label: "Montant HT",  val: factureCourante.montant_ht,  unit: "FCFA" },
+              { label: "TVA",          val: factureCourante.montant_tva, unit: "FCFA" },
+              { label: "Montant TTC",  val: factureCourante.montant_ttc, unit: "FCFA" },
+            ].map(c => (
+              <div key={c.label} className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
+                <p className="text-[10px] text-gray-400 uppercase tracking-wide">{c.label}</p>
+                <p className="text-base font-bold text-gray-800 tabular-nums mt-0.5">{num(c.val)} <span className="text-xs font-normal text-gray-400">{c.unit}</span></p>
+              </div>
+            ))}
+          </div>
+
+          {/* Upload scan */}
+          {peutUploader && factureCourante.statut !== "validee" && (
+            <form onSubmit={handleUpload} className="border border-dashed border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Uploader un scan de la facture</p>
+              <div className="flex gap-3 flex-wrap">
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={e => setFichier(e.target.files[0] ?? null)}
+                  className="flex-1 min-w-48 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white file:mr-2 file:text-xs file:border-0 file:bg-[#087F3E]/10 file:text-[#087F3E] file:rounded-lg file:px-2 file:py-1" />
+                <input type="text" placeholder="Note (optionnel)…" value={note}
+                  onChange={e => setNote(e.target.value)}
+                  className="flex-1 min-w-36 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 outline-none bg-white" />
+              </div>
+              <button type="submit" disabled={!fichier || uploading}
+                className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50">
+                {uploading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus size={13} />}
+                Uploader le scan
+              </button>
+            </form>
+          )}
+
+          {/* Scan courant */}
+          {factureCourante.fichier_courant && (
+            <div className="flex items-center justify-between px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl">
+              <div className="flex items-center gap-2">
+                <FileDown size={16} className="text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-blue-800">Scan courant</p>
+                  {factureCourante.scans?.[0] && (
+                    <p className="text-xs text-blue-500">{factureCourante.scans[0].nom_original} · {factureCourante.scans[0].uploaded_by}</p>
+                  )}
+                </div>
+              </div>
+              <button onClick={() => window.open(`${http.defaults.baseURL}/facture/scan/${factureCourante.scans[0]?.id}/download`, "_blank")}
+                className="text-xs text-blue-700 border border-blue-200 rounded-lg px-3 py-1.5 hover:bg-blue-100">
+                Télécharger
+              </button>
+            </div>
+          )}
+
+          {/* Circuit validation */}
+          {factureCourante.validations?.length > 0 && (
+            <div className="border border-gray-100 rounded-xl overflow-hidden">
+              <p className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">Circuit de validation</p>
+              <div className="divide-y divide-gray-50">
+                {factureCourante.validations.map((v, i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-3">
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${v.action === "valide" ? "bg-emerald-400" : v.action === "rejete" ? "bg-red-400" : "bg-amber-400"}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800">{v.libelle ?? v.profil_code?.toUpperCase()}</p>
+                      {v.user && <p className="text-xs text-gray-400">{v.user}</p>}
+                      {v.motif && <p className="text-xs text-red-500 italic">"{v.motif}"</p>}
+                    </div>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${v.action === "valide" ? "bg-emerald-100 text-emerald-700" : v.action === "rejete" ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-500"}`}>
+                      {v.action === "valide" ? "Approuvé" : v.action === "rejete" ? "Rejeté" : v.action}
+                    </span>
+                    <p className="text-[10px] text-gray-400 flex-shrink-0">
+                      {v.validated_at ? new Date(v.validated_at).toLocaleDateString("fr-FR") : ""}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Boutons approbation */}
+          {factureCourante.statut !== "validee" && factureCourante.fichier_courant && !showRejet && (
+            <div className="flex gap-2">
+              <button onClick={() => setShowConfirmApprove(true)} disabled={validating}
+                className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold disabled:opacity-50">
+                <CheckCircle2 size={13} /> Approuver
+              </button>
+              <button onClick={() => setShowRejet(true)}
+                className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50">
+                <XCircle size={13} /> Rejeter la facture
+              </button>
+            </div>
+          )}
+
+          {showRejet && (
+            <div className="border border-red-100 rounded-xl p-4 space-y-3 bg-red-50">
+              <p className="text-xs font-semibold text-red-700 uppercase tracking-wide">Motif du rejet (obligatoire)</p>
+              <textarea rows={3} value={motifRejet} onChange={e => setMotifRejet(e.target.value)}
+                placeholder="Expliquez la raison du rejet…"
+                className="w-full border border-red-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-200 resize-none bg-white" />
+              <div className="flex gap-2">
+                <button onClick={handleRejeter} disabled={!motifRejet.trim()}
+                  className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-medium disabled:opacity-50">
+                  Confirmer le rejet
+                </button>
+                <button onClick={() => { setShowRejet(false); setMotifRejet(""); }}
+                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl text-sm">
+                  Annuler
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Historique scans */}
+          {factureCourante.scans?.length > 1 && (
+            <div className="border border-gray-100 rounded-xl overflow-hidden">
+              <p className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">Historique des scans</p>
+              <div className="divide-y divide-gray-50">
+                {factureCourante.scans.map((s, i) => (
+                  <div key={s.id} className="flex items-center gap-3 px-4 py-2.5">
+                    <FileDown size={13} className="text-gray-400 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-700 truncate">{s.nom_original}</p>
+                      <p className="text-xs text-gray-400">{s.uploaded_by} · {s.created_at ? new Date(s.created_at).toLocaleDateString("fr-FR") : ""}{s.note ? ` · ${s.note}` : ""}</p>
+                    </div>
+                    {i === 0 && <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">Courant</span>}
+                    <button onClick={() => window.open(`${http.defaults.baseURL}/facture/scan/${s.id}/download`, "_blank")}
+                      className="text-xs text-gray-500 border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50">
+                      DL
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Factures annulées */}
+      {facturesAnnulees.length > 0 && (
+        <div className="border border-red-100 rounded-xl overflow-hidden">
+          <p className="px-4 py-3 text-xs font-semibold text-red-500 uppercase tracking-wide border-b border-red-100">Factures annulées ({facturesAnnulees.length})</p>
+          <div className="divide-y divide-red-50">
+            {facturesAnnulees.map(f => (
+              <div key={f.id} className="flex items-center gap-3 px-4 py-3">
+                <XCircle size={14} className="text-red-400 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-700">{f.code}</p>
+                  {f.motif_annulation && <p className="text-xs text-red-500 italic">"{f.motif_annulation}"</p>}
+                </div>
+                <p className="text-[10px] text-gray-400">{f.created_at ? new Date(f.created_at).toLocaleDateString("fr-FR") : ""}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Modale confirmation approbation */}
+      {showConfirmApprove && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 size={20} className="text-[#087F3E]" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800">Confirmer l'approbation</p>
+                <p className="text-sm text-gray-500">{factureCourante?.code}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">Êtes-vous sûr de vouloir approuver cette facture STT ?</p>
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => setShowConfirmApprove(false)}
+                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
+                Annuler
+              </button>
+              <button onClick={handleValider}
+                className="px-4 py-2 text-sm font-semibold text-white bg-[#087F3E] hover:bg-[#065A2C] rounded-xl">
+                Approuver
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Page principale ─────────────────────────────────────────────────────────
 export default function DecompteFormPage() {
   const { id }         = useParams();
@@ -1832,11 +2157,15 @@ export default function DecompteFormPage() {
     + (d?.payload?.postes?.I?.cessionsIds ?? []).length
     + (d?.payload?.postes?.K?.cessionsIds ?? []).length;
 
+  const { statut: circuitStatut, allValidated } = useCircuitState(d, circuit, peutValiderDecompte);
+  const showFactureTab = allValidated || d?.statut === "paye";
+
   const tabs = [
     { id: "structure", label: "Structure" },
     { id: "cessions",  label: `Cessions (${nbCessionsAttachees})` },
     { id: "workflow",  label: `Workflow & Discussion (${(d?.validations ?? []).length})` },
     { id: "pieces",    label: "Pièces jointes" },
+    ...(showFactureTab ? [{ id: "facture", label: "Facture STT" }] : []),
   ];
 
   return (
@@ -1990,6 +2319,10 @@ export default function DecompteFormPage() {
 
                 {activeTab === "pieces" && (
                   <PiecesJointesTab decompteId={d.id} />
+                )}
+
+                {activeTab === "facture" && (
+                  <FactureSttTab decompte={d} />
                 )}
               </div>
             </div>
