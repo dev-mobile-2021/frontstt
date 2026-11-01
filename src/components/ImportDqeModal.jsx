@@ -4,25 +4,43 @@ import { X, Upload, Download, Loader2, FileSpreadsheet, CheckCircle2, AlertCircl
 
 const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-/** Génère et télécharge le modèle Excel DQE (format X3). */
+/** Génère et télécharge le modèle Excel DQE (format X3 — identique au fichier X3 réel). */
 function telechargerModele() {
+  // Même structure que le fichier X3 réel :
+  // col0=RA (code), col1=Désignation RA, col2=N° Item, col3=Désignation, col4=U, col5=PU, col6=Qté Marché, col7=Montant
+  // Les lignes rubrique ont col0+col1 remplis, col2 vide
+  // Les lignes poste ont col2=numéro pur (ex: "100"), col3=libellé
+  // Les lignes DQE ont col0+col1+col2 remplis, col2 au format "100-1"
   const rows = [
-    ["", "DQE MARCHE SOUS-TRAITANT", "", "", "", "", "", ""],
-    ["", "", "", "", "", "", "", ""],
-    ["RA", "Désignation RA", "N° Item", "Désignation", "U", "PU", "Qté Marché", "Montant"],
-    ["", "", "", "", "", "", "", ""],
-    ["6A83", "ST: Bâtiment TCE", "100-1", "Fouille en terrain meuble", "m³", 5000, 300, 1500000],
-    ["6A83", "ST: Bâtiment TCE", "100-2", "Béton de propreté C15", "m³", 20, 80000, 1600000],
-    ["6A83", "ST: Bâtiment TCE", "200-1", "Béton armé C25 fondations", "m³", 50, 150000, 7500000],
-    ["6A40", "ST Voirie / TP",   "300-1", "Terrassement général", "m³", 1000, 3500, 3500000],
-    ["6A40", "ST Voirie / TP",   "300-2", "Remblai compacté", "m³", 500, 8000, 4000000],
+    ["", "DQE MARCHE SOUS-TRAITANT", "",      "",                             "",    "",       "",          ""],
+    ["", "",                          "",      "",                             "",    "",       "",          ""],
+    ["", "",                          "N° Item","Désignation",                "U",   "PU",     "Qté\nMarché","Montant"],
+    ["", "",                          "",      "",                             "",    "",       "",          ""],
+    // Rubrique 1
+    ["6A83", "ST: Bâtiment TCE",      "",      "",                             "",    "",       "",          10080432],
+    // Poste 100
+    ["",     "",                       "100",   "Terrassement / Fondations",   "",    "",       "",          10080432],
+    ["6A83", "ST: Bâtiment TCE",      "100-1", "Fouille en terrain meuble",   "m³",  3600,     300.12,      1080432],
+    ["6A83", "ST: Bâtiment TCE",      "100-2", "Béton de propreté C15",       "m³",  9800,     500.22,      4902156],
+    ["6A83", "ST: Bâtiment TCE",      "100-3", "Béton armé C25 fondations",   "m³",  7200,     200.44,      1443168],
+    // Poste 200
+    ["",     "",                       "200",   "Maçonnerie",                  "",    "",       "",          2654676],
+    ["6A83", "ST: Bâtiment TCE",      "200-1", "Parpaings 20cm",              "m²",  4000,     450.00,      1800000],
+    ["6A83", "ST: Bâtiment TCE",      "200-2", "Enduit façade",               "m²",  6100,     140.00,      854000],
+    // Rubrique 2
+    ["6A40", "ST Voirie / TP",         "",      "",                             "",    "",       "",          8402000],
+    // Poste 300
+    ["",     "",                       "300",   "Terrassement VRD",            "",    "",       "",          8402000],
+    ["6A40", "ST Voirie / TP",         "300-1", "Terrassement général",        "m³",  1000,     3500,        3500000],
+    ["6A40", "ST Voirie / TP",         "300-2", "Remblai compacté",            "m³",  500,      8000,        4000000],
+    ["6A40", "ST Voirie / TP",         "300-3", "Couche de base grave 0/31.5", "m²",  2000,     451,         902000],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws["!cols"] = [{ wch: 8 }, { wch: 25 }, { wch: 10 }, { wch: 40 }, { wch: 6 }, { wch: 12 }, { wch: 12 }, { wch: 14 }];
+  ws["!cols"] = [{ wch: 8 }, { wch: 25 }, { wch: 10 }, { wch: 40 }, { wch: 6 }, { wch: 10 }, { wch: 12 }, { wch: 14 }];
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "DQE");
+  XLSX.utils.book_append_sheet(wb, ws, "DQE ");
   XLSX.writeFile(wb, "modele_import_dqe.xlsx");
 }
 
