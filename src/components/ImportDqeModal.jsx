@@ -4,44 +4,137 @@ import { X, Upload, Download, Loader2, FileSpreadsheet, CheckCircle2, AlertCircl
 
 const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-/** Génère et télécharge le modèle Excel DQE (format X3 — identique au fichier X3 réel). */
+/** Données d'exemple du modèle (identiques à Modele_DQE_Import.xlsx). */
+const EXEMPLE_DQE = [
+  { numero: 100, ra: "6A83", dra: "ST: Bâtiment TCE", lignes: [
+    ["100-1", "F/pose,,,,,,,,,,", "m2", 3600,   300.12],
+    ["100-2", "F/pose,,,,,,,,,,", "m2", 9800,   500.22],
+    ["100-3", "F/pose,,,,,,,,,,", "m2", 7200,   2000.44],
+    ["100-4", "F/pose,,,,,,,,,,", "m2", 400000, 1600.56],
+  ]},
+  { numero: 200, ra: "6A40", dra: "ST Voirie / TP", lignes: [
+    ["200-1", "F/pose,,,,,,,,,,", "ml", 50000, 300.55],
+    ["200-2", "F/pose,,,,,,,,,,", "ml", 3900,  2000.66],
+    ["200-3", "F/pose,,,,,,,,,,", "ml", 72000, 1433.46],
+    ["200-4", "F/pose,,,,,,,,,,", "ml", 6000,  360000],
+  ]},
+  { numero: 300, ra: "6A63", dra: "ST: Façonnage-Pose aciers", lignes: [
+    ["300-1", "F/pose,,,,,,,,,,", "kg", 3500,  5200],
+    ["300-2", "F/pose,,,,,,,,,,", "kg", 4200,  52333],
+    ["300-3", "F/pose,,,,,,,,,,", "kg", 55533, 300.6],
+    ["300-4", "F/pose,,,,,,,,,,", "kg", 45036, 44.56],
+  ]},
+  { numero: 400, ra: "6B28", dra: "ST espace vert", lignes: [
+    ["400-1", "F/pose,,,,,,,,,,", "u", 86422,   69.36],
+    ["400-2", "F/pose,,,,,,,,,,", "u", 3388,    4000.36],
+    ["400-3", "F/pose,,,,,,,,,,", "u", 6541236, 5.44],
+    ["400-4", "F/pose,,,,,,,,,,", "u", 66,      5002.22],
+  ]},
+];
+
+const FMT_PU      = "#,##0";
+const FMT_QTE     = '_-* #,##0.00_-;\\-* #,##0.00_-;_-* "-"_-;_-@_-';
+const FMT_MONTANT = '_-* #,##0_-;\\-* #,##0_-;_-* "-"_-;_-@_-';
+
+/**
+ * Génère et télécharge le modèle Excel DQE — même structure que Modele_DQE_Import.xlsx :
+ *   Ligne 1  : B1:H1 fusionné « DQE MARCHE SOUS-TRAITANT »
+ *   Ligne 3  : en-têtes C..H  N° Item | Désignation | U | PU | Qté Marché | Montant
+ *   Ligne 6  : « Montant Total » (D) + total (H)
+ *   Ligne 7+ : récapitulatif des rubriques  A=code RA | B=désignation RA | H=montant
+ *   Puis par poste : ligne poste (C=100, D=« Poste 100 », H=sous-total)
+ *                    lignes DQE (A=RA, B=désig RA, C=100-1, D, E=U, F=PU, G=Qté, H=Montant)
+ */
 function telechargerModele() {
-  // Même structure que le fichier X3 réel :
-  // col0=RA (code), col1=Désignation RA, col2=N° Item, col3=Désignation, col4=U, col5=PU, col6=Qté Marché, col7=Montant
-  // Les lignes rubrique ont col0+col1 remplis, col2 vide
-  // Les lignes poste ont col2=numéro pur (ex: "100"), col3=libellé
-  // Les lignes DQE ont col0+col1+col2 remplis, col2 au format "100-1"
-  const rows = [
-    ["", "DQE MARCHE SOUS-TRAITANT", "",      "",                             "",    "",       "",          ""],
-    ["", "",                          "",      "",                             "",    "",       "",          ""],
-    ["", "",                          "N° Item","Désignation",                "U",   "PU",     "Qté\nMarché","Montant"],
-    ["", "",                          "",      "",                             "",    "",       "",          ""],
-    // Rubrique 1
-    ["6A83", "ST: Bâtiment TCE",      "",      "",                             "",    "",       "",          10080432],
-    // Poste 100
-    ["",     "",                       "100",   "Terrassement / Fondations",   "",    "",       "",          10080432],
-    ["6A83", "ST: Bâtiment TCE",      "100-1", "Fouille en terrain meuble",   "m³",  3600,     300.12,      1080432],
-    ["6A83", "ST: Bâtiment TCE",      "100-2", "Béton de propreté C15",       "m³",  9800,     500.22,      4902156],
-    ["6A83", "ST: Bâtiment TCE",      "100-3", "Béton armé C25 fondations",   "m³",  7200,     200.44,      1443168],
-    // Poste 200
-    ["",     "",                       "200",   "Maçonnerie",                  "",    "",       "",          2654676],
-    ["6A83", "ST: Bâtiment TCE",      "200-1", "Parpaings 20cm",              "m²",  4000,     450.00,      1800000],
-    ["6A83", "ST: Bâtiment TCE",      "200-2", "Enduit façade",               "m²",  6100,     140.00,      854000],
-    // Rubrique 2
-    ["6A40", "ST Voirie / TP",         "",      "",                             "",    "",       "",          8402000],
-    // Poste 300
-    ["",     "",                       "300",   "Terrassement VRD",            "",    "",       "",          8402000],
-    ["6A40", "ST Voirie / TP",         "300-1", "Terrassement général",        "m³",  1000,     3500,        3500000],
-    ["6A40", "ST Voirie / TP",         "300-2", "Remblai compacté",            "m³",  500,      8000,        4000000],
-    ["6A40", "ST Voirie / TP",         "300-3", "Couche de base grave 0/31.5", "m²",  2000,     451,         902000],
-  ];
+  const vide = () => ["", "", "", "", "", "", "", ""];
+  const rows = [];
+  const fmts = []; // [ligne, colonne, format]
+
+  // Calcul des montants
+  const postes = EXEMPLE_DQE.map((p) => {
+    const lignes = p.lignes.map(([item, des, u, pu, qte]) => ({ item, des, u, pu, qte, montant: Math.round(pu * qte) }));
+    return { ...p, lignes, total: lignes.reduce((s, l) => s + l.montant, 0) };
+  });
+  const rubriques = [];
+  postes.forEach((p) => {
+    let r = rubriques.find((x) => x.ra === p.ra);
+    if (!r) { r = { ra: p.ra, dra: p.dra, total: 0 }; rubriques.push(r); }
+    r.total += p.total;
+  });
+  const totalGeneral = rubriques.reduce((s, r) => s + r.total, 0);
+
+  // Ligne 1 : titre
+  rows.push(["", "DQE MARCHE SOUS-TRAITANT", "", "", "", "", "", ""]);
+  rows.push(vide());
+  // Ligne 3 : en-têtes
+  rows.push(["", "", "N° Item", "Désignation", "U", "PU", "Qté\nMarché", "Montant"]);
+  rows.push(vide());
+  rows.push(vide());
+  // Ligne 6 : montant total
+  rows.push(["", "", "", "Montant Total", "", "", "", totalGeneral]);
+  fmts.push([rows.length - 1, 7, FMT_MONTANT]);
+  // Récapitulatif des rubriques
+  rubriques.forEach((r) => {
+    rows.push([r.ra, r.dra, "", "", "", "", "", r.total]);
+    fmts.push([rows.length - 1, 7, FMT_MONTANT]);
+  });
+  rows.push(vide());
+  // Postes et lignes
+  postes.forEach((p) => {
+    rows.push(["", "", p.numero, `Poste ${p.numero}`, "", "", "", p.total]);
+    fmts.push([rows.length - 1, 7, FMT_MONTANT]);
+    p.lignes.forEach((l) => {
+      rows.push([p.ra, p.dra, l.item, l.des, l.u, l.pu, l.qte, l.montant]);
+      const r = rows.length - 1;
+      fmts.push([r, 5, FMT_PU], [r, 6, FMT_QTE], [r, 7, FMT_MONTANT]);
+    });
+  });
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws["!cols"] = [{ wch: 8 }, { wch: 25 }, { wch: 10 }, { wch: 40 }, { wch: 6 }, { wch: 10 }, { wch: 12 }, { wch: 14 }];
+  fmts.forEach(([r, c, z]) => {
+    const cell = ws[XLSX.utils.encode_cell({ r, c })];
+    if (cell && typeof cell.v === "number") cell.z = z;
+  });
+
+  ws["!merges"] = [{ s: { r: 0, c: 1 }, e: { r: 0, c: 7 } }]; // B1:H1
+  ws["!cols"] = [
+    { wch: 8.43 },  // A  RA
+    { wch: 23.55 }, // B  Désignation RA
+    { wch: 11.55 }, // C  N° Item
+    { wch: 20.66 }, // D  Désignation
+    { wch: 12 },    // E  U
+    { wch: 8.43 },  // F  PU
+    { wch: 15.78 }, // G  Qté Marché
+    { wch: 22.66 }, // H  Montant
+  ];
+  ws["!rows"] = rows.map((_, i) =>
+    i === 0 ? { hpt: 23.4 } :
+    i === 2 ? { hpt: 36.75 } :
+    i === 3 ? { hpt: 21 } :
+    i === 4 ? { hpt: 18 } :
+    i === 5 ? { hpt: 36 } :
+    i <= 5 + rubriques.length + 1 ? { hpt: 18 } :
+    { hpt: 21.9 }
+  );
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "DQE ");
-  XLSX.writeFile(wb, "modele_import_dqe.xlsx");
+  XLSX.writeFile(wb, "Modele_DQE_Import.xlsx");
+}
+
+/** Convertit une cellule en nombre (gère 1 234,56 / 1,234.56 / 1234.56 / "-"). */
+function toNum(v) {
+  if (typeof v === "number") return v;
+  let s = String(v ?? "").replace(/[\s\u00a0\u202f]/g, "");
+  if (!s || s === "-") return 0;
+  if (s.includes(",") && s.includes(".")) {
+    // le dernier séparateur est le décimal
+    s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+  } else if (s.includes(",")) {
+    s = /,\d{3}(,|$)/.test(s) && !/,\d{1,2}$/.test(s) ? s.replace(/,/g, "") : s.replace(",", ".");
+  }
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : 0;
 }
 
 /** Parse le format X3 (PF_X3_STT) : RA | Désig RA | N° Item | Désignation | U | PU | Qté Marché | Montant */
@@ -54,7 +147,7 @@ function parseFormatX3(rows, headerRowIdx) {
   const iRA   = col("ra", "rubrique");
   const iItem = col("item", "no");
   const iDes  = col("designation", "libelle");
-  const iU    = col("unite", " u");
+  const iU    = entetes.findIndex((h) => h === "u" || h.includes("unite"));
   const iPU   = col("pu", "prixunit", "prix");
   const iQte  = col("qte", "quantite");
 
@@ -65,6 +158,15 @@ function parseFormatX3(rows, headerRowIdx) {
   const colU    = iU    >= 0 ? iU    : 4;
   const colPU   = iPU   >= 0 ? iPU   : 5;
   const colQte  = iQte  >= 0 ? iQte  : 6;
+
+  // Récapitulatif des rubriques en tête de fichier (A=RA, B=désignation, sans N° Item)
+  const libellesRA = {};
+  for (let i = headerRowIdx + 1; i < rows.length; i++) {
+    const ra  = String(rows[i][colRA]   ?? "").trim();
+    const dra = String(rows[i][colDRA]  ?? "").trim();
+    const it  = String(rows[i][colItem] ?? "").trim();
+    if (ra && dra && !it && !libellesRA[ra]) libellesRA[ra] = dra;
+  }
 
   const postesByNum  = {}; // "100" → poste obj
   const rubriquesMap = {}; // "6A83" → rubrique obj
@@ -94,7 +196,7 @@ function parseFormatX3(rows, headerRowIdx) {
       // Créer/récupérer la rubrique via le code RA
       const raKey = ra || "__default__";
       if (!rubriquesMap[raKey]) {
-        const rub = { code: null, code_x3: ra || null, designation: dra || ra || "Rubrique", postes: [] };
+        const rub = { code: null, code_x3: ra || null, designation: dra || libellesRA[ra] || ra || "Rubrique", postes: [] };
         rubriquesMap[raKey] = rub;
         rubriques.push(rub);
       }
@@ -105,8 +207,8 @@ function parseFormatX3(rows, headerRowIdx) {
         rub.postes.push(postesByNum[posteNum]);
       }
 
-      const qte = parseFloat(String(row[colQte] ?? "").replace(",", ".")) || 0;
-      const pu  = parseFloat(String(row[colPU]  ?? "").replace(",", ".")) || 0;
+      const qte = toNum(row[colQte]);
+      const pu  = toNum(row[colPU]);
       postesByNum[posteNum].lignes.push({
         code_x3:         item,
         designation:     des,
@@ -149,7 +251,7 @@ async function parseFichier(file) {
   }
 
   const sheetName = wb.SheetNames[0];
-  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, raw: false, defval: "" });
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, raw: true, defval: "" });
   if (rows.length < 2) throw new Error("Le fichier est vide.");
 
   // Détecter le format
@@ -198,8 +300,8 @@ async function parseFichier(file) {
       } else if (type === "ligne") {
         if (!desig) continue;
         if (!curPoste) { lignesOrphelines++; continue; }
-        const qte = parseFloat(String(row[iQte] ?? "").replace(",", ".")) || 0;
-        const pu  = parseFloat(String(row[iPu]  ?? "").replace(",", ".")) || 0;
+        const qte = iQte >= 0 ? toNum(row[iQte]) : 0;
+        const pu  = iPu  >= 0 ? toNum(row[iPu])  : 0;
         curPoste.lignes.push({
           designation:     desig,
           unite:           iUnite >= 0 ? String(row[iUnite] ?? "").trim() || null : null,
@@ -280,7 +382,7 @@ export default function ImportDqeModal({ contratId, onImported, onClose }) {
 
         <div className="p-6 space-y-4">
           <p className="text-xs text-gray-500">
-            Le fichier doit être au format X3 : colonnes <strong>RA</strong>, <strong>Désignation RA</strong>, <strong>N° Item</strong>, <strong>Désignation</strong>, <strong>U</strong>, <strong>PU</strong>, <strong>Qté Marché</strong>, <strong>Montant</strong>. Téléchargez le modèle pour voir un exemple.
+            Le fichier doit suivre le modèle DQE : en-têtes <strong>N° Item</strong>, <strong>Désignation</strong>, <strong>U</strong>, <strong>PU</strong>, <strong>Qté Marché</strong>, <strong>Montant</strong> (colonnes C à H), code <strong>RA</strong> et désignation RA en colonnes A et B, postes numérotés <strong>100</strong>, <strong>200</strong>… et lignes <strong>100-1</strong>, <strong>100-2</strong>… Téléchargez le modèle pour voir un exemple.
           </p>
 
           {/* Actions fichier */}
