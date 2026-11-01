@@ -1847,6 +1847,8 @@ function DqeTab({ contratId, contrat }) {
   // Etat local pour le panneau de validation
   const [validObs, setValidObs] = useState("");
   const [validLoading, setValidLoading] = useState(false);
+  const [dqeActiveTab, setDqeActiveTab] = useState("lignes"); // "lignes" | "circuit"
+  const [showConfirmValider, setShowConfirmValider] = useState(false);
 
   const rubriques = data?.data || [];
   const total     = data?.total ?? 0;
@@ -2019,60 +2021,77 @@ function DqeTab({ contratId, contrat }) {
         </div>
       )}
 
-      {/* Panneau de validation DQE — uniquement pour type base ou avenant */}
+      {/* Onglets Lignes / Circuit — uniquement pour DQE base ou avenant */}
       {data?.dqe && (data.dqe.type === "base" || data.dqe.type === "avenant") && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <ShieldCheck size={16} className="text-blue-600" />
-            <span className="text-sm font-semibold text-blue-800">Circuit de validation DQE</span>
-          </div>
+        <div className="flex gap-1 border-b border-gray-200">
+          <button
+            onClick={() => setDqeActiveTab("lignes")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${dqeActiveTab === "lignes" ? "border-[#087F3E] text-[#087F3E]" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          >
+            Lignes DQE
+          </button>
+          <button
+            onClick={() => setDqeActiveTab("circuit")}
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${dqeActiveTab === "circuit" ? "border-[#087F3E] text-[#087F3E]" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          >
+            <ShieldCheck size={13} /> Circuit
+            {data?.dqe?.statut === "valide" && <span className="ml-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium">Validé</span>}
+            {data?.dqe?.statut === "en_validation" && <span className="ml-1 text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">En cours</span>}
+          </button>
+        </div>
+      )}
 
+      {/* Panel Circuit */}
+      {dqeActiveTab === "circuit" && data?.dqe && (data.dqe.type === "base" || data.dqe.type === "avenant") && (
+        <div className="space-y-3 py-2">
           {circuitEtapes.length === 0 ? (
-            <p className="text-xs text-gray-500 italic">Aucun circuit de validation configuré pour ce contrat.</p>
+            <p className="text-sm text-gray-400 italic text-center py-6">Aucun circuit de validation configuré pour ce contrat.</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {circuitEtapes.map((etape) => {
                 const profilCode = etape.profil_code ?? etape.profil?.code ?? etape.code;
                 const validations = data?.dqe?.validations ?? [];
                 const val = validations.find(v => v.profil_code === profilCode);
                 const deja_valide = !!val;
-                const peut_valider = !deja_valide && !readonly && userRole === profilCode;
+                const peut_valider = !deja_valide && !readonly && userRole === profilCode && data?.dqe?.statut !== "valide";
 
                 return (
-                  <div key={etape.id ?? profilCode} className="flex items-center gap-3 flex-wrap">
-                    <span className="w-16 text-xs font-mono font-semibold text-gray-700 uppercase">{profilCode}</span>
-                    {deja_valide ? (
-                      <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                        <CheckCircle2 size={11} />
-                        Validé{val.validated_at ? ` le ${formatDate(val.validated_at)}` : ""}
-                        {val.observations ? ` — ${val.observations}` : ""}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-gray-400 italic">En attente</span>
-                    )}
+                  <div key={etape.id ?? profilCode} className={`rounded-xl border p-4 flex items-center justify-between gap-4 flex-wrap ${deja_valide ? "border-green-200 bg-green-50/60" : peut_valider ? "border-blue-200 bg-blue-50/40" : "border-gray-100 bg-gray-50/60"}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${deja_valide ? "bg-green-100" : "bg-gray-100"}`}>
+                        {deja_valide
+                          ? <CheckCircle2 size={16} className="text-green-600" />
+                          : <Clock size={16} className="text-gray-400" />
+                        }
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-800">{profilCode}</div>
+                        {deja_valide ? (
+                          <div className="text-xs text-green-700">
+                            Validé{val.validated_at ? ` le ${formatDate(val.validated_at)}` : ""}
+                            {val.user ? ` par ${val.user.prenom ?? ""} ${val.user.nom ?? ""}`.trim() : ""}
+                            {val.observations ? ` — ${val.observations}` : ""}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-400">En attente de validation</div>
+                        )}
+                      </div>
+                    </div>
                     {peut_valider && (
-                      <div className="flex items-center gap-2 ml-auto">
+                      <div className="flex items-center gap-2">
                         <input
                           type="text"
                           value={validObs}
                           onChange={e => setValidObs(e.target.value)}
                           placeholder="Observations (optionnel)"
-                          className="px-2 py-1 border border-gray-200 rounded text-xs w-48"
+                          className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs w-48"
                         />
                         <button
                           disabled={validLoading}
-                          onClick={async () => {
-                            setValidLoading(true);
-                            try {
-                              await validerDqe.mutateAsync({ profil_code: profilCode, observations: validObs.trim() || null });
-                              setValidObs("");
-                            } finally {
-                              setValidLoading(false);
-                            }
-                          }}
-                          className="inline-flex items-center gap-1 px-3 py-1 rounded bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                          onClick={() => setShowConfirmValider(profilCode)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#087F3E] text-white text-xs font-medium hover:bg-[#076a34] disabled:opacity-50 transition-colors"
                         >
-                          {validLoading ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
+                          {validLoading ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
                           Valider
                         </button>
                       </div>
@@ -2082,33 +2101,48 @@ function DqeTab({ contratId, contrat }) {
               })}
             </div>
           )}
-
-          {/* Validations hors circuit (profils supplémentaires) */}
-          {(() => {
-            const validations = data?.dqe?.validations ?? [];
-            const etapesCodes = circuitEtapes.map(e => e.profil_code ?? e.profil?.code ?? e.code);
-            const extras = validations.filter(v => !etapesCodes.includes(v.profil_code));
-            return extras.length > 0 ? (
-              <div className="pt-1 border-t border-blue-100">
-                {extras.map(v => (
-                  <span key={v.id} className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium mr-2">
-                    <CheckCircle2 size={11} /> {v.profil_code} — Validé{v.validated_at ? ` le ${formatDate(v.validated_at)}` : ""}
-                  </span>
-                ))}
-              </div>
-            ) : null;
-          })()}
-
-          <p className="text-[11px] text-blue-600 italic">
+          <p className="text-[11px] text-gray-400 italic">
             Au moins 1 validation suffit pour que le DQE soit utilisable.
             {(data?.dqe?.validations ?? []).length > 0 && (
               <span className="ml-2 font-semibold text-green-700">
-                {(data.dqe.validations ?? []).length} validation(s) enregistrée(s).
+                {data.dqe.validations.length} validation(s) enregistrée(s).
               </span>
             )}
           </p>
         </div>
       )}
+
+      {/* Modal confirmation validation DQE */}
+      {showConfirmValider && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4">
+            <h3 className="text-base font-semibold text-gray-800">Confirmer la validation</h3>
+            <p className="text-sm text-gray-600">Valider ce DQE en tant que <strong>{showConfirmValider}</strong> ?</p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setShowConfirmValider(false)} className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Annuler</button>
+              <button
+                disabled={validLoading}
+                onClick={async () => {
+                  setValidLoading(true);
+                  try {
+                    await validerDqe.mutateAsync({ profil_code: showConfirmValider, observations: validObs.trim() || null });
+                    setValidObs("");
+                    setShowConfirmValider(false);
+                  } finally {
+                    setValidLoading(false);
+                  }
+                }}
+                className="px-4 py-2 text-sm bg-[#087F3E] text-white rounded-lg font-medium hover:bg-[#076a34] disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {validLoading && <Loader2 size={13} className="animate-spin" />} Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Section lignes — masquée si onglet circuit actif */}
+      {(dqeActiveTab === "lignes" || !data?.dqe || data.dqe.type === "actualise") && <>
 
       {/* Header actions + Total */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -2685,6 +2719,7 @@ function DqeTab({ contratId, contrat }) {
           onClose={() => setShowImportDqe(false)}
         />
       )}
+      </> /* fin section lignes */}
     </div>
   );
 }
