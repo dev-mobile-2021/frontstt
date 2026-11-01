@@ -1852,7 +1852,7 @@ function DqeTab({ contratId, contrat }) {
 
   const rubriques = data?.data || [];
   const total     = data?.total ?? 0;
-  const activeDqeReadonly = readonly || data?.dqe?.type === "actualise" || (data?.dqe?.statut === "en_validation");
+  const activeDqeReadonly = readonly || data?.dqe?.type === "actualise" || data?.dqe?.statut === "en_validation" || data?.dqe?.statut === "valide";
 
   // Formulaires inline
   const [addingRubrique, setAddingRubrique] = useState(false);
