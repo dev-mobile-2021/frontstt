@@ -2001,41 +2001,55 @@ function DqeTab({ contratId, contrat }) {
 
   return (
     <div className="space-y-4">
-      {/* Onglets DQE + bouton Valider */}
-      {dqeList.length > 0 && (() => {
+      {/* Onglets DQE */}
+      {dqeList.length > 0 && (
+        <div className="flex gap-2 flex-wrap border-b border-gray-200 pb-0">
+          {dqeList.map(dqe => (
+            <button
+              key={dqe.id}
+              onClick={() => setSelectedDqeId(dqe.id)}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                activeDqeId === dqe.id
+                  ? "border-[#087F3E] text-[#087F3E]"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {labelDqe(dqe)}
+              {statutBadge(dqe)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Onglets Lignes / Circuit + bouton Valider — uniquement pour DQE base ou avenant */}
+      {data?.dqe && (data.dqe.type === "base" || data.dqe.type === "avenant") && (() => {
         const validations = data?.dqe?.validations ?? [];
-        const peutValiderNow = data?.dqe && (data.dqe.type === "base" || data.dqe.type === "avenant")
-          && data.dqe.statut !== "valide"
-          && !readonly
-          && circuitEtapes.some(e => {
-              const pc = e.profil_code ?? e.profil?.code ?? e.code;
-              return pc === userRole && !validations.find(v => v.profil_code === pc);
-            });
-        const profilCodeCourant = circuitEtapes.find(e => {
+        const etapeCourante = circuitEtapes.find(e => {
           const pc = e.profil_code ?? e.profil?.code ?? e.code;
           return pc === userRole && !validations.find(v => v.profil_code === pc);
         });
-        const pc = profilCodeCourant ? (profilCodeCourant.profil_code ?? profilCodeCourant.profil?.code ?? profilCodeCourant.code) : null;
+        const pc = etapeCourante ? (etapeCourante.profil_code ?? etapeCourante.profil?.code ?? etapeCourante.code) : null;
+        const peutValiderNow = !!pc && data.dqe.statut !== "valide" && !readonly;
 
         return (
           <div className="flex items-center justify-between gap-2 border-b border-gray-200">
-            <div className="flex gap-2 flex-wrap">
-              {dqeList.map(dqe => (
-                <button
-                  key={dqe.id}
-                  onClick={() => setSelectedDqeId(dqe.id)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
-                    activeDqeId === dqe.id
-                      ? "border-[#087F3E] text-[#087F3E]"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  {labelDqe(dqe)}
-                  {statutBadge(dqe)}
-                </button>
-              ))}
+            <div className="flex gap-1">
+              <button
+                onClick={() => setDqeActiveTab("lignes")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${dqeActiveTab === "lignes" ? "border-[#087F3E] text-[#087F3E]" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+              >
+                Lignes DQE
+              </button>
+              <button
+                onClick={() => setDqeActiveTab("circuit")}
+                className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${dqeActiveTab === "circuit" ? "border-[#087F3E] text-[#087F3E]" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+              >
+                <ShieldCheck size={13} /> Circuit
+                {data?.dqe?.statut === "valide" && <span className="ml-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium">Validé</span>}
+                {data?.dqe?.statut === "en_validation" && <span className="ml-1 text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">En cours</span>}
+              </button>
             </div>
-            {peutValiderNow && pc && (
+            {peutValiderNow && (
               <button
                 onClick={() => setShowConfirmValider(pc)}
                 className="mb-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#087F3E] text-white text-xs font-medium hover:bg-[#076a34] transition-colors"
@@ -2046,26 +2060,6 @@ function DqeTab({ contratId, contrat }) {
           </div>
         );
       })()}
-
-      {/* Onglets Lignes / Circuit — uniquement pour DQE base ou avenant */}
-      {data?.dqe && (data.dqe.type === "base" || data.dqe.type === "avenant") && (
-        <div className="flex gap-1 border-b border-gray-200">
-          <button
-            onClick={() => setDqeActiveTab("lignes")}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${dqeActiveTab === "lignes" ? "border-[#087F3E] text-[#087F3E]" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-          >
-            Lignes DQE
-          </button>
-          <button
-            onClick={() => setDqeActiveTab("circuit")}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors inline-flex items-center gap-1.5 ${dqeActiveTab === "circuit" ? "border-[#087F3E] text-[#087F3E]" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-          >
-            <ShieldCheck size={13} /> Circuit
-            {data?.dqe?.statut === "valide" && <span className="ml-1 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium">Validé</span>}
-            {data?.dqe?.statut === "en_validation" && <span className="ml-1 text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full font-medium">En cours</span>}
-          </button>
-        </div>
-      )}
 
       {/* Panel Circuit */}
       {dqeActiveTab === "circuit" && data?.dqe && (data.dqe.type === "base" || data.dqe.type === "avenant") && (
