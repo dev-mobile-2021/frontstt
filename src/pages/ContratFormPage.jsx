@@ -6,7 +6,7 @@ import {
   ArrowLeft, ChevronRight, Save, Loader2, AlertTriangle, RefreshCw,
   Hash, FileText, Info, FilePlus, CheckCircle, Trash2, Plus, X, Paperclip,
   Upload, Download, File, Circle, Clock, CheckCircle2, XCircle, Archive,
-  Pencil, ChevronDown, Lock, ShieldCheck,
+  Pencil, ChevronDown, Lock, ShieldCheck, RotateCcw,
 } from "lucide-react";
 import { useContrat, useSaveContrat, useContratStatut, useContratCircuit, useSoumettreContrat, useValiderContrat, useRejeterContrat, useDeleteContrat } from "../hooks/useContrats";
 import { useChantiersList } from "../hooks/useChantiers";
