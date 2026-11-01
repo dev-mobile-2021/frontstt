@@ -46,7 +46,7 @@ const AVENANT_STATUT_COLORS = {
 
 const INIT = {
   chantier_id: "", soustraitant_id: "",
-  objet: "", type_contrat: "",
+  libelle: "", objet: "", type_contrat: "",
   montant_initial: "", date_debut: "", date_fin_prevue: "",
   taux_rg:                  5,
   taux_revision_prix:       0,
@@ -155,6 +155,7 @@ export default function ContratsListPage() {
     const errs = {};
     if (!form.chantier_id)           errs.chantier_id      = "Requis";
     if (!form.soustraitant_id)       errs.soustraitant_id  = "Requis";
+    if (!form.libelle.trim())        errs.libelle          = "Requis";
     if (!form.objet.trim())          errs.objet            = "Requis";
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
@@ -162,6 +163,7 @@ export default function ContratsListPage() {
       const created = await saveMut.mutateAsync({
         chantier_id:               parseInt(form.chantier_id),
         soustraitant_id:           parseInt(form.soustraitant_id),
+        libelle:                   form.libelle.trim(),
         objet:                     form.objet.trim(),
         type_contrat:              form.type_contrat  || null,
         date_debut:                form.date_debut      || null,
@@ -433,6 +435,13 @@ export default function ContratsListPage() {
                   className={`${INPUT} ${errors.soustraitant_id ? "border-red-400" : ""}`}
                 />
                 {errors.soustraitant_id && <p className="text-xs text-red-500 mt-1">{errors.soustraitant_id}</p>}
+              </Field>
+
+              <Field label="Libellé" required>
+                <input value={form.libelle} onChange={e => set("libelle", e.target.value)}
+                  className={`${INPUT} ${errors.libelle ? "border-red-400" : ""}`}
+                  placeholder="Ex: Terrassement gros œuvre Bâtiment A" />
+                {errors.libelle && <p className="text-xs text-red-500 mt-1">{errors.libelle}</p>}
               </Field>
 
               <Field label="Objet du contrat" required>
