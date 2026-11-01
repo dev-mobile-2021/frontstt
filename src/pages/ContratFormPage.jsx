@@ -1854,7 +1854,7 @@ function DqeTab({ contratId, contrat }) {
 
   // Formulaires inline
   const [addingRubrique, setAddingRubrique] = useState(false);
-  const [rubForm, setRubForm] = useState({ designation: "", code: "", bon_commande_id: null });
+  const [rubForm, setRubForm] = useState({ designation: "", code: "", code_x3: "", bon_commande_id: "" });
   const [editRubId, setEditRubId] = useState(null);
   const [editRubForm, setEditRubForm] = useState({ designation: "", code: "" });
 
@@ -1885,7 +1885,7 @@ function DqeTab({ contratId, contrat }) {
   // Confirm delete
   const [confirmDel, setConfirmDel] = useState(null); // { type, id, label }
 
-  const resetAddRub = () => { setAddingRubrique(false); setRubForm({ designation: "", code: "", code_x3: "", avenant_id: null }); };
+  const resetAddRub = () => { setAddingRubrique(false); setRubForm({ designation: "", code: "", code_x3: "", bon_commande_id: "" }); };
   const resetAddPoste = () => { setAddingPosteFor(null); setPosteForm({ numero: "", designation: "" }); };
   const resetAddLigne = () => { setAddingLigneFor(null); setLigneForm({ code_x3: "", designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" }); };
 
@@ -1895,7 +1895,7 @@ function DqeTab({ contratId, contrat }) {
       designation:     rubForm.designation.trim(),
       code:            rubForm.code.trim() || null,
       code_x3:         rubForm.code_x3.trim() || null,
-      avenant_id: rubForm.avenant_id ? Number(rubForm.avenant_id) : null,
+      bon_commande_id: rubForm.bon_commande_id ? Number(rubForm.bon_commande_id) : null,
     });
     resetAddRub();
   };
@@ -1906,7 +1906,7 @@ function DqeTab({ contratId, contrat }) {
       designation:     editRubForm.designation.trim(),
       code:            editRubForm.code?.trim() || null,
       code_x3:         editRubForm.code_x3?.trim() || null,
-      avenant_id: editRubForm.avenant_id ? Number(editRubForm.avenant_id) : null,
+      bon_commande_id: editRubForm.bon_commande_id ? Number(editRubForm.bon_commande_id) : null,
     });
     setEditRubId(null);
   };
@@ -2160,18 +2160,17 @@ function DqeTab({ contratId, contrat }) {
               placeholder="TERRASSEMENTS"
             />
           </div>
-          {avenantsDqe.length > 0 && (
+          {bcs.length > 0 && (
             <div className="min-w-[180px]">
-              <label className="block text-[11px] text-gray-600 mb-1">Avenant associé (optionnel)</label>
+              <label className="block text-[11px] text-gray-600 mb-1">Bon de commande</label>
               <SearchSelect
-                value={rubForm.avenant_id || ""}
-                onChange={e => setRubForm(s => ({ ...s, avenant_id: e.target.value || null }))}
-                placeholder="— Aucun avenant —"
+                value={rubForm.bon_commande_id || ""}
+                onChange={e => setRubForm(s => ({ ...s, bon_commande_id: e.target.value || "" }))}
                 className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-white"
               >
-                <option value="">— Aucun avenant —</option>
-                {avenantsDqe.map(a => (
-                  <option key={a.id} value={a.id}>{a.code} — {a.objet}</option>
+                <option value="">— Aucun BC —</option>
+                {bcs.map(bc => (
+                  <option key={bc.id} value={bc.id}>{bc.numero ?? bc.code_x3 ?? bc.code}</option>
                 ))}
               </SearchSelect>
             </div>
@@ -2235,16 +2234,15 @@ function DqeTab({ contratId, contrat }) {
                     onChange={e => setEditRubForm(s => ({ ...s, designation: e.target.value }))}
                     className="flex-1 min-w-[200px] px-2 py-1 border border-gray-200 rounded text-sm"
                   />
-                  {avenantsDqe.length > 0 && (
+                  {bcs.length > 0 && (
                     <SearchSelect
-                      value={editRubForm.avenant_id || ""}
-                      onChange={e => setEditRubForm(s => ({ ...s, avenant_id: e.target.value || null }))}
-                      placeholder="— Aucun avenant —"
+                      value={editRubForm.bon_commande_id || ""}
+                      onChange={e => setEditRubForm(s => ({ ...s, bon_commande_id: e.target.value || "" }))}
                       className="border border-gray-200 rounded px-2 py-1 text-xs bg-white max-w-[200px]"
                     >
-                      <option value="">— Aucun avenant —</option>
-                      {avenantsDqe.map(a => (
-                        <option key={a.id} value={a.id}>{a.code} — {a.objet}</option>
+                      <option value="">— Aucun BC —</option>
+                      {bcs.map(bc => (
+                        <option key={bc.id} value={bc.id}>{bc.numero ?? bc.code_x3 ?? bc.code}</option>
                       ))}
                     </SearchSelect>
                   )}
@@ -2257,9 +2255,9 @@ function DqeTab({ contratId, contrat }) {
                     {rub.code && <span className="text-xs text-gray-500 font-mono mr-2">{rub.code}</span>}
                     {rub.code_x3 && <span className="text-xs text-blue-600 font-mono mr-2 bg-blue-50 px-1 rounded">{rub.code_x3}</span>}
                     RA : {rub.designation}
-                    {rub.avenant && (
-                      <span className="ml-2 text-[11px] font-normal bg-purple-50 text-purple-700 border border-purple-200 px-1.5 py-0.5 rounded-full">
-                        {rub.avenant.code}
+                    {rub.bon_commande && (
+                      <span className="ml-2 text-[11px] font-normal bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                        BC {rub.bon_commande.numero ?? rub.bon_commande.code_x3 ?? rub.bon_commande.code}
                       </span>
                     )}
                   </div>
@@ -2267,7 +2265,7 @@ function DqeTab({ contratId, contrat }) {
                   {!activeDqeReadonly && (
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => { setEditRubId(rub.id); setEditRubForm({ designation: rub.designation, code: rub.code || "", code_x3: rub.code_x3 || "", avenant_id: rub.avenant_id || "" }); }}
+                        onClick={() => { setEditRubId(rub.id); setEditRubForm({ designation: rub.designation, code: rub.code || "", code_x3: rub.code_x3 || "", bon_commande_id: rub.bon_commande_id || "" }); }}
                         className="p-1 rounded hover:bg-white/60 text-gray-600" title="Modifier"
                       >
                         <Pencil size={13} />
