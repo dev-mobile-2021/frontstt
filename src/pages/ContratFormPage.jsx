@@ -2485,6 +2485,7 @@ function DqeTab({ contratId, contrat }) {
                                       <div className="flex items-center gap-1">
                                         <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{ligne.code}</span>
                                         {ligne.is_bis && <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1 py-0.5 rounded">BIS</span>}
+                                        {ligne.est_utilisee && !ligne.is_bis && <span title="Utilisée dans un décompte — toute modification créera une ligne BIS" className="text-[9px] font-bold text-orange-600 bg-orange-100 px-1 py-0.5 rounded cursor-help">EN USE</span>}
                                       </div>
                                     </td>
                                     <td className="py-1 pr-2 w-24">
