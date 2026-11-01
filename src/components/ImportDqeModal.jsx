@@ -4,31 +4,22 @@ import { X, Upload, Download, Loader2, FileSpreadsheet, CheckCircle2, AlertCircl
 
 const norm = (s) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 
-/** Génère et télécharge le modèle Excel DQE. */
+/** Génère et télécharge le modèle Excel DQE (format X3). */
 function telechargerModele() {
   const rows = [
-    ["Type", "Code", "Désignation", "Unité", "Quantité", "Prix unitaire"],
-    ["RUBRIQUE", "R01", "TERRASSEMENTS", "", "", ""],
-    ["POSTE", "", "Décapage de la terre végétale", "", "", ""],
-    ["LIGNE", "", "Décapage mécanique", "m²", 1000, 500],
-    ["LIGNE", "", "Décapage manuel", "m²", 200, 800],
-    ["POSTE", "", "Remblai compacté", "", "", ""],
-    ["LIGNE", "", "Remblai en latérite", "m³", 500, 12000],
-    ["RUBRIQUE", "R02", "OUVRAGES D'ART", "", "", ""],
-    ["POSTE", "", "Fondations", "", "", ""],
-    ["LIGNE", "", "Béton de propreté C15", "m³", 20, 80000],
-    ["LIGNE", "", "Béton armé C25", "m³", 100, 150000],
+    ["", "DQE MARCHE SOUS-TRAITANT", "", "", "", "", "", ""],
+    ["", "", "", "", "", "", "", ""],
+    ["RA", "Désignation RA", "N° Item", "Désignation", "U", "PU", "Qté Marché", "Montant"],
+    ["", "", "", "", "", "", "", ""],
+    ["6A83", "ST: Bâtiment TCE", "100-1", "Fouille en terrain meuble", "m³", 5000, 300, 1500000],
+    ["6A83", "ST: Bâtiment TCE", "100-2", "Béton de propreté C15", "m³", 20, 80000, 1600000],
+    ["6A83", "ST: Bâtiment TCE", "200-1", "Béton armé C25 fondations", "m³", 50, 150000, 7500000],
+    ["6A40", "ST Voirie / TP",   "300-1", "Terrassement général", "m³", 1000, 3500, 3500000],
+    ["6A40", "ST Voirie / TP",   "300-2", "Remblai compacté", "m³", 500, 8000, 4000000],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws["!cols"] = [{ wch: 12 }, { wch: 8 }, { wch: 45 }, { wch: 8 }, { wch: 12 }, { wch: 14 }];
-
-  // Style en-tête
-  const header = ["A1", "B1", "C1", "D1", "E1", "F1"];
-  header.forEach((cell) => {
-    if (!ws[cell]) return;
-    ws[cell].s = { font: { bold: true }, fill: { fgColor: { rgb: "087F3E" } }, fontColor: { rgb: "FFFFFF" } };
-  });
+  ws["!cols"] = [{ wch: 8 }, { wch: 25 }, { wch: 10 }, { wch: 40 }, { wch: 6 }, { wch: 12 }, { wch: 12 }, { wch: 14 }];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "DQE");
@@ -271,8 +262,7 @@ export default function ImportDqeModal({ contratId, onImported, onClose }) {
 
         <div className="p-6 space-y-4">
           <p className="text-xs text-gray-500">
-            Le fichier doit suivre le modèle : une colonne <strong>Type</strong> (RUBRIQUE / POSTE / LIGNE),
-            une colonne <strong>Désignation</strong>, et pour les lignes : Unité, Quantité, Prix unitaire.
+            Le fichier doit être au format X3 : colonnes <strong>RA</strong>, <strong>Désignation RA</strong>, <strong>N° Item</strong>, <strong>Désignation</strong>, <strong>U</strong>, <strong>PU</strong>, <strong>Qté Marché</strong>, <strong>Montant</strong>. Téléchargez le modèle pour voir un exemple.
           </p>
 
           {/* Actions fichier */}
