@@ -2726,6 +2726,8 @@ export default function ContratFormPage() {
   const { data: decomptesData }   = useDecomptesPaginated({ contrat_id: contratIdInt, count: 100 });
   const { data: avenantsList = [] } = useAvenantsByContrat(contratIdInt);
   const { data: bcsList = [], isSuccess: bcsLoaded } = useBonCommandesByContrat(contratIdInt);
+  const { data: dqeListDataPage } = useDqeList(contratIdInt);
+  const dqeBaseStatut = (dqeListDataPage?.data ?? []).find(d => d.type === "base")?.statut ?? null;
 
   const chantiersList = chantiersData ?? [];
   const sttList       = (sttData ?? []).filter(s => s.statut !== "blackliste");
@@ -2904,7 +2906,7 @@ export default function ContratFormPage() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
               <Download size={13} /> PDF
             </button>
-            {dqeBase?.statut === 'valide' && (
+            {dqeBaseStatut === 'valide' && (
               <button onClick={() => navigate(`/decomptes/nouveau?contrat_id=${id}`)}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-[#087F3E] text-white rounded-lg hover:bg-[#065A2C] transition-colors font-medium">
                 <FilePlus size={14} /> Nouveau décompte
