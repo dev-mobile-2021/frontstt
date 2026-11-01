@@ -2001,25 +2001,51 @@ function DqeTab({ contratId, contrat }) {
 
   return (
     <div className="space-y-4">
-      {/* Onglets DQE */}
-      {dqeList.length > 0 && (
-        <div className="flex gap-2 flex-wrap border-b border-gray-200 pb-0">
-          {dqeList.map(dqe => (
-            <button
-              key={dqe.id}
-              onClick={() => setSelectedDqeId(dqe.id)}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
-                activeDqeId === dqe.id
-                  ? "border-[#087F3E] text-[#087F3E]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {labelDqe(dqe)}
-              {statutBadge(dqe)}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Onglets DQE + bouton Valider */}
+      {dqeList.length > 0 && (() => {
+        const validations = data?.dqe?.validations ?? [];
+        const peutValiderNow = data?.dqe && (data.dqe.type === "base" || data.dqe.type === "avenant")
+          && data.dqe.statut !== "valide"
+          && !readonly
+          && circuitEtapes.some(e => {
+              const pc = e.profil_code ?? e.profil?.code ?? e.code;
+              return pc === userRole && !validations.find(v => v.profil_code === pc);
+            });
+        const profilCodeCourant = circuitEtapes.find(e => {
+          const pc = e.profil_code ?? e.profil?.code ?? e.code;
+          return pc === userRole && !validations.find(v => v.profil_code === pc);
+        });
+        const pc = profilCodeCourant ? (profilCodeCourant.profil_code ?? profilCodeCourant.profil?.code ?? profilCodeCourant.code) : null;
+
+        return (
+          <div className="flex items-center justify-between gap-2 border-b border-gray-200">
+            <div className="flex gap-2 flex-wrap">
+              {dqeList.map(dqe => (
+                <button
+                  key={dqe.id}
+                  onClick={() => setSelectedDqeId(dqe.id)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 transition-colors -mb-px ${
+                    activeDqeId === dqe.id
+                      ? "border-[#087F3E] text-[#087F3E]"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {labelDqe(dqe)}
+                  {statutBadge(dqe)}
+                </button>
+              ))}
+            </div>
+            {peutValiderNow && pc && (
+              <button
+                onClick={() => setShowConfirmValider(pc)}
+                className="mb-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#087F3E] text-white text-xs font-medium hover:bg-[#076a34] transition-colors"
+              >
+                <CheckCircle2 size={13} /> Valider le DQE
+              </button>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Onglets Lignes / Circuit — uniquement pour DQE base ou avenant */}
       {data?.dqe && (data.dqe.type === "base" || data.dqe.type === "avenant") && (
@@ -2078,23 +2104,7 @@ function DqeTab({ contratId, contrat }) {
                       </div>
                     </div>
                     {peut_valider && (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={validObs}
-                          onChange={e => setValidObs(e.target.value)}
-                          placeholder="Observations (optionnel)"
-                          className="px-2 py-1.5 border border-gray-200 rounded-lg text-xs w-48"
-                        />
-                        <button
-                          disabled={validLoading}
-                          onClick={() => setShowConfirmValider(profilCode)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#087F3E] text-white text-xs font-medium hover:bg-[#076a34] disabled:opacity-50 transition-colors"
-                        >
-                          {validLoading ? <Loader2 size={12} className="animate-spin" /> : <CheckCircle2 size={12} />}
-                          Valider
-                        </button>
-                      </div>
+                      <span className="text-xs text-blue-600 font-medium">C'est votre tour</span>
                     )}
                   </div>
                 );
