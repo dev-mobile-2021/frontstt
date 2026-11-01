@@ -1885,6 +1885,22 @@ function DqeTab({ contratId, contrat }) {
   // Confirm delete
   const [confirmDel, setConfirmDel] = useState(null); // { type, id, label }
 
+  // Historique ligne
+  const [historiqueModal, setHistoriqueModal] = useState(null); // { ligneId, designation }
+  const [historiqueData, setHistoriqueData]   = useState([]);
+  const [historiqueLoading, setHistoriqueLoading] = useState(false);
+
+  async function openHistorique(ligne) {
+    setHistoriqueModal({ ligneId: ligne.id, designation: ligne.designation });
+    setHistoriqueLoading(true);
+    try {
+      const { data } = await http.get(`/dqe/ligne/${ligne.id}/historique`);
+      setHistoriqueData(data.data ?? []);
+    } finally {
+      setHistoriqueLoading(false);
+    }
+  }
+
   const resetAddRub = () => { setAddingRubrique(false); setRubForm({ designation: "", code: "", code_x3: "", bon_commande_id: "" }); };
   const resetAddPoste = () => { setAddingPosteFor(null); setPosteForm({ numero: "", designation: "" }); };
   const resetAddLigne = () => { setAddingLigneFor(null); setLigneForm({ code_x3: "", designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" }); };
@@ -2426,9 +2442,12 @@ function DqeTab({ contratId, contrat }) {
                                     })()}
                                   </tr>
                                 ) : (
-                                  <tr key={ligne.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                                  <tr key={ligne.id} className={`border-b border-gray-50 hover:bg-gray-50/50 ${ligne.is_bis ? "bg-amber-50/30" : ""}`}>
                                     <td className="py-1 pr-2 w-16">
-                                      <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{ligne.code}</span>
+                                      <div className="flex items-center gap-1">
+                                        <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{ligne.code}</span>
+                                        {ligne.is_bis && <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1 py-0.5 rounded">BIS</span>}
+                                      </div>
                                     </td>
                                     <td className="py-1 pr-2 w-24">
                                       {ligne.code_x3
@@ -2440,9 +2459,13 @@ function DqeTab({ contratId, contrat }) {
                                     <td className="text-right pr-2">{fmtQte(ligne.quantite_prevue)}</td>
                                     <td className="text-right pr-2">{fmtMontantDqe(ligne.prix_unitaire)}</td>
                                     <td className="text-right pr-2 font-medium">{fmtMontantDqe(ligne.montant)}</td>
-                                    {!activeDqeReadonly && (
-                                      <td>
-                                        <div className="flex items-center gap-1 justify-end">
+                                    <td>
+                                      <div className="flex items-center gap-1 justify-end">
+                                        <button onClick={() => openHistorique(ligne)}
+                                          className="p-0.5 rounded hover:bg-blue-50 text-blue-400" title="Historique">
+                                          <RotateCcw size={11} />
+                                        </button>
+                                        {!activeDqeReadonly && (<>
                                           <button
                                             onClick={() => { setEditLigneId(ligne.id); setEditLigneForm({ code_x3: ligne.code_x3 || "", designation: ligne.designation, unite: ligne.unite || "", quantite_prevue: ligne.quantite_prevue, prix_unitaire: ligne.prix_unitaire }); }}
                                             className="p-0.5 rounded hover:bg-gray-200 text-gray-600" title="Modifier"
@@ -2455,9 +2478,9 @@ function DqeTab({ contratId, contrat }) {
                                           >
                                             <Trash2 size={11} />
                                           </button>
-                                        </div>
-                                      </td>
-                                    )}
+                                        </>)}
+                                      </div>
+                                    </td>
                                   </tr>
                                 )
                               ))}
@@ -2598,6 +2621,54 @@ function DqeTab({ contratId, contrat }) {
                 className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600">
                 Supprimer
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale historique ligne */}
+      {historiqueModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div>
+                <p className="font-semibold text-gray-900 text-sm">Historique des modifications</p>
+                <p className="text-xs text-gray-400 truncate max-w-xs">{historiqueModal.designation}</p>
+              </div>
+              <button onClick={() => setHistoriqueModal(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
+                <XCircle size={16} />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4">
+              {historiqueLoading ? (
+                <div className="flex justify-center py-8"><div className="w-5 h-5 border-2 border-[#087F3E] border-t-transparent rounded-full animate-spin" /></div>
+              ) : historiqueData.length === 0 ? (
+                <p className="text-sm text-gray-400 text-center py-8">Aucun historique pour cette ligne.</p>
+              ) : (
+                <div className="space-y-2">
+                  {historiqueData.map(h => (
+                    <div key={h.id} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                      <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${h.action === 'bis_cree' ? 'bg-amber-400' : h.action === 'modifie' ? 'bg-blue-400' : 'bg-emerald-400'}`} />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${h.action === 'bis_cree' ? 'bg-amber-100 text-amber-700' : h.action === 'modifie' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                            {h.action === 'bis_cree' ? 'Ligne BIS créée' : h.action === 'modifie' ? 'Modifié' : 'Créé'}
+                          </span>
+                          {h.champ && <span className="text-[10px] text-gray-500 font-mono">{h.champ}</span>}
+                        </div>
+                        {h.ancienne_valeur && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            <span className="line-through text-red-400">{h.ancienne_valeur}</span>
+                            <span className="mx-1 text-gray-300">→</span>
+                            <span className="text-emerald-600 font-medium">{h.nouvelle_valeur}</span>
+                          </p>
+                        )}
+                        <p className="text-[10px] text-gray-400 mt-1">{h.user ?? "—"} · {h.created_at}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
