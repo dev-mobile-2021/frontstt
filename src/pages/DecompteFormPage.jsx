@@ -1871,6 +1871,25 @@ export default function DecompteFormPage() {
           </div>
         </div>
       ) : d && (
+        <div className="space-y-4">
+        {/* ── 3 cartes résumé ── */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Montant partiel</p>
+            <p className="text-xl font-bold text-gray-900 tabular-nums">{num(d.payload?.postes?.A?.mensuelM ?? 0)} <span className="text-sm font-normal text-gray-400">FCFA</span></p>
+            <p className="text-[10px] text-gray-400 mt-1">Travaux exécutés ce mois</p>
+          </div>
+          <div className="bg-white border border-[#087F3E]/40 rounded-2xl px-5 py-4">
+            <p className="text-xs text-[#087F3E] font-medium uppercase tracking-wide mb-1">Net TTC à payer</p>
+            <p className="text-xl font-bold text-[#087F3E] tabular-nums">{num(d.montant_ttc ?? 0)} <span className="text-sm font-normal text-[#087F3E]/60">FCFA</span></p>
+            <p className="text-[10px] text-gray-400 mt-1">TVA {d.taux_tva ?? 18}% incluse</p>
+          </div>
+          <div className="bg-white border border-dashed border-gray-300 rounded-2xl px-5 py-4 flex flex-col justify-center items-center text-center">
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">À définir</p>
+            <p className="text-sm text-gray-300 mt-1">—</p>
+          </div>
+        </div>
+
         <div className="flex gap-5 items-start">
           {/* Contenu principal */}
           <div className="flex-1 min-w-0">
@@ -1925,17 +1944,18 @@ export default function DecompteFormPage() {
             <InfoPanel decompte={d} circuit={circuit} />
           </div>
         </div>
-      )}
 
-      <ConfirmModal
-        open={confirmDel}
-        title="Supprimer le décompte"
-        message={`Supprimer définitivement ${d?.code} ? Cette action est irréversible.`}
-        confirmLabel="Supprimer"
-        confirmClass="bg-red-500 hover:bg-red-600 text-white"
-        onConfirm={() => { setConfirmDel(false); handleDelete(); }}
-        onCancel={() => setConfirmDel(false)}
-      />
+        <ConfirmModal
+          open={confirmDel}
+          title="Supprimer le décompte"
+          message={`Supprimer définitivement ${d?.code} ? Cette action est irréversible.`}
+          confirmLabel="Supprimer"
+          confirmClass="bg-red-500 hover:bg-red-600 text-white"
+          onConfirm={() => { setConfirmDel(false); handleDelete(); }}
+          onCancel={() => setConfirmDel(false)}
+        />
+        </div>
+      )}
     </div>
   );
 }
