@@ -214,6 +214,97 @@ function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumett
 }
 
 // ─── Workflow tab style Odoo ─────────────────────────────────────────────────
+// ─── Discussion ─────────────────────────────────────────────────────────────
+function DiscussionSection({ decompteId }) {
+  const [messages, setMessages] = useState([]);
+  const [contenu, setContenu]   = useState("");
+  const [sending, setSending]   = useState(false);
+  const { currentUser } = useUser();
+  const bottomRef = React.useRef(null);
+
+  async function fetchMessages() {
+    const { data } = await http.get(`/decompte/${decompteId}/messages`);
+    setMessages(data.data ?? []);
+  }
+
+  useEffect(() => { fetchMessages(); }, [decompteId]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+  async function handleSend(e) {
+    e.preventDefault();
+    if (!contenu.trim()) return;
+    setSending(true);
+    try {
+      await http.post("/decompte/messages", { decompte_id: decompteId, contenu: contenu.trim() });
+      setContenu("");
+      fetchMessages();
+    } finally {
+      setSending(false);
+    }
+  }
+
+  async function handleDelete(id) {
+    await http.delete(`/decompte/messages/${id}`);
+    fetchMessages();
+  }
+
+  const initiales = (u) => u ? `${(u.prenom?.[0] ?? "").toUpperCase()}${(u.nom?.[0] ?? "").toUpperCase()}` : "?";
+  const nomComplet = (u) => u ? `${u.prenom ?? ""} ${u.nom ?? ""}`.trim() : "Inconnu";
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Discussion & Observations</p>
+
+      {/* Fil de messages */}
+      <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+        {messages.length === 0 && (
+          <p className="text-sm text-gray-400 text-center py-4">Aucune observation pour l'instant.</p>
+        )}
+        {messages.map(msg => {
+          const isMe = msg.user_id === currentUser?.id;
+          return (
+            <div key={msg.id} className={`flex gap-3 ${isMe ? "flex-row-reverse" : ""}`}>
+              {/* Avatar */}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold
+                ${isMe ? "bg-[#087F3E] text-white" : "bg-gray-200 text-gray-600"}`}>
+                {initiales(msg.user)}
+              </div>
+              {/* Bulle */}
+              <div className={`max-w-sm ${isMe ? "items-end" : "items-start"} flex flex-col`}>
+                <div className={`px-3 py-2 rounded-2xl text-sm ${isMe ? "bg-[#087F3E] text-white rounded-tr-sm" : "bg-gray-100 text-gray-800 rounded-tl-sm"}`}>
+                  {msg.contenu}
+                </div>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-[10px] text-gray-400">{nomComplet(msg.user)} · {msg.created_at}</p>
+                  {isMe && (
+                    <button onClick={() => handleDelete(msg.id)} className="text-[10px] text-red-400 hover:text-red-600">
+                      Supprimer
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Zone de saisie */}
+      <form onSubmit={handleSend} className="flex gap-2 pt-2 border-t border-gray-100">
+        <input
+          value={contenu} onChange={e => setContenu(e.target.value)}
+          placeholder="Ajouter une observation…"
+          className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 outline-none"
+        />
+        <button type="submit" disabled={!contenu.trim() || sending}
+          className="px-4 py-2 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50 flex-shrink-0">
+          {sending ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : "Envoyer"}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function WorkflowTab({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider }) {
   const { statut, validations, etapes, validatedProfils, currentEtape, allValidated, isTerminal, isBrouillon } =
     useCircuitState(decompte, circuit, peutValider);
@@ -303,6 +394,11 @@ function WorkflowTab({ decompte, circuit, onValider, onRejeter, onPayer, onSoume
           {allValidated && statut !== "paye" && <span className="text-violet-600 font-medium">✓ Toutes les approbations obtenues</span>}
           {statut === "paye" && <span className="text-emerald-600 font-medium">✓ Payé</span>}
         </div>
+      </div>
+
+      {/* Discussion */}
+      <div className="border-t border-gray-100 pt-6">
+        <DiscussionSection decompteId={decompte.id} />
       </div>
     </div>
   );
