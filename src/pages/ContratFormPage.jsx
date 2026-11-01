@@ -1869,6 +1869,7 @@ function DqeTab({ contratId, contrat }) {
   const [ligneForm, setLigneForm] = useState({ code_x3: "", designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" });
   const [editLigneId, setEditLigneId] = useState(null);
   const [editLigneForm, setEditLigneForm] = useState({ code_x3: "", designation: "", unite: "", quantite_prevue: "", prix_unitaire: "" });
+  const [confirmBisLigneId, setConfirmBisLigneId] = useState(null); // id ligne EN USE en attente de confirmation
 
   // Collapse state
   const [collapsedRub, setCollapsedRub] = useState({});
@@ -1952,7 +1953,7 @@ function DqeTab({ contratId, contrat }) {
     });
     resetAddLigne();
   };
-  const submitEditLigne = async (id) => {
+  const submitEditLigneConfirmed = async (id) => {
     if (!editLigneForm.designation.trim()) return;
     const res = await saveLigne.mutateAsync({
       posteId: 0,
@@ -1969,6 +1970,15 @@ function DqeTab({ contratId, contrat }) {
       addToast("Le prix a changé sur une ligne utilisée dans un décompte — une nouvelle ligne BIS a été créée.", "info");
     }
     setEditLigneId(null);
+    setConfirmBisLigneId(null);
+  };
+
+  const submitEditLigne = (id, estUtilisee) => {
+    if (estUtilisee) {
+      setConfirmBisLigneId(id);
+    } else {
+      submitEditLigneConfirmed(id);
+    }
   };
 
   const doDelete = async () => {
@@ -2429,7 +2439,7 @@ function DqeTab({ contratId, contrat }) {
                                   <tr key={ligne.id} className="bg-amber-50/40">
                                     {(() => {
                                       const handleKey = (e) => {
-                                        if (e.key === "Enter") { e.preventDefault(); submitEditLigne(ligne.id); }
+                                        if (e.key === "Enter") { e.preventDefault(); submitEditLigne(ligne.id, ligne.est_utilisee); }
                                         if (e.key === "Escape") setEditLigneId(null);
                                       };
                                       return <>
@@ -2666,6 +2676,22 @@ function DqeTab({ contratId, contrat }) {
       )}
 
       {/* Modale historique ligne */}
+      {/* Modal confirmation BIS */}
+      {confirmBisLigneId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm space-y-4 p-6">
+            <h3 className="text-base font-semibold text-gray-800">Ligne utilisée dans un décompte</h3>
+            <p className="text-sm text-gray-600">Cette ligne est déjà utilisée dans un décompte ou attachement. La modification créera automatiquement une <strong>ligne BIS</strong>. Continuer ?</p>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => { setConfirmBisLigneId(null); setEditLigneId(null); }} className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Annuler</button>
+              <button onClick={() => submitEditLigneConfirmed(confirmBisLigneId)} className="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 inline-flex items-center gap-1.5">
+                Créer une ligne BIS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {historiqueModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
