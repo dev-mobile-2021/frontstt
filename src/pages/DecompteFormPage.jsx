@@ -290,16 +290,21 @@ function DiscussionSection({ decompteId }) {
       </div>
 
       {/* Zone de saisie */}
-      <form onSubmit={handleSend} className="flex gap-2 pt-2 border-t border-gray-100">
-        <input
+      <form onSubmit={handleSend} className="flex flex-col gap-2 pt-2 border-t border-gray-100">
+        <textarea
           value={contenu} onChange={e => setContenu(e.target.value)}
-          placeholder="Ajouter une observation…"
-          className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 outline-none"
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
+          placeholder="Ajouter une observation… (Entrée pour envoyer, Maj+Entrée pour saut de ligne)"
+          rows={3}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 outline-none resize-none"
         />
-        <button type="submit" disabled={!contenu.trim() || sending}
-          className="px-4 py-2 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50 flex-shrink-0">
-          {sending ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : "Envoyer"}
-        </button>
+        <div className="flex justify-end">
+          <button type="submit" disabled={!contenu.trim() || sending}
+            className="px-4 py-2 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50 flex items-center gap-2">
+            {sending ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={13} />}
+            Envoyer
+          </button>
+        </div>
       </form>
     </div>
   );
