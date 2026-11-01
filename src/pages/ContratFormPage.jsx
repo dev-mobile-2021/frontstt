@@ -2039,7 +2039,8 @@ function DqeTab({ contratId, contrat }) {
           return pc === userRole && !validations.find(v => v.profil_code === pc);
         });
         const pc = etapeCourante ? (etapeCourante.profil_code ?? etapeCourante.profil?.code ?? etapeCourante.code) : null;
-        const peutValiderNow = !!pc && data.dqe.statut !== "valide" && !readonly;
+        const hasLignes = total > 0;
+        const peutValiderNow = !!pc && data.dqe.statut !== "valide" && !readonly && hasLignes;
 
         return (
           <div className="flex items-center justify-between gap-2 border-b border-gray-200">
