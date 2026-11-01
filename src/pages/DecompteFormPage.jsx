@@ -1892,6 +1892,12 @@ export default function DecompteFormPage() {
                 </div>
               ) : null;
             })()}
+            <ActionBar
+              decompte={d} circuit={circuit}
+              onValider={handleValider} onRejeter={handleRejeter}
+              onPayer={handlePayer} onSoumettre={handleValider}
+              peutValider={peutValiderDecompte}
+            />
             {canEdit && !isNew && (
               <button onClick={() => setConfirmDel(true)}
                 className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50">
@@ -1962,16 +1968,6 @@ export default function DecompteFormPage() {
                     {t.label}
                   </button>
                 ))}
-              </div>
-
-              {/* Barre d'actions — visible sur tous les onglets sauf nouveau */}
-              <div className="px-5 pt-4 pb-0">
-                <ActionBar
-                  decompte={d} circuit={circuit}
-                  onValider={handleValider} onRejeter={handleRejeter}
-                  onPayer={handlePayer} onSoumettre={handleValider}
-                  peutValider={peutValiderDecompte}
-                />
               </div>
 
               <div className="p-5">
