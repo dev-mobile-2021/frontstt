@@ -128,18 +128,35 @@ function useCircuitState(decompte, circuit, peutValider) {
 
 // ─── Barre d'actions (haut de Structure) ────────────────────────────────────
 function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider }) {
-  const [showRejet, setShowRejet] = useState(false);
-  const [motif, setMotif]         = useState("");
+  const [showRejet,          setShowRejet]          = useState(false);
+  const [motif,              setMotif]              = useState("");
+  const [showConfirmApprove, setShowConfirmApprove] = useState(false);
+  const [showConfirmRejet,   setShowConfirmRejet]   = useState(false);
   const { currentUser } = useUser();
   const { statut, etapes, currentEtape, allValidated, isTerminal, isBrouillon, canValidate } = useCircuitState(decompte, circuit, peutValider);
 
-  // Le CT est l'initiateur : en brouillon, son "Approuver" = soumettre + valider en une fois
   const firstEtape    = etapes[0];
   const isCTInitiator = firstEtape?.profil_code === "CT";
   const userRole      = currentUser?.role?.designation?.toLowerCase() ?? "";
   const isAdmin       = userRole === "admin";
   const isCT          = isAdmin || userRole === "ct";
   const ctCanApprove  = isBrouillon && isCTInitiator && isCT && peutValider;
+
+  const approveLabel = ctCanApprove
+    ? "CT"
+    : currentEtape?.profil_code?.toUpperCase();
+
+  function handleConfirmApprove() {
+    setShowConfirmApprove(false);
+    onValider();
+  }
+
+  function handleConfirmRejet() {
+    if (!motif.trim()) return;
+    setShowConfirmRejet(false);
+    onRejeter(motif);
+    setMotif("");
+  }
 
   if (isTerminal && statut !== "paye") return null;
   if (statut === "paye") return (
@@ -148,68 +165,111 @@ function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumett
     </div>
   );
 
+  const showApproveBtn = ctCanApprove || (!isBrouillon && !allValidated && currentEtape && canValidate);
+
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      {/* CT en brouillon → Approuver directement (soumettre + valider) */}
-      {ctCanApprove && !showRejet && (
-        <>
-          <button onClick={onValider}
+    <>
+      <div className="flex items-center gap-2 flex-wrap">
+        {showApproveBtn && (
+          <>
+            <button onClick={() => setShowConfirmApprove(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold">
+              <CheckCircle2 size={13} /> Approuver — {approveLabel}
+            </button>
+            <button onClick={() => setShowConfirmRejet(true)}
+              className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50">
+              <XCircle size={13} /> Refuser
+            </button>
+          </>
+        )}
+        {isBrouillon && !ctCanApprove && (
+          <button onClick={onSoumettre}
             className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold">
-            <CheckCircle2 size={13} /> Approuver — CT
+            <Send size={13} /> Soumettre au circuit
           </button>
-          <button onClick={() => setShowRejet(true)}
-            className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50">
-            <XCircle size={13} /> Refuser
+        )}
+        {!isBrouillon && !allValidated && currentEtape && !canValidate && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+            <Clock size={12} /> En attente de <strong>{currentEtape.libelle ?? currentEtape.profil_code?.toUpperCase()}</strong>
+          </div>
+        )}
+        {allValidated && statut !== "paye" && (
+          <button onClick={onPayer}
+            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold">
+            <CheckCircle2 size={13} /> Marquer comme payé
           </button>
-        </>
-      )}
-      {/* Autres profils en brouillon → Soumettre */}
-      {isBrouillon && !ctCanApprove && (
-        <button onClick={onSoumettre}
-          className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold">
-          <Send size={13} /> Soumettre au circuit
-        </button>
-      )}
-      {!isBrouillon && !allValidated && currentEtape && canValidate && !showRejet && (
-        <>
-          <button onClick={onValider}
-            className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold">
-            <CheckCircle2 size={13} /> Approuver — {currentEtape.profil_code?.toUpperCase()}
-          </button>
-          <button onClick={() => setShowRejet(true)}
-            className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50">
-            <XCircle size={13} /> Refuser
-          </button>
-        </>
-      )}
-      {showRejet && (
-        <div className="flex items-center gap-2 flex-wrap w-full">
-          <input autoFocus placeholder="Motif du refus (obligatoire)…" value={motif}
-            onChange={e => setMotif(e.target.value)}
-            className="flex-1 min-w-48 border border-red-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-red-200 outline-none" />
-          <button onClick={() => { onRejeter(motif); setShowRejet(false); setMotif(""); }}
-            disabled={!motif.trim()}
-            className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-medium disabled:opacity-50">
-            Confirmer
-          </button>
-          <button onClick={() => { setShowRejet(false); setMotif(""); }}
-            className="px-3 py-2 text-gray-500 border border-gray-200 rounded-xl text-sm">
-            Annuler
-          </button>
+        )}
+      </div>
+
+      {/* Modale confirmation approbation */}
+      {showConfirmApprove && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 size={20} className="text-[#087F3E]" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800">Confirmer l'approbation</p>
+                <p className="text-sm text-gray-500">Étape : <strong>{approveLabel}</strong></p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">
+              Êtes-vous sûr de vouloir approuver ce décompte ? Cette action est enregistrée dans le circuit de validation.
+            </p>
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => setShowConfirmApprove(false)}
+                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
+                Annuler
+              </button>
+              <button onClick={handleConfirmApprove}
+                className="px-4 py-2 text-sm font-semibold text-white bg-[#087F3E] hover:bg-[#065A2C] rounded-xl">
+                Approuver
+              </button>
+            </div>
+          </div>
         </div>
       )}
-      {!isBrouillon && !allValidated && currentEtape && !canValidate && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-          <Clock size={12} /> En attente de <strong>{currentEtape.libelle ?? currentEtape.profil_code?.toUpperCase()}</strong>
+
+      {/* Modale refus avec motif obligatoire */}
+      {showConfirmRejet && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                <XCircle size={20} className="text-red-500" />
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800">Refuser le décompte</p>
+                <p className="text-sm text-gray-500">Un motif est obligatoire</p>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Motif du refus</label>
+              <textarea
+                autoFocus
+                rows={3}
+                placeholder="Expliquez la raison du refus…"
+                value={motif}
+                onChange={e => setMotif(e.target.value)}
+                className="w-full border border-red-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-red-200 outline-none resize-none"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => { setShowConfirmRejet(false); setMotif(""); }}
+                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
+                Annuler
+              </button>
+              <button onClick={handleConfirmRejet}
+                disabled={!motif.trim()}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl disabled:opacity-50">
+                Confirmer le refus
+              </button>
+            </div>
+          </div>
         </div>
       )}
-      {allValidated && statut !== "paye" && (
-        <button onClick={onPayer}
-          className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold">
-          <CheckCircle2 size={13} /> Marquer comme payé
-        </button>
-      )}
-    </div>
+    </>
   );
 }
 
