@@ -2904,10 +2904,12 @@ export default function ContratFormPage() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
               <Download size={13} /> PDF
             </button>
-            <button onClick={() => navigate(`/decomptes/nouveau?contrat_id=${id}`)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-[#087F3E] text-white rounded-lg hover:bg-[#065A2C] transition-colors font-medium">
-              <FilePlus size={14} /> Nouveau décompte
-            </button>
+            {dqeBase?.statut === 'valide' && (
+              <button onClick={() => navigate(`/decomptes/nouveau?contrat_id=${id}`)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-sm bg-[#087F3E] text-white rounded-lg hover:bg-[#065A2C] transition-colors font-medium">
+                <FilePlus size={14} /> Nouveau décompte
+              </button>
+            )}
           </div>
         )}
       />
