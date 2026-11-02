@@ -1225,7 +1225,7 @@ export default function AttachementDetailPage() {
   // Accès global
   const canView = isCTEditable || isDTView || isDACCView || isAsstDACCReadOnly
     || (isCT && ["Soumis au DT","Soumis au DACC","Validé","Rejeté"].includes(att.statut))
-    || (isDT && ["Validé","Soumis au DACC"].includes(att.statut))
+    || (isDT && ["Validé","Soumis au DACC","Soumis à l'Asst DACC"].includes(att.statut))
     || roleCode === "Admin";
   const statutColor = STATUT_COLORS[att.statut] || "bg-gray-100 text-gray-600 border-gray-200";
 
