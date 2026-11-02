@@ -557,12 +557,6 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
 
   return (
     <div className="space-y-4">
-      {editable && (
-        <div className="flex items-center gap-3 px-4 py-2.5 bg-orange-50 border border-orange-200 rounded-xl">
-          <Edit3 size={14} className="text-orange-500 flex-shrink-0" />
-          <p className="text-xs text-orange-800 font-medium">Mode révision DT — vous pouvez modifier le constat CT avant validation</p>
-        </div>
-      )}
       <div className="flex gap-4 items-start">
         {/* Panneau gauche — Tableau CSE */}
         <div className="flex-[3] min-w-0 bg-white rounded-2xl border border-gray-200 overflow-hidden">
