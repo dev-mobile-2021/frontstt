@@ -1298,15 +1298,6 @@ export default function AttachementDetailPage() {
           </div>
         </div>
       )}
-      {att.statut === "Soumis au DT" && (
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl px-5 py-4 flex items-start gap-3">
-          <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-blue-800">Dossier soumis au DT — en attente de révision</p>
-            <p className="text-xs text-blue-700 mt-0.5">Le tableau CSE est verrouillé. Le DT peut modifier et valider.</p>
-          </div>
-        </div>
-      )}
       {att.statut === "Rejeté" && (() => {
         const motif = [...(att.discussion ?? [])].reverse().find(m => m.type === "rejet" || (m.type === "action" && m.message?.toLowerCase().includes("rejet")));
         const rejectedBy = motif?.roleId ?? "—";
