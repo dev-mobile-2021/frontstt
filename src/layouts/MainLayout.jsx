@@ -50,12 +50,10 @@ export default function MainLayout() {
       {/* Desktop header (hidden on mobile, shown on lg+) */}
       <Header sidebarWidth={sidebarWidth} />
 
-      {/* Main content — no left margin on mobile, sidebarWidth margin on desktop */}
-      <main
-        className="pt-16 transition-all duration-300"
-        style={{ "--sidebar-w": `${sidebarWidth}px` }}
-      >
-        <div className="p-4 lg:p-8 lg:[margin-left:var(--sidebar-w)] transition-all duration-300">
+      {/* Main content — no margin on mobile, sidebar-width margin on lg+ */}
+      <main className="pt-16 transition-all duration-300">
+        <style>{`@media (min-width: 1024px) { .main-content { margin-left: ${sidebarWidth}px; } }`}</style>
+        <div className="main-content p-4 lg:p-8">
           <Outlet />
         </div>
       </main>
