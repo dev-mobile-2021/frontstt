@@ -361,17 +361,17 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
       </div>
 
       {/* Cards CT + DT */}
-      <div className="grid grid-cols-2 divide-x divide-gray-100">
+      <div className="divide-y divide-gray-100">
         {ROLES.map(({ badge, label, user, colors }) => (
-          <div key={badge} className="p-5">
+          <div key={badge} className="px-5 py-4">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ring-2 ${colors.avatar} ${user ? colors.ring : "ring-gray-200"}`}>
-                {initials(user) ?? <span className="text-gray-300 text-lg">?</span>}
+              <div className={`w-9 h-9 flex-shrink-0 rounded-full flex items-center justify-center text-sm font-bold ring-2 ${colors.avatar} ${user ? colors.ring : "ring-gray-200"}`}>
+                {initials(user) ?? <span className="text-gray-300 text-base">?</span>}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
+                <div className="flex items-center gap-1.5 mb-0.5">
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${colors.badge}`}>{badge}</span>
-                  <span className="text-[10px] text-gray-400">{label}</span>
+                  <span className="text-[10px] text-gray-400 truncate">{label}</span>
                 </div>
                 {fmtUser(user)
                   ? <p className="text-sm font-semibold text-gray-800 truncate">{fmtUser(user)}</p>
@@ -858,21 +858,21 @@ export default function ChantierFormPage() {
       </div>
 
       {/* ── KPIs ───────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { label: "Budget", value: budgetTotal, sub: null, color: "text-gray-800", icon: "💰" },
           { label: "Contrats STT", value: sttEngage, sub: `${contrats.length} contrat${contrats.length > 1 ? "s" : ""}`, color: "text-[#087F3E]", icon: "📋" },
           { label: "Réalisé", value: realise, sub: `${nbRealise} décompte${nbRealise > 1 ? "s" : ""} validé${nbRealise > 1 ? "s" : ""}`, color: "text-blue-600", icon: "✅" },
           { label: "En cours", value: decomptesEnCours.reduce((s,d) => s + parseFloat(d.montant_ht ?? 0), 0), sub: `${decomptesEnCours.length} décompte${decomptesEnCours.length > 1 ? "s" : ""}`, color: "text-amber-600", icon: "⏳" },
         ].map(({ label, value, sub, color, icon }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</span>
-              <span className="text-base">{icon}</span>
+          <div key={label} className="bg-white border border-gray-200 rounded-xl px-4 py-3.5">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
+              <span className="text-sm">{icon}</span>
             </div>
-            <p className={`text-xl font-bold ${color} tabular-nums truncate`}>{fmtNum(Math.round(value))}</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">FCFA</p>
-            {sub && <p className="text-xs text-gray-500 mt-2 font-medium border-t border-gray-100 pt-2">{sub}</p>}
+            <p className={`text-lg font-bold ${color} tabular-nums truncate`}>{fmtNum(Math.round(value))}</p>
+            <p className="text-[10px] text-gray-400">FCFA</p>
+            {sub && <p className="text-[10px] text-gray-500 mt-1.5 font-medium border-t border-gray-100 pt-1.5">{sub}</p>}
           </div>
         ))}
       </div>
