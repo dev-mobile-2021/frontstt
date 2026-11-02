@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Plus, FileDown, Trash2, FileText, Loader2, X, ChevronLeft, ChevronRight, Search, Filter } from "lucide-react";
+import { Plus, FileDown, Trash2, FileText, Loader2, X, Search, Filter } from "lucide-react";
+import Pagination from "../components/Pagination";
 import { useNotesDevisPaginated, useCreateNoteDevis, useDeleteNoteDevis } from "../hooks/useNotesDevis";
 import { useEtatsCessionPaginated, useEtatCession } from "../hooks/useEtatsCession";
 import { useChantiersPaginated } from "../hooks/useChantiers";
@@ -219,23 +220,7 @@ export default function NoteDevisListPage() {
             </TableBody>
           </Table>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3">
-              <p className="text-xs text-gray-500">Page {meta.current_page} / {meta.last_page} — {meta.total} résultat{meta.total !== 1 ? "s" : ""}</p>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronLeft size={16} /></button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
-                  <button key={n} onClick={() => setPage(n)}
-                    className={`w-7 h-7 text-xs rounded transition-colors ${n === page ? "bg-[#087F3E] text-white font-semibold" : "hover:bg-gray-100 text-gray-600"}`}>
-                    {n}
-                  </button>
-                ))}
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30"><ChevronRight size={16} /></button>
-              </div>
-            </div>
-          )}
+          <Pagination page={page} totalPages={totalPages} total={meta.total} onPage={setPage} />
         </div>
       )}
 

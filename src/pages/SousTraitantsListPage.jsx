@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Search, RotateCcw, ChevronLeft, ChevronRight, Users, Plus } from "lucide-react";
+import { Search, RotateCcw, Users, Plus } from "lucide-react";
+import Pagination from "../components/Pagination";
 import { useSousTraitantsPaginated } from "../hooks/useSousTraitants";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
@@ -168,29 +169,7 @@ export default function SousTraitantsListPage() {
             </tbody>
           </table>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-              <p className="text-sm text-gray-500">
-                Page {meta.current_page} / {meta.last_page} — {meta.total} résultat{meta.total !== 1 ? "s" : ""}
-              </p>
-              <div className="flex flex-wrap items-center gap-2">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30">
-                  <ChevronLeft size={16} />
-                </button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
-                  <button key={n} onClick={() => setPage(n)}
-                    className={`w-8 h-8 text-sm rounded transition-colors ${n === page ? "bg-[#087F3E] text-white font-semibold" : "hover:bg-gray-100 text-gray-600"}`}>
-                    {n}
-                  </button>
-                ))}
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30">
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination page={page} totalPages={totalPages} total={meta.total} onPage={setPage} />
         </div>
       )}
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search, RotateCcw, ChevronLeft, ChevronRight, Plus, X, Loader2,
+  Search, RotateCcw, Plus, X, Loader2,
   FileText, FileSpreadsheet, TrendingUp, ChevronDown,
   DollarSign, CheckCircle2, Trash2,
 } from "lucide-react";
@@ -19,6 +19,7 @@ import MoneyDisplay from "../components/MoneyDisplay";
 import { SkeletonTable } from "../components/Skeleton";
 import { formatMontantCourt } from "../utils/formatters";
 import SearchSelect from "../components/SearchSelect";
+import Pagination from "../components/Pagination";
 
 const STATUTS = [
   { value: "brouillon",    label: "Brouillon" },
@@ -449,25 +450,7 @@ export default function DecomptesListPage() {
             </tbody>
           </table>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-gray-50">
-              <p className="text-xs text-gray-500">
-                Page {meta.current_page} / {meta.last_page} — {meta.total} résultat{meta.total !== 1 ? "s" : ""}
-              </p>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30"><ChevronLeft size={16} /></button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
-                  <button key={n} onClick={() => setPage(n)}
-                    className={`w-7 h-7 text-xs rounded transition-colors ${n === page ? "bg-[#087F3E] text-white font-semibold" : "hover:bg-gray-200 text-gray-600"}`}>
-                    {n}
-                  </button>
-                ))}
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30"><ChevronRight size={16} /></button>
-              </div>
-            </div>
-          )}
+          <Pagination page={page} totalPages={totalPages} total={meta.total} onPage={setPage} />
         </div>
       )}
 

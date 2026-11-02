@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Fragment } from "react";
 import {
-  Search, RotateCcw, ChevronLeft, ChevronRight, Plus, Eye, X, Loader2,
+  Search, RotateCcw, Plus, Eye, X, Loader2,
   FileText, FileSpreadsheet, ChevronDown, ChevronRight as ChevronRightIcon, Trash2, Archive, AlertTriangle, Pencil, FilePlus,
 } from "lucide-react";
 
@@ -22,6 +22,7 @@ import SearchSelect from "../components/SearchSelect";
 import SousTraitantSelect from "../components/SousTraitantSelect";
 import ActionsMenu from "../components/ActionsMenu";
 import ArchiveContratDialog from "../components/ArchiveContratDialog";
+import Pagination from "../components/Pagination";
 
 const STATUTS = [
   { value: "brouillon", label: "Brouillon" },
@@ -384,25 +385,7 @@ export default function ContratsListPage() {
             </TableBody>
           </Table>
 
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100 bg-white rounded-b-xl">
-              <p className="text-xs text-gray-500">
-                Page {meta.current_page} / {meta.last_page} — {meta.total} résultat{meta.total !== 1 ? "s" : ""}
-              </p>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30"><ChevronLeft size={16} /></button>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(n => (
-                  <button key={n} onClick={() => setPage(n)}
-                    className={`w-7 h-7 text-xs rounded transition-colors ${n === page ? "bg-[#087F3E] text-white font-semibold" : "hover:bg-gray-200 text-gray-600"}`}>
-                    {n}
-                  </button>
-                ))}
-                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="p-1.5 rounded hover:bg-gray-200 disabled:opacity-30"><ChevronRight size={16} /></button>
-              </div>
-            </div>
-          )}
+          <Pagination page={page} totalPages={totalPages} total={meta.total} onPage={setPage} />
         </div>
       )}
 
