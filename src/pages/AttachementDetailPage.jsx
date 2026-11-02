@@ -902,19 +902,12 @@ function VueDacc({ att, updateAttachement, validerAttachement, rejeterAttachemen
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 px-4 py-2.5 bg-purple-50 border border-purple-200 rounded-xl">
-        <CheckCircle size={14} className="text-purple-500 flex-shrink-0" />
-        <p className="text-xs text-purple-800 font-medium">
-          {isReadOnly ? "Dossier validé — lecture seule" : "Mode visa DACC — tableau en consultation"}
-        </p>
-      </div>
 
       <div className="flex gap-4 items-start">
         {/* Panneau gauche — Tableau CSE read-only */}
         <div className="flex-[3] min-w-0 bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-100">
             <h3 className="font-semibold text-gray-800 text-sm">Volet CSE — Constat terrain</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Lecture seule — modifications DT tracées</p>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
