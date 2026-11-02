@@ -627,16 +627,22 @@ function CircuitConfigTab({ contratId, isNew }) {
   // local etapes state
   const [etapes, setEtapes] = useState([]);
   const [circuitId, setCircuitId] = useState(null);
+  const [typeCircuit, setTypeCircuit] = useState("sequentiel");
+  const [seuilValidation, setSeuilValidation] = useState(1);
 
   // sync from server
   useEffect(() => {
     if (circuitData && circuitData.etapes) {
       setCircuitId(circuitData.id ?? null);
+      setTypeCircuit(circuitData.type_circuit ?? "sequentiel");
+      setSeuilValidation(circuitData.seuil_validation ?? 1);
       setEtapes(
         [...circuitData.etapes].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0)).map((e) => ({ ...e, _key: e.id ?? Math.random() }))
       );
     } else if (circuitError || (circuitData && !circuitData.etapes)) {
       setCircuitId(null);
+      setTypeCircuit("sequentiel");
+      setSeuilValidation(1);
       setEtapes([]);
     }
   }, [circuitData, circuitError, activeModule]);
@@ -686,6 +692,8 @@ function CircuitConfigTab({ contratId, isNew }) {
       const payload = {
         contrat_id: contratId,
         module: activeModule,
+        type_circuit: typeCircuit,
+        seuil_validation: parseInt(seuilValidation, 10) || 1,
         etapes: etapes.map((e, i) => ({
           ...(e.id ? { id: e.id } : {}),
           ordre: i + 1,
@@ -749,6 +757,44 @@ function CircuitConfigTab({ contratId, isNew }) {
               {copierM.isPending ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
               Copier depuis défaut
             </button>
+          </div>
+
+          {/* Type circuit + seuil */}
+          <div className="flex flex-wrap items-end gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <div className="flex-1 min-w-[160px]">
+              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Type de circuit</label>
+              <select
+                value={typeCircuit}
+                onChange={e => setTypeCircuit(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#087F3E] outline-none bg-white"
+              >
+                <option value="sequentiel">Séquentiel — étape par étape</option>
+                <option value="parallele">Parallèle — plusieurs validateurs simultanés</option>
+              </select>
+            </div>
+            {typeCircuit === "parallele" && (
+              <div className="min-w-[140px]">
+                <label className="block text-xs font-semibold text-gray-500 mb-1.5">
+                  Seuil de validation
+                  <span className="text-gray-400 font-normal ml-1">(nb de validateurs requis)</span>
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={etapes.length || 10}
+                  value={seuilValidation}
+                  onChange={e => setSeuilValidation(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#087F3E] outline-none"
+                />
+              </div>
+            )}
+            <div className="text-xs text-gray-400 max-w-xs">
+              {typeCircuit === "sequentiel"
+                ? "Chaque étape doit être validée avant de passer à la suivante."
+                : seuilValidation <= 1
+                  ? "1 validateur suffit parmi les étapes (logique OU)."
+                  : `${seuilValidation} validateurs requis parmi les étapes (logique ET).`}
+            </div>
           </div>
 
           {circuitLoading ? (
