@@ -27,14 +27,8 @@ export default function MainLayout() {
         />
       )}
 
-      {/* Sidebar — overlay on mobile, always visible fixed on desktop */}
-      <div
-        className={`fixed top-0 left-0 h-full z-30 transition-transform duration-300
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          lg:translate-x-0`}
-      >
-        <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(v => !v)} />
-      </div>
+      {/* Sidebar */}
+      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(v => !v)} mobileOpen={sidebarOpen} />
 
       {/* Mobile-only top bar with hamburger */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-10 flex items-center h-16 bg-white border-b border-gray-200 px-4">

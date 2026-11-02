@@ -96,7 +96,7 @@ function NavItem({ to, icon: Icon, label, collapsed, pendingCount }) {
   );
 }
 
-export default function Sidebar({ collapsed, onToggle }) {
+export default function Sidebar({ collapsed, onToggle, mobileOpen }) {
   const { currentUser } = useUser();
   const attachPending = 0;
   const userRole = currentUser?.role?.designation;
@@ -124,7 +124,8 @@ export default function Sidebar({ collapsed, onToggle }) {
   const [referentielOpen, setReferentielOpen] = useState(referentielActive);
   return (
     <aside
-      className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-10 transition-all duration-300`}
+      className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-30 transition-all duration-300
+        ${typeof mobileOpen !== "undefined" ? (mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0") : ""}`}
     >
       {/* Logo + Brand */}
       <div className={`flex items-center border-b border-gray-100 ${collapsed ? "justify-center px-2 py-4" : "gap-3 px-5 py-5"}`}>
