@@ -1289,15 +1289,6 @@ export default function AttachementDetailPage() {
           </div>
         </div>
       )}
-      {att.statut === "Soumis au DACC" && (
-        <div className="bg-purple-50 border border-purple-200 rounded-2xl px-5 py-4 flex items-start gap-3">
-          <Clock size={16} className="text-purple-500 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-sm font-semibold text-purple-800">En attente de validation DACC</p>
-            <p className="text-xs text-purple-700 mt-0.5">Le dossier a été soumis au DACC — en lecture seule.</p>
-          </div>
-        </div>
-      )}
       {att.statut === "Rejeté" && (() => {
         const motif = [...(att.discussion ?? [])].reverse().find(m => m.type === "rejet" || (m.type === "action" && m.message?.toLowerCase().includes("rejet")));
         const rejectedBy = motif?.roleId ?? "—";
