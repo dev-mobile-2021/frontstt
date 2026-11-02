@@ -131,7 +131,7 @@ export default function AttachementNewPage() {
   const dqeEmpty = contratId && (!dqeData?.data?.length || dqeData.data.every(r => !r.postes?.length || r.postes.every(p => !p.lignes?.length)));
 
   return (
-    <div className="max-w-6xl mx-auto space-y-5">
+    <div className="space-y-5">
       {/* En-tête — même style que la fiche détail */}
       <div className="flex items-start gap-3">
         <button onClick={() => navigate("/attachements")} className="mt-0.5 p-2 rounded-xl hover:bg-gray-100 text-gray-400 flex-shrink-0">

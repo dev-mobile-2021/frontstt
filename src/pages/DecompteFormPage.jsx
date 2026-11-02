@@ -2139,7 +2139,7 @@ export default function DecompteFormPage() {
 
   if (!isNew && isLoading) {
     return (
-      <div className="max-w-6xl mx-auto space-y-4">
+      <div className="space-y-4">
         {[1,2,3].map(i => <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />)}
       </div>
     );
@@ -2169,7 +2169,7 @@ export default function DecompteFormPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-5">
+    <div className="space-y-5">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500">
         <button onClick={() => navigate("/decomptes")} className="hover:text-[#087F3E] flex items-center gap-1">

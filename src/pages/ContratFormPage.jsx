@@ -2763,8 +2763,9 @@ export default function ContratFormPage() {
   const isNew     = !id || id === "nouveau";
   const { addToast } = useToast();
 
-  const TABS_RESERVES = ["circuit", "attachements", "cessions", "decomptes"];
+  const TABS_RESERVES = ["attachements", "cessions", "decomptes"];
   const { data: peutVoirOngletsComplets = false } = usePeutFaire("onglets_complets_contrat");
+  const { data: peutVoirCircuit = false }         = usePeutFaire("config_circuit_contrat");
 
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "info");
@@ -2922,7 +2923,7 @@ export default function ContratFormPage() {
     { id: "info",         label: "Infos",           icon: Info },
     { id: "parametrage",  label: "Paramétrage",      icon: Hash },
     { id: "avenants",     label: nbAv > 0 ? `Avenants (${nbAv})` : "Avenants", icon: FilePlus },
-    { id: "circuit",      label: "Circuit",          icon: CheckCircle },
+    ...(peutVoirCircuit ? [{ id: "circuit", label: "Circuit", icon: CheckCircle }] : []),
     // — Exécution —
     { id: "bareme",       label: "Barème", icon: FileText },
     { id: "dqe",          label: "DQE",              icon: FileText },

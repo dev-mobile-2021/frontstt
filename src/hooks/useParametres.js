@@ -45,7 +45,8 @@ export function usePeutFaire(action) {
     queryFn: () => http.get("/permissions").then(r => {
       const roleDesig = currentUser?.role?.designation;
       if (roleDesig === "Admin") return true;
-      const perm = (r.data.data ?? []).find(p => p.cle === "permission_" + action);
+      const perms = r.data.data ?? [];
+      const perm = perms.find(p => p.cle === "permission_" + action) ?? perms.find(p => p.cle === action);
       if (!perm) return false;
       return perm.roles.some(r => r.designation === roleDesig && r.actif);
     }),

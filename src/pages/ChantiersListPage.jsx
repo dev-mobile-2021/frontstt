@@ -74,9 +74,9 @@ function ChantierCard({ chantier, onClick }) {
           <span className={`font-semibold ${sttPct > 90 ? "text-amber-600" : "text-[#087F3E]"}`}>{sttPct}%</span>
         </div>
         <ProgressBar pct={sttPct} color={sttPct > 90 ? "bg-amber-400" : "bg-[#087F3E]"} />
-        <div className="flex justify-between text-xs text-gray-400">
-          <MoneyDisplay amount={sttEngage} variant="small" />
-          <MoneyDisplay amount={budgetTotal} variant="small" />
+        <div className="flex justify-between text-xs text-gray-400 gap-2">
+          <MoneyDisplay amount={sttEngage} variant="small" className="truncate min-w-0" />
+          <MoneyDisplay amount={budgetTotal} variant="small" className="whitespace-nowrap" />
         </div>
       </div>
 
@@ -167,7 +167,7 @@ export default function ChantiersListPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : isError ? (
@@ -181,7 +181,7 @@ export default function ChantiersListPage() {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {chantiers.map(c => (
               <ChantierCard key={c.id} chantier={c} onClick={() => navigate(`/chantiers/${c.id}`)} />
             ))}
@@ -192,7 +192,7 @@ export default function ChantiersListPage() {
               <p className="text-xs text-gray-500">
                 Page {meta.current_page} / {meta.last_page} — {meta.total} résultat{meta.total !== 1 ? "s" : ""}
               </p>
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                   className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30">
                   <ChevronLeft size={16} />

@@ -476,7 +476,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
   return (
     <div className={`border rounded-xl overflow-hidden ${c.border}`}>
       {/* Header */}
-      <div className={`flex items-center justify-between px-5 py-3.5 ${c.bg} border-b ${c.border}`}>
+      <div className={`flex flex-wrap items-center justify-between px-5 py-3.5 gap-2 ${c.bg} border-b ${c.border}`}>
         <div className="flex items-center gap-2.5">
           <span className={`w-2 h-2 rounded-full ${c.dot}`} />
           <span className="text-sm font-semibold text-gray-900">{cfg.label}</span>
@@ -599,14 +599,14 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                   {poste === "MTX" && <TableCell><span className="font-mono text-xs text-green-600">{l.ref_br ?? "—"}</span></TableCell>}
                   <TableCell className="text-xs text-gray-500 uppercase">{l.unite || "—"}</TableCell>
                   <TableCell className="text-right text-gray-700">{fmtNum(l.quantite)}</TableCell>
-                  <TableCell className="text-right text-xs">
+                  <TableCell className="text-right text-xs whitespace-nowrap">
                     <span className={`tabular-nums ${!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0 ? "text-amber-600 font-semibold" : "text-gray-600"}`}>
                       {!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0
                         ? <span title="Prix manquant">⚠ 0 FCFA</span>
                         : <>{fmtNum(l.prix_unitaire)} FCFA</>}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right font-semibold text-gray-800">{fmtNum(l.montant)} FCFA</TableCell>
+                  <TableCell className="text-right font-semibold text-gray-800 whitespace-nowrap">{fmtNum(l.montant)} FCFA</TableCell>
                   {canEdit && (
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
@@ -682,7 +682,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
       {showForm && canEdit && !useBareme && (
         <div className={`border-t ${c.border} ${c.bg} px-5 py-4`}>
           <form onSubmit={handleAdd}>
-              <div className="grid gap-3 items-end grid-cols-[1fr_70px_90px_110px_auto]">
+              <div className="grid gap-3 items-end grid-cols-1 sm:grid-cols-[1fr_70px_90px_110px_auto]">
                 <div className="space-y-1">
                   <label className="text-xs text-gray-500 font-medium">Désignation *</label>
                   <input type="text" value={form.designation}
@@ -1005,7 +1005,7 @@ export default function EtatCessionFormPage() {
         subtitle={isNew ? "Renseignez le contrat et la période" :
           [etat.contrat?.code, etat.contrat?.chantier?.designation, etat.contrat?.soustraitant?.raison_sociale].filter(Boolean).join(" · ")}
         action={!isNew && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center flex-wrap gap-2">
             <button onClick={() => setPendingStatut("brouillon_delete")}
               className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-300 text-gray-500 rounded-lg hover:bg-red-50 hover:border-red-300 hover:text-red-500 transition-all">
               <Trash2 size={13} /> Supprimer
@@ -1075,7 +1075,7 @@ export default function EtatCessionFormPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Période</p>
-              <p className="text-sm font-semibold text-gray-800">
+              <p className="text-sm font-semibold text-gray-800 truncate">
                 {fmtDate(etat.periode_debut)} → {fmtDate(etat.periode_fin)}
               </p>
             </div>
@@ -1091,13 +1091,13 @@ export default function EtatCessionFormPage() {
             </div>
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total consolidé</p>
-              <p className="text-xl font-bold text-gray-900">{fmtNum(etat.montant_total ?? totalEC)} FCFA</p>
+              <p className="text-base md:text-xl font-bold text-gray-900 tabular-nums">{fmtNum(etat.montant_total ?? totalEC)} FCFA</p>
             </div>
           </div>
           {/* Bandeaux d'état */}
           {etat.statut === "soumis" && (
-            <div className="mt-4 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-              <Loader2 size={16} className="flex-shrink-0" />
+            <div className="mt-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
+              <Loader2 size={16} className="flex-shrink-0 mt-0.5" />
               <span>En attente de validation DCG — les lignes ne peuvent plus être modifiées.</span>
             </div>
           )}

@@ -356,7 +356,8 @@ export default function EtatsCessionListPage() {
         </div>
       ) : (
         <div className="space-y-2">
-          <Table>
+          <div className="overflow-x-auto">
+          <Table className="min-w-[1000px]">
             <TableHeader>
               <TableRow>
                 {["Code", "Contrat / STT", "Chantier", "Période", "MTX", "MTL", "RH", "GASOIL", "Total", "Statut", ""].map(h => (
@@ -374,14 +375,14 @@ export default function EtatsCessionListPage() {
                     <p className="font-mono text-gray-700">{e.contrat?.code ?? "—"}</p>
                     <p className="text-xs text-gray-400 truncate max-w-[140px]">{e.contrat?.soustraitant?.raison_sociale}</p>
                   </TableCell>
-                  <TableCell className="text-xs text-gray-500 max-w-[120px] truncate">{e.contrat?.chantier?.designation ?? "—"}</TableCell>
+                  <TableCell><span className="block max-w-[120px] truncate text-xs text-gray-500">{e.contrat?.chantier?.designation ?? "—"}</span></TableCell>
                   <TableCell className="text-xs text-gray-500 whitespace-nowrap">{fmtPeriode(e.periode_debut, e.periode_fin)}</TableCell>
                   {["MTX", "MTL", "RH", "GASOIL"].map(type => {
                     const lignes = e.lignes ?? [];
                     const total = lignes.filter(l => l.poste === type).reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
                     const hasType = lignes.some(l => l.poste === type);
                     return (
-                      <TableCell key={type} className="text-xs tabular-nums">
+                      <TableCell key={type} className="text-xs tabular-nums whitespace-nowrap">
                         {hasType
                           ? <span className="font-medium text-gray-700">{fmtNum(Math.round(total))} FCFA</span>
                           : <span className="text-gray-300">—</span>}
@@ -425,6 +426,7 @@ export default function EtatsCessionListPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-3">

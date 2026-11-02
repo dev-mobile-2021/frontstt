@@ -14,7 +14,7 @@ export default function KPICard({ icon: Icon, label, value, variation, variation
 
       <div>
         <p className="text-xs uppercase tracking-wide font-medium text-gray-500 mb-1">{label}</p>
-        <p className="text-3xl font-bold text-gray-900">{value}</p>
+        <p className="text-3xl font-bold text-gray-900 truncate">{value}</p>
       </div>
 
       {variationLabel && (

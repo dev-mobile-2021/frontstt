@@ -10,10 +10,9 @@ import { usePermissions } from "../hooks/useParametres";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
 
 const NAV_ITEMS = [
-  { label: "Tableau de bord", to: "/dashboard",      icon: LayoutDashboard, permKey: "menu_dashboard" },
-  { label: "Contrats",        to: "/contrats",        icon: FileText,        permKey: "menu_contrats" },
-  { label: "Attachements",    to: "/attachements",    icon: Paperclip,       permKey: "menu_attachements", badge: true },
-  { label: "Rapports",        to: "/rapports",        icon: BarChart3,       permKey: "menu_rapports" },
+  { label: "Tableau de bord", to: "/dashboard", icon: LayoutDashboard, permKey: "menu_dashboard" },
+  { label: "Contrats",        to: "/contrats",  icon: FileText,        permKey: "menu_contrats" },
+  { label: "Rapports",        to: "/rapports",  icon: BarChart3,       permKey: "menu_rapports" },
 ];
 
 const REFERENTIEL_GROUP = {
@@ -30,9 +29,10 @@ const DECOMPTE_GROUP = {
   label: "Décompte",
   icon: Calculator,
   children: [
-    { label: "Décomptes", to: "/decomptes", icon: Calculator,  permKey: "menu_decomptes" },
-    { label: "Relevés",   to: "/releves",   icon: ReceiptText, permKey: "menu_releves" },
-    { label: "Factures",  to: "/factures",  icon: FileStack,   permKey: "menu_factures" },
+    { label: "Attachements", to: "/attachements", icon: Paperclip,   permKey: "menu_attachements", badge: true },
+    { label: "Décomptes",    to: "/decomptes",    icon: Calculator,  permKey: "menu_decomptes" },
+    { label: "Relevés",      to: "/releves",      icon: ReceiptText, permKey: "menu_releves" },
+    { label: "Factures",     to: "/factures",     icon: FileStack,   permKey: "menu_factures" },
   ],
 };
 
@@ -100,12 +100,13 @@ export default function Sidebar({ collapsed, onToggle }) {
   const { currentUser } = useUser();
   const attachPending = 0;
   const userRole = currentUser?.role?.designation;
-  const { data: allPerms = [] } = usePermissions();
+  const { data: allPerms, isLoading: permsLoading } = usePermissions();
 
   function canSeeMenu(key) {
+    if (permsLoading) return true;
     if (userRole === "Admin") return true;
-    const perm = allPerms.find(p => p.cle === key);
-    if (!perm) return true;
+    const perm = (allPerms ?? []).find(p => p.cle === key);
+    if (!perm) return false;
     return perm.roles.some(r => r.designation === userRole && r.actif);
   }
 
@@ -186,7 +187,7 @@ export default function Sidebar({ collapsed, onToggle }) {
         </div>}
 
         {/* Décompte */}
-        {(canSeeMenu("menu_decomptes") || canSeeMenu("menu_releves") || canSeeMenu("menu_factures")) && <div>
+        {(canSeeMenu("menu_attachements") || canSeeMenu("menu_decomptes") || canSeeMenu("menu_releves") || canSeeMenu("menu_factures")) && <div>
           <button
             onClick={() => setDecompteOpen(v => !v)}
             className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${decompteActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}

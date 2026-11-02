@@ -64,7 +64,7 @@ function TabContrats({ sttId }) {
   const contrats = data?.data ?? [];
   return (
     <div className="border border-gray-200 rounded-xl overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-sm min-w-[700px]">
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">
             {["Code", "Chantier", "Objet", "Montant HT", "Statut", ""].map(h => (
@@ -79,7 +79,7 @@ function TabContrats({ sttId }) {
             <tr key={c.id} onClick={() => navigate(`/contrats/${c.id}`)} className="hover:bg-gray-50 cursor-pointer">
               <td className="px-4 py-3 font-mono text-xs text-[#087F3E] font-semibold">{c.code}</td>
               <td className="px-4 py-3 text-sm text-gray-700">{c.chantier?.designation ?? "—"}</td>
-              <td className="px-4 py-3 text-sm text-gray-600 max-w-[180px] truncate">{c.objet ?? "—"}</td>
+              <td className="px-4 py-3"><span className="block max-w-[180px] truncate text-sm text-gray-600">{c.objet ?? "—"}</span></td>
               <td className="px-4 py-3 text-right"><MoneyDisplay amount={c.montant_actuel ?? 0} variant="small" className="font-semibold" /></td>
               <td className="px-4 py-3"><StatusBadge statut={c.statut} /></td>
               <td className="px-4 py-3"><ExternalLink size={14} className="text-gray-400 hover:text-[#087F3E]" /></td>
@@ -271,7 +271,7 @@ export default function SousTraitantFormPage() {
           <ArrowLeft size={14} /> Sous-traitants
         </button>
         <ChevronRight size={14} />
-        <span className="text-gray-900 font-medium">{stt.raison_sociale}</span>
+        <span className="text-gray-900 font-medium truncate max-w-[300px]">{stt.raison_sociale}</span>
       </div>
 
       <PageHeader
@@ -382,7 +382,7 @@ export default function SousTraitantFormPage() {
                     placeholder="Nom de l'entreprise" />
                   {stt.code_x3 && <p className="text-[11px] text-gray-400 mt-1">Géré par Sage X3 — non modifiable ici.</p>}
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Forme juridique">
                     <SearchSelect value={form.forme_juridique ?? ""} onChange={e => set("forme_juridique", e.target.value)} className={INPUT}>
                       <option value="">— Sélectionner —</option>
@@ -394,7 +394,7 @@ export default function SousTraitantFormPage() {
                       className={INPUT} placeholder="Génie civil, électricité…" />
                   </Field>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="NINEA" error={errors.ninea}>
                     <input value={form.ninea ?? ""} onChange={e => set("ninea", e.target.value)}
                       className={`${INPUT} ${errors.ninea ? "border-red-400" : ""}`} placeholder="Numéro NINEA" />
@@ -413,7 +413,7 @@ export default function SousTraitantFormPage() {
               {/* Coordonnées */}
               <div className="space-y-4">
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Coordonnées</p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Ville">
                     <input value={form.ville ?? ""} onChange={e => set("ville", e.target.value)} className={INPUT} placeholder="Dakar…" />
                   </Field>
@@ -424,7 +424,7 @@ export default function SousTraitantFormPage() {
                 <Field label="Adresse">
                   <input value={form.adresse ?? ""} onChange={e => set("adresse", e.target.value)} className={INPUT} placeholder="Rue, quartier…" />
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Email société" error={errors.email}>
                     <input type="email" value={form.email ?? ""} onChange={e => set("email", e.target.value)}
                       className={`${INPUT} ${errors.email ? "border-red-400" : ""}`} placeholder="contact@entreprise.sn" />
@@ -443,7 +443,7 @@ export default function SousTraitantFormPage() {
                   <input value={form.contact_nom ?? ""} onChange={e => set("contact_nom", e.target.value)}
                     className={INPUT} placeholder="Prénom Nom, titre…" />
                 </Field>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Tél. direct">
                     <input value={form.contact_telephone ?? ""} onChange={e => set("contact_telephone", e.target.value)}
                       className={INPUT} placeholder="+221…" />

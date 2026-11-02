@@ -26,7 +26,7 @@ function CountLink({ n, to }) {
 }
 
 const Montant = ({ v, strong, color }) => (
-  <span className={`font-mono text-sm ${strong ? "font-semibold" : ""} ${color ?? (v ? "text-gray-800" : "text-gray-300")}`}>{fmtNum(v)}</span>
+  <span className={`font-mono text-sm whitespace-nowrap ${strong ? "font-semibold" : ""} ${color ?? (v ? "text-gray-800" : "text-gray-300")}`}>{fmtNum(v)}</span>
 );
 
 const STATUTS = [
@@ -135,7 +135,7 @@ export default function SousTraitantsListPage() {
                   ["Montant réalisé", "right"], ["Montant à réaliser", "right"],
                   ["Nets à payer", "right"], ["Payés", "right"], ["Restant à payer", "right"],
                 ].map(([h, align]) => (
-                  <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-${align}`}>{h}</th>
+                  <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap text-${align}`}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -150,8 +150,8 @@ export default function SousTraitantsListPage() {
               ) : rows.map(stt => (
                 <tr key={stt.id} onClick={() => navigate(`/sous-traitants/${stt.id}`)}
                   className="hover:bg-gray-50 even:bg-gray-50/40 group cursor-pointer transition-colors">
-                  <td className="px-4 py-3.5">
-                    <p className="text-sm font-semibold text-gray-900">{stt.raison_sociale}</p>
+                  <td className="px-4 py-3.5 max-w-[220px]">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{stt.raison_sociale}</p>
                     {stt.forme_juridique && <p className="text-xs text-gray-400">{stt.forme_juridique}</p>}
                   </td>
                   <td className="px-4 py-3.5"><StatusBadge statut={stt.statut} /></td>
@@ -173,7 +173,7 @@ export default function SousTraitantsListPage() {
               <p className="text-sm text-gray-500">
                 Page {meta.current_page} / {meta.last_page} — {meta.total} résultat{meta.total !== 1 ? "s" : ""}
               </p>
-              <div className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-2">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                   className="p-1.5 rounded hover:bg-gray-100 disabled:opacity-30">
                   <ChevronLeft size={16} />

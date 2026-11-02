@@ -1,9 +1,19 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import queryClient from "./config/queryClient";
 import { ToastProvider } from "./context/ToastContext";
 import { UserProvider } from "./context/UserContext";
 import MainLayout from "./layouts/MainLayout";
+import { usePeutFaire } from "./hooks/useParametres";
+
+// Garde de route : redirige vers /dashboard si la permission est refusée.
+// Attend la réponse API avant de décider (évite le flash de redirection).
+function RequirePermission({ perm }) {
+  const { data: allowed, isLoading } = usePeutFaire(perm);
+  if (isLoading) return null;
+  if (!allowed) return <Navigate to="/dashboard" replace />;
+  return <Outlet />;
+}
 
 // Pages publiques
 import LoginPage from "./pages/LoginPage";
@@ -61,65 +71,87 @@ export default function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
 
                 {/* Chantiers */}
-                <Route path="/chantiers" element={<ChantiersListPage />} />
-                <Route path="/chantiers/nouveau" element={<ChantierFormPage />} />
-                <Route path="/chantiers/:id" element={<ChantierFormPage />} />
+                <Route element={<RequirePermission perm="menu_chantiers" />}>
+                  <Route path="/chantiers" element={<ChantiersListPage />} />
+                  <Route path="/chantiers/nouveau" element={<ChantierFormPage />} />
+                  <Route path="/chantiers/:id" element={<ChantierFormPage />} />
+                </Route>
 
                 {/* Sous-traitants */}
-                <Route path="/sous-traitants" element={<SousTraitantsListPage />} />
-                <Route path="/sous-traitants/nouveau" element={<SousTraitantFormPage />} />
-                <Route path="/sous-traitants/:id" element={<SousTraitantFormPage />} />
+                <Route element={<RequirePermission perm="menu_sous_traitants" />}>
+                  <Route path="/sous-traitants" element={<SousTraitantsListPage />} />
+                  <Route path="/sous-traitants/nouveau" element={<SousTraitantFormPage />} />
+                  <Route path="/sous-traitants/:id" element={<SousTraitantFormPage />} />
+                </Route>
 
                 {/* Contrats */}
-                <Route path="/contrats" element={<ContratsListPage />} />
-                <Route path="/contrats/nouveau" element={<ContratFormPage />} />
-                <Route path="/contrats/:id" element={<ContratFormPage />} />
+                <Route element={<RequirePermission perm="menu_contrats" />}>
+                  <Route path="/contrats" element={<ContratsListPage />} />
+                  <Route path="/contrats/nouveau" element={<ContratFormPage />} />
+                  <Route path="/contrats/:id" element={<ContratFormPage />} />
+                </Route>
 
                 {/* États de cession */}
-                <Route path="/etats-cession" element={<EtatsCessionListPage />} />
-                <Route path="/etats-cession/consultation" element={<ConsultationEtatsCessionPage />} />
-                <Route path="/consultation" element={<ConsultationEtatsCessionPage />} />
-                <Route path="/etats-cession/nouveau" element={<EtatCessionFormPage />} />
-                <Route path="/etats-cession/:id/modifier" element={<EtatCessionFormPage />} />
-                <Route path="/etats-cession/:id" element={<EtatCessionFormPage />} />
+                <Route element={<RequirePermission perm="menu_etats_cession" />}>
+                  <Route path="/etats-cession" element={<EtatsCessionListPage />} />
+                  <Route path="/etats-cession/consultation" element={<ConsultationEtatsCessionPage />} />
+                  <Route path="/consultation" element={<ConsultationEtatsCessionPage />} />
+                  <Route path="/etats-cession/nouveau" element={<EtatCessionFormPage />} />
+                  <Route path="/etats-cession/:id/modifier" element={<EtatCessionFormPage />} />
+                  <Route path="/etats-cession/:id" element={<EtatCessionFormPage />} />
+                </Route>
 
                 {/* Notes de débit */}
-                <Route path="/notes-debit" element={<NoteDevisListPage />} />
-                <Route path="/notes-debit/:id" element={<NoteDevisDetailPage />} />
+                <Route element={<RequirePermission perm="menu_releves" />}>
+                  <Route path="/notes-debit" element={<NoteDevisListPage />} />
+                  <Route path="/notes-debit/:id" element={<NoteDevisDetailPage />} />
+                </Route>
 
                 {/* Décomptes */}
-                <Route path="/decomptes" element={<DecomptesListPage />} />
-                <Route path="/decomptes/nouveau" element={<DecompteFormPage />} />
-                <Route path="/decomptes/:id" element={<DecompteFormPage />} />
+                <Route element={<RequirePermission perm="menu_decomptes" />}>
+                  <Route path="/decomptes" element={<DecomptesListPage />} />
+                  <Route path="/decomptes/nouveau" element={<DecompteFormPage />} />
+                  <Route path="/decomptes/:id" element={<DecompteFormPage />} />
+                </Route>
 
                 {/* Factures */}
-                <Route path="/factures" element={<FacturesListPage />} />
-                <Route path="/factures/:id" element={<FactureDetailPage />} />
+                <Route element={<RequirePermission perm="menu_factures" />}>
+                  <Route path="/factures" element={<FacturesListPage />} />
+                  <Route path="/factures/:id" element={<FactureDetailPage />} />
+                </Route>
 
                 {/* Relevés */}
-                <Route path="/releves" element={<RelevesListPage />} />
-                <Route path="/releves/:id" element={<ReleveDetailPage />} />
+                <Route element={<RequirePermission perm="menu_releves" />}>
+                  <Route path="/releves" element={<RelevesListPage />} />
+                  <Route path="/releves/:id" element={<ReleveDetailPage />} />
+                </Route>
 
                 {/* Rapports */}
-                <Route path="/rapports" element={<RapportsPage />} />
-                <Route path="/rapports/:rapportId" element={<RapportDetailPage />} />
+                <Route element={<RequirePermission perm="menu_rapports" />}>
+                  <Route path="/rapports" element={<RapportsPage />} />
+                  <Route path="/rapports/:rapportId" element={<RapportDetailPage />} />
+                </Route>
 
                 {/* Attachements */}
-                <Route path="/attachements" element={<AttachementsListPage />} />
-                <Route path="/attachements/nouveau" element={<AttachementNewPage />} />
-                <Route path="/attachements/:id" element={<AttachementDetailPage />} />
+                <Route element={<RequirePermission perm="menu_attachements" />}>
+                  <Route path="/attachements" element={<AttachementsListPage />} />
+                  <Route path="/attachements/nouveau" element={<AttachementNewPage />} />
+                  <Route path="/attachements/:id" element={<AttachementDetailPage />} />
+                </Route>
 
-                {/* Paramétrage — ancienne route (tab) conservée */}
-                <Route path="/parametrage" element={<Navigate to="/parametrage/circuit" replace />} />
-                <Route path="/parametrage/circuit" element={<CircuitPage />} />
-                <Route path="/parametrage/parametres" element={<ParametresPage />} />
-                <Route path="/parametrage/utilisateurs" element={<UtilisateursPage />} />
-                <Route path="/parametrage/roles" element={<RolesPage />} />
-                <Route path="/parametrage/permissions" element={<PermissionsPage />} />
-                <Route path="/parametrage/baremes" element={<BaremesPage />} />
-                <Route path="/parametrage/articles" element={<ArticlesX3Page />} />
-                <Route path="/parametrage/mtx" element={<MtxPage />} />
-                <Route path="/parametrage/bt" element={<BtDocumentsPage />} />
+                {/* Paramétrage — réservé aux rôles ayant menu_parametrage */}
+                <Route element={<RequirePermission perm="menu_parametrage" />}>
+                  <Route path="/parametrage" element={<Navigate to="/parametrage/circuit" replace />} />
+                  <Route path="/parametrage/circuit" element={<CircuitPage />} />
+                  <Route path="/parametrage/parametres" element={<ParametresPage />} />
+                  <Route path="/parametrage/utilisateurs" element={<UtilisateursPage />} />
+                  <Route path="/parametrage/roles" element={<RolesPage />} />
+                  <Route path="/parametrage/permissions" element={<PermissionsPage />} />
+                  <Route path="/parametrage/baremes" element={<BaremesPage />} />
+                  <Route path="/parametrage/articles" element={<ArticlesX3Page />} />
+                  <Route path="/parametrage/mtx" element={<MtxPage />} />
+                  <Route path="/parametrage/bt" element={<BtDocumentsPage />} />
+                </Route>
 
                 <Route path="*" element={<NotFoundPage />} />
               </Route>

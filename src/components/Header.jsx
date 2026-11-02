@@ -49,7 +49,7 @@ export default function Header({ sidebarWidth = 260 }) {
 
   return (
     <header
-      className="fixed top-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 z-10 transition-all duration-300"
+      className="hidden lg:flex fixed top-0 right-0 h-16 bg-white border-b border-gray-200 items-center justify-between px-8 z-10 transition-all duration-300"
       style={{ left: sidebarWidth }}
     >
       {/* Breadcrumb */}

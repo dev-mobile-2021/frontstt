@@ -1236,7 +1236,7 @@ export default function AttachementDetailPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-5">
+    <div className="space-y-5">
       {/* En-tête */}
       <div className="flex items-start gap-3">
         <button onClick={() => navigate("/attachements")} className="mt-0.5 p-2 rounded-xl hover:bg-gray-100 text-gray-400 flex-shrink-0"><ArrowLeft size={18} /></button>

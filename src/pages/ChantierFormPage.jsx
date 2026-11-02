@@ -68,9 +68,9 @@ function BudgetFamille({ icon: Icon, label, depense, budget, color }) {
         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
           <div className="h-full bg-[#087F3E] rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
         </div>
-        <div className="flex justify-between text-xs text-gray-400 mt-1">
-          <span>{fmt(depense)} engagé</span>
-          <span>{fmt(budget)}</span>
+        <div className="flex justify-between text-xs text-gray-400 mt-1 gap-2">
+          <span className="truncate">{fmt(depense)} engagé</span>
+          <span className="whitespace-nowrap">{fmt(budget)}</span>
         </div>
       </div>
     </div>
@@ -148,7 +148,7 @@ function TabContrats({ chantierId }) {
                     </td>
                     <td className="px-3 py-3 font-mono text-xs text-[#087F3E] font-semibold whitespace-nowrap">{c.code}</td>
                     <td className="px-3 py-3 text-sm text-gray-900">{c.soustraitant?.raison_sociale ?? "—"}</td>
-                    <td className="px-3 py-3 text-sm text-gray-600 max-w-[200px] truncate">{c.objet ?? "—"}</td>
+                    <td className="px-3 py-3"><span className="block max-w-[200px] truncate text-sm text-gray-600">{c.objet ?? "—"}</span></td>
                     <td className="px-3 py-3 text-right">
                       <MoneyDisplay amount={c.montant_actuel ?? c.montant_initial ?? 0} className="text-sm font-semibold text-gray-900" />
                     </td>
@@ -199,7 +199,7 @@ function TabDecomptes({ chantierId }) {
 
   return (
     <div className="border border-gray-200 rounded-xl overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full min-w-[600px] text-sm">
         <thead>
           <tr className="bg-gray-50 border-b border-gray-200">
             {["Code", "Sous-traitant", "Période", "Net HT", "Statut"].map(h => (
@@ -350,12 +350,12 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <div>
+        <div className="min-w-0">
           <h3 className="text-sm font-semibold text-gray-900">Responsables du chantier</h3>
           <p className="text-xs text-gray-400 mt-0.5">DT et CT — valident les décomptes avant le circuit administratif</p>
         </div>
         <button onClick={() => setShowHistory(h => !h)}
-          className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${showHistory ? "bg-gray-100 text-gray-700 border-gray-200" : "text-gray-400 border-transparent hover:text-gray-600"}`}>
+          className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${showHistory ? "bg-gray-100 text-gray-700 border-gray-200" : "text-gray-400 border-transparent hover:text-gray-600"}`}>
           <History size={13} /> Historique
         </button>
       </div>
@@ -389,7 +389,7 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
       </div>
 
       {/* Validateur final attachement */}
-      <div className="border-t border-gray-100 px-5 py-4 flex items-center justify-between gap-4">
+      <div className="border-t border-gray-100 px-5 py-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-gray-800">Validateur final — Attachements</p>
           <p className="text-xs text-gray-400 mt-0.5">Qui soumet au DACC après l'Asst DACC : DT ou Asst DACC</p>
@@ -567,14 +567,14 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <div>
+      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 gap-3">
+        <div className="min-w-0">
           <h3 className="text-sm font-semibold text-gray-900">Portefeuilles CT</h3>
           <p className="text-xs text-gray-400 mt-0.5">Chaque CT est responsable des marchés (contrats) qui lui sont assignés</p>
         </div>
         {isDacc && (
           <button onClick={() => setShowModal(true)}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-[#087F3E] text-[#087F3E] hover:bg-[#E8F5EE] transition-colors">
+            className="flex-shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-[#087F3E] text-[#087F3E] hover:bg-[#E8F5EE] transition-colors">
             <UserCheck size={13} /> Assigner un marché
           </button>
         )}
@@ -849,7 +849,7 @@ export default function ChantierFormPage() {
           {peutSynchro && (
             <button onClick={handleSync} disabled={syncMut.isPending || !chantier.code_x3}
               title={chantier.code_x3 ? undefined : "Ce chantier n'a pas de code Sage X3"}
-              className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs text-[#087F3E] border border-[#087F3E] px-3 py-2 rounded-xl hover:bg-[#E8F5EE] transition-colors font-medium disabled:opacity-50">
+              className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs text-[#087F3E] border border-[#087F3E] px-3 py-2 rounded-xl hover:bg-[#E8F5EE] transition-colors font-medium disabled:opacity-50 whitespace-nowrap">
               {syncMut.isPending ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
               {syncMut.isPending ? "Synchronisation…" : "Sync Sage X3"}
             </button>
@@ -870,7 +870,7 @@ export default function ChantierFormPage() {
               <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">{label}</span>
               <span className="text-base">{icon}</span>
             </div>
-            <p className={`text-xl font-bold ${color} tabular-nums`}>{fmtNum(Math.round(value))}</p>
+            <p className={`text-xl font-bold ${color} tabular-nums truncate`}>{fmtNum(Math.round(value))}</p>
             <p className="text-[10px] text-gray-400 mt-0.5">FCFA</p>
             {sub && <p className="text-xs text-gray-500 mt-2 font-medium border-t border-gray-100 pt-2">{sub}</p>}
           </div>
@@ -878,10 +878,10 @@ export default function ChantierFormPage() {
       </div>
 
       {/* ── Contenu principal 2 colonnes ───────────────────────────────────── */}
-      <div className="flex gap-5 items-start">
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
 
         {/* Colonne gauche — Contrats / Décomptes */}
-        <div className="flex-[3] min-w-0 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+        <div className="flex-[3] min-w-0 w-full bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="border-b border-gray-200 px-5 pt-2">
             <Tabs items={tabs} activeTab={activeTab} onChange={setActiveTab} />
           </div>
@@ -892,7 +892,7 @@ export default function ChantierFormPage() {
         </div>
 
         {/* Colonne droite — Équipe + Portefeuilles */}
-        <div className="flex-[2] min-w-0 space-y-4">
+        <div className="flex-[2] min-w-0 w-full lg:max-w-sm xl:max-w-md space-y-4">
           {/* Équipe */}
           <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100">
