@@ -57,7 +57,7 @@ export default function DashboardPage() {
       <PageHeader title="Tableau de bord" subtitle="Vue synthétique de l'activité sous-traitance" />
 
       {/* ── KPI Cards ── */}
-      <div className="grid grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
         <KPICard
           icon={FileText}
           label="Contrats de sous-traitance"

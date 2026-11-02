@@ -1253,7 +1253,7 @@ export default function AttachementDetailPage() {
       </div>
 
       {/* Cards montants */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
           <p className="text-xs uppercase tracking-wide font-medium text-gray-400 mb-1">Montant partiel</p>
           <p className="text-lg font-bold text-gray-900">{num(att.montantFinal ?? att.voletCSE?.totalValorise ?? 0)} FCFA</p>

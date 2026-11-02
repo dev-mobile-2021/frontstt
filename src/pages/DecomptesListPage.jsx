@@ -263,7 +263,7 @@ export default function DecomptesListPage() {
 
         {showStats && (
           <div className="border-t border-gray-100 p-5 space-y-5">
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               <MiniKPI icon={FileText} label="Contrats de ST" value={statsKPIs.totalContrats} sub="Contrats avec décomptes" />
               <MiniKPI icon={TrendingUp} label="Montants contrats" value={formatMontantCourt(statsKPIs.montantContrats)} sub="Montant actualisé total" />
               <MiniKPI icon={CheckCircle2} label="Montants engagés" value={formatMontantCourt(statsKPIs.montantEngage)} sub="Total décomptes soumis" iconColor="text-blue-600" />

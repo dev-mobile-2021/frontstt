@@ -274,7 +274,7 @@ export default function ReleveDetailPage() {
       </div>
 
       {/* 3 cartes résumé */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* Avance de démarrage */}
         <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-3">
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Avance de démarrage</h3>

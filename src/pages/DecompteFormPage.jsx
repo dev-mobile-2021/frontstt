@@ -1839,7 +1839,7 @@ function FactureSttTab({ decompte }) {
           </div>
 
           {/* Montants */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {[
               { label: "Montant HT",  val: factureCourante.montant_ht,  unit: "FCFA" },
               { label: "TVA",          val: factureCourante.montant_tva, unit: "FCFA" },
