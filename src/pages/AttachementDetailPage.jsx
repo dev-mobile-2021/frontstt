@@ -88,7 +88,7 @@ function exportCSE(lignes, ref) {
   // Ligne 3 : en-têtes
   aoa.push(["Rubriques analytiques", "", "N° Item", "Désignation", "U", "PU", "Qté\nCumulée", "Montants\nCumulés"]);
   // Ligne 4 : sous-en-têtes
-  aoa.push(["RA", "Désignation", "", "", "", "Renseignée par la plateforme", "", "Calculé par la plateforme"]);
+  aoa.push(["RA", "Désignation", "", "", "", "Renseignée par la plateforme", "← À SAISIR", "Calculé par la plateforme"]);
   // Ligne 5 : vide
   aoa.push(["", "", "", "", "", "", "", ""]);
   // Ligne 6 : total général
