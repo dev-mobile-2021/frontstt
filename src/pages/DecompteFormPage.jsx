@@ -127,7 +127,7 @@ function useCircuitState(decompte, circuit, peutValider) {
 }
 
 // ─── Barre d'actions (haut de Structure) ────────────────────────────────────
-function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider }) {
+function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider, peutCreer = false }) {
   const [showRejet,          setShowRejet]          = useState(false);
   const [motif,              setMotif]              = useState("");
   const [showConfirmApprove, setShowConfirmApprove] = useState(false);
@@ -182,7 +182,7 @@ function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumett
             </button>
           </>
         )}
-        {isBrouillon && !ctCanApprove && (
+        {isBrouillon && !ctCanApprove && peutCreer && (
           <button onClick={onSoumettre}
             className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold">
             <Send size={13} /> Soumettre au circuit
@@ -371,7 +371,7 @@ function DiscussionSection({ decompteId }) {
   );
 }
 
-function WorkflowTab({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider }) {
+function WorkflowTab({ decompte, circuit, onValider, onRejeter, onPayer, onSoumettre, peutValider, peutCreer = false }) {
   const { statut, validations, etapes, validatedProfils, currentEtape, allValidated, isTerminal, isBrouillon } =
     useCircuitState(decompte, circuit, peutValider);
 
@@ -2053,6 +2053,7 @@ export default function DecompteFormPage() {
   );
   const canEdit = !lockedByDg && (isNew || decompte?.statut === "brouillon");
   const { data: peutValiderDecompte = false } = usePeutFaire("valider_decompte");
+  const { data: peutCreerDecompte   = false } = usePeutFaire("creer_decompte");
   const d       = decompte;
 
   async function handleCreate(form) {
@@ -2226,6 +2227,7 @@ export default function DecompteFormPage() {
               onValider={handleValider} onRejeter={handleRejeter}
               onPayer={handlePayer} onSoumettre={handleValider}
               peutValider={peutValiderDecompte}
+              peutCreer={peutCreerDecompte}
             />
             {canEdit && !isNew && (
               <button onClick={() => setConfirmDel(true)}
@@ -2314,6 +2316,7 @@ export default function DecompteFormPage() {
                     onValider={handleValider} onRejeter={handleRejeter}
                     onPayer={handlePayer} onSoumettre={handleValider}
                     peutValider={peutValiderDecompte}
+                    peutCreer={peutCreerDecompte}
                   />
                 )}
 
