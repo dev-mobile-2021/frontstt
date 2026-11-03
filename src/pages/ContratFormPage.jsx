@@ -598,6 +598,7 @@ const MODULE_LABELS = {
   dqe: "DQE",
   facture: "Facture",
   avenant: "Avenant",
+  etat_cession: "État de cession",
 };
 
 function CircuitConfigTab({ contratId, isNew }) {
