@@ -193,11 +193,6 @@ function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumett
             <Clock size={12} /> En attente de <strong>{currentEtape.libelle ?? currentEtape.profil_code?.toUpperCase()}</strong>
           </div>
         )}
-        {allValidated && statut !== "paye" && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-violet-50 border border-violet-200 rounded-xl text-xs text-violet-700">
-            <CheckCircle2 size={12} /> Validé — déposez la facture STT pour finaliser
-          </div>
-        )}
       </div>
 
       {/* Modale confirmation approbation */}
@@ -1704,9 +1699,10 @@ function FactureSttTab({ decompte, onPayer }) {
   const { currentUser } = useUser();
   const { data: peutUploader = false } = usePeutFaire("upload_facture_stt");
 
-  const [factures,   setFactures]   = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [uploading,  setUploading]  = useState(false);
+  const [factures,      setFactures]      = useState([]);
+  const [loading,       setLoading]       = useState(true);
+  const [genLiasse,     setGenLiasse]     = useState(false);
+  const [uploading,     setUploading]     = useState(false);
   const [validating, setValidating] = useState(false);
   const [fichier,    setFichier]    = useState(null);
   const [note,       setNote]       = useState("");
@@ -1728,6 +1724,25 @@ function FactureSttTab({ decompte, onPayer }) {
   }
 
   useEffect(() => { fetchFactures(); }, [decompte.id]);
+
+  async function handleGenererLiasse() {
+    setGenLiasse(true);
+    try {
+      const response = await http.get(`/pdf/liasse/${decompte.id}`, { responseType: "blob" });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: "application/pdf" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `liasse-${decompte.code}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch {
+      addToast("Erreur lors de la génération de la liasse", "error");
+    } finally {
+      setGenLiasse(false);
+    }
+  }
 
   async function handleDeposer(e) {
     e.preventDefault();
@@ -1805,9 +1820,10 @@ function FactureSttTab({ decompte, onPayer }) {
     <div className="space-y-6">
       {/* Bouton liasse toujours accessible */}
       <div className="flex justify-end">
-        <button onClick={() => window.open(`${http.defaults.baseURL}/pdf/liasse/${decompte.id}`, "_blank")}
-          className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-xl text-xs font-medium hover:bg-gray-50">
-          <FileDown size={12} /> Générer la liasse
+        <button onClick={handleGenererLiasse} disabled={genLiasse}
+          className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-xl text-xs font-medium hover:bg-gray-50 disabled:opacity-50">
+          {genLiasse ? <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <FileDown size={12} />}
+          Générer la liasse
         </button>
       </div>
 
