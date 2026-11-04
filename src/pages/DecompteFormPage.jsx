@@ -5,6 +5,7 @@ import {
   Clock, XCircle, Circle, RotateCcw, AlertTriangle, Plus, Trash2, RefreshCw,
 } from "lucide-react";
 import { useDecompte, useSaveDecompte, useValiderDecompte, useRejeterDecompte, usePayerDecompte, useDecompteCircuit, useDecompteCessions, useDeleteDecompte } from "../hooks/useDecomptes";
+import { useFactureCircuit } from "../hooks/useFactures";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { usePeutFaire } from "../hooks/useParametres";
 import { useToast } from "../context/ToastContext";
@@ -1698,6 +1699,7 @@ function FactureSttTab({ decompte, onPayer }) {
   const { addToast } = useToast();
   const { currentUser } = useUser();
   const { data: peutUploader = false } = usePeutFaire("upload_facture_stt");
+  const { data: circuitEtapes = [] } = useFactureCircuit(decompte?.contrat_id ?? null);
 
   const [factures,      setFactures]      = useState([]);
   const [loading,       setLoading]       = useState(true);
@@ -1712,6 +1714,16 @@ function FactureSttTab({ decompte, onPayer }) {
 
   const factureCourante = factures.find(f => f.statut !== "annulee") ?? null;
   const facturesAnnulees = factures.filter(f => f.statut === "annulee");
+
+  // Circuit check pour les boutons Approuver/Rejeter
+  const fcEtapes = [...circuitEtapes].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
+  const fcValidatedProfils = (factureCourante?.validations ?? []).filter(v => v.action === "valide").map(v => v.profil_code);
+  const fcCurrentEtape = fcEtapes.find(e => !fcValidatedProfils.includes(e.profil_code));
+  const fcUserRole = currentUser?.role?.designation?.toLowerCase() ?? "";
+  const fcIsAdmin  = fcUserRole === "admin";
+  const fcIsTerminal = factureCourante?.statut === "validee" || factureCourante?.statut === "annulee";
+  const fcHasScan    = !!factureCourante?.fichier_courant;
+  const fcCanValidate = !fcIsTerminal && fcHasScan && (fcIsAdmin || (fcCurrentEtape && fcUserRole === fcCurrentEtape.profil_code?.toLowerCase()));
 
   async function fetchFactures() {
     setLoading(true);
@@ -1959,8 +1971,8 @@ function FactureSttTab({ decompte, onPayer }) {
             </div>
           )}
 
-          {/* Boutons approbation */}
-          {factureCourante.statut !== "validee" && factureCourante.fichier_courant && !showRejet && (
+          {/* Boutons approbation — visibles uniquement si c'est le tour de ce profil */}
+          {fcCanValidate && !showRejet && (
             <div className="flex gap-2">
               <button onClick={() => setShowConfirmApprove(true)} disabled={validating}
                 className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold disabled:opacity-50">
@@ -1970,6 +1982,13 @@ function FactureSttTab({ decompte, onPayer }) {
                 className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50">
                 <XCircle size={13} /> Rejeter la facture
               </button>
+            </div>
+          )}
+          {/* En attente d'une autre étape */}
+          {!fcIsTerminal && fcHasScan && !fcCanValidate && fcCurrentEtape && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
+              <Clock size={12} className="flex-shrink-0" />
+              En attente de validation — {fcCurrentEtape.libelle ?? fcCurrentEtape.profil_code?.toUpperCase()}
             </div>
           )}
 

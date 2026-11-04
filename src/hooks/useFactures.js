@@ -43,3 +43,12 @@ export function useDeleteFacture() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["factures"] }),
   });
 }
+
+export function useFactureCircuit(contratId = null) {
+  return useQuery({
+    queryKey: ["facture_circuit", contratId],
+    queryFn: () => factureService.getCircuit(contratId),
+    enabled: !!contratId,
+    staleTime: 5 * 60 * 1000,
+  });
+}

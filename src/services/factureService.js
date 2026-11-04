@@ -74,4 +74,10 @@ export const factureService = {
     const { data } = await http.delete(`/facture/delete/${id}`);
     return data;
   },
+
+  async getCircuit(contratId = null) {
+    const url = contratId ? `/facture/circuit?contrat_id=${contratId}` : "/facture/circuit";
+    const { data } = await http.get(url);
+    return data.data ?? [];
+  },
 };
