@@ -108,22 +108,6 @@ export default function FactureDetailPage() {
     }
   }
 
-  async function downloadPDF() {
-    try {
-      const token = localStorage.getItem("stt_token");
-      const resp = await fetch(`${import.meta.env.VITE_API_BASE}/api/pdf/facture/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!resp.ok) { addToast("Erreur lors du téléchargement.", "error"); return; }
-      const blob = await resp.blob();
-      const url  = URL.createObjectURL(blob);
-      window.open(url, "_blank");
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-    } catch {
-      addToast("Erreur lors du téléchargement.", "error");
-    }
-  }
-
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -145,10 +129,6 @@ export default function FactureDetailPage() {
         <div className="flex items-center gap-2 mt-1">
           <TypeBadge type={f.type} />
           <StatusBadge statut={f.statut} />
-          <button onClick={downloadPDF}
-            className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors">
-            <FileDown size={14} /> Télécharger PDF
-          </button>
         </div>
       </div>
 
