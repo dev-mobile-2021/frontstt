@@ -194,10 +194,9 @@ function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumett
           </div>
         )}
         {allValidated && statut !== "paye" && (
-          <button onClick={onPayer}
-            className="flex items-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold">
-            <CheckCircle2 size={13} /> Marquer comme payé
-          </button>
+          <div className="flex items-center gap-2 px-3 py-2 bg-violet-50 border border-violet-200 rounded-xl text-xs text-violet-700">
+            <CheckCircle2 size={12} /> Validé — déposez la facture STT pour finaliser
+          </div>
         )}
       </div>
 
@@ -1700,14 +1699,13 @@ function NouveauForm({ onSave, saving, initialContratId }) {
 }
 
 // ─── Facture STT ─────────────────────────────────────────────────────────────
-function FactureSttTab({ decompte }) {
+function FactureSttTab({ decompte, onPayer }) {
   const { addToast } = useToast();
   const { currentUser } = useUser();
   const { data: peutUploader = false } = usePeutFaire("upload_facture_stt");
 
   const [factures,   setFactures]   = useState([]);
   const [loading,    setLoading]    = useState(true);
-  const [creating,   setCreating]   = useState(false);
   const [uploading,  setUploading]  = useState(false);
   const [validating, setValidating] = useState(false);
   const [fichier,    setFichier]    = useState(null);
@@ -1731,16 +1729,24 @@ function FactureSttTab({ decompte }) {
 
   useEffect(() => { fetchFactures(); }, [decompte.id]);
 
-  async function handleCreer() {
-    setCreating(true);
+  async function handleDeposer(e) {
+    e.preventDefault();
+    if (!fichier) return;
+    setUploading(true);
     try {
-      await http.post("/facture/depuis-decompte", { decompte_id: decompte.id });
-      addToast("Facture STT créée", "success");
+      const fd = new FormData();
+      fd.append("decompte_id", decompte.id);
+      fd.append("fichier", fichier);
+      if (note.trim()) fd.append("note", note.trim());
+      await http.post("/facture/deposer", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      setFichier(null); setNote("");
+      e.target.reset();
+      addToast("Facture STT déposée", "success");
       fetchFactures();
     } catch (err) {
-      addToast(err?.response?.data?.error ?? "Erreur", "error");
+      addToast(err?.response?.data?.error ?? "Erreur dépôt", "error");
     } finally {
-      setCreating(false);
+      setUploading(false);
     }
   }
 
@@ -1797,21 +1803,42 @@ function FactureSttTab({ decompte }) {
 
   return (
     <div className="space-y-6">
+      {/* Bouton liasse toujours accessible */}
+      <div className="flex justify-end">
+        <button onClick={() => window.open(`${http.defaults.baseURL}/pdf/liasse/${decompte.id}`, "_blank")}
+          className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-xl text-xs font-medium hover:bg-gray-50">
+          <FileDown size={12} /> Générer la liasse
+        </button>
+      </div>
+
       {/* Pas encore de facture */}
       {!factureCourante && (
-        <div className="flex flex-col items-center justify-center py-12 gap-4">
-          <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center">
-            <FileDown size={24} className="text-[#087F3E]" />
+        <div className="space-y-5">
+          <div className="flex flex-col items-center gap-3 py-6">
+            <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center">
+              <FileDown size={24} className="text-[#087F3E]" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-gray-800">Aucune facture STT</p>
+              <p className="text-sm text-gray-400 mt-1">Générez la liasse et envoyez-la au STT, puis déposez sa facture ici.</p>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="font-semibold text-gray-800">Aucune facture STT</p>
-            <p className="text-sm text-gray-400 mt-1">Créez la facture STT pré-remplie avec les données du décompte</p>
-          </div>
-          <button onClick={handleCreer} disabled={creating}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] text-white rounded-xl text-sm font-semibold hover:bg-[#065A2C] disabled:opacity-50">
-            {creating ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus size={14} />}
-            Créer la facture STT
-          </button>
+          <form onSubmit={handleDeposer} className="border border-dashed border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Déposer la facture STT</p>
+            <div className="flex gap-3 flex-wrap">
+              <input type="file" accept=".pdf,.jpg,.jpeg,.png"
+                onChange={e => setFichier(e.target.files[0] ?? null)}
+                className="flex-1 min-w-48 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white file:mr-2 file:text-xs file:border-0 file:bg-[#087F3E]/10 file:text-[#087F3E] file:rounded-lg file:px-2 file:py-1" />
+              <input type="text" placeholder="Note (optionnel)…" value={note}
+                onChange={e => setNote(e.target.value)}
+                className="flex-1 min-w-36 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 outline-none bg-white" />
+            </div>
+            <button type="submit" disabled={!fichier || uploading}
+              className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50">
+              {uploading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus size={13} />}
+              Déposer la facture STT
+            </button>
+          </form>
         </div>
       )}
 
@@ -1928,6 +1955,14 @@ function FactureSttTab({ decompte }) {
                 <XCircle size={13} /> Rejeter la facture
               </button>
             </div>
+          )}
+
+          {/* Marquer comme payé — uniquement quand la facture STT est validée */}
+          {factureCourante.statut === "validee" && (
+            <button onClick={onPayer}
+              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold">
+              <CheckCircle2 size={13} /> Marquer comme payé
+            </button>
           )}
 
           {showRejet && (
@@ -2325,7 +2360,7 @@ export default function DecompteFormPage() {
                 )}
 
                 {activeTab === "facture" && (
-                  <FactureSttTab decompte={d} />
+                  <FactureSttTab decompte={d} onPayer={handlePayer} />
                 )}
               </div>
             </div>
