@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, ChevronRight, CheckCircle2, Loader2, FileDown, Building2, MapPin, FileText } from "lucide-react";
+import { ArrowLeft, ChevronRight, CheckCircle2, Loader2, FileDown, Building2, MapPin, FileText, Paperclip } from "lucide-react";
+import http from "../services/http";
 import { useFacture, useFactureStatut } from "../hooks/useFactures";
 import { useToast } from "../context/ToastContext";
 import PageHeader from "../components/PageHeader";
@@ -247,6 +248,43 @@ export default function FactureDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Scans uploadés */}
+      {f.scans?.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+            <Paperclip size={12} /> Scans facture ({f.scans.length})
+          </p>
+          <div className="space-y-2">
+            {f.scans.map(scan => (
+              <div key={scan.id} className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileDown size={14} className="text-gray-400 flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-sm text-gray-800 font-medium truncate">{scan.nom_original}</p>
+                    {scan.note && <p className="text-xs text-gray-400 truncate">{scan.note}</p>}
+                  </div>
+                </div>
+                <button
+                  onClick={async () => {
+                    try {
+                      const resp = await http.get(`/facture/scan/${scan.id}/download`, { responseType: "blob" });
+                      const url = window.URL.createObjectURL(new Blob([resp.data]));
+                      const a = document.createElement("a");
+                      a.href = url; a.download = scan.nom_original;
+                      document.body.appendChild(a); a.click();
+                      window.URL.revokeObjectURL(url); document.body.removeChild(a);
+                    } catch { addToast("Erreur téléchargement", "error"); }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-white transition-colors flex-shrink-0"
+                >
+                  <FileDown size={12} /> Télécharger
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Observations */}
       {f.observations && (

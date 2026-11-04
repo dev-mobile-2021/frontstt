@@ -23,6 +23,7 @@ const DETAIL_FIELDS = `
   decompte { id code etat_cession { periode_debut periode_fin } }
   chantier { id code designation }
   soustraitant { id raison_sociale ninea }
+  scans { id nom_original note created_at }
 `;
 
 export const factureService = {
