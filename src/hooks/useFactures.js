@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { factureService } from "../services/factureService";
+import http from "../services/http";
 
 export function useFacturesPaginated(filters = {}) {
   return useQuery({
@@ -41,6 +42,15 @@ export function useDeleteFacture() {
   return useMutation({
     mutationFn: (id) => factureService.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["factures"] }),
+  });
+}
+
+export function useFacturesByDecompte(decompteId = null) {
+  return useQuery({
+    queryKey: ["factures_decompte", decompteId],
+    queryFn: () => http.get(`/facture/decompte/${decompteId}`).then(r => r.data?.data ?? []),
+    enabled: !!decompteId,
+    staleTime: 30 * 1000,
   });
 }
 
