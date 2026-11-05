@@ -1695,7 +1695,7 @@ function NouveauForm({ onSave, saving, initialContratId }) {
 }
 
 // ─── Facture STT ─────────────────────────────────────────────────────────────
-function FactureSttTab({ decompte, onPayer }) {
+function FactureSttTab({ decompte, onPayer, onPendingChange }) {
   const { addToast } = useToast();
   const { currentUser } = useUser();
   const { data: peutUploader = false } = usePeutFaire("upload_facture_stt");
@@ -1729,7 +1729,10 @@ function FactureSttTab({ decompte, onPayer }) {
     setLoading(true);
     try {
       const { data } = await http.get(`/facture/decompte/${decompte.id}`);
-      setFactures(data.data ?? []);
+      const list = data.data ?? [];
+      setFactures(list);
+      const courante = list.find(f => f.statut !== "annulee");
+      onPendingChange?.(courante && !["validee"].includes(courante.statut));
     } finally {
       setLoading(false);
     }
@@ -2103,7 +2106,8 @@ export default function DecompteFormPage() {
   const isNew          = !id || id === "nouveau";
   const initialContratId = searchParams.get("contrat_id") || null;
 
-  const [activeTab, setActiveTab] = useState("cessions");
+  const [activeTab,         setActiveTab]         = useState("cessions");
+  const [factureEnAttente,  setFactureEnAttente]  = useState(false);
 
   const { data: decompte, isLoading, isError } = useDecompte(!isNew ? id : null);
   const { data: circuit = [] } = useDecompteCircuit(decompte?.contrat_id ?? null);
@@ -2236,7 +2240,7 @@ export default function DecompteFormPage() {
     { id: "cessions",  label: `Cessions (${nbCessionsAttachees})` },
     { id: "workflow",  label: `Workflow & Discussion (${(d?.validations ?? []).length})` },
     { id: "pieces",    label: "Pièces jointes" },
-    ...(showFactureTab ? [{ id: "facture", label: "Facture STT" }] : []),
+    ...(showFactureTab ? [{ id: "facture", label: "Facture STT", dot: factureEnAttente }] : []),
   ];
 
   return (
@@ -2365,8 +2369,9 @@ export default function DecompteFormPage() {
               <div className="flex border-b border-gray-200 px-2 pt-1">
                 {tabs.map(t => (
                   <button key={t.id} onClick={() => setActiveTab(t.id)}
-                    className={`px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${activeTab === t.id ? "border-[#087F3E] text-[#087F3E]" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+                    className={`relative px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${activeTab === t.id ? "border-[#087F3E] text-[#087F3E]" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
                     {t.label}
+                    {t.dot && <span className="absolute top-2 right-1 w-2 h-2 rounded-full bg-amber-400" />}
                   </button>
                 ))}
               </div>
@@ -2395,7 +2400,7 @@ export default function DecompteFormPage() {
                 )}
 
                 {activeTab === "facture" && (
-                  <FactureSttTab decompte={d} onPayer={handlePayer} />
+                  <FactureSttTab decompte={d} onPayer={handlePayer} onPendingChange={setFactureEnAttente} />
                 )}
               </div>
             </div>
