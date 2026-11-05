@@ -2125,7 +2125,13 @@ export default function DecompteFormPage() {
   const canEdit = !lockedByDg && (isNew || decompte?.statut === "brouillon");
   const { data: peutValiderDecompte = false } = usePeutFaire("valider_decompte");
   const { data: peutCreerDecompte   = false } = usePeutFaire("creer_decompte");
-  const d       = decompte;
+  const d = decompte;
+
+  // Hooks pour le badge onglet Facture STT — doivent être avant tout return anticipé
+  const { statut: circuitStatut, allValidated } = useCircuitState(d, circuit, peutValiderDecompte);
+  const showFactureTab = allValidated || d?.statut === "paye";
+  const { data: facturesDecompte = [] } = useFacturesByDecompte(showFactureTab && d?.id ? d.id : null);
+  const { data: factureCircuit   = [] } = useFactureCircuit(showFactureTab && d?.contrat_id ? d.contrat_id : null);
 
   async function handleCreate(form) {
     try {
@@ -2229,12 +2235,7 @@ export default function DecompteFormPage() {
     + (d?.payload?.postes?.I?.cessionsIds ?? []).length
     + (d?.payload?.postes?.K?.cessionsIds ?? []).length;
 
-  const { statut: circuitStatut, allValidated } = useCircuitState(d, circuit, peutValiderDecompte);
-  const showFactureTab = allValidated || d?.statut === "paye";
-
   // Badge onglet Facture STT — profil en attente
-  const { data: facturesDecompte = [] } = useFacturesByDecompte(showFactureTab ? d?.id : null);
-  const { data: factureCircuit   = [] } = useFactureCircuit(showFactureTab ? d?.contrat_id : null);
   const fcCourante = facturesDecompte.find(f => f.statut !== "annulee") ?? null;
   const fcEtapesSorted = [...factureCircuit].sort((a, b) => (a.ordre ?? 0) - (b.ordre ?? 0));
   const fcValidatedProfils = (fcCourante?.validations ?? []).filter(v => v.action === "valide").map(v => v.profil_code);
