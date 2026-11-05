@@ -1694,6 +1694,91 @@ function NouveauForm({ onSave, saving, initialContratId }) {
   );
 }
 
+// ─── Factures annulées — section expandable ───────────────────────────────────
+function FacturesAnnuleesSection({ factures }) {
+  const [openId, setOpenId] = useState(null);
+
+  return (
+    <div className="border border-red-100 rounded-xl overflow-hidden">
+      <p className="px-4 py-3 text-xs font-semibold text-red-500 uppercase tracking-wide border-b border-red-100">
+        Factures annulées ({factures.length})
+      </p>
+      <div className="divide-y divide-red-50">
+        {factures.map(f => (
+          <div key={f.id}>
+            {/* Ligne principale */}
+            <button
+              onClick={() => setOpenId(openId === f.id ? null : f.id)}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50/50 text-left transition-colors">
+              <XCircle size={14} className="text-red-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-700">{f.code}</p>
+                {f.motif_annulation && <p className="text-xs text-red-500 italic">"{f.motif_annulation}"</p>}
+              </div>
+              <p className="text-[10px] text-gray-400 flex-shrink-0">
+                {f.created_at ? new Date(f.created_at).toLocaleDateString("fr-FR") : ""}
+              </p>
+              <ChevronDown size={13} className={`text-gray-400 flex-shrink-0 transition-transform ${openId === f.id ? "rotate-180" : ""}`} />
+            </button>
+
+            {/* Détail expandable */}
+            {openId === f.id && (
+              <div className="px-4 pb-4 space-y-3 bg-red-50/30">
+                {/* Scan */}
+                {f.fichier_courant && f.scans?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Scan déposé</p>
+                    {f.scans.map(s => (
+                      <div key={s.id} className="flex items-center gap-2">
+                        <FileDown size={12} className="text-gray-400" />
+                        <span className="text-xs text-gray-600 flex-1 truncate">{s.nom_original}</span>
+                        <button
+                          onClick={() => window.open(`${http.defaults.baseURL}/facture/scan/${s.id}/download`, "_blank")}
+                          className="text-[10px] text-gray-500 border border-gray-200 rounded-lg px-2 py-0.5 hover:bg-white">
+                          Télécharger
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Historique validations */}
+                {f.validations?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Historique circuit</p>
+                    <div className="space-y-1.5">
+                      {f.validations.map((v, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
+                            v.action === "valide" ? "bg-emerald-400" : v.action === "rejete" ? "bg-red-400" : "bg-gray-300"
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-gray-700">
+                              <span className="font-medium">{v.libelle ?? v.profil_code?.toUpperCase()}</span>
+                              {v.user && <span className="text-gray-400"> · {v.user}</span>}
+                              {v.validated_at && <span className="text-gray-400"> · {new Date(v.validated_at).toLocaleDateString("fr-FR")}</span>}
+                            </p>
+                            {v.motif && <p className="text-[10px] text-red-500 italic">"{v.motif}"</p>}
+                          </div>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${
+                            v.action === "valide" ? "bg-emerald-100 text-emerald-700" : v.action === "rejete" ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-500"
+                          }`}>
+                            {v.action === "valide" ? "Approuvé" : v.action === "rejete" ? "Rejeté" : v.action}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Facture STT ─────────────────────────────────────────────────────────────
 function FactureSttTab({ decompte, onPayer }) {
   const { addToast } = useToast();
@@ -2047,21 +2132,7 @@ function FactureSttTab({ decompte, onPayer }) {
 
       {/* Factures annulées */}
       {facturesAnnulees.length > 0 && (
-        <div className="border border-red-100 rounded-xl overflow-hidden">
-          <p className="px-4 py-3 text-xs font-semibold text-red-500 uppercase tracking-wide border-b border-red-100">Factures annulées ({facturesAnnulees.length})</p>
-          <div className="divide-y divide-red-50">
-            {facturesAnnulees.map(f => (
-              <div key={f.id} className="flex items-center gap-3 px-4 py-3">
-                <XCircle size={14} className="text-red-400 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-700">{f.code}</p>
-                  {f.motif_annulation && <p className="text-xs text-red-500 italic">"{f.motif_annulation}"</p>}
-                </div>
-                <p className="text-[10px] text-gray-400">{f.created_at ? new Date(f.created_at).toLocaleDateString("fr-FR") : ""}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <FacturesAnnuleesSection factures={facturesAnnulees} />
       )}
 
       {/* Modale confirmation approbation */}
