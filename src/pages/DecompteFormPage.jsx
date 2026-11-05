@@ -1696,14 +1696,29 @@ function NouveauForm({ onSave, saving, initialContratId }) {
 
 // ─── Factures annulées — section expandable ───────────────────────────────────
 function FacturesAnnuleesSection({ factures }) {
+  const [open,   setOpen]   = useState(false);
   const [openId, setOpenId] = useState(null);
 
   return (
     <div className="border border-red-100 rounded-xl overflow-hidden">
-      <p className="px-4 py-3 text-xs font-semibold text-red-500 uppercase tracking-wide border-b border-red-100">
-        Factures annulées ({factures.length})
-      </p>
-      <div className="divide-y divide-red-50">
+      {/* En-tête — toggle toute la section */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-red-50/40 transition-colors">
+        <p className="text-xs font-semibold text-red-500 uppercase tracking-wide">
+          Factures annulées ({factures.length})
+        </p>
+        <ChevronDown size={13} className={`text-red-400 transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {!open && (
+        <p className="px-4 pb-3 text-xs text-gray-400">
+          {factures.length} facture{factures.length > 1 ? "s" : ""} — cliquez pour afficher
+        </p>
+      )}
+
+      {open && (
+      <div className="divide-y divide-red-50 border-t border-red-100">
         {factures.map(f => (
           <div key={f.id}>
             {/* Ligne principale */}
@@ -1775,6 +1790,7 @@ function FacturesAnnuleesSection({ factures }) {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }
