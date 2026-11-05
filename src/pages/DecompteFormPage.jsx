@@ -1986,10 +1986,10 @@ function FactureSttTab({ decompte, onPayer }) {
           )}
           {/* En attente d'une autre étape */}
           {!fcIsTerminal && fcHasScan && !fcCanValidate && fcCurrentEtape && (
-            <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-              <Clock size={12} className="flex-shrink-0" />
-              En attente de validation — {fcCurrentEtape.libelle ?? fcCurrentEtape.profil_code?.toUpperCase()}
-            </div>
+            <p className="text-xs text-amber-600 flex items-center gap-1.5">
+              <Clock size={11} />
+              En attente — <span className="font-semibold">{fcCurrentEtape.libelle ?? fcCurrentEtape.profil_code?.toUpperCase()}</span>
+            </p>
           )}
 
           {/* Marquer comme payé — uniquement quand la facture STT est validée */}
