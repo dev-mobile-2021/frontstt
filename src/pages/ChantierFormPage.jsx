@@ -514,7 +514,7 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
 }
 
 // ─── Section portefeuilles CT ────────────────────────────────────────────────
-function SectionPortefeuillesCT({ chantierId, isDacc }) {
+function SectionPortefeuillesCT({ chantierId, chantier, isDacc }) {
   const qc = useQueryClient();
   const { addToast } = useToast();
   const [showModal, setShowModal] = useState(false);
@@ -523,7 +523,9 @@ function SectionPortefeuillesCT({ chantierId, isDacc }) {
 
   const { data: usersData } = useUsersPaginated({ count: 200 });
   const users    = usersData?.data ?? [];
-  const ctUsers  = users.filter(u => u.role?.designation === "CT");
+  // Exclure le CT déjà responsable du chantier — il voit tout sans portefeuille
+  const ctResponsableId = chantier?.ct_user?.id ?? chantier?.ct_user_id;
+  const ctUsers  = users.filter(u => u.role?.designation === "CT" && u.id !== ctResponsableId);
 
   const { data: contratsData } = useContratsPaginated({ chantier_id: Number(chantierId), count: 200 });
   const contrats = contratsData?.data ?? [];
@@ -904,7 +906,7 @@ export default function ChantierFormPage() {
           </div>
 
           {/* Portefeuilles CT */}
-          <SectionPortefeuillesCT chantierId={id} isDacc={isDacc} />
+          <SectionPortefeuillesCT chantierId={id} chantier={chantier} isDacc={isDacc} />
 
           {/* Budget par famille (si renseigné) */}
           {totalBudget > 0 && (
