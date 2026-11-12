@@ -577,7 +577,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
           Aucune ligne. {canEdit && "Cliquez sur « Ajouter » pour commencer."}
         </div>
       ) : lignes.length > 0 && (
-        <div className="px-5 pb-4">
+        <div className="px-5 pt-3 pb-4">
           <Table>
             <TableHeader>
               <TableRow>
