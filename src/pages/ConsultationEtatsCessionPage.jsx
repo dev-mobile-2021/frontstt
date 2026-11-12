@@ -473,6 +473,7 @@ export default function ConsultationEtatsCessionPage() {
                   <th className="px-4 py-3 text-left text-xs font-semibold text-white">Désignation</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-white">Date sortie</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-white">Réf. BS</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-white">Réf. BR</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-white">Unité</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-white">Quantité</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-white">P.U</th>
@@ -499,6 +500,7 @@ export default function ConsultationEtatsCessionPage() {
                     <td className="px-4 py-2.5 text-xs text-gray-700">{l.designation || "—"}</td>
                     <td className="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap">{fmtDate(l.date_sortie)}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-blue-600 whitespace-nowrap">{l.ref_bs || "—"}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-green-600 whitespace-nowrap">{l.ref_br || "—"}</td>
                     <td className="px-4 py-2.5 text-center text-xs text-gray-600 uppercase">{l.unite || "—"}</td>
                     <td className="px-4 py-2.5 text-right text-xs text-gray-800">{l.quantite != null ? fmtNum(l.quantite, 2) : "—"}</td>
                     <td className="px-4 py-2.5 text-right text-xs text-gray-800">{l.prix_unitaire != null ? fmtNum(l.prix_unitaire, 0) : "—"}</td>
