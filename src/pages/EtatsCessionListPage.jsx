@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Search, RotateCcw, Plus, X, Loader2,
-  FileText, FileSpreadsheet, CheckCircle2, Clock, FolderOpen, TrendingUp, Eye, Trash2,
+  FileText, FileSpreadsheet, CheckCircle2, Clock, FolderOpen, TrendingUp, Eye, Trash2, ChevronRight,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
