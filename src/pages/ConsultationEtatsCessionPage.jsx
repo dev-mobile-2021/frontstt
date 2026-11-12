@@ -466,7 +466,6 @@ export default function ConsultationEtatsCessionPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-[#065A2C]">
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-white">Période</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-white">Chantier</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-white">Sous-traitant</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-white">Poste</th>
@@ -484,9 +483,6 @@ export default function ConsultationEtatsCessionPage() {
               <tbody>
                 {lignes.map((l, i) => (
                   <tr key={l.id ?? i} className={`border-b border-gray-100 hover:bg-[#E8F5EE] transition-colors ${i % 2 === 0 ? "bg-white" : "bg-gray-50/40"}`}>
-                    <td className="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap">
-                      {l.periode_debut ? new Date(l.periode_debut).toLocaleDateString("fr-FR", { month: "short", year: "numeric" }) : "—"}
-                    </td>
                     <td className="px-4 py-2.5 text-xs text-gray-700">{l.chantier?.code_x3 || l.chantier?.designation || "—"}</td>
                     <td className="px-4 py-2.5 text-xs text-gray-700">{l.soustraitant?.raison_sociale || "—"}</td>
                     <td className="px-4 py-2.5 text-xs">
