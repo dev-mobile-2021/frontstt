@@ -283,6 +283,8 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
   const [x3Loading, setX3Loading]     = useState(false);
   const [gmaoLoading, setGmaoLoading] = useState(false);
   const [reloadingId, setReloadingId] = useState(null);
+  const x3LockRef   = useRef(false);
+  const gmaoLockRef = useRef(false);
 
   const saveMut          = useSaveLigneEC();
   const deleteMut        = useDeleteLigneEC();
@@ -353,7 +355,9 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
   }
 
   async function handleX3Import() {
+    if (x3LockRef.current) return;
     if (!x3Config?.chantier_code) return addToast("Ce chantier n'a pas de code X3 configuré.", "error");
+    x3LockRef.current = true;
     setX3Loading(true);
     try {
       if (!x3Config?.soustraitant_code) return addToast("Le sous-traitant n'a pas de code STT configuré.", "error");
@@ -397,13 +401,16 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
       const msg = err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? "Erreur inconnue";
       addToast(`Erreur import X3 : ${msg}`, "error");
     } finally {
+      x3LockRef.current = false;
       setX3Loading(false);
     }
   }
 
   async function handleGmaoImport() {
+    if (gmaoLockRef.current) return;
     if (!x3Config?.chantier_code) return addToast("Ce chantier n'a pas de code X3 configuré.", "error");
     if (!x3Config?.soustraitant_code) return addToast("Le sous-traitant n'a pas de code STT configuré.", "error");
+    gmaoLockRef.current = true;
     setGmaoLoading(true);
     try {
       const resp = await axios.get(`${EC_API}/gmao/pointages`, {
@@ -439,6 +446,7 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
       const msg = err?.response?.data?.error ?? err?.response?.data?.message ?? err?.message ?? "Erreur inconnue";
       addToast(`Erreur import GMAO : ${msg}`, "error");
     } finally {
+      gmaoLockRef.current = false;
       setGmaoLoading(false);
     }
   }
