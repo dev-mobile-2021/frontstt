@@ -1,9 +1,9 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "../lib/utils";
 
 export default function Pagination({ page, totalPages, total, onPage }) {
   if (totalPages <= 1) return null;
 
-  // Calcule les numéros à afficher (max 5, avec ellipsis)
   function pages() {
     if (totalPages <= 5) return Array.from({ length: totalPages }, (_, i) => i + 1);
     const arr = new Set([1, totalPages, page]);
@@ -15,18 +15,19 @@ export default function Pagination({ page, totalPages, total, onPage }) {
   const nums = pages();
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-white border-t border-gray-100">
-      <p className="text-xs text-gray-500 whitespace-nowrap">
-        Page <span className="font-medium">{page}</span> / {totalPages}
-        {total != null && <> · <span className="font-medium">{total}</span> résultat{total > 1 ? "s" : ""}</>}
+    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-100 bg-white px-5 py-3">
+      <p className="text-xs text-ink-500 whitespace-nowrap">
+        Page <span className="font-medium text-ink-900">{page}</span> / {totalPages}
+        {total != null && <> · <span className="font-medium text-ink-900">{total}</span> résultat{total > 1 ? "s" : ""}</>}
       </p>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPage(p => Math.max(1, p - 1))}
           disabled={page === 1}
-          className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          aria-label="Page précédente"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-ink-500 transition-all duration-150 hover:bg-surface-50 hover:text-ink-900 active:scale-90 disabled:pointer-events-none disabled:opacity-30"
         >
-          <ChevronLeft size={14} />
+          <ChevronLeft className="h-3.5 w-3.5" />
         </button>
 
         {nums.map((n, i) => {
@@ -34,15 +35,17 @@ export default function Pagination({ page, totalPages, total, onPage }) {
           return (
             <span key={n} className="flex items-center gap-1">
               {prev && n - prev > 1 && (
-                <span className="w-8 h-8 flex items-center justify-center text-xs text-gray-400">…</span>
+                <span className="flex h-7 w-5 items-center justify-center text-[12px] text-ink-300">…</span>
               )}
               <button
                 onClick={() => onPage(() => n)}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-colors ${
+                aria-current={page === n ? "page" : undefined}
+                className={cn(
+                  "flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 text-[12px] font-medium tabular-nums transition-all duration-150 active:scale-90",
                   page === n
-                    ? "bg-[#087F3E] text-white"
-                    : "border border-gray-200 text-gray-600 hover:bg-gray-50"
-                }`}
+                    ? "bg-green-600 text-white shadow-xs"
+                    : "text-ink-500 hover:bg-surface-50 hover:text-ink-900"
+                )}
               >
                 {n}
               </button>
@@ -53,9 +56,10 @@ export default function Pagination({ page, totalPages, total, onPage }) {
         <button
           onClick={() => onPage(p => Math.min(totalPages, p + 1))}
           disabled={page === totalPages}
-          className="w-8 h-8 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          aria-label="Page suivante"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-ink-500 transition-all duration-150 hover:bg-surface-50 hover:text-ink-900 active:scale-90 disabled:pointer-events-none disabled:opacity-30"
         >
-          <ChevronRight size={14} />
+          <ChevronRight className="h-3.5 w-3.5" />
         </button>
       </div>
     </div>
