@@ -3079,52 +3079,52 @@ export default function ContratFormPage() {
         const montantAvenants  = avenantsValides.reduce((s, a) => s + parseFloat(a.montant ?? 0), 0);
 
         return (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="stagger-in grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
             {/* Card 1: Montant initial */}
-            <div className="col-span-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
-              <p className="text-[11px] text-gray-400 uppercase tracking-wide">Montant HT initial</p>
-              <p className="mt-1 text-[22px] font-bold text-gray-900 tabular-nums">{fmtFull(montantInitialHT)}</p>
-              {bcsList.length > 0 && <p className="text-[11px] text-gray-400 mt-0.5">{bcsList.length} BC Sage X3 liés</p>}
+            <div className="col-span-2 rounded-xl border border-line-200 bg-white px-4 py-3 shadow-xs">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">Montant HT initial</p>
+              <p className="mt-1 text-[22px] font-bold tabular-nums text-ink-900">{fmtFull(montantInitialHT)}</p>
+              {bcsList.length > 0 && <p className="mt-0.5 text-[11px] text-ink-500">{bcsList.length} BC Sage X3 liés</p>}
             </div>
             {/* Card 2: Avenants */}
-            <div className="col-span-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
-              <p className="text-[11px] text-gray-400 uppercase tracking-wide">Avenants validés</p>
-              <p className={`mt-1 text-[22px] font-bold tabular-nums ${montantAvenants > 0 ? "text-violet-700" : "text-gray-400"}`}>
+            <div className="col-span-2 rounded-xl border border-line-200 bg-white px-4 py-3 shadow-xs">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">Avenants validés</p>
+              <p className={`mt-1 text-[22px] font-bold tabular-nums ${montantAvenants > 0 ? "text-green-700" : "text-ink-400"}`}>
                 {montantAvenants > 0 ? "+ " : ""}{fmtFull(montantAvenants)}
               </p>
-              <p className="text-[11px] text-gray-400 mt-0.5">
+              <p className="mt-0.5 text-[11px] text-ink-500">
                 {avenantsValides.length} validé{avenantsValides.length > 1 ? "s" : ""}
                 {avenantsAttente.length > 0 && <> · {avenantsAttente.length} en attente</>}
               </p>
             </div>
             {/* Card 3: Montant actualisé */}
-            <div className="col-span-2 rounded-xl border border-[#087F3E]/30 bg-[#E8F5EE] px-4 py-3">
-              <p className="text-[11px] text-[#087F3E]/70 uppercase tracking-wide">Montant actualisé</p>
-              <p className="mt-1 text-[22px] font-bold text-[#087F3E] tabular-nums">{fmtFull(montantActuel)}</p>
-              <span className="text-[10px] text-gray-400">Somme des BCs X3</span>
+            <div className="col-span-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 shadow-xs">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-green-700">Montant actualisé</p>
+              <p className="mt-1 text-[22px] font-bold tabular-nums text-green-700">{fmtFull(montantActuel)}</p>
+              <span className="text-[10px] text-ink-500">Somme des BCs X3</span>
             </div>
             {/* Card 4: Réalisé */}
-            <div className="col-span-1 rounded-xl border border-gray-200 bg-white px-4 py-3">
-              <p className="text-[11px] text-gray-400 uppercase tracking-wide">Réalisé</p>
-              <p className="mt-1 text-[22px] font-bold text-[#087F3E] tabular-nums">{pct}%</p>
-              <div className="mt-1.5 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                <div className="h-full bg-[#087F3E] rounded-full" style={{ width: `${Math.min(pct,100)}%` }} />
+            <div className="col-span-1 rounded-xl border border-line-200 bg-white px-4 py-3 shadow-xs">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">Réalisé</p>
+              <p className="mt-1 text-[22px] font-bold tabular-nums text-green-700">{pct}%</p>
+              <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line-100">
+                <div className="h-full rounded-full bg-green-600" style={{ width: `${Math.min(pct,100)}%` }} />
               </div>
             </div>
             {/* Card 5: En validation */}
-            <div className="col-span-1 rounded-xl border border-gray-200 bg-white px-4 py-3">
-              <p className="text-[11px] text-gray-400 uppercase tracking-wide">En validation</p>
-              <p className="mt-1 text-[20px] font-bold text-amber-600 tabular-nums">{formatMontantCourt(enValidation)}</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">{nbValidation} décompte{nbValidation > 1 ? "s" : ""}</p>
+            <div className="col-span-1 rounded-xl border border-line-200 bg-white px-4 py-3 shadow-xs">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">En validation</p>
+              <p className="mt-1 text-[20px] font-bold tabular-nums text-green-600">{formatMontantCourt(enValidation)}</p>
+              <p className="mt-0.5 text-[11px] text-ink-500">{nbValidation} décompte{nbValidation > 1 ? "s" : ""}</p>
             </div>
             {/* Card 6: Décomptes */}
-            <div className="col-span-2 rounded-xl border border-gray-200 bg-white px-4 py-3">
-              <p className="text-[11px] text-gray-400 uppercase tracking-wide">Décomptes</p>
+            <div className="col-span-2 rounded-xl border border-line-200 bg-white px-4 py-3 shadow-xs">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-ink-500">Décomptes</p>
               <div className="mt-1 flex flex-wrap gap-1.5">
-                {nbPaye > 0 && <span className="text-[11px] bg-[#E8F5EE] text-[#087F3E] px-2 py-0.5 rounded-full font-medium">{nbPaye} payé{nbPaye > 1 ? "s" : ""}</span>}
-                {nbValidation > 0 && <span className="text-[11px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">{nbValidation} en cours</span>}
-                {nbBrouillon > 0 && <span className="text-[11px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-medium">{nbBrouillon} brouillon{nbBrouillon > 1 ? "s" : ""}</span>}
-                {decomptes.length === 0 && <span className="text-[11px] text-gray-400">Aucun</span>}
+                {nbPaye > 0 && <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700">{nbPaye} payé{nbPaye > 1 ? "s" : ""}</span>}
+                {nbValidation > 0 && <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700">{nbValidation} en cours</span>}
+                {nbBrouillon > 0 && <span className="rounded-full border border-line-200 bg-surface-50 px-2 py-0.5 text-[11px] font-medium text-ink-500">{nbBrouillon} brouillon{nbBrouillon > 1 ? "s" : ""}</span>}
+                {decomptes.length === 0 && <span className="text-[11px] text-ink-400">Aucun</span>}
               </div>
             </div>
           </div>
