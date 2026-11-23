@@ -1,56 +1,45 @@
 import { useState } from "react";
-import { Outlet, Navigate } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import { useUser } from "../context/UserContext";
 
-const SIDEBAR_W = 260;
-const SIDEBAR_COLLAPSED_W = 64;
-
 export default function MainLayout() {
   const { isLoggedIn } = useUser();
   const [collapsed, setCollapsed] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
   if (!isLoggedIn) return <Navigate to="/login" replace />;
 
-  const sidebarWidth = collapsed ? SIDEBAR_COLLAPSED_W : SIDEBAR_W;
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex h-screen w-full overflow-hidden bg-surface-50">
       {/* Mobile backdrop */}
-      {sidebarOpen && (
+      {mobileOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-30 bg-ink-900/30 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
         />
       )}
 
-      {/* Sidebar */}
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed(v => !v)} mobileOpen={sidebarOpen} />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(v => !v)}
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+      />
 
-      {/* Mobile-only top bar with hamburger */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-10 flex items-center h-16 bg-white border-b border-gray-200 px-4">
-        <button
-          onClick={() => setSidebarOpen(v => !v)}
-          className="p-2 rounded-md text-gray-500 hover:bg-gray-100"
-          aria-label="Ouvrir le menu"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Header onOpenMobile={() => setMobileOpen(true)} />
+        <main className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="mx-auto max-w-[1400px] px-4 py-5 sm:px-6 sm:py-6">
+            <div key={location.pathname} className="page-enter">
+              <Outlet />
+            </div>
+          </div>
+        </main>
       </div>
-
-      {/* Desktop header (hidden on mobile, shown on lg+) */}
-      <Header sidebarWidth={sidebarWidth} />
-
-      {/* Main content — no margin on mobile, sidebar-width margin on lg+ */}
-      <main className="pt-16 transition-all duration-300">
-        <style>{`@media (min-width: 1024px) { .main-content { margin-left: ${sidebarWidth}px; } }`}</style>
-        <div className="main-content p-4 lg:p-8">
-          <Outlet />
-        </div>
-      </main>
     </div>
   );
 }

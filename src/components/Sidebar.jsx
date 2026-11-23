@@ -2,12 +2,13 @@ import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, FileText, Calculator, Users, Building2, BarChart3, Settings,
-  ChevronLeft, ChevronRight, ChevronsLeft, ReceiptText, FileStack, Package, Paperclip, Eye,
+  ChevronsLeft, ReceiptText, FileStack, Package, Paperclip, Eye,
   GitBranch, Sliders, Shield, ShieldCheck, Tags, Upload, ChevronDown, Layers,
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { usePermissions } from "../hooks/useParametres";
 import { useEtatsCessionPaginated } from "../hooks/useEtatsCession";
+import { cn } from "../lib/utils";
 
 const NAV_ITEMS = [
   { label: "Tableau de bord", to: "/dashboard", icon: LayoutDashboard, permKey: "menu_dashboard" },
@@ -29,7 +30,7 @@ const DECOMPTE_GROUP = {
   label: "Décompte",
   icon: Calculator,
   children: [
-    { label: "Attachements", to: "/attachements", icon: Paperclip,   permKey: "menu_attachements", badge: true },
+    { label: "Attachements", to: "/attachements", icon: Paperclip,   permKey: "menu_attachements" },
     { label: "Décomptes",    to: "/decomptes",    icon: Calculator,  permKey: "menu_decomptes" },
     { label: "Relevés",      to: "/releves",      icon: ReceiptText, permKey: "menu_releves" },
     { label: "Factures",     to: "/factures",     icon: FileStack,   permKey: "menu_factures" },
@@ -49,7 +50,6 @@ const CONTROLLER_GROUP = {
 const PARAMETRAGE_GROUP = {
   label: "Paramétrage",
   icon: Settings,
-  roles: ["Admin", "DG"],
   children: [
     { label: "Circuit validation", to: "/parametrage/circuit",      icon: GitBranch },
     { label: "Paramètres",        to: "/parametrage/parametres",    icon: Sliders },
@@ -62,33 +62,46 @@ const PARAMETRAGE_GROUP = {
   ],
 };
 
-function NavItem({ to, icon: Icon, label, collapsed, pendingCount }) {
+function SidebarLink({ to, icon: Icon, label, collapsed, indented, badge, onNavigate }) {
   return (
     <NavLink
       to={to}
+      end={to === "/dashboard"}
+      onClick={onNavigate}
       title={collapsed ? label : undefined}
       className={({ isActive }) =>
-        `relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
-          collapsed ? "justify-center px-3" : "gap-3 px-4"
-        } ${
-          isActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"
-        }`
+        cn(
+          "relative flex items-center rounded-lg text-[13px] font-medium transition-all duration-200",
+          indented ? "gap-3 px-4 py-2" : "py-3",
+          collapsed ? "justify-center px-3" : (indented ? "" : "gap-3 px-4"),
+          isActive
+            ? "bg-green-100 text-green-600"
+            : "text-ink-700 hover:bg-surface-50 hover:text-ink-900"
+        )
       }
     >
       {({ isActive }) => (
         <>
           {isActive && !collapsed && (
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-[#087F3E] rounded-r-full" />
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-6 bg-green-600 rounded-r-full" />
           )}
-          <div className="relative flex-shrink-0">
-            <Icon className={`w-5 h-5 ${isActive ? "text-[#087F3E]" : "text-gray-500"}`} />
-            {pendingCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center leading-none">{pendingCount}</span>
+          <Icon
+            className={cn(
+              "shrink-0",
+              indented ? "h-4 w-4" : "h-5 w-5",
+              isActive ? "text-green-600" : "text-ink-400"
             )}
-          </div>
-          {!collapsed && <span className="flex-1 min-w-0 truncate">{label}</span>}
-          {!collapsed && pendingCount > 0 && (
-            <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded-full">{pendingCount}</span>
+            strokeWidth={1.75}
+          />
+          {!collapsed && (
+            <>
+              <span className="flex-1 min-w-0 truncate">{label}</span>
+              {badge > 0 && (
+                <span className="ml-auto rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700">
+                  {badge}
+                </span>
+              )}
+            </>
           )}
         </>
       )}
@@ -96,11 +109,66 @@ function NavItem({ to, icon: Icon, label, collapsed, pendingCount }) {
   );
 }
 
-export default function Sidebar({ collapsed, onToggle, mobileOpen }) {
+function SidebarGroup({ group, collapsed, open, active, onToggle, onNavigate, badges = {} }) {
+  const Icon = group.icon;
+
+  if (collapsed) {
+    const first = group.children[0];
+    return (
+      <NavLink
+        to={first.to}
+        onClick={onNavigate}
+        title={group.label}
+        className={cn(
+          "relative flex items-center justify-center rounded-lg px-3 py-3 text-[13px] font-medium transition-colors duration-150 hover:bg-surface-50 hover:text-ink-900",
+          active ? "bg-green-100 text-green-600 hover:bg-green-100" : "text-ink-700"
+        )}
+      >
+        <Icon className={cn("h-5 w-5 shrink-0", active ? "text-green-600" : "text-ink-400")} strokeWidth={1.75} />
+      </NavLink>
+    );
+  }
+
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className={cn(
+          "flex w-full items-center gap-3 rounded-lg px-4 py-3 text-[13px] font-medium transition-colors duration-150 hover:bg-surface-50 hover:text-ink-900",
+          active ? "text-ink-900" : "text-ink-700"
+        )}
+      >
+        <Icon className={cn("h-5 w-5 shrink-0", active ? "text-green-600" : "text-ink-400")} strokeWidth={1.75} />
+        <span className="flex-1 truncate text-left">{group.label}</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-ink-400 transition-transform duration-150", open && "rotate-180")} />
+      </button>
+      {open && (
+        <div className="ml-5 mt-0.5 space-y-0.5 border-l border-line-200 pl-3">
+          {group.children.map(child => (
+            <SidebarLink
+              key={child.to}
+              to={child.to}
+              icon={child.icon}
+              label={child.label}
+              collapsed={false}
+              indented
+              badge={badges[child.to]}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }) {
   const { currentUser } = useUser();
-  const attachPending = 0;
   const userRole = currentUser?.role?.designation;
   const { data: allPerms, isLoading: permsLoading } = usePermissions();
+  const { data: pretsData } = useEtatsCessionPaginated({ statut: "pret", count: 500 });
+  const nbPrets = pretsData?.data?.length ?? 0;
+  const location = useLocation();
 
   function canSeeMenu(key) {
     if (permsLoading) return true;
@@ -110,208 +178,127 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen }) {
     return perm.roles.some(r => r.designation === userRole && r.actif);
   }
 
-  const { data: pretsData } = useEtatsCessionPaginated({ statut: "pret", count: 500 });
-  const nbPrets = pretsData?.data?.length ?? 0;
+  const groupActive = (g) => g.children.some(c => location.pathname.startsWith(c.to));
 
-  const location = useLocation();
-  const paramActive = PARAMETRAGE_GROUP.children.some(c => location.pathname.startsWith(c.to));
-  const controllerActive = CONTROLLER_GROUP.children.some(c => location.pathname.startsWith(c.to));
-  const decompteActive = DECOMPTE_GROUP.children.some(c => location.pathname.startsWith(c.to));
-  const referentielActive = REFERENTIEL_GROUP.children.some(c => location.pathname.startsWith(c.to));
-  const [paramOpen, setParamOpen] = useState(paramActive);
-  const [controllerOpen, setControllerOpen] = useState(controllerActive);
-  const [decompteOpen, setDecompteOpen] = useState(decompteActive);
-  const [referentielOpen, setReferentielOpen] = useState(referentielActive);
+  const visibleReferentiel = REFERENTIEL_GROUP.children.filter(c => canSeeMenu(c.permKey));
+  const visibleDecompte    = DECOMPTE_GROUP.children.filter(c => canSeeMenu(c.permKey));
+  const visibleController  = CONTROLLER_GROUP.children.filter(c => canSeeMenu(c.permKey));
+  const visibleParam       = canSeeMenu("menu_parametrage") ? PARAMETRAGE_GROUP.children : [];
+
+  const referentielGrp = { ...REFERENTIEL_GROUP, children: visibleReferentiel };
+  const decompteGrp    = { ...DECOMPTE_GROUP,    children: visibleDecompte };
+  const controllerGrp  = { ...CONTROLLER_GROUP,  children: visibleController };
+  const paramGrp       = { ...PARAMETRAGE_GROUP, children: visibleParam };
+
+  const [overrides, setOverrides] = useState({});
+  const isOpen = (g) => overrides[g.label] ?? groupActive(g);
+  const toggle = (g) => setOverrides(prev => ({ ...prev, [g.label]: !isOpen(g) }));
+
   return (
     <aside
-      className={`fixed left-0 top-0 h-full ${collapsed ? "w-16" : "w-[260px]"} bg-white border-r border-gray-200 flex flex-col z-30 transition-all duration-300
-        ${typeof mobileOpen !== "undefined" ? (mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0") : ""}`}
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 flex h-screen w-72 shrink-0 flex-col border-r border-line-200 bg-white transition-transform duration-200 ease-out",
+        "lg:static lg:z-auto lg:translate-x-0 lg:transition-[width]",
+        mobileOpen ? "translate-x-0" : "-translate-x-full",
+        collapsed ? "lg:w-[76px]" : "lg:w-72"
+      )}
     >
-      {/* Logo + Brand */}
-      <div className={`flex items-center border-b border-gray-100 ${collapsed ? "justify-center px-2 py-4" : "gap-3 px-5 py-5"}`}>
+      {/* Header + logo */}
+      <div className={cn(
+        "flex h-16 shrink-0 items-center gap-3 border-b border-line-200 px-5",
+        collapsed && "lg:justify-center lg:px-2"
+      )}>
         {collapsed ? (
-          <div className="w-8 h-8 rounded-lg bg-[#087F3E] flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-sm">S</span>
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-600">
+            <span className="text-[13px] font-bold text-white">S</span>
           </div>
         ) : (
           <>
-            <img src={import.meta.env.BASE_URL + "logo-stt.svg"} alt="Logo STT" className="h-9 w-auto object-contain flex-shrink-0" />
+            <div className="flex shrink-0 gap-1">
+              {["C","S","E"].map(l => (
+                <div key={l} className="flex h-7 w-7 items-center justify-center rounded bg-green-600 text-[15px] font-bold leading-none text-white">
+                  {l}
+                </div>
+              ))}
+            </div>
             <div className="min-w-0">
-              <span className="font-semibold text-gray-900 text-sm leading-none block truncate">STT</span>
-              <p className="text-xs text-gray-500 mt-0.5 truncate">Sous-Traitance Chantier</p>
+              <div className="truncate text-[13px] font-semibold leading-none text-ink-900">STT</div>
+              <div className="mt-0.5 truncate text-[11px] text-ink-500">Sous-Traitance Chantier</div>
             </div>
           </>
         )}
       </div>
 
-      {/* Navigation scrollable — inclut Paramétrage en bas */}
-      <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden">
-        {NAV_ITEMS.filter(item => canSeeMenu(item.permKey)).map((item) => (
-          <NavItem key={item.to} {...item} collapsed={collapsed} pendingCount={item.badge ? attachPending : 0} />
+      <nav className="mt-1 flex-1 space-y-0.5 overflow-y-auto overflow-x-hidden px-3 scrollbar-thin">
+        {NAV_ITEMS.filter(i => canSeeMenu(i.permKey)).map(item => (
+          <SidebarLink
+            key={item.to}
+            to={item.to}
+            icon={item.icon}
+            label={item.label}
+            collapsed={collapsed}
+            onNavigate={onMobileClose}
+          />
         ))}
 
-        {/* Référentiel */}
-        {(canSeeMenu("menu_sous_traitants") || canSeeMenu("menu_chantiers") || canSeeMenu("menu_articles")) && <div>
-          <button
-            onClick={() => setReferentielOpen(v => !v)}
-            className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${referentielActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
-          >
-            <Building2 className={`w-5 h-5 flex-shrink-0 ${referentielActive ? "text-[#087F3E]" : "text-gray-500"}`} />
-            {!collapsed && (
-              <>
-                <span className="flex-1 text-left">Référentiel</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${referentielOpen ? "rotate-180" : ""}`} />
-              </>
-            )}
-          </button>
-          {!collapsed && referentielOpen && (
-            <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
-              {REFERENTIEL_GROUP.children.filter(item => canSeeMenu(item.permKey)).map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-600 hover:bg-gray-50"}`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#087F3E] rounded-r-full" />}
-                      <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#087F3E]" : "text-gray-400"}`} />
-                      <span className="truncate">{item.label}</span>
-                    </>
-                  )}
-                </NavLink>
-              ))}
-            </div>
-          )}
-        </div>}
+        {visibleReferentiel.length > 0 && (
+          <SidebarGroup
+            group={referentielGrp}
+            collapsed={collapsed}
+            open={isOpen(referentielGrp)}
+            active={groupActive(referentielGrp)}
+            onToggle={() => toggle(referentielGrp)}
+            onNavigate={onMobileClose}
+          />
+        )}
 
-        {/* Décompte */}
-        {(canSeeMenu("menu_attachements") || canSeeMenu("menu_decomptes") || canSeeMenu("menu_releves") || canSeeMenu("menu_factures")) && <div>
-          <button
-            onClick={() => setDecompteOpen(v => !v)}
-            className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${decompteActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
-          >
-            <Calculator className={`w-5 h-5 flex-shrink-0 ${decompteActive ? "text-[#087F3E]" : "text-gray-500"}`} />
-            {!collapsed && (
-              <>
-                <span className="flex-1 text-left">Décompte</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${decompteOpen ? "rotate-180" : ""}`} />
-              </>
-            )}
-          </button>
-          {!collapsed && decompteOpen && (
-            <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
-              {DECOMPTE_GROUP.children.filter(item => canSeeMenu(item.permKey)).map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-600 hover:bg-gray-50"}`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#087F3E] rounded-r-full" />}
-                      <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#087F3E]" : "text-gray-400"}`} />
-                      <span className="truncate">{item.label}</span>
-                    </>
-                  )}
-                </NavLink>
-              ))}
-            </div>
-          )}
-        </div>}
+        {visibleDecompte.length > 0 && (
+          <SidebarGroup
+            group={decompteGrp}
+            collapsed={collapsed}
+            open={isOpen(decompteGrp)}
+            active={groupActive(decompteGrp)}
+            onToggle={() => toggle(decompteGrp)}
+            onNavigate={onMobileClose}
+          />
+        )}
 
-        {/* Controller de gestion */}
-        {(canSeeMenu("menu_etats_cession") || canSeeMenu("permission_voir_notes_devis") || canSeeMenu("permission_consulter_articles")) && <div>
-          <button
-            onClick={() => setControllerOpen(v => !v)}
-            className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${controllerActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
-          >
-            <Layers className={`w-5 h-5 flex-shrink-0 ${controllerActive ? "text-[#087F3E]" : "text-gray-500"}`} />
-            {!collapsed && (
-              <>
-                <span className="flex-1 text-left">Controller de gestion</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${controllerOpen ? "rotate-180" : ""}`} />
-              </>
-            )}
-          </button>
-          {!collapsed && controllerOpen && (
-            <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
-              {CONTROLLER_GROUP.children.filter(item => canSeeMenu(item.permKey)).map(item => {
-                const isNotesDebit = item.to === "/notes-debit";
-                return (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    className={({ isActive }) =>
-                      `relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-600 hover:bg-gray-50"}`
-                    }
-                  >
-                    {({ isActive }) => (
-                      <>
-                        {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#087F3E] rounded-r-full" />}
-                        <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#087F3E]" : "text-gray-400"}`} />
-                        <span className="flex-1 truncate">{item.label}</span>
-                        {isNotesDebit && nbPrets > 0 && (
-                          <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-full">{nbPrets}</span>
-                        )}
-                      </>
-                    )}
-                  </NavLink>
-                );
-              })}
-            </div>
-          )}
-        </div>}
-
-        {/* Paramétrage */}
-        {canSeeMenu("menu_parametrage") && <div className="pt-2 mt-2 border-t border-gray-100">
-          <button
-            onClick={() => setParamOpen(v => !v)}
-            className={`relative flex items-center py-3 rounded-lg text-sm font-medium transition-all duration-200 w-full ${collapsed ? "justify-center px-3" : "gap-3 px-4"} ${paramActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-700 hover:bg-gray-50"}`}
-          >
-            <Settings className={`w-5 h-5 flex-shrink-0 ${paramActive ? "text-[#087F3E]" : "text-gray-500"}`} />
-            {!collapsed && (
-              <>
-                <span className="flex-1 text-left">Paramétrage</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${paramOpen ? "rotate-180" : ""}`} />
-              </>
-            )}
-          </button>
-          {!collapsed && paramOpen && (
-            <div className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
-              {PARAMETRAGE_GROUP.children.map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `relative flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${isActive ? "bg-[#E8F5EE] text-[#087F3E]" : "text-gray-600 hover:bg-gray-50"}`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[#087F3E] rounded-r-full" />}
-                      <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-[#087F3E]" : "text-gray-400"}`} />
-                      <span className="truncate">{item.label}</span>
-                    </>
-                  )}
-                </NavLink>
-              ))}
-            </div>
-          )}
-        </div>}
+        {visibleController.length > 0 && (
+          <SidebarGroup
+            group={controllerGrp}
+            collapsed={collapsed}
+            open={isOpen(controllerGrp)}
+            active={groupActive(controllerGrp)}
+            onToggle={() => toggle(controllerGrp)}
+            onNavigate={onMobileClose}
+            badges={{ "/notes-debit": nbPrets }}
+          />
+        )}
       </nav>
 
-      {/* Bouton collapse — absolu sur le bord droit, style GMAO */}
+      {visibleParam.length > 0 && (
+        <div className="space-y-0.5 border-t border-line-200 px-3 py-3">
+          <SidebarGroup
+            group={paramGrp}
+            collapsed={collapsed}
+            open={isOpen(paramGrp)}
+            active={groupActive(paramGrp)}
+            onToggle={() => toggle(paramGrp)}
+            onNavigate={onMobileClose}
+          />
+        </div>
+      )}
+
+      <div className={cn("shrink-0 px-4 pb-3 text-[11px] text-ink-400", collapsed && "lg:px-0 lg:text-center")}>
+        {collapsed ? "v1" : "v1.0 — STT"}
+      </div>
+
       <button
         onClick={onToggle}
         aria-label={collapsed ? "Déplier la barre latérale" : "Replier la barre latérale"}
-        className="absolute -right-3 top-[26px] hidden h-6 w-6 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-400 shadow-sm transition-all duration-200 hover:text-[#087F3E] lg:flex"
+        className="absolute -right-3 top-[26px] hidden h-6 w-6 items-center justify-center rounded-full border border-line-200 bg-white text-ink-500 shadow-sm transition-all duration-200 hover:text-green-700 lg:flex"
       >
-        <ChevronsLeft className={`w-3.5 h-3.5 transition-transform duration-200 ${collapsed ? "rotate-180" : ""}`} />
+        <ChevronsLeft className={cn("h-3.5 w-3.5 transition-transform duration-200", collapsed && "rotate-180")} />
       </button>
     </aside>
   );
