@@ -2,11 +2,14 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { FileText, TrendingUp, DollarSign, CheckCircle2, ArrowRight } from "lucide-react";
 import PageHeader from "../components/PageHeader";
-import KPICard from "../components/KPICard";
+import KpiStrip from "../components/KpiStrip";
 import MoneyDisplay from "../components/MoneyDisplay";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "../components/ui/card";
 import { useContratsPaginated } from "../hooks/useContrats";
 import { useDecomptesPaginated, useDecompteCircuit } from "../hooks/useDecomptes";
 import { formatMontantCourt } from "../utils/formatters";
+
+const STATUTS_INSTANCE = ["soumis", "valide_dacc", "valide_dex", "valide_dga", "valide_dg"];
 
 export default function DashboardPage() {
   const { data: contratsData }  = useContratsPaginated({ count: 200 });
@@ -16,7 +19,6 @@ export default function DashboardPage() {
   const contrats  = contratsData?.data  ?? [];
   const decomptes = decomptesData?.data ?? [];
 
-  // ── KPIs ─────────────────────────────────────────────────────────────────
   const totalContrats   = contratsData?.metadata?.total ?? contrats.length;
   const montantContrats = contrats.reduce((s, c) => s + parseFloat(c.montant_actuel ?? c.montant_initial ?? 0), 0);
   const montantEngage   = decomptes.reduce((s, d) => s + parseFloat(d.montant_ht ?? 0), 0);
@@ -24,7 +26,13 @@ export default function DashboardPage() {
     .filter(d => d.statut === "paye")
     .reduce((s, d) => s + parseFloat(d.montant_ht ?? 0), 0);
 
-  // ── Validations en cours ──────────────────────────────────────────────────
+  const kpis = [
+    { label: "Contrats",         value: String(totalContrats),              caption: "Tous statuts confondus",  icon: FileText },
+    { label: "Montant contrats", value: formatMontantCourt(montantContrats), caption: "Montant actualisé total", icon: TrendingUp },
+    { label: "Engagés",          value: formatMontantCourt(montantEngage),   caption: "Total décomptes soumis",  icon: CheckCircle2 },
+    { label: "Cumul payé",       value: formatMontantCourt(cumulPaye),       caption: "Décomptes payés",         icon: DollarSign },
+  ];
+
   const validationsEnCours = useMemo(() => {
     if (!circuit.length) return [];
     return circuit.map(etape => ({
@@ -33,9 +41,6 @@ export default function DashboardPage() {
       count:       decomptes.filter(d => d.statut === etape.statut_avant).length,
     }));
   }, [circuit, decomptes]);
-
-  // ── Règlements en instance ────────────────────────────────────────────────
-  const STATUTS_INSTANCE = ["soumis", "valide_dacc", "valide_dex", "valide_dga", "valide_dg"];
 
   const reglements = useMemo(() => {
     const map = {};
@@ -53,116 +58,95 @@ export default function DashboardPage() {
   const totalReglements = reglements.reduce((s, r) => s + r.montant, 0);
 
   return (
-    <div className="space-y-6">
-      <PageHeader title="Tableau de bord" subtitle="Vue synthétique de l'activité sous-traitance" />
+    <div className="space-y-5">
+      <PageHeader
+        title="Tableau de bord"
+        description="Vue synthétique de l'activité sous-traitance"
+      />
 
-      {/* ── KPI Cards ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5">
-        <KPICard
-          icon={FileText}
-          label="Contrats de sous-traitance"
-          value={totalContrats}
-          variationLabel="Tous statuts confondus"
-        />
-        <KPICard
-          icon={TrendingUp}
-          label="Montants contrats"
-          value={formatMontantCourt(montantContrats)}
-          variationLabel="Montant actualisé total"
-        />
-        <KPICard
-          icon={CheckCircle2}
-          label="Montants engagés"
-          value={formatMontantCourt(montantEngage)}
-          variationLabel="Total décomptes soumis"
-          iconColor="text-blue-600"
-        />
-        <KPICard
-          icon={DollarSign}
-          label="Cumul payé"
-          value={formatMontantCourt(cumulPaye)}
-          variationLabel="Décomptes à statut payé"
-          iconColor="text-[#087F3E]"
-        />
-      </div>
+      <KpiStrip items={kpis} columns={4} />
 
-      {/* ── Panels ── */}
-      <div className="grid grid-cols-2 gap-6">
-
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Validations en cours */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-base font-semibold text-gray-900">Validations en cours</h2>
+        <Card>
+          <CardHeader>
+            <div>
+              <CardTitle>Validations en cours</CardTitle>
+              <CardDescription>Décomptes en attente par profil</CardDescription>
+            </div>
             <Link
               to="/decomptes"
-              className="text-xs text-[#087F3E] hover:underline flex items-center gap-1"
+              className="inline-flex items-center gap-1 text-[12px] font-medium text-green-600 hover:text-green-700"
             >
-              Voir tout <ArrowRight size={12} />
+              Voir tout <ArrowRight className="h-3 w-3" />
             </Link>
-          </div>
-
-          {validationsEnCours.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-10">Aucune validation en attente.</p>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {validationsEnCours.map(v => (
-                <div key={v.profil_code} className="flex items-center gap-4 py-4">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-xl
-                    ${v.count > 0
-                      ? "bg-amber-50 border-2 border-amber-300 text-amber-700"
-                      : "bg-gray-50 border border-gray-100 text-gray-300"
-                    }`}
-                  >
-                    {v.count}
+          </CardHeader>
+          <CardContent>
+            {validationsEnCours.length === 0 ? (
+              <p className="py-10 text-center text-[13px] text-ink-400">Aucune validation en attente.</p>
+            ) : (
+              <div className="divide-y divide-line-100">
+                {validationsEnCours.map(v => (
+                  <div key={v.profil_code} className="flex items-center gap-3 py-3">
+                    <div
+                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-base font-bold ${
+                        v.count > 0
+                          ? "bg-green-50 border border-green-300 text-green-700"
+                          : "bg-surface-50 border border-line-200 text-ink-300"
+                      }`}
+                    >
+                      {v.count}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-semibold text-ink-900">{v.profil_code.toUpperCase()}</p>
+                      <p className="mt-0.5 text-[11px] text-ink-500">{v.libelle}</p>
+                    </div>
+                    {v.count > 0 && (
+                      <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[11px] font-medium text-green-700 whitespace-nowrap">
+                        En attente
+                      </span>
+                    )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-800">{v.profil_code.toUpperCase()}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{v.libelle}</p>
-                  </div>
-                  {v.count > 0 && (
-                    <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-medium whitespace-nowrap">
-                      En attente
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Règlements en instance */}
-        <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <div className="flex items-start justify-between mb-5">
-            <div>
-              <h2 className="text-base font-semibold text-gray-900">Règlements en instance</h2>
-              <p className="text-xs text-gray-400 mt-0.5">Décomptes en circuit non encore payés</p>
+        <Card>
+          <CardHeader>
+            <div className="min-w-0">
+              <CardTitle>Règlements en instance</CardTitle>
+              <CardDescription>Décomptes en circuit non encore payés</CardDescription>
             </div>
-            <div className="text-right flex-shrink-0 ml-4">
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Total</p>
-              <MoneyDisplay amount={totalReglements} className="text-base font-bold text-[#087F3E]" />
+            <div className="shrink-0 text-right">
+              <p className="text-[10px] font-medium uppercase tracking-wide text-ink-500">Total</p>
+              <MoneyDisplay amount={totalReglements} className="text-sm font-bold text-green-700" />
             </div>
-          </div>
-
-          {reglements.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-10">Aucun règlement en instance.</p>
-          ) : (
-            <div className="divide-y divide-gray-50">
-              {reglements.map(r => (
-                <div key={r.designation} className="flex items-center justify-between py-3 gap-3">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#087F3E] flex-shrink-0" />
-                    <p className="text-sm text-gray-700 truncate">{r.designation}</p>
+          </CardHeader>
+          <CardContent>
+            {reglements.length === 0 ? (
+              <p className="py-10 text-center text-[13px] text-ink-400">Aucun règlement en instance.</p>
+            ) : (
+              <div className="divide-y divide-line-100">
+                {reglements.map(r => (
+                  <div key={r.designation} className="flex items-center justify-between gap-3 py-3">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-green-600" />
+                      <p className="truncate text-[13px] text-ink-700">{r.designation}</p>
+                    </div>
+                    <MoneyDisplay
+                      amount={r.montant}
+                      variant="small"
+                      className="shrink-0 font-semibold text-ink-900"
+                    />
                   </div>
-                  <MoneyDisplay
-                    amount={r.montant}
-                    variant="small"
-                    className="font-semibold text-gray-800 flex-shrink-0"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
