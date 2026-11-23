@@ -209,18 +209,18 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         collapsed && "lg:justify-center lg:px-2"
       )}>
         {collapsed ? (
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-600">
-            <span className="text-[13px] font-bold text-white">S</span>
-          </div>
+          <img
+            src={import.meta.env.BASE_URL + "logo-stt.svg"}
+            alt="STT"
+            className="h-8 w-8 shrink-0 object-contain"
+          />
         ) : (
           <>
-            <div className="flex shrink-0 gap-1">
-              {["C","S","E"].map(l => (
-                <div key={l} className="flex h-7 w-7 items-center justify-center rounded bg-green-600 text-[15px] font-bold leading-none text-white">
-                  {l}
-                </div>
-              ))}
-            </div>
+            <img
+              src={import.meta.env.BASE_URL + "logo-stt.svg"}
+              alt="Logo STT"
+              className="h-9 w-auto shrink-0 object-contain"
+            />
             <div className="min-w-0">
               <div className="truncate text-[13px] font-semibold leading-none text-ink-900">STT</div>
               <div className="mt-0.5 truncate text-[11px] text-ink-500">Sous-Traitance Chantier</div>

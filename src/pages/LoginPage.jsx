@@ -25,14 +25,12 @@ export default function LoginPage() {
       <div className="w-full max-w-md overflow-hidden rounded-lg border border-line-200 bg-white shadow-sm">
         <div className="flex flex-col justify-center px-8 py-10 sm:px-10">
           {/* Logo */}
-          <div className="mb-6 flex items-center justify-center gap-3">
-            <div className="flex gap-1">
-              {["C","S","E"].map(l => (
-                <div key={l} className="flex h-10 w-10 items-center justify-center rounded bg-green-600 text-[18px] font-bold leading-none text-white">
-                  {l}
-                </div>
-              ))}
-            </div>
+          <div className="mb-6 flex items-center justify-center">
+            <img
+              src={import.meta.env.BASE_URL + "logo-stt.svg"}
+              alt="Logo STT"
+              className="h-20 w-auto object-contain"
+            />
           </div>
 
           <h1 className="text-center text-[20px] font-semibold text-ink-900">Connexion</h1>
