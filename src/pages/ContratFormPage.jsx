@@ -2130,7 +2130,7 @@ function DqeTab({ contratId, contrat }) {
       {dqeActiveTab === "circuit" && data?.dqe && (data.dqe.type === "base" || data.dqe.type === "avenant") && (
         <div className="space-y-3 py-2">
           {circuitEtapes.length === 0 ? (
-            <p className="text-sm text-gray-400 italic text-center py-6">Aucun circuit de validation configuré pour ce contrat.</p>
+            <p className="py-6 text-center text-[13px] italic text-ink-400">Aucun circuit de validation configuré pour ce contrat.</p>
           ) : (
             <div className="space-y-3">
               {circuitEtapes.map((etape) => {
@@ -2141,16 +2141,25 @@ function DqeTab({ contratId, contrat }) {
                 const peut_valider = !deja_valide && !readonly && userRole === profilCode && data?.dqe?.statut !== "valide";
 
                 return (
-                  <div key={etape.id ?? profilCode} className={`rounded-xl border p-4 flex items-center justify-between gap-4 flex-wrap ${deja_valide ? "border-green-200 bg-green-50/60" : peut_valider ? "border-blue-200 bg-blue-50/40" : "border-gray-100 bg-gray-50/60"}`}>
+                  <div
+                    key={etape.id ?? profilCode}
+                    className={`flex flex-wrap items-center justify-between gap-4 rounded-xl border p-4 ${
+                      deja_valide
+                        ? "border-green-200 bg-green-50"
+                        : peut_valider
+                          ? "border-green-300 bg-green-50/40"
+                          : "border-line-200 bg-surface-50"
+                    }`}
+                  >
                     <div className="flex items-center gap-3">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${deja_valide ? "bg-green-100" : "bg-gray-100"}`}>
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${deja_valide ? "bg-green-100" : "bg-line-100"}`}>
                         {deja_valide
-                          ? <CheckCircle2 size={16} className="text-green-600" />
-                          : <Clock size={16} className="text-gray-400" />
+                          ? <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          : <Clock className="h-4 w-4 text-ink-400" />
                         }
                       </div>
                       <div>
-                        <div className="text-sm font-semibold text-gray-800">{profilCode}</div>
+                        <div className="text-[13px] font-semibold text-ink-900">{profilCode}</div>
                         {deja_valide ? (
                           <div className="text-xs text-green-700">
                             Validé{val.validated_at ? ` le ${formatDate(val.validated_at)}` : ""}
@@ -2158,19 +2167,19 @@ function DqeTab({ contratId, contrat }) {
                             {val.observations ? ` — ${val.observations}` : ""}
                           </div>
                         ) : (
-                          <div className="text-xs text-gray-400">En attente de validation</div>
+                          <div className="text-xs text-ink-500">En attente de validation</div>
                         )}
                       </div>
                     </div>
                     {peut_valider && (
-                      <span className="text-xs text-blue-600 font-medium">C'est votre tour</span>
+                      <span className="text-xs font-medium text-green-700">C'est votre tour</span>
                     )}
                   </div>
                 );
               })}
             </div>
           )}
-          <p className="text-[11px] text-gray-400 italic">
+          <p className="text-[11px] italic text-ink-500">
             Au moins 1 validation suffit pour que le DQE soit utilisable.
             {(data?.dqe?.validations ?? []).length > 0 && (
               <span className="ml-2 font-semibold text-green-700">
@@ -2214,24 +2223,24 @@ function DqeTab({ contratId, contrat }) {
       {(dqeActiveTab === "lignes" || !data?.dqe || data.dqe.type === "actualise") && <>
 
       {/* Header actions + Total */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         {!activeDqeReadonly ? (
           <div className="flex items-center gap-2">
             <button
               onClick={() => setAddingRubrique(true)}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#076a34] transition-colors"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-3 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800"
             >
-              <Plus size={14} /> Ajouter une rubrique
+              <Plus className="h-3.5 w-3.5" /> Ajouter une rubrique
             </button>
             <button
               onClick={() => setShowImportDqe(true)}
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-[#087F3E] text-[#087F3E] text-sm font-medium hover:bg-[#087F3E]/5 transition-colors"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-green-600 bg-white px-3 text-[13px] font-medium text-green-600 transition-colors hover:bg-green-50"
             >
-              <Upload size={14} /> Importer
+              <Upload className="h-3.5 w-3.5" /> Importer
             </button>
           </div>
         ) : (
-          <div className="text-xs text-gray-500 italic">
+          <div className="text-xs italic text-ink-500">
             {readonly
               ? `Contrat ${contrat?.statut} — lecture seule`
               : data?.dqe?.type === "actualise"
@@ -2241,51 +2250,51 @@ function DqeTab({ contratId, contrat }) {
         )}
 
         <div className="text-right">
-          <div className="text-[11px] uppercase tracking-wide text-gray-500">Total DQE</div>
-          <div className="text-xl font-bold text-[#087F3E]">{fmtMontantDqe(total)} FCFA</div>
+          <div className="text-[11px] font-medium uppercase tracking-wide text-ink-500">Total DQE</div>
+          <div className="text-xl font-bold tabular-nums text-green-700">{fmtMontantDqe(total)} FCFA</div>
         </div>
       </div>
 
       {/* Formulaire ajout rubrique inline */}
       {addingRubrique && (
-        <div className="rounded-xl border border-[#087F3E]/30 bg-[#087F3E]/5 p-3 flex items-end gap-2 flex-wrap">
+        <div className="flex flex-wrap items-end gap-2 rounded-xl border border-green-200 bg-green-50 p-3">
           <div className="min-w-[120px]">
-            <label className="block text-[11px] text-gray-600 mb-1">Code interne</label>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">Code interne</label>
             <input
               value={rubForm.code}
               onChange={e => setRubForm(s => ({ ...s, code: e.target.value }))}
-              className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm"
+              className="h-8 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
               placeholder="RA-01"
               maxLength={20}
             />
           </div>
           <div className="min-w-[120px]">
-            <label className="block text-[11px] text-gray-600 mb-1">Code X3</label>
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">Code X3</label>
             <input
               value={rubForm.code_x3}
               onChange={e => setRubForm(s => ({ ...s, code_x3: e.target.value }))}
-              className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm"
+              className="h-8 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
               placeholder="6A40"
               maxLength={20}
             />
           </div>
-          <div className="flex-[3] min-w-[260px]">
-            <label className="block text-[11px] text-gray-600 mb-1">Désignation *</label>
+          <div className="min-w-[260px] flex-[3]">
+            <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">Désignation *</label>
             <input
               autoFocus
               value={rubForm.designation}
               onChange={e => setRubForm(s => ({ ...s, designation: e.target.value }))}
-              className="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-sm"
+              className="h-8 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
               placeholder="TERRASSEMENTS"
             />
           </div>
           {bcs.length > 0 && (
             <div className="min-w-[180px]">
-              <label className="block text-[11px] text-gray-600 mb-1">Bon de commande</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">Bon de commande</label>
               <SearchSelect
                 value={rubForm.bon_commande_id || ""}
                 onChange={e => setRubForm(s => ({ ...s, bon_commande_id: e.target.value || "" }))}
-                className="w-full border border-gray-200 rounded-lg px-2 py-1.5 text-sm bg-white"
+                className="h-8 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
               >
                 <option value="">— Aucun BC —</option>
                 {bcs.map(bc => (
@@ -2298,11 +2307,11 @@ function DqeTab({ contratId, contrat }) {
             <button
               onClick={submitAddRub}
               disabled={saveRubrique.isPending || !rubForm.designation.trim()}
-              className="px-3 py-1.5 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#076a34] disabled:opacity-50 inline-flex items-center gap-1"
+              className="inline-flex h-8 items-center gap-1 rounded-md bg-green-600 px-3 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-50"
             >
-              {saveRubrique.isPending && <Loader2 size={13} className="animate-spin" />} OK
+              {saveRubrique.isPending && <Loader2 className="h-3 w-3 animate-spin" />} OK
             </button>
-            <button onClick={resetAddRub} className="px-3 py-1.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">
+            <button onClick={resetAddRub} className="inline-flex h-8 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] text-ink-900 hover:bg-surface-50 hover:border-ink-300">
               Annuler
             </button>
           </div>
@@ -2311,7 +2320,7 @@ function DqeTab({ contratId, contrat }) {
 
       {/* Liste des rubriques */}
       {rubriques.length === 0 && !addingRubrique && (
-        <div className="text-center py-10 text-sm text-gray-400">
+        <div className="py-10 text-center text-[13px] text-ink-400">
           Aucune rubrique DQE. {!activeDqeReadonly && "Cliquez sur « Ajouter une rubrique » pour commencer."}
         </div>
       )}
@@ -2324,26 +2333,26 @@ function DqeTab({ contratId, contrat }) {
         const isRubCollapsed = !!collapsedRub[rub.id];
 
         return (
-          <div key={rub.id} className="rounded-xl border border-gray-200 overflow-hidden">
+          <div key={rub.id} className="overflow-hidden rounded-xl border border-line-200 shadow-xs">
             {/* Header rubrique */}
-            <div className="bg-[#087F3E]/8 border-l-4 border-[#087F3E] px-3 py-2 flex items-center gap-2">
-              <button onClick={() => toggleRub(rub.id)} className="text-[#087F3E] hover:bg-[#087F3E]/10 rounded p-0.5">
-                {isRubCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+            <div className="flex items-center gap-2 border-l-4 border-green-600 bg-green-50 px-3 py-2">
+              <button onClick={() => toggleRub(rub.id)} className="rounded p-0.5 text-green-700 hover:bg-green-100">
+                {isRubCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
 
               {editRubId === rub.id ? (
-                <div className="flex-1 flex items-center gap-2 flex-wrap">
+                <div className="flex flex-1 flex-wrap items-center gap-2">
                   <input
                     value={editRubForm.code || ""}
                     onChange={e => setEditRubForm(s => ({ ...s, code: e.target.value }))}
-                    className="px-2 py-1 border border-gray-200 rounded text-xs w-20"
+                    className="h-7 w-20 rounded-md border border-line-200 bg-white px-2 text-xs text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                     placeholder="RA-01"
                     maxLength={20}
                   />
                   <input
                     value={editRubForm.code_x3 || ""}
                     onChange={e => setEditRubForm(s => ({ ...s, code_x3: e.target.value }))}
-                    className="px-2 py-1 border border-blue-200 rounded text-xs w-20"
+                    className="h-7 w-20 rounded-md border border-line-200 bg-white px-2 text-xs text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                     placeholder="6A40"
                     maxLength={20}
                   />
@@ -2351,13 +2360,13 @@ function DqeTab({ contratId, contrat }) {
                     autoFocus
                     value={editRubForm.designation}
                     onChange={e => setEditRubForm(s => ({ ...s, designation: e.target.value }))}
-                    className="flex-1 min-w-[200px] px-2 py-1 border border-gray-200 rounded text-sm"
+                    className="h-7 min-w-[200px] flex-1 rounded-md border border-line-200 bg-white px-2 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                   />
                   {bcs.length > 0 && (
                     <SearchSelect
                       value={editRubForm.bon_commande_id || ""}
                       onChange={e => setEditRubForm(s => ({ ...s, bon_commande_id: e.target.value || "" }))}
-                      className="border border-gray-200 rounded px-2 py-1 text-xs bg-white max-w-[200px]"
+                      className="h-7 max-w-[200px] rounded-md border border-line-200 bg-white px-2 text-xs text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                     >
                       <option value="">— Aucun BC —</option>
                       {bcs.map(bc => (
@@ -2365,35 +2374,35 @@ function DqeTab({ contratId, contrat }) {
                       ))}
                     </SearchSelect>
                   )}
-                  <button onClick={() => submitEditRub(rub.id)} className="px-2 py-1 rounded bg-[#087F3E] text-white text-xs hover:bg-[#076a34]">OK</button>
-                  <button onClick={() => setEditRubId(null)} className="px-2 py-1 rounded border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">Annuler</button>
+                  <button onClick={() => submitEditRub(rub.id)} className="inline-flex h-7 items-center rounded-md bg-green-600 px-2 text-xs font-medium text-white hover:bg-green-700">OK</button>
+                  <button onClick={() => setEditRubId(null)} className="inline-flex h-7 items-center rounded-md border border-line-200 bg-white px-2 text-xs text-ink-900 hover:bg-surface-50">Annuler</button>
                 </div>
               ) : (
                 <>
-                  <div className="flex-1 font-semibold text-[#087F3E] text-sm">
-                    {rub.code && <span className="text-xs text-gray-500 font-mono mr-2">{rub.code}</span>}
-                    {rub.code_x3 && <span className="text-xs text-blue-600 font-mono mr-2 bg-blue-50 px-1 rounded">{rub.code_x3}</span>}
+                  <div className="flex-1 text-[13px] font-semibold text-green-700">
+                    {rub.code && <span className="mr-2 font-mono text-xs text-ink-500">{rub.code}</span>}
+                    {rub.code_x3 && <span className="mr-2 rounded bg-green-100 px-1 font-mono text-xs text-green-700">{rub.code_x3}</span>}
                     RA : {rub.designation}
                     {rub.bon_commande && (
-                      <span className="ml-2 text-[11px] font-normal bg-amber-50 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                      <span className="ml-2 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[11px] font-normal text-amber-700">
                         BC {rub.bon_commande.numero ?? rub.bon_commande.code_x3 ?? rub.bon_commande.code}
                       </span>
                     )}
                   </div>
-                  <div className="text-sm font-bold text-[#087F3E]">{fmtMontantDqe(rubMontant)} FCFA</div>
+                  <div className="text-[13px] font-bold tabular-nums text-green-700">{fmtMontantDqe(rubMontant)} FCFA</div>
                   {!activeDqeReadonly && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => { setEditRubId(rub.id); setEditRubForm({ designation: rub.designation, code: rub.code || "", code_x3: rub.code_x3 || "", bon_commande_id: rub.bon_commande_id || "" }); }}
-                        className="p-1 rounded hover:bg-white/60 text-gray-600" title="Modifier"
+                        className="rounded p-1 text-ink-500 hover:bg-white/60 hover:text-ink-900" title="Modifier"
                       >
-                        <Pencil size={13} />
+                        <Pencil className="h-3.5 w-3.5" />
                       </button>
                       <button
                         onClick={() => setConfirmDel({ type: "rubrique", id: rub.id, label: rub.designation })}
-                        className="p-1 rounded hover:bg-red-50 text-red-500" title="Supprimer"
+                        className="rounded p-1 text-ink-400 hover:bg-red-50 hover:text-red-600" title="Supprimer"
                       >
-                        <Trash2 size={13} />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   )}
@@ -2403,7 +2412,7 @@ function DqeTab({ contratId, contrat }) {
 
             {/* Postes */}
             {!isRubCollapsed && (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-line-100">
                 {(rub.postes || []).map((poste) => {
                   const posteMontant = (poste.lignes || []).reduce((s, l) => s + (Number(l.montant) || 0), 0);
                   const isPosteCollapsed = !!collapsedPoste[poste.id];
@@ -2411,17 +2420,17 @@ function DqeTab({ contratId, contrat }) {
                   return (
                     <div key={poste.id}>
                       {/* Header poste */}
-                      <div className="bg-gray-50 px-3 py-2 flex items-center gap-2 pl-6">
-                        <button onClick={() => togglePoste(poste.id)} className="text-gray-600 hover:bg-gray-200 rounded p-0.5">
-                          {isPosteCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+                      <div className="flex items-center gap-2 bg-surface-50 px-3 py-2 pl-6">
+                        <button onClick={() => togglePoste(poste.id)} className="rounded p-0.5 text-ink-500 hover:bg-line-100 hover:text-ink-900">
+                          {isPosteCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                         </button>
 
                         {editPosteId === poste.id ? (
-                          <div className="flex-1 flex items-center gap-2">
+                          <div className="flex flex-1 items-center gap-2">
                             <input
                               value={editPosteForm.numero}
                               onChange={e => setEditPosteForm(s => ({ ...s, numero: e.target.value }))}
-                              className="px-2 py-1 border border-gray-200 rounded text-sm w-20"
+                              className="h-7 w-20 rounded-md border border-line-200 bg-white px-2 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                               placeholder="N° (100)"
                               maxLength={20}
                             />
@@ -2429,39 +2438,39 @@ function DqeTab({ contratId, contrat }) {
                               autoFocus
                               value={editPosteForm.designation}
                               onChange={e => setEditPosteForm(s => ({ ...s, designation: e.target.value }))}
-                              className="flex-1 px-2 py-1 border border-gray-200 rounded text-sm"
+                              className="h-7 flex-1 rounded-md border border-line-200 bg-white px-2 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                             />
-                            <button onClick={() => submitEditPoste(poste.id)} className="px-2 py-1 rounded bg-[#087F3E] text-white text-xs hover:bg-[#076a34]">OK</button>
-                            <button onClick={() => setEditPosteId(null)} className="px-2 py-1 rounded border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">Annuler</button>
+                            <button onClick={() => submitEditPoste(poste.id)} className="inline-flex h-7 items-center rounded-md bg-green-600 px-2 text-xs font-medium text-white hover:bg-green-700">OK</button>
+                            <button onClick={() => setEditPosteId(null)} className="inline-flex h-7 items-center rounded-md border border-line-200 bg-white px-2 text-xs text-ink-900 hover:bg-surface-50">Annuler</button>
                           </div>
                         ) : (
                           <>
-                            <div className="flex-1 font-medium text-gray-700 text-sm">
-                              {poste.numero && <span className="font-mono text-gray-500 mr-1.5">{poste.numero}</span>}
+                            <div className="flex-1 text-[13px] font-medium text-ink-700">
+                              {poste.numero && <span className="mr-1.5 font-mono text-ink-500">{poste.numero}</span>}
                               {poste.designation}
                             </div>
                             {!activeDqeReadonly && (
                               <button
                                 onClick={() => { setAddingLigneFor(poste.id); setCollapsedPoste(s => ({ ...s, [poste.id]: false })); }}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded border border-[#087F3E] text-[#087F3E] text-xs hover:bg-[#087F3E]/10"
+                                className="inline-flex h-7 items-center gap-1 rounded-md border border-green-600 bg-white px-2 text-xs font-medium text-green-600 hover:bg-green-50"
                               >
-                                <Plus size={11} /> Ligne
+                                <Plus className="h-3 w-3" /> Ligne
                               </button>
                             )}
-                            <div className="text-sm font-semibold text-gray-700">{fmtMontantDqe(posteMontant)} FCFA</div>
+                            <div className="text-[13px] font-semibold tabular-nums text-ink-700">{fmtMontantDqe(posteMontant)} FCFA</div>
                             {!activeDqeReadonly && (
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => { setEditPosteId(poste.id); setEditPosteForm({ numero: poste.numero || "", designation: poste.designation }); }}
-                                  className="p-1 rounded hover:bg-gray-200 text-gray-600" title="Modifier"
+                                  className="rounded p-1 text-ink-500 hover:bg-line-100 hover:text-ink-900" title="Modifier"
                                 >
-                                  <Pencil size={12} />
+                                  <Pencil className="h-3 w-3" />
                                 </button>
                                 <button
                                   onClick={() => setConfirmDel({ type: "poste", id: poste.id, label: poste.designation })}
-                                  className="p-1 rounded hover:bg-red-50 text-red-500" title="Supprimer"
+                                  className="rounded p-1 text-ink-400 hover:bg-red-50 hover:text-red-600" title="Supprimer"
                                 >
-                                  <Trash2 size={12} />
+                                  <Trash2 className="h-3 w-3" />
                                 </button>
                               </div>
                             )}
@@ -2471,23 +2480,23 @@ function DqeTab({ contratId, contrat }) {
 
                       {/* Lignes */}
                       {!isPosteCollapsed && (
-                        <div className="pl-10 pr-3 py-2 bg-white">
+                        <div className="bg-white px-3 py-2 pl-10">
                           <table className="w-full text-xs">
                             <thead>
-                              <tr className="text-gray-500 border-b border-gray-100">
-                                <th className="text-left font-medium py-1 w-16">Réf</th>
-                                <th className="text-left font-medium py-1 w-24">N° Item X3</th>
-                                <th className="text-left font-medium py-1">Désignation</th>
-                                <th className="text-left font-medium py-1 w-20">U</th>
-                                <th className="text-right font-medium py-1 w-24">Qté prévue</th>
-                                <th className="text-right font-medium py-1 w-28">PU</th>
-                                <th className="text-right font-medium py-1 w-32">Montant</th>
+                              <tr className="border-b border-line-100 text-ink-500">
+                                <th className="w-16 py-1 text-left text-[11px] font-semibold uppercase tracking-wide">Réf</th>
+                                <th className="w-24 py-1 text-left text-[11px] font-semibold uppercase tracking-wide">N° Item X3</th>
+                                <th className="py-1 text-left text-[11px] font-semibold uppercase tracking-wide">Désignation</th>
+                                <th className="w-20 py-1 text-left text-[11px] font-semibold uppercase tracking-wide">U</th>
+                                <th className="w-24 py-1 text-right text-[11px] font-semibold uppercase tracking-wide">Qté prévue</th>
+                                <th className="w-28 py-1 text-right text-[11px] font-semibold uppercase tracking-wide">PU</th>
+                                <th className="w-32 py-1 text-right text-[11px] font-semibold uppercase tracking-wide">Montant</th>
                                 {!activeDqeReadonly && <th className="w-16"></th>}
                               </tr>
                             </thead>
                             <tbody>
                               {(poste.lignes || []).length === 0 && (
-                                <tr><td colSpan={activeDqeReadonly ? 7 : 8} className="text-center text-gray-400 italic py-2">Aucune ligne</td></tr>
+                                <tr><td colSpan={activeDqeReadonly ? 7 : 8} className="py-2 text-center italic text-ink-400">Aucune ligne</td></tr>
                               )}
                               {(poste.lignes || []).map((ligne, ligneIdx) => (
                                 editLigneId === ligne.id ? (
@@ -2498,89 +2507,89 @@ function DqeTab({ contratId, contrat }) {
                                         if (e.key === "Escape") setEditLigneId(null);
                                       };
                                       return <>
-                                        <td className="py-1 pr-2 w-16">
-                                          <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{ligne.code}</span>
+                                        <td className="w-16 py-1 pr-2">
+                                          <span className="rounded bg-line-100 px-1.5 py-0.5 font-mono text-[10px] text-ink-500">{ligne.code}</span>
                                         </td>
-                                        <td className="py-1 pr-2 w-24">
+                                        <td className="w-24 py-1 pr-2">
                                           <input value={editLigneForm.code_x3 || ""}
                                             onChange={e => setEditLigneForm(s => ({ ...s, code_x3: e.target.value }))}
                                             onKeyDown={handleKey}
                                             placeholder="N° Item X3"
-                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs font-mono" maxLength={30} />
+                                            className="h-7 w-full rounded-md border border-line-200 bg-white px-2 font-mono text-xs text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" maxLength={30} />
                                         </td>
                                         <td className="py-1 pr-2">
                                           <input autoFocus value={editLigneForm.designation}
                                             onChange={e => setEditLigneForm(s => ({ ...s, designation: e.target.value }))}
                                             onKeyDown={handleKey}
-                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs" />
+                                            className="h-7 w-full rounded-md border border-line-200 bg-white px-2 text-xs text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                                         </td>
                                         <td className="pr-2">
                                           <input list="unites-dqe-ligne" value={editLigneForm.unite || ""}
                                             onChange={e => setEditLigneForm(s => ({ ...s, unite: e.target.value.toUpperCase() }))}
                                             onKeyDown={handleKey}
-                                            className="w-20 px-2 py-1 border border-gray-200 rounded text-xs" maxLength={10} />
+                                            className="h-7 w-20 rounded-md border border-line-200 bg-white px-2 text-xs uppercase text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" maxLength={10} />
                                         </td>
                                         <td className="pr-2">
                                           <input type="text" inputMode="decimal" value={editLigneForm.quantite_prevue}
                                             onChange={e => setEditLigneForm(s => ({ ...s, quantite_prevue: e.target.value.replace(/[^0-9.]/g, "") }))}
                                             onKeyDown={handleKey}
-                                            className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                            className="h-7 w-full rounded-md border border-line-200 bg-white px-2 text-right text-xs tabular-nums text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                                         </td>
                                         <td className="pr-2">
                                           {isDT ? (
-                                            <div className="flex items-center gap-1 w-full px-2 py-1 border border-gray-100 rounded text-xs text-right bg-gray-50 text-gray-400 justify-end">
-                                              <Lock size={9} className="shrink-0" />
+                                            <div className="flex h-7 w-full items-center justify-end gap-1 rounded-md border border-line-100 bg-line-100 px-2 text-right text-xs text-ink-400">
+                                              <Lock className="h-2.5 w-2.5 shrink-0" />
                                               <span>{editLigneForm.prix_unitaire || "0"}</span>
                                             </div>
                                           ) : (
                                             <input type="text" inputMode="decimal" value={editLigneForm.prix_unitaire}
                                               onChange={e => setEditLigneForm(s => ({ ...s, prix_unitaire: e.target.value.replace(/[^0-9.]/g, "") }))}
                                               onKeyDown={handleKey}
-                                              className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                              className="h-7 w-full rounded-md border border-line-200 bg-white px-2 text-right text-xs tabular-nums text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                                           )}
                                         </td>
-                                        <td className="text-right pr-2 font-semibold">{fmtMontantDqe(liveEditLigneMontant)}</td>
-                                        <td className="text-[10px] text-gray-400 pl-1">↵ Entrée</td>
+                                        <td className="pr-2 text-right font-semibold tabular-nums">{fmtMontantDqe(liveEditLigneMontant)}</td>
+                                        <td className="pl-1 text-[10px] text-ink-400">↵ Entrée</td>
                                       </>;
                                     })()}
                                   </tr>
                                 ) : (
-                                  <tr key={ligne.id} className={`border-b border-gray-50 hover:bg-gray-50/50 ${ligne.is_bis ? "bg-amber-50/30" : ""}`}>
-                                    <td className="py-1 pr-2 w-16">
+                                  <tr key={ligne.id} className={`border-b border-line-100 transition-colors hover:bg-green-50/60 ${ligne.is_bis ? "bg-amber-50/30" : ""}`}>
+                                    <td className="w-16 py-1 pr-2">
                                       <div className="flex items-center gap-1">
-                                        <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{ligne.code}</span>
-                                        {ligne.is_bis && <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1 py-0.5 rounded">BIS</span>}
-                                        {ligne.est_utilisee && !ligne.is_bis && <span title="Utilisée dans un décompte — toute modification créera une ligne BIS" className="text-[9px] font-bold text-orange-600 bg-orange-100 px-1 py-0.5 rounded cursor-help">EN USE</span>}
+                                        <span className="rounded bg-line-100 px-1.5 py-0.5 font-mono text-[10px] text-ink-500">{ligne.code}</span>
+                                        {ligne.is_bis && <span className="rounded bg-amber-100 px-1 py-0.5 text-[9px] font-bold text-amber-700">BIS</span>}
+                                        {ligne.est_utilisee && !ligne.is_bis && <span title="Utilisée dans un décompte — toute modification créera une ligne BIS" className="cursor-help rounded bg-amber-100 px-1 py-0.5 text-[9px] font-bold text-amber-700">EN USE</span>}
                                       </div>
                                     </td>
-                                    <td className="py-1 pr-2 w-24">
+                                    <td className="w-24 py-1 pr-2">
                                       {ligne.code_x3
-                                        ? <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{ligne.code_x3}</span>
-                                        : <span className="text-[10px] text-gray-300">—</span>}
+                                        ? <span className="rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-green-700">{ligne.code_x3}</span>
+                                        : <span className="text-[10px] text-ink-300">—</span>}
                                     </td>
-                                    <td className="py-1 pr-2">{ligne.designation}</td>
-                                    <td className="pr-2">{ligne.unite || "—"}</td>
-                                    <td className="text-right pr-2">{fmtQte(ligne.quantite_prevue)}</td>
-                                    <td className="text-right pr-2">{fmtMontantDqe(ligne.prix_unitaire)}</td>
-                                    <td className="text-right pr-2 font-medium">{fmtMontantDqe(ligne.montant)}</td>
+                                    <td className="py-1 pr-2 text-ink-900">{ligne.designation}</td>
+                                    <td className="pr-2 text-ink-700">{ligne.unite || "—"}</td>
+                                    <td className="pr-2 text-right tabular-nums text-ink-900">{fmtQte(ligne.quantite_prevue)}</td>
+                                    <td className="pr-2 text-right tabular-nums text-ink-900">{fmtMontantDqe(ligne.prix_unitaire)}</td>
+                                    <td className="pr-2 text-right font-medium tabular-nums text-ink-900">{fmtMontantDqe(ligne.montant)}</td>
                                     <td>
-                                      <div className="flex items-center gap-1 justify-end">
+                                      <div className="flex items-center justify-end gap-1">
                                         <button onClick={() => openHistorique(ligne)}
-                                          className="p-0.5 rounded hover:bg-blue-50 text-blue-400" title="Historique">
-                                          <RotateCcw size={11} />
+                                          className="rounded p-0.5 text-ink-400 hover:bg-green-50 hover:text-green-600" title="Historique">
+                                          <RotateCcw className="h-3 w-3" />
                                         </button>
                                         {!activeDqeReadonly && (<>
                                           <button
                                             onClick={() => { setEditLigneId(ligne.id); setEditLigneForm({ code_x3: ligne.code_x3 || "", designation: ligne.designation, unite: ligne.unite || "", quantite_prevue: ligne.quantite_prevue, prix_unitaire: ligne.prix_unitaire }); }}
-                                            className="p-0.5 rounded hover:bg-gray-200 text-gray-600" title="Modifier"
+                                            className="rounded p-0.5 text-ink-500 hover:bg-line-100 hover:text-ink-900" title="Modifier"
                                           >
-                                            <Pencil size={11} />
+                                            <Pencil className="h-3 w-3" />
                                           </button>
                                           <button
                                             onClick={() => setConfirmDel({ type: "ligne", id: ligne.id, label: ligne.designation })}
-                                            className="p-0.5 rounded hover:bg-red-50 text-red-500" title="Supprimer"
+                                            className="rounded p-0.5 text-ink-400 hover:bg-red-50 hover:text-red-600" title="Supprimer"
                                           >
-                                            <Trash2 size={11} />
+                                            <Trash2 className="h-3 w-3" />
                                           </button>
                                         </>)}
                                       </div>
@@ -2591,27 +2600,27 @@ function DqeTab({ contratId, contrat }) {
 
                               {/* Formulaire ajout ligne inline */}
                               {addingLigneFor === poste.id && !activeDqeReadonly && (
-                                <tr className="bg-[#087F3E]/5">
-                                  <td className="py-1 pr-2 w-16">
-                                    <span className="text-[10px] text-gray-300 italic">auto</span>
+                                <tr className="bg-green-50">
+                                  <td className="w-16 py-1 pr-2">
+                                    <span className="text-[10px] italic text-ink-400">auto</span>
                                   </td>
-                                  <td className="py-1 pr-2 w-24">
+                                  <td className="w-24 py-1 pr-2">
                                     <input value={ligneForm.code_x3}
                                       onChange={e => setLigneForm(s => ({ ...s, code_x3: e.target.value }))}
                                       placeholder="N° Item X3"
-                                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs font-mono" maxLength={30} />
+                                      className="h-7 w-full rounded-md border border-line-200 bg-white px-2 font-mono text-xs text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" maxLength={30} />
                                   </td>
                                   <td className="py-1 pr-2">
                                     <input autoFocus value={ligneForm.designation}
                                       onChange={e => setLigneForm(s => ({ ...s, designation: e.target.value }))}
                                       placeholder="Désignation *"
-                                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs" />
+                                      className="h-7 w-full rounded-md border border-line-200 bg-white px-2 text-xs text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                                   </td>
-                                  <td className="pr-2 w-20">
+                                  <td className="w-20 pr-2">
                                     <input list="unites-dqe-ligne" value={ligneForm.unite}
                                       onChange={e => setLigneForm(s => ({ ...s, unite: e.target.value.toUpperCase() }))}
                                       placeholder="U"
-                                      className="w-20 px-2 py-1 border border-gray-200 rounded text-xs" maxLength={10} />
+                                      className="h-7 w-20 rounded-md border border-line-200 bg-white px-2 text-xs uppercase text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" maxLength={10} />
                                     <datalist id="unites-dqe-ligne">
                                       {["M²","M³","ML","M","T","KG","L","SAC","U","PC","BARRE","H","JOUR","MOIS","FF"].map(u => <option key={u} value={u} />)}
                                     </datalist>
@@ -2620,30 +2629,30 @@ function DqeTab({ contratId, contrat }) {
                                     <input type="text" inputMode="decimal" value={ligneForm.quantite_prevue}
                                       onChange={e => setLigneForm(s => ({ ...s, quantite_prevue: e.target.value.replace(/[^0-9.]/g, "") }))}
                                       placeholder="Qté"
-                                      className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                      className="h-7 w-full rounded-md border border-line-200 bg-white px-2 text-right text-xs tabular-nums text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                                   </td>
                                   <td className="pr-2">
                                     {isDT ? (
-                                      <div className="flex items-center gap-1 w-full px-2 py-1 border border-gray-100 rounded text-xs text-right bg-gray-50 text-gray-400 justify-end" title="DT : quantités uniquement">
-                                        <Lock size={9} className="shrink-0" />
+                                      <div className="flex h-7 w-full items-center justify-end gap-1 rounded-md border border-line-100 bg-line-100 px-2 text-right text-xs text-ink-400" title="DT : quantités uniquement">
+                                        <Lock className="h-2.5 w-2.5 shrink-0" />
                                         <span>DT: qté uniquement</span>
                                       </div>
                                     ) : (
                                       <input type="text" inputMode="decimal" value={ligneForm.prix_unitaire}
                                         onChange={e => setLigneForm(s => ({ ...s, prix_unitaire: e.target.value.replace(/[^0-9.]/g, "") }))}
                                         placeholder="PU"
-                                        className="w-full px-2 py-1 border border-gray-200 rounded text-xs text-right" />
+                                        className="h-7 w-full rounded-md border border-line-200 bg-white px-2 text-right text-xs tabular-nums text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                                     )}
                                   </td>
-                                  <td className="text-right pr-2 font-semibold text-[#087F3E]">{fmtMontantDqe(liveLigneMontant)}</td>
+                                  <td className="pr-2 text-right font-semibold tabular-nums text-green-700">{fmtMontantDqe(liveLigneMontant)}</td>
                                   <td>
-                                    <div className="flex items-center gap-1 justify-end">
+                                    <div className="flex items-center justify-end gap-1">
                                       <button
                                         disabled={saveLigne.isPending || !ligneForm.designation.trim()}
                                         onClick={() => submitAddLigne(poste.id)}
-                                        className="px-1.5 py-0.5 rounded bg-[#087F3E] text-white text-[10px] disabled:opacity-50"
+                                        className="rounded-md bg-green-600 px-1.5 py-0.5 text-[10px] font-medium text-white hover:bg-green-700 disabled:opacity-50"
                                       >OK</button>
-                                      <button onClick={resetAddLigne} className="px-1.5 py-0.5 rounded border border-gray-200 text-[10px] text-gray-600">X</button>
+                                      <button onClick={resetAddLigne} className="rounded-md border border-line-200 bg-white px-1.5 py-0.5 text-[10px] text-ink-700 hover:bg-surface-50">X</button>
                                     </div>
                                   </td>
                                 </tr>
@@ -2665,7 +2674,7 @@ function DqeTab({ contratId, contrat }) {
                           value={posteForm.numero}
                           onChange={e => setPosteForm(s => ({ ...s, numero: e.target.value }))}
                           placeholder="N° (100)"
-                          className="px-2 py-1.5 border border-gray-200 rounded text-sm w-20"
+                          className="h-8 w-20 rounded-md border border-line-200 bg-white px-2 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                           maxLength={20}
                         />
                         <input
@@ -2673,21 +2682,21 @@ function DqeTab({ contratId, contrat }) {
                           value={posteForm.designation}
                           onChange={e => setPosteForm(s => ({ ...s, designation: e.target.value }))}
                           placeholder="Désignation du poste"
-                          className="flex-1 px-2 py-1.5 border border-gray-200 rounded text-sm"
+                          className="h-8 flex-1 rounded-md border border-line-200 bg-white px-2 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                         />
                         <button
                           disabled={savePoste.isPending || !posteForm.designation.trim()}
                           onClick={() => submitAddPoste(rub.id)}
-                          className="px-3 py-1.5 rounded bg-[#087F3E] text-white text-xs font-medium hover:bg-[#076a34] disabled:opacity-50"
+                          className="inline-flex h-8 items-center rounded-md bg-green-600 px-3 text-xs font-medium text-white hover:bg-green-700 active:bg-green-800 disabled:opacity-50"
                         >OK</button>
-                        <button onClick={resetAddPoste} className="px-3 py-1.5 rounded border border-gray-200 text-xs text-gray-600 hover:bg-gray-50">Annuler</button>
+                        <button onClick={resetAddPoste} className="inline-flex h-8 items-center rounded-md border border-line-200 bg-white px-3 text-xs text-ink-900 hover:bg-surface-50 hover:border-ink-300">Annuler</button>
                       </div>
                     ) : (
                       <button
                         onClick={() => setAddingPosteFor(rub.id)}
-                        className="inline-flex items-center gap-1 text-xs text-[#087F3E] hover:underline"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700"
                       >
-                        <Plus size={12} /> Ajouter un poste
+                        <Plus className="h-3 w-3" /> Ajouter un poste
                       </button>
                     )}
                   </div>
