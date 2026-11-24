@@ -1619,7 +1619,7 @@ function BonCommandeTab({ contratId, isNew }) {
 
   if (isNew) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-6 text-sm text-gray-500">
+      <div className="rounded-xl border border-line-200 bg-white p-6 text-[13px] text-ink-500 shadow-xs">
         Enregistrez d'abord le contrat : les bons de commande Sage X3 sont ensuite recherchés avec son chantier et son sous-traitant.
       </div>
     );
@@ -1627,133 +1627,134 @@ function BonCommandeTab({ contratId, isNew }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-sm font-semibold text-gray-800">Bons de commande Sage X3</h3>
-          <p className="text-xs text-gray-400">Récupérés depuis X3 avec le chantier et le sous-traitant du contrat, non modifiables dans STT.</p>
+          <h3 className="text-[13px] font-semibold text-ink-900">Bons de commande Sage X3</h3>
+          <p className="text-[11px] text-ink-500">Récupérés depuis X3 avec le chantier et le sous-traitant du contrat, non modifiables dans STT.</p>
         </div>
         <button
           onClick={handleRechercher}
           disabled={rechercheMut.isPending}
-          className="inline-flex items-center gap-2 text-[#087F3E] border border-[#087F3E]/40 px-3.5 py-2 rounded-lg text-sm font-medium hover:bg-[#E8F5EE] disabled:opacity-60 transition-colors"
+          className="inline-flex h-9 items-center gap-1.5 rounded-md border border-green-600 bg-white px-3 text-[13px] font-medium text-green-600 transition-colors hover:bg-green-50 disabled:opacity-60"
         >
-          {rechercheMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+          {rechercheMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           {rechercheMut.isPending ? "Recherche…" : "Récupérer les BC depuis Sage X3"}
         </button>
       </div>
 
       {/* Résultats de la recherche X3 */}
       {resultats && resultats.length > 0 && (
-        <div className="bg-white rounded-xl border border-[#087F3E]/30 overflow-hidden">
-          <div className="px-4 py-2.5 bg-[#E8F5EE] text-xs text-[#065A2C] font-medium flex items-center justify-between">
+        <div className="overflow-hidden rounded-xl border border-green-300 bg-white shadow-xs">
+          <div className="flex items-center justify-between bg-green-50 px-4 py-2.5 text-xs font-medium text-green-700">
             <span>{resultats.length} bon(s) de commande trouvé(s) dans Sage X3 — cochez ceux à lier au contrat</span>
-            <button onClick={() => setResultats(null)} className="text-gray-500 hover:text-gray-700">Fermer</button>
+            <button onClick={() => setResultats(null)} className="text-ink-500 hover:text-ink-900">Fermer</button>
           </div>
-          <table className="w-full text-sm">
+          <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-gray-100 text-xs text-gray-500 uppercase">
-                <th className="px-3 py-2 w-10"></th>
-                <th className="text-left px-3 py-2">N° BC</th>
-                <th className="text-left px-3 py-2">Date</th>
-                <th className="text-right px-3 py-2">Montant HT</th>
-                <th className="text-right px-3 py-2">Montant TTC</th>
-                <th className="text-left px-3 py-2">Devise</th>
-                <th className="text-left px-3 py-2">Statut X3</th>
+              <tr className="border-b border-line-200">
+                <th className="w-10 px-3 py-2"></th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">N° BC</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Date</th>
+                <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-500">Montant HT</th>
+                <th className="px-3 py-2 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-500">Montant TTC</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Devise</th>
+                <th className="px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Statut X3</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line-100">
               {resultats.map(r => {
                 const dejaLie = r.lie_a_ce_contrat;
                 const bloque  = r.lie_a_autre_contrat;
                 return (
-                  <tr key={r.numero} className={bloque ? "opacity-50" : "hover:bg-gray-50"}>
+                  <tr key={r.numero} className={bloque ? "opacity-50" : "transition-colors hover:bg-green-50/60"}>
                     <td className="px-3 py-2 text-center">
                       <input
                         type="checkbox"
                         checked={selection.includes(r.numero)}
                         disabled={dejaLie || bloque}
                         onChange={() => toggle(r.numero)}
+                        className="accent-green-600"
                       />
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs">
+                    <td className="px-3 py-2 font-mono text-xs text-ink-900">
                       {r.numero}
-                      {dejaLie && <span className="ml-2 text-[10px] text-[#065A2C] bg-[#E8F5EE] px-1.5 py-0.5 rounded">Déjà lié</span>}
-                      {bloque && <span className="ml-2 text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">Lié à un autre contrat</span>}
+                      {dejaLie && <span className="ml-2 rounded border border-green-200 bg-green-50 px-1.5 py-0.5 text-[10px] text-green-700">Déjà lié</span>}
+                      {bloque && <span className="ml-2 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700">Lié à un autre contrat</span>}
                     </td>
-                    <td className="px-3 py-2 text-gray-600">{r.date_commande ? new Date(r.date_commande).toLocaleDateString("fr-FR") : "—"}</td>
-                    <td className="px-3 py-2 text-right font-medium">{fmt(r.montant_ht)}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{fmt(r.montant_ttc)}</td>
-                    <td className="px-3 py-2 text-gray-500">{r.devise ?? "—"}</td>
-                    <td className="px-3 py-2 text-gray-500 text-xs">{r.statut_x3 ?? "—"} · clôt. {r.cloture_x3 ?? "—"} · récep. {r.receptionne_x3 ?? "—"}</td>
+                    <td className="px-3 py-2 text-xs text-ink-500">{r.date_commande ? new Date(r.date_commande).toLocaleDateString("fr-FR") : "—"}</td>
+                    <td className="px-3 py-2 text-right font-medium tabular-nums text-ink-900">{fmt(r.montant_ht)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums text-ink-700">{fmt(r.montant_ttc)}</td>
+                    <td className="px-3 py-2 text-ink-500">{r.devise ?? "—"}</td>
+                    <td className="px-3 py-2 text-xs text-ink-500">{r.statut_x3 ?? "—"} · clôt. {r.cloture_x3 ?? "—"} · récep. {r.receptionne_x3 ?? "—"}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-end gap-3">
-            <button onClick={() => setResultats(null)} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+          <div className="flex items-center justify-end gap-2 border-t border-line-200 px-4 py-3">
+            <button onClick={() => setResultats(null)} className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300">Annuler</button>
             <button
               onClick={handleLier}
               disabled={lierMut.isPending}
-              className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60"
             >
-              {lierMut.isPending ? <><Loader2 size={14} className="animate-spin" /> Enregistrement…</> : "Lier au contrat"}
+              {lierMut.isPending ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Enregistrement…</> : "Lier au contrat"}
             </button>
           </div>
         </div>
       )}
 
       {/* BC liés au contrat */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-line-200 bg-white shadow-xs">
         {isLoading ? (
-          <div className="p-6 text-center text-sm text-gray-400">Chargement…</div>
+          <div className="p-6 text-center text-[13px] text-ink-400">Chargement…</div>
         ) : bcs.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-400">
+          <div className="p-8 text-center text-[13px] text-ink-400">
             Aucun bon de commande lié à ce contrat. Utilisez « Récupérer les BC depuis Sage X3 ».
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full text-[13px]">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase">
-                <th className="text-left px-4 py-2.5">N° BC</th>
-                <th className="text-left px-4 py-2.5">Date</th>
-                <th className="text-right px-4 py-2.5">Montant HT</th>
-                <th className="text-right px-4 py-2.5">TVA</th>
-                <th className="text-right px-4 py-2.5">Montant TTC</th>
-                <th className="text-left px-4 py-2.5">Devise</th>
-                <th className="text-left px-4 py-2.5">Statut X3</th>
-                <th className="px-4 py-2.5 w-24"></th>
+              <tr className="border-b border-line-200 bg-surface-50">
+                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">N° BC</th>
+                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Date</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-500">Montant HT</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-500">TVA</th>
+                <th className="px-4 py-2.5 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-500">Montant TTC</th>
+                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Devise</th>
+                <th className="px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Statut X3</th>
+                <th className="w-24 px-4 py-2.5"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-line-100">
               {bcs.map(b => (
-                <tr key={b.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-2.5 font-mono text-xs">{b.numero}</td>
-                  <td className="px-4 py-2.5 text-gray-600">{b.date_commande ? new Date(b.date_commande).toLocaleDateString("fr-FR") : "—"}</td>
-                  <td className="px-4 py-2.5 text-right font-semibold">{fmt(b.montant_ht)}</td>
-                  <td className="px-4 py-2.5 text-right text-gray-500">{fmt(b.montant_tva)}</td>
-                  <td className="px-4 py-2.5 text-right text-gray-700">{fmt(b.montant_ttc)}</td>
-                  <td className="px-4 py-2.5 text-gray-500">{b.devise ?? "—"}</td>
-                  <td className="px-4 py-2.5 text-gray-500 text-xs">{b.statut_x3 ?? "—"} · clôt. {b.cloture_x3 ?? "—"} · récep. {b.receptionne_x3 ?? "—"}</td>
+                <tr key={b.id} className="transition-colors hover:bg-green-50/60">
+                  <td className="px-4 py-2.5 font-mono text-xs text-ink-900">{b.numero}</td>
+                  <td className="px-4 py-2.5 text-ink-500">{b.date_commande ? new Date(b.date_commande).toLocaleDateString("fr-FR") : "—"}</td>
+                  <td className="px-4 py-2.5 text-right font-semibold tabular-nums text-ink-900">{fmt(b.montant_ht)}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-ink-500">{fmt(b.montant_tva)}</td>
+                  <td className="px-4 py-2.5 text-right tabular-nums text-ink-700">{fmt(b.montant_ttc)}</td>
+                  <td className="px-4 py-2.5 text-ink-500">{b.devise ?? "—"}</td>
+                  <td className="px-4 py-2.5 text-xs text-ink-500">{b.statut_x3 ?? "—"} · clôt. {b.cloture_x3 ?? "—"} · récep. {b.receptionne_x3 ?? "—"}</td>
                   <td className="px-4 py-2.5 text-right">
                     {confirmDelier === b.id ? (
                       <span className="inline-flex items-center gap-2 text-xs">
-                        <button onClick={() => handleDelier(b.id)} disabled={delierMut.isPending} className="text-red-600 font-medium">Détacher</button>
-                        <button onClick={() => setConfirmDelier(null)} className="text-gray-400">Non</button>
+                        <button onClick={() => handleDelier(b.id)} disabled={delierMut.isPending} className="font-medium text-red-600 hover:text-red-700">Détacher</button>
+                        <button onClick={() => setConfirmDelier(null)} className="text-ink-400 hover:text-ink-700">Non</button>
                       </span>
                     ) : (
-                      <button onClick={() => setConfirmDelier(b.id)} className="text-xs text-gray-400 hover:text-red-500">Détacher</button>
+                      <button onClick={() => setConfirmDelier(b.id)} className="text-xs text-ink-400 hover:text-red-600">Détacher</button>
                     )}
                   </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
-              <tr className="bg-gray-50 border-t border-gray-200 font-semibold text-sm">
-                <td className="px-4 py-2.5" colSpan={2}>Total ({bcs.length} BC)</td>
-                <td className="px-4 py-2.5 text-right text-[#065A2C]">{fmt(totalHT)}</td>
+              <tr className="border-t border-line-200 bg-surface-50 text-[13px] font-semibold">
+                <td className="px-4 py-2.5 text-ink-900" colSpan={2}>Total ({bcs.length} BC)</td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-green-700">{fmt(totalHT)}</td>
                 <td className="px-4 py-2.5"></td>
-                <td className="px-4 py-2.5 text-right">{fmt(totalTTC)}</td>
+                <td className="px-4 py-2.5 text-right tabular-nums text-ink-900">{fmt(totalTTC)}</td>
                 <td colSpan={3}></td>
               </tr>
             </tfoot>
@@ -1766,13 +1767,13 @@ function BonCommandeTab({ contratId, isNew }) {
 
 // ─── Sub-tab: Attachements ───────────────────────────────────────
 const STATUT_COLORS_ATT = {
-  "Validé":           "bg-green-100 text-green-700",
-  "Soumis au DACC":   "bg-purple-100 text-purple-700",
-  "Soumis au DT":     "bg-blue-100 text-blue-700",
-  "En rapprochement": "bg-orange-100 text-orange-700",
-  "En cours":         "bg-yellow-100 text-yellow-700",
-  "Ouvert":           "bg-gray-100 text-gray-500",
-  "Rejeté":           "bg-red-100 text-red-700",
+  "Validé":           "bg-green-50 text-green-700 border border-green-200",
+  "Soumis au DACC":   "bg-green-50 text-green-700 border border-green-200",
+  "Soumis au DT":     "bg-surface-50 text-ink-700 border border-line-200",
+  "En rapprochement": "bg-amber-50 text-amber-700 border border-amber-200",
+  "En cours":         "bg-amber-50 text-amber-700 border border-amber-200",
+  "Ouvert":           "bg-surface-50 text-ink-500 border border-line-200",
+  "Rejeté":           "bg-red-50 text-red-700 border border-red-200",
 };
 
 function nextPeriode(contratAtts, dateDebut) {
@@ -1814,39 +1815,39 @@ function AttachementsTab({ contratId, isNew }) {
     .sort((a, b) => (b.periodeDebut ?? "").localeCompare(a.periodeDebut ?? ""));
 
   if (isNew) return (
-    <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer les attachements.</p>
+    <p className="py-8 text-center text-[13px] text-ink-400">Enregistrez le contrat pour gérer les attachements.</p>
   );
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-500">{contratAtts.length} dossier{contratAtts.length !== 1 ? "s" : ""}</p>
+      <p className="text-[13px] text-ink-500">{contratAtts.length} dossier{contratAtts.length !== 1 ? "s" : ""}</p>
 
       {contratAtts.length === 0 ? (
-        <p className="text-center text-gray-400 text-sm py-8">Aucun dossier d'attachement pour ce contrat.</p>
+        <p className="py-8 text-center text-[13px] text-ink-400">Aucun dossier d'attachement pour ce contrat.</p>
       ) : (
-        <table className="w-full text-sm">
+        <table className="w-full text-[13px]">
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Code</th>
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Période</th>
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Statut</th>
-              <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-500 pb-2">Montant</th>
+            <tr className="border-b border-line-200">
+              <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Code</th>
+              <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Période</th>
+              <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Statut</th>
+              <th className="pb-2 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-500">Montant</th>
               <th className="pb-2"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-line-100">
             {contratAtts.map(a => (
-              <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                <td className="py-2.5 pr-3 font-medium text-gray-900">{a.code}</td>
-                <td className="py-2.5 pr-3 text-gray-500 text-xs">{a.periodeDebut} → {a.periodeFin}</td>
+              <tr key={a.id} className="transition-colors hover:bg-green-50/60">
+                <td className="py-2.5 pr-3 font-medium text-ink-900">{a.code}</td>
+                <td className="py-2.5 pr-3 text-xs text-ink-500">{a.periodeDebut} → {a.periodeFin}</td>
                 <td className="py-2.5 pr-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${STATUT_COLORS_ATT[a.statut] ?? "bg-gray-100 text-gray-500"}`}>{a.statut}</span>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUT_COLORS_ATT[a.statut] ?? "bg-surface-50 text-ink-500 border border-line-200"}`}>{a.statut}</span>
                 </td>
-                <td className="py-2.5 text-right tabular-nums text-gray-700 text-xs">
+                <td className="py-2.5 text-right text-xs tabular-nums text-ink-700">
                   {a.montantFinal != null ? `${numFmt(a.montantFinal)} FCFA` : "—"}
                 </td>
                 <td className="py-2.5 text-right">
-                  <button onClick={() => navigate(`/attachements/${a.id}`)} className="text-xs text-[#087F3E] hover:underline">Voir</button>
+                  <button onClick={() => navigate(`/attachements/${a.id}`)} className="text-xs font-medium text-green-600 hover:text-green-700">Voir</button>
                 </td>
               </tr>
             ))}
@@ -3416,11 +3417,11 @@ export default function ContratFormPage() {
 
           {/* Tab: Factures — placeholder (no contrat_id filter in factureService list) */}
           {activeTab === "factures" && (
-            <div className="text-center py-12 text-gray-400 text-sm">
-              <p className="text-3xl mb-3">🧮</p>
-              <p className="font-medium text-gray-500">Factures</p>
-              <p className="text-xs mt-1 text-gray-400">Consultez la liste des factures pour ce contrat.</p>
-              <Link to="/factures" className="mt-3 inline-block text-xs text-[#087F3E] hover:underline">
+            <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-line-200 py-14 text-center">
+              <Hash className="h-6 w-6 text-ink-300" strokeWidth={1.5} />
+              <p className="text-[13px] font-medium text-ink-700">Factures</p>
+              <p className="max-w-sm text-xs text-ink-500">Consultez la liste des factures pour ce contrat.</p>
+              <Link to="/factures" className="mt-2 text-xs font-medium text-green-600 hover:text-green-700">
                 Voir toutes les factures →
               </Link>
             </div>
