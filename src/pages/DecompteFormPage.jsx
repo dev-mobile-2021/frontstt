@@ -487,89 +487,89 @@ function InfoPanel({ decompte, circuit }) {
   return (
     <div className="space-y-4">
       {/* Infos clés */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
-        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Informations</h3>
-        <div className="space-y-2 text-sm">
-          <div><p className="text-xs text-gray-400">Code</p><p className="font-mono font-semibold text-gray-900">{d.code}</p></div>
-          <div><p className="text-xs text-gray-400">Type</p><p className="text-gray-700">{TYPE_LABELS[d.type] ?? d.type}</p></div>
-          <div><p className="text-xs text-gray-400">Période</p><p className="text-gray-700">{fmtD(d.date_debut)} → {fmtD(d.date_fin)}</p></div>
-          <div><p className="text-xs text-gray-400">Étape validation</p>
-            <p className="text-gray-700">{nbEtapesDone}/{etapes.length} {lastStatut && d.statut === lastStatut ? "(approuvé)" : ""}</p>
+      <div className="space-y-3 rounded-xl border border-line-200 bg-white p-5 shadow-xs">
+        <h3 className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Informations</h3>
+        <div className="space-y-2 text-[13px]">
+          <div><p className="text-[11px] text-ink-500">Code</p><p className="font-mono font-semibold text-ink-900">{d.code}</p></div>
+          <div><p className="text-[11px] text-ink-500">Type</p><p className="text-ink-700">{TYPE_LABELS[d.type] ?? d.type}</p></div>
+          <div><p className="text-[11px] text-ink-500">Période</p><p className="text-ink-700">{fmtD(d.date_debut)} → {fmtD(d.date_fin)}</p></div>
+          <div><p className="text-[11px] text-ink-500">Étape validation</p>
+            <p className="text-ink-700">{nbEtapesDone}/{etapes.length} {lastStatut && d.statut === lastStatut ? "(approuvé)" : ""}</p>
           </div>
         </div>
-        <div className="border-t border-gray-100 pt-3 space-y-1.5">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Montants clés</p>
-          <div className="flex justify-between text-sm"><span className="text-gray-500">Travaux exécutés</span><span className="font-semibold">{num(postes.A?.cumulM ?? d.montant_brut)} FCFA</span></div>
-          <div className="flex justify-between text-sm"><span className="text-gray-500">RG + AD</span><span className="text-red-600">−{num((postes.D?.cumulM ?? 0) + (postes.C?.cumulM ?? 0))} FCFA</span></div>
+        <div className="space-y-1.5 border-t border-line-100 pt-3">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Montants clés</p>
+          <div className="flex justify-between text-[13px]"><span className="text-ink-500">Travaux exécutés</span><span className="font-semibold tabular-nums text-ink-900">{num(postes.A?.cumulM ?? d.montant_brut)} FCFA</span></div>
+          <div className="flex justify-between text-[13px]"><span className="text-ink-500">RG + AD</span><span className="tabular-nums text-red-600">−{num((postes.D?.cumulM ?? 0) + (postes.C?.cumulM ?? 0))} FCFA</span></div>
           {sit?.montant_en_validation > 0 && (
-            <div className="flex justify-between text-sm"><span className="text-gray-500">Cessions</span><span className="text-gray-600">{num(postes.G?.cumulM ?? 0)} FCFA</span></div>
+            <div className="flex justify-between text-[13px]"><span className="text-ink-500">Cessions</span><span className="tabular-nums text-ink-700">{num(postes.G?.cumulM ?? 0)} FCFA</span></div>
           )}
-          <div className="flex justify-between text-sm font-bold border-t pt-2 mt-1"><span>Net TTC</span><span className="text-[#087F3E]">{num(d.montant_ttc)} FCFA</span></div>
+          <div className="mt-1 flex justify-between border-t border-line-100 pt-2 text-[13px] font-bold"><span className="text-ink-900">Net TTC</span><span className="tabular-nums text-green-700">{num(d.montant_ttc)} FCFA</span></div>
         </div>
       </div>
 
       {/* Marché */}
       {contrat && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Marché</h3>
-          <div className="space-y-1.5 text-sm">
-            <div className="flex justify-between"><span className="text-gray-500">Montant initial</span><span>{num(contrat.montant_initial)} FCFA</span></div>
+        <div className="space-y-3 rounded-xl border border-line-200 bg-white p-5 shadow-xs">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Marché</h3>
+          <div className="space-y-1.5 text-[13px]">
+            <div className="flex justify-between"><span className="text-ink-500">Montant initial</span><span className="tabular-nums text-ink-900">{num(contrat.montant_initial)} FCFA</span></div>
             {(contrat.avenants ?? []).map((a, i) => (
-              <div key={i} className="flex justify-between text-violet-600 text-xs">
-                <span>{a.code}</span><span>{a.montant >= 0 ? "+" : ""}{num(a.montant)} FCFA</span>
+              <div key={i} className="flex justify-between text-xs text-green-700">
+                <span className="font-mono">{a.code}</span><span className="tabular-nums">{a.montant >= 0 ? "+" : ""}{num(a.montant)} FCFA</span>
               </div>
             ))}
-            <div className="flex justify-between font-semibold border-t pt-1.5 text-[#087F3E]">
-              <span>Montant actualisé</span><span>{num(montantActuel)} FCFA</span>
+            <div className="flex justify-between border-t border-line-100 pt-1.5 font-semibold text-green-700">
+              <span>Montant actualisé</span><span className="tabular-nums">{num(montantActuel)} FCFA</span>
             </div>
-            {sit && <div className="flex justify-between text-sm"><span className="text-gray-500">Solde du bon de commande</span><span className="font-medium">{num(sit.solde_bc)} FCFA</span></div>}
+            {sit && <div className="flex justify-between text-[13px]"><span className="text-ink-500">Solde du bon de commande</span><span className="font-medium tabular-nums text-ink-900">{num(sit.solde_bc)} FCFA</span></div>}
           </div>
-          <Link to={`/contrats/${d.contrat_id}`} className="text-xs text-[#087F3E] hover:underline">Voir le contrat {contrat.code} →</Link>
+          <Link to={`/contrats/${d.contrat_id}`} className="text-xs font-medium text-green-600 hover:text-green-700">Voir le contrat {contrat.code} →</Link>
         </div>
       )}
 
       {/* Situation financière */}
       {sit && montantActuel > 0 && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Situation financière</h3>
-          <div className="text-xs text-gray-500 mb-1">{num(montantActuel)} FCFA · {sit.pct_realise ?? 0}% réalisé</div>
-          <div className="h-3 rounded-full bg-gray-100 overflow-hidden flex">
-            <div className="bg-emerald-500 transition-all" style={{ width: `${pctPaye}%` }} title={`Payé : ${num(sit.montant_paye)} FCFA`} />
-            <div className="bg-blue-400 transition-all" style={{ width: `${pctAppr}%` }} title={`Approuvé : ${num(sit.montant_approuve)} FCFA`} />
-            <div className="bg-amber-300 transition-all" style={{ width: `${pctEnVal}%` }} title={`En validation : ${num(sit.montant_en_validation)} FCFA`} />
+        <div className="space-y-3 rounded-xl border border-line-200 bg-white p-5 shadow-xs">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Situation financière</h3>
+          <div className="mb-1 text-xs text-ink-500">{num(montantActuel)} FCFA · {sit.pct_realise ?? 0}% réalisé</div>
+          <div className="flex h-3 overflow-hidden rounded-full bg-line-100">
+            <div className="bg-green-600 transition-all" style={{ width: `${pctPaye}%` }} title={`Payé : ${num(sit.montant_paye)} FCFA`} />
+            <div className="bg-green-400 transition-all" style={{ width: `${pctAppr}%` }} title={`Approuvé : ${num(sit.montant_approuve)} FCFA`} />
+            <div className="bg-amber-400 transition-all" style={{ width: `${pctEnVal}%` }} title={`En validation : ${num(sit.montant_en_validation)} FCFA`} />
           </div>
-          <div className="flex gap-3 text-xs flex-wrap">
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />Payé</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-blue-400 inline-block" />Approuvé</span>
-            <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-300 inline-block" />En validation</span>
+          <div className="flex flex-wrap gap-3 text-xs text-ink-700">
+            <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full bg-green-600" />Payé</span>
+            <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full bg-green-400" />Approuvé</span>
+            <span className="flex items-center gap-1"><span className="inline-block h-2.5 w-2.5 rounded-full bg-amber-400" />En validation</span>
           </div>
-          <div className="space-y-1 text-sm pt-1 border-t border-gray-100">
-            <div className="flex justify-between"><span className="text-gray-500">Payé</span><span className="font-medium text-emerald-700">{num(sit.montant_paye)} FCFA</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">Approuvé (à payer)</span><span className="font-medium text-blue-700">{num(sit.montant_approuve)} FCFA</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">En cours de validation</span><span className="font-medium text-amber-700">{num(sit.montant_en_validation)} FCFA</span></div>
-            <div className="flex justify-between font-semibold border-t pt-1 mt-1"><span>Solde restant</span><span>{num(sit.solde_bc)} FCFA</span></div>
+          <div className="space-y-1 border-t border-line-100 pt-1 text-[13px]">
+            <div className="flex justify-between"><span className="text-ink-500">Payé</span><span className="font-medium tabular-nums text-green-700">{num(sit.montant_paye)} FCFA</span></div>
+            <div className="flex justify-between"><span className="text-ink-500">Approuvé (à payer)</span><span className="font-medium tabular-nums text-green-600">{num(sit.montant_approuve)} FCFA</span></div>
+            <div className="flex justify-between"><span className="text-ink-500">En cours de validation</span><span className="font-medium tabular-nums text-amber-700">{num(sit.montant_en_validation)} FCFA</span></div>
+            <div className="mt-1 flex justify-between border-t border-line-100 pt-1 font-semibold"><span className="text-ink-900">Solde restant</span><span className="tabular-nums text-ink-900">{num(sit.solde_bc)} FCFA</span></div>
           </div>
         </div>
       )}
 
       {/* Retenues cumulées */}
       {sit && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 space-y-3">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Retenues cumulées</h3>
+        <div className="space-y-3 rounded-xl border border-line-200 bg-white p-5 shadow-xs">
+          <h3 className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Retenues cumulées</h3>
           <div className="space-y-3">
             <div>
-              <div className="flex justify-between text-sm mb-0.5">
-                <span className="text-gray-500">Retenue de garantie (5%)</span>
-                <span className="font-semibold">{num(sit.retenue_cumulee)} FCFA</span>
+              <div className="mb-0.5 flex justify-between text-[13px]">
+                <span className="text-ink-500">Retenue de garantie (5%)</span>
+                <span className="font-semibold tabular-nums text-ink-900">{num(sit.retenue_cumulee)} FCFA</span>
               </div>
-              {montantActuel > 0 && <p className="text-[10px] text-gray-400">{((sit.retenue_cumulee / montantActuel) * 100).toFixed(1)}% du marché actualisé</p>}
+              {montantActuel > 0 && <p className="text-[10px] text-ink-500">{((sit.retenue_cumulee / montantActuel) * 100).toFixed(1)}% du marché actualisé</p>}
             </div>
             <div>
-              <div className="flex justify-between text-sm mb-0.5">
-                <span className="text-gray-500">Avance démarrage (15%)</span>
-                <span className="font-semibold">{num(sit.avance_cumulee)} FCFA</span>
+              <div className="mb-0.5 flex justify-between text-[13px]">
+                <span className="text-ink-500">Avance démarrage (15%)</span>
+                <span className="font-semibold tabular-nums text-ink-900">{num(sit.avance_cumulee)} FCFA</span>
               </div>
-              {montantActuel > 0 && <p className="text-[10px] text-gray-400">{((sit.avance_cumulee / montantActuel) * 100).toFixed(1)}% du marché actualisé</p>}
+              {montantActuel > 0 && <p className="text-[10px] text-ink-500">{((sit.avance_cumulee / montantActuel) * 100).toFixed(1)}% du marché actualisé</p>}
             </div>
           </div>
         </div>
@@ -577,18 +577,18 @@ function InfoPanel({ decompte, circuit }) {
 
       {/* Stats décomptes */}
       {sit && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Décomptes</h3>
-          <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="rounded-xl border border-line-200 bg-white p-5 shadow-xs">
+          <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Décomptes</h3>
+          <div className="grid grid-cols-2 gap-2 text-[13px]">
             {[
               { label: "Total", val: sit.total },
-              { label: "Payés", val: sit.payes, color: "text-emerald-700" },
+              { label: "Payés", val: sit.payes, color: "text-green-700" },
               { label: "En validation", val: sit.en_validation, color: "text-amber-700" },
-              { label: "Brouillons", val: sit.brouillons, color: "text-gray-500" },
+              { label: "Brouillons", val: sit.brouillons, color: "text-ink-500" },
             ].map(({ label, val, color }) => (
-              <div key={label} className="flex justify-between border-b border-gray-50 pb-1">
-                <span className="text-gray-500">{label}</span>
-                <span className={`font-semibold ${color ?? "text-gray-800"}`}>{val}</span>
+              <div key={label} className="flex justify-between border-b border-line-100 pb-1">
+                <span className="text-ink-500">{label}</span>
+                <span className={cn("font-semibold tabular-nums", color ?? "text-ink-900")}>{val}</span>
               </div>
             ))}
           </div>
