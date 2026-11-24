@@ -617,42 +617,42 @@ function PosteLigne({ code, type, label, taux, cumulM1, mensuelM, cumulM, editab
   const isMinus = type === "minus";
 
   const badge = {
-    "plus":  <span className="w-4 h-4 rounded bg-green-100 text-green-600 text-[9px] flex items-center justify-center font-bold flex-shrink-0">+</span>,
-    "minus": <span className="w-4 h-4 rounded bg-red-100 text-red-500 text-[9px] flex items-center justify-center font-bold flex-shrink-0">−</span>,
-    "info":  <span className="w-4 h-4 rounded bg-blue-100 text-blue-500 text-[9px] flex items-center justify-center font-bold flex-shrink-0">i</span>,
+    "plus":  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-green-100 text-[9px] font-bold text-green-700">+</span>,
+    "minus": <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-red-50 text-[9px] font-bold text-red-600">−</span>,
+    "info":  <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded bg-surface-50 text-[9px] font-bold text-ink-500">i</span>,
   }[type] ?? null;
 
-  const valColor = isInfo ? "text-gray-400 italic" : isMinus ? "text-red-600" : "text-gray-800 font-medium";
+  const valColor = isInfo ? "italic text-ink-500" : isMinus ? "text-red-600" : "font-medium text-ink-900";
 
   return (
     <>
-      <tr className="border-b border-gray-50 hover:bg-gray-50/60 group">
-        <td className="px-4 py-2.5 w-12">
-          <span className="text-xs font-bold text-gray-400">{code}</span>
+      <tr className="group border-b border-line-100 hover:bg-surface-50">
+        <td className="w-12 px-4 py-2.5">
+          <span className="text-xs font-bold text-ink-500">{code}</span>
         </td>
         <td className="px-2 py-2.5">
           <div className="flex items-start gap-2">
             {badge}
             <div>
-              <span className="text-sm text-gray-800">{label}</span>
-              {taux && <span className="ml-2 text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{taux}%</span>}
-              {extra  && <p className="text-[10px] text-gray-400 mt-0.5">{extra}</p>}
-              {extra2 && <p className="text-[10px] text-gray-400">{extra2}</p>}
+              <span className="text-[13px] text-ink-900">{label}</span>
+              {taux && <span className="ml-2 rounded bg-line-100 px-1.5 py-0.5 text-[10px] text-ink-500">{taux}%</span>}
+              {extra  && <p className="mt-0.5 text-[10px] text-ink-500">{extra}</p>}
+              {extra2 && <p className="text-[10px] text-ink-500">{extra2}</p>}
             </div>
           </div>
         </td>
-        <td className="px-3 py-2.5 text-right text-xs text-gray-300 w-32 tabular-nums">
+        <td className="w-32 px-3 py-2.5 text-right text-xs tabular-nums text-ink-300">
           {cumulM1 != null && cumulM1 !== 0 ? num(cumulM1) : "—"}
         </td>
-        <td className="px-3 py-2.5 text-right text-sm w-32 tabular-nums text-gray-500 italic">
+        <td className="w-32 px-3 py-2.5 text-right text-[13px] italic tabular-nums text-ink-500">
           {mensuelM != null ? (mensuelM !== 0 ? num(mensuelM) : "0") : "—"}
         </td>
-        <td className={`px-4 py-2.5 text-right text-sm w-36 tabular-nums ${valColor}`}>
+        <td className={cn("w-36 px-4 py-2.5 text-right text-[13px] tabular-nums", valColor)}>
           {editable && !isInfo ? (
             <input
               type="number" min={0} value={cumulM ?? 0}
               onChange={e => onChange && onChange(parseFloat(e.target.value) || 0)}
-              className="w-full text-right px-2 py-1 rounded-lg border border-blue-200 bg-blue-50 text-blue-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 tabular-nums"
+              className="w-full rounded-md border border-green-200 bg-green-50 px-2 py-1 text-right text-[13px] font-medium tabular-nums text-green-800 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
             />
           ) : (
             cumulM != null ? (cumulM === 0 ? "0" : num(cumulM)) : "—"
@@ -667,18 +667,18 @@ function PosteLigne({ code, type, label, taux, cumulM1, mensuelM, cumulM, editab
 // Sous-ligne de détail (indentée, lecture seule)
 function SousLigne({ label, cumulM1, mensuelM, cumulM, highlight }) {
   return (
-    <tr className="bg-gray-50/70 border-b border-gray-50">
-      <td className="px-4 py-1.5 w-12" />
+    <tr className="border-b border-line-100 bg-surface-50/70">
+      <td className="w-12 px-4 py-1.5" />
       <td className="px-2 py-1.5 pl-8">
-        <span className="text-[11px] text-gray-500">└ {label}</span>
+        <span className="text-[11px] text-ink-500">└ {label}</span>
       </td>
-      <td className="px-3 py-1.5 text-right text-[11px] text-gray-400 tabular-nums">
+      <td className="px-3 py-1.5 text-right text-[11px] tabular-nums text-ink-400">
         {cumulM1 != null && cumulM1 !== 0 ? num(cumulM1) : "—"}
       </td>
-      <td className="px-3 py-1.5 text-right text-[11px] text-gray-400 tabular-nums">
+      <td className="px-3 py-1.5 text-right text-[11px] tabular-nums text-ink-400">
         {mensuelM != null && mensuelM !== 0 ? num(mensuelM) : "—"}
       </td>
-      <td className={`px-4 py-1.5 text-right text-[11px] tabular-nums ${highlight ? "text-amber-600 font-semibold" : "text-gray-400"}`}>
+      <td className={cn("px-4 py-1.5 text-right text-[11px] tabular-nums", highlight ? "font-semibold text-amber-600" : "text-ink-400")}>
         {cumulM != null && cumulM !== 0 ? `⚡${num(cumulM)}` : "0"}
       </td>
     </tr>
@@ -703,72 +703,72 @@ function PosteLigneA({ lignes, cumulM1, cumulM, mensuelM, canEdit, onChange, att
 
   return (
     <>
-      <tr className="border-b border-gray-100 hover:bg-gray-50/50">
-        <td className="px-4 py-2.5 w-12">
+      <tr className="border-b border-line-100 hover:bg-surface-50">
+        <td className="w-12 px-4 py-2.5">
           <div className="flex items-center gap-1">
-            <span className="text-xs font-bold text-gray-500 w-4">A</span>
+            <span className="w-4 text-xs font-bold text-ink-500">A</span>
             {hasLines && (
-              <button onClick={() => setOpen(o => !o)} className="text-gray-400 hover:text-[#087F3E] transition-colors">
-                {open ? <ChevronDown size={13}/> : <ChevronRight size={13}/>}
+              <button onClick={() => setOpen(o => !o)} className="text-ink-400 transition-colors hover:text-green-600">
+                {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
               </button>
             )}
           </div>
         </td>
         <td className="px-2 py-2.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-gray-800">Travaux exécutés</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[13px] font-medium text-ink-900">Travaux exécutés</span>
             {attachementCode && (
               attachementId
-                ? <Link to={`/attachements/${attachementId}`} target="_blank" className="text-[10px] text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded font-mono hover:underline">{attachementCode} ↗</Link>
-                : <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-mono">{attachementCode}</span>
+                ? <Link to={`/attachements/${attachementId}`} target="_blank" className="rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] text-green-700 hover:underline">{attachementCode} ↗</Link>
+                : <span className="rounded bg-line-100 px-1.5 py-0.5 font-mono text-[10px] text-ink-500">{attachementCode}</span>
             )}
             {hasLines ? (
-              <button onClick={() => setOpen(o => !o)} className="text-[10px] text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded hover:bg-[#087F3E]/20 transition-colors">
+              <button onClick={() => setOpen(o => !o)} className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] text-green-700 transition-colors hover:bg-green-200">
                 {open ? "▲" : "▼"} {lignes.length} ligne{lignes.length > 1 ? "s" : ""}
               </button>
             ) : attachementCode ? (
-              <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">Enregistrer pour charger les lignes</span>
+              <span className="rounded bg-green-50 px-1.5 py-0.5 text-[10px] text-green-700">Enregistrer pour charger les lignes</span>
             ) : (
-              <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">Aucun attachement validé</span>
+              <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-700">Aucun attachement validé</span>
             )}
           </div>
         </td>
-        <td className="px-3 py-2.5 text-right text-sm tabular-nums text-gray-600">{num(cumulM1)}</td>
-        <td className="px-3 py-2.5 text-right text-sm tabular-nums text-gray-800">{num(mensuelM)}</td>
-        <td className="px-4 py-2.5 text-right text-sm font-semibold tabular-nums text-gray-900">{num(cumulM)}</td>
+        <td className="px-3 py-2.5 text-right text-[13px] tabular-nums text-ink-500">{num(cumulM1)}</td>
+        <td className="px-3 py-2.5 text-right text-[13px] tabular-nums text-ink-900">{num(mensuelM)}</td>
+        <td className="px-4 py-2.5 text-right text-[13px] font-semibold tabular-nums text-ink-900">{num(cumulM)}</td>
       </tr>
 
       {open && hasLines && (
         <tr>
           <td colSpan={5} className="p-0">
-            <div className="border-b border-[#087F3E]/20 bg-[#087F3E]/5">
+            <div className="border-b border-green-200 bg-green-50/40">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="bg-[#087F3E]/10 text-[10px] text-[#087F3E] uppercase tracking-wide font-semibold">
-                    <th className="px-4 py-2 text-left w-24">Réf</th>
+                  <tr className="bg-green-100 text-[10px] font-semibold uppercase tracking-wide text-green-700">
+                    <th className="w-24 px-4 py-2 text-left">Réf</th>
                     <th className="px-2 py-2 text-left">Désignation</th>
-                    <th className="px-2 py-2 text-center w-10">U</th>
-                    <th className="px-2 py-2 text-right w-28">PU HT</th>
-                    <th className="px-2 py-2 text-right w-24">Cum. M-1</th>
-                    <th className="px-2 py-2 text-right w-28 text-blue-600">Cum. M {canEdit && "✎"}</th>
-                    <th className="px-2 py-2 text-right w-20">Partiel</th>
-                    <th className="px-4 py-2 text-right w-32">Montant HT</th>
+                    <th className="w-10 px-2 py-2 text-center">U</th>
+                    <th className="w-28 px-2 py-2 text-right">PU HT</th>
+                    <th className="w-24 px-2 py-2 text-right">Cum. M-1</th>
+                    <th className="w-28 px-2 py-2 text-right">Cum. M {canEdit && "✎"}</th>
+                    <th className="w-20 px-2 py-2 text-right">Partiel</th>
+                    <th className="w-32 px-4 py-2 text-right">Montant HT</th>
                   </tr>
                 </thead>
                 <tbody>
                   {lignes.map((l, idx) => (
-                    <tr key={idx} className={`border-b border-[#087F3E]/10 ${l.partiel < 0 ? "bg-orange-50" : "hover:bg-[#087F3E]/5"}`}>
+                    <tr key={idx} className={cn("border-b border-green-200/50", l.partiel < 0 ? "bg-amber-50" : "hover:bg-green-50")}>
                       <td className="px-4 py-1.5">
                         {l.refDQEX3
-                          ? <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{l.refDQEX3}</span>
+                          ? <span className="rounded bg-green-100 px-1.5 py-0.5 font-mono text-[10px] font-semibold text-green-700">{l.refDQEX3}</span>
                           : l.refDQE
-                            ? <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{l.refDQE}</span>
-                            : <span className="text-gray-300">—</span>}
+                            ? <span className="rounded bg-line-100 px-1.5 py-0.5 font-mono text-[10px] text-ink-500">{l.refDQE}</span>
+                            : <span className="text-ink-300">—</span>}
                       </td>
-                      <td className="px-2 py-1.5 text-gray-700 max-w-xs truncate">{l.designation}</td>
-                      <td className="px-2 py-1.5 text-center text-gray-500">{l.unite}</td>
-                      <td className="px-2 py-1.5 text-right tabular-nums text-gray-600">{num(l.pu)}</td>
-                      <td className="px-2 py-1.5 text-right tabular-nums text-gray-400">{l.qteCumuleeM1 ?? 0}</td>
+                      <td className="max-w-xs truncate px-2 py-1.5 text-ink-900">{l.designation}</td>
+                      <td className="px-2 py-1.5 text-center text-ink-500">{l.unite}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums text-ink-700">{num(l.pu)}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums text-ink-400">{l.qteCumuleeM1 ?? 0}</td>
                       <td className="px-2 py-1.5 text-right">
                         {canEdit ? (
                           <input
@@ -777,26 +777,26 @@ function PosteLigneA({ lignes, cumulM1, cumulM, mensuelM, canEdit, onChange, att
                             step="any"
                             value={l.qteCumuleeM ?? 0}
                             onChange={e => handleQteChange(idx, e.target.value)}
-                            className="w-24 text-right px-1.5 py-0.5 rounded border border-blue-200 bg-white text-blue-800 font-medium focus:outline-none focus:ring-1 focus:ring-blue-300 text-xs"
+                            className="w-24 rounded-md border border-green-200 bg-white px-1.5 py-0.5 text-right text-xs font-medium text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                           />
                         ) : (
                           <span className="tabular-nums">{l.qteCumuleeM ?? 0}</span>
                         )}
                       </td>
-                      <td className={`px-2 py-1.5 text-right tabular-nums font-medium ${l.partiel < 0 ? "text-orange-600" : "text-gray-700"}`}>
+                      <td className={cn("px-2 py-1.5 text-right font-medium tabular-nums", l.partiel < 0 ? "text-amber-700" : "text-ink-900")}>
                         {l.partiel ?? 0}
-                        {l.partiel < 0 && <span className="ml-1 text-orange-400" title="Partiel négatif">⚠</span>}
+                        {l.partiel < 0 && <span className="ml-1 text-amber-500" title="Partiel négatif">⚠</span>}
                       </td>
-                      <td className="px-4 py-1.5 text-right tabular-nums font-semibold text-gray-800 whitespace-nowrap">
+                      <td className="whitespace-nowrap px-4 py-1.5 text-right font-semibold tabular-nums text-ink-900">
                         {num(l.montant)} FCFA
                       </td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr className="bg-[#087F3E]/10 font-bold">
-                    <td colSpan={7} className="px-4 py-2 text-right text-xs text-[#087F3E]">Total Poste A</td>
-                    <td className="px-4 py-2 text-right tabular-nums text-[#087F3E] whitespace-nowrap">{num(cumulM)} FCFA</td>
+                  <tr className="bg-green-100 font-bold">
+                    <td colSpan={7} className="px-4 py-2 text-right text-xs text-green-700">Total Poste A</td>
+                    <td className="whitespace-nowrap px-4 py-2 text-right tabular-nums text-green-700">{num(cumulM)} FCFA</td>
                   </tr>
                 </tfoot>
               </table>
