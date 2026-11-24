@@ -224,93 +224,94 @@ function ParametrageFinancierTab({ contrat, avenants }) {
     }
   };
 
-  const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none transition-all";
+  const inputCls = "h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100 transition-colors";
+  const labelCls = "block text-[11px] font-medium uppercase tracking-wide text-ink-500";
 
   return (
     <div className="space-y-6">
       {/* Montants */}
       <div>
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Valeur contractuelle</h3>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Montant initial HT</p>
-            <p className="text-lg font-bold text-gray-900">{fmt(montantInitial)} FCFA</p>
+        <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Valeur contractuelle</h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-line-200 bg-white p-4 shadow-xs">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-500">Montant initial HT</p>
+            <p className="text-lg font-bold tabular-nums text-ink-900">{fmt(montantInitial)} FCFA</p>
           </div>
-          <div className={`border rounded-xl p-4 ${totalAvenants !== 0 ? "bg-violet-50 border-violet-200" : "bg-gray-50 border-gray-200"}`}>
-            <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">
+          <div className={`rounded-xl border p-4 shadow-xs ${totalAvenants !== 0 ? "border-green-200 bg-green-50" : "border-line-200 bg-white"}`}>
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-500">
               Avenants validés
-              {avenatsValides.length > 0 && <span className="ml-1 text-violet-600">({avenatsValides.length})</span>}
+              {avenatsValides.length > 0 && <span className="ml-1 text-green-700">({avenatsValides.length})</span>}
             </p>
-            <p className={`text-lg font-bold ${totalAvenants > 0 ? "text-violet-700" : totalAvenants < 0 ? "text-red-600" : "text-gray-400"}`}>
+            <p className={`text-lg font-bold tabular-nums ${totalAvenants > 0 ? "text-green-700" : totalAvenants < 0 ? "text-red-600" : "text-ink-400"}`}>
               {totalAvenants >= 0 ? "+" : ""}{fmt(totalAvenants)} FCFA
             </p>
           </div>
-          <div className="bg-[#E8F5EE] border border-[#087F3E]/30 rounded-xl p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Montant HT actualisé</p>
-            <p className="text-lg font-bold text-[#087F3E]">{fmt(montantActuel)} FCFA</p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Valeur contractuelle courante</p>
+          <div className="rounded-xl border border-green-200 bg-green-50 p-4 shadow-xs">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-green-700">Montant HT actualisé</p>
+            <p className="text-lg font-bold tabular-nums text-green-700">{fmt(montantActuel)} FCFA</p>
+            <p className="mt-0.5 text-[10px] text-ink-500">Valeur contractuelle courante</p>
           </div>
         </div>
       </div>
 
       {/* Conditions financières éditables */}
       <div>
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Conditions financières</h3>
-        <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Retenue de garantie (%)</label>
+        <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Conditions financières</h3>
+        <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className={labelCls}>Retenue de garantie (%)</label>
             <input type="number" step="0.01" value={fin.taux_rg} onChange={e => set("taux_rg", e.target.value)} className={inputCls} />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">TVA (%)</label>
+          <div className="space-y-1.5">
+            <label className={labelCls}>TVA (%)</label>
             <input type="number" step="0.01" value={fin.taux_tva} onChange={e => set("taux_tva", e.target.value)} className={inputCls} />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Révision de prix (%)</label>
+          <div className="space-y-1.5">
+            <label className={labelCls}>Révision de prix (%)</label>
             <input type="number" step="0.01" min="0" value={fin.taux_revision_prix} onChange={e => set("taux_revision_prix", e.target.value)} className={inputCls} placeholder="0" />
-            <p className="text-[10px] text-gray-400">Poste B décompte — calculé automatiquement sur A</p>
+            <p className="text-[10px] text-ink-500">Poste B décompte — calculé automatiquement sur A</p>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Taux avance (%)</label>
+          <div className="space-y-1.5">
+            <label className={labelCls}>Taux avance (%)</label>
             <input type="number" step="0.01" value={fin.taux_avance} onChange={e => set("taux_avance", e.target.value)} className={inputCls} />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Remboursement avance / décompte (%)</label>
+          <div className="space-y-1.5">
+            <label className={labelCls}>Remboursement avance / décompte (%)</label>
             <input type="number" step="0.01" value={fin.taux_remboursement_avance} onChange={e => set("taux_remboursement_avance", e.target.value)} className={inputCls} />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Délai de paiement (jours)</label>
+          <div className="space-y-1.5">
+            <label className={labelCls}>Délai de paiement (jours)</label>
             <input type="number" step="1" value={fin.delai_paiement} onChange={e => set("delai_paiement", e.target.value)} className={inputCls} />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Délai d'exécution (jours)</label>
+          <div className="space-y-1.5">
+            <label className={labelCls}>Délai d'exécution (jours)</label>
             <input type="number" step="1" value={fin.delai_execution} onChange={e => set("delai_execution", e.target.value)} className={inputCls} placeholder="—" />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Pénalité de retard (%/jour)</label>
+          <div className="space-y-1.5">
+            <label className={labelCls}>Pénalité de retard (%/jour)</label>
             <input type="number" step="0.001" value={fin.taux_penalite} onChange={e => set("taux_penalite", e.target.value)} className={inputCls} />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Plafond pénalités (%)</label>
+          <div className="space-y-1.5">
+            <label className={labelCls}>Plafond pénalités (%)</label>
             <input type="number" step="0.01" value={fin.plafond_penalite} onChange={e => set("plafond_penalite", e.target.value)} className={inputCls} />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Date de signature</label>
+          <div className="space-y-1.5">
+            <label className={labelCls}>Date de signature</label>
             <input type="date" value={fin.date_signature} onChange={e => set("date_signature", e.target.value)} className={inputCls} />
           </div>
-          <div className="space-y-1">
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Financement</label>
+          <div className="space-y-1.5">
+            <label className={labelCls}>Financement</label>
             <input type="text" value={fin.financement} onChange={e => set("financement", e.target.value)} className={inputCls} placeholder="ex: BCI, FCP…" />
           </div>
         </div>
 
-        <div className="flex justify-end mt-4">
+        <div className="mt-4 flex justify-end">
           <button
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex items-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors disabled:opacity-60"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60"
           >
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+            {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
             Enregistrer
           </button>
         </div>
@@ -319,23 +320,23 @@ function ParametrageFinancierTab({ contrat, avenants }) {
       {/* Historique avenants */}
       {avenatsValides.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Historique des avenants validés</h3>
-          <table className="w-full text-sm">
+          <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Historique des avenants validés</h3>
+          <table className="w-full text-[13px]">
             <thead>
-              <tr className="border-b border-gray-100">
-                <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Code</th>
-                <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Objet</th>
-                <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Date signature</th>
-                <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-500 pb-2">Montant</th>
+              <tr className="border-b border-line-200">
+                <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Code</th>
+                <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Objet</th>
+                <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Date signature</th>
+                <th className="pb-2 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-500">Montant</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody className="divide-y divide-line-100">
               {avenatsValides.map(a => (
-                <tr key={a.id} className="hover:bg-gray-50">
-                  <td className="py-2.5 pr-3 font-mono text-xs font-medium text-gray-900">{a.code}</td>
-                  <td className="py-2.5 pr-3 text-gray-700 max-w-[260px] truncate">{a.objet}</td>
-                  <td className="py-2.5 pr-3 text-gray-500 text-xs">{a.date_signature ? new Date(a.date_signature).toLocaleDateString("fr-FR") : "—"}</td>
-                  <td className={`py-2.5 text-right font-semibold ${parseFloat(a.montant) >= 0 ? "text-violet-700" : "text-red-600"}`}>
+                <tr key={a.id} className="hover:bg-green-50/60 transition-colors">
+                  <td className="py-2.5 pr-3 font-mono text-xs font-medium text-ink-900">{a.code}</td>
+                  <td className="max-w-[260px] truncate py-2.5 pr-3 text-ink-700">{a.objet}</td>
+                  <td className="py-2.5 pr-3 text-xs text-ink-500">{a.date_signature ? new Date(a.date_signature).toLocaleDateString("fr-FR") : "—"}</td>
+                  <td className={`py-2.5 text-right font-semibold tabular-nums ${parseFloat(a.montant) >= 0 ? "text-green-700" : "text-red-600"}`}>
                     {parseFloat(a.montant) >= 0 ? "+" : ""}{fmt(parseFloat(a.montant))} FCFA
                   </td>
                 </tr>
