@@ -1292,7 +1292,7 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
   const fmt          = n => fmtNum(Math.round(n));
 
   if (isNew) return (
-    <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer les avenants.</p>
+    <p className="py-8 text-center text-[13px] text-ink-400">Enregistrez le contrat pour gérer les avenants.</p>
   );
 
   async function handleSave(e) {
@@ -1351,8 +1351,8 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
     <div className="space-y-4">
       {/* Warning 30% marchés publics */}
       {depasse30 && (
-        <div className="flex items-start gap-2 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle size={15} className="shrink-0 mt-0.5" />
+        <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
             Les avenants validés ({fmt(totalValide)} FCFA) dépassent <strong>30%</strong> du montant initial ({fmt(plafond30)} FCFA).
             Une procédure de passation de marché peut être requise.
@@ -1362,11 +1362,11 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
 
       {/* Summary bar */}
       {avenants.length > 0 && (
-        <div className="flex items-center justify-between bg-violet-50 border border-violet-200 rounded-lg px-4 py-2.5 text-sm">
-          <span className="text-violet-700 font-medium">
+        <div className="flex items-center justify-between rounded-md border border-green-200 bg-green-50 px-4 py-2.5 text-[13px]">
+          <span className="font-medium text-green-700">
             {avenants.filter(a => a.statut === "valide").length} avenant(s) validé(s)
           </span>
-          <span className="text-violet-900 font-bold">
+          <span className="font-bold text-green-700 tabular-nums">
             Impact sur montant actuel : {formatMontant(totalValide)}
           </span>
         </div>
@@ -1374,36 +1374,36 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
 
       {/* Table */}
       {isLoading ? (
-        <p className="text-sm text-gray-400 text-center py-6">Chargement…</p>
+        <p className="py-6 text-center text-[13px] text-ink-400">Chargement…</p>
       ) : avenants.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-6">Aucun avenant pour ce contrat.</p>
+        <p className="py-6 text-center text-[13px] text-ink-400">Aucun avenant pour ce contrat.</p>
       ) : (
-        <table className="w-full text-sm">
+        <table className="w-full text-[13px]">
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Code</th>
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">BC</th>
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Objet</th>
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Montant</th>
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Signature</th>
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2">Statut</th>
-              <th className="pb-2 text-right text-xs uppercase tracking-wide font-medium text-gray-500">Actions</th>
+            <tr className="border-b border-line-200">
+              <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Code</th>
+              <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">BC</th>
+              <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Objet</th>
+              <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Montant</th>
+              <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Signature</th>
+              <th className="pb-2 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Statut</th>
+              <th className="pb-2 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-500">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-line-100">
             {avenants.map(a => (
-              <tr key={a.id} className="hover:bg-gray-50 transition-colors">
-                <td className="py-2.5 pr-3 font-mono text-xs font-medium text-gray-900">{a.code}</td>
+              <tr key={a.id} className="transition-colors hover:bg-green-50/60">
+                <td className="py-2.5 pr-3 font-mono text-xs font-medium text-ink-900">{a.code}</td>
                 <td className="py-2.5 pr-3 text-xs">
                   {a.bon_commande
-                    ? <span className="bg-blue-50 text-blue-700 border border-blue-200 px-1.5 py-0.5 rounded-full font-medium">{a.bon_commande.code_x3 ?? a.bon_commande.code}</span>
-                    : <span className="text-gray-300">—</span>}
+                    ? <span className="rounded-full border border-green-200 bg-green-50 px-1.5 py-0.5 font-medium text-green-700">{a.bon_commande.code_x3 ?? a.bon_commande.code}</span>
+                    : <span className="text-ink-300">—</span>}
                 </td>
-                <td className="py-2.5 pr-3 text-gray-700 max-w-[200px] truncate">{a.objet}</td>
-                <td className={`py-2.5 pr-3 font-semibold whitespace-nowrap ${a.statut === "valide" ? "text-violet-700" : "text-gray-700"}`}>
+                <td className="max-w-[200px] truncate py-2.5 pr-3 text-ink-700">{a.objet}</td>
+                <td className={`whitespace-nowrap py-2.5 pr-3 font-semibold tabular-nums ${a.statut === "valide" ? "text-green-700" : "text-ink-700"}`}>
                   {formatMontant(parseFloat(a.montant ?? 0))}
                 </td>
-                <td className="py-2.5 pr-3 text-gray-500 text-xs">
+                <td className="py-2.5 pr-3 text-xs text-ink-500">
                   {a.date_signature ? formatDate(a.date_signature) : "—"}
                 </td>
                 <td className="py-2.5">
@@ -1416,17 +1416,17 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
                         onClick={() => setConfirmValider(a.id)}
                         disabled={validerMut.isPending}
                         title="Valider l'avenant"
-                        className="text-[#087F3E] hover:text-[#065A2C] transition-colors disabled:opacity-40"
+                        className="text-green-600 transition-colors hover:text-green-700 disabled:opacity-40"
                       >
-                        <CheckCircle size={15} />
+                        <CheckCircle className="h-3.5 w-3.5" />
                       </button>
                     )}
                     <button
                       onClick={() => setConfirmDelete(a.id)}
                       title="Supprimer"
-                      className="text-red-400 hover:text-red-600 transition-colors"
+                      className="text-ink-400 transition-colors hover:text-red-600"
                     >
-                      <Trash2 size={15} />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </span>
                 </td>
@@ -1440,9 +1440,9 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
       <div className="flex justify-end">
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors"
+          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-green-600 px-3 text-xs font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800"
         >
-          <Plus size={13} /> Nouvel avenant
+          <Plus className="h-3 w-3" /> Nouvel avenant
         </button>
       </div>
 
@@ -1466,23 +1466,23 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
 
       {/* Modal overlay */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => { setShowForm(false); setForm(AVENANT_INIT); }}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-semibold text-gray-900">Nouvel avenant</h3>
-              <button onClick={() => { setShowForm(false); setForm(AVENANT_INIT); }} className="text-gray-400 hover:text-gray-600">
-                <X size={18} />
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4" onClick={() => { setShowForm(false); setForm(AVENANT_INIT); }}>
+          <div className="dialog-content w-full max-w-lg rounded-lg border border-line-200 bg-white shadow-popover" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-line-200 px-5 py-4">
+              <h3 className="text-sm font-semibold text-ink-900">Nouvel avenant</h3>
+              <button onClick={() => { setShowForm(false); setForm(AVENANT_INIT); }} className="rounded-md p-1 text-ink-500 hover:bg-surface-50 hover:text-ink-900">
+                <X className="h-4 w-4" />
               </button>
             </div>
-            <form onSubmit={handleSave} className="grid grid-cols-2 gap-4">
+            <form onSubmit={handleSave} className="grid grid-cols-1 gap-4 px-5 py-4 sm:grid-cols-2">
               {bcs.length > 0 && (
-                <div className="col-span-2 space-y-1.5">
-                  <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">BC associé</label>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">BC associé</label>
                   <SearchSelect
                     value={form.bon_commande_id}
                     onChange={e => setForm(f => ({ ...f, bon_commande_id: e.target.value }))}
                     placeholder="— Aucun BC —"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none bg-white"
+                    className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                   >
                     <option value="">— Aucun BC —</option>
                     {bcs.map(bc => (
@@ -1491,63 +1491,63 @@ function AvenantsTab({ contratId, isNew, montantInitial }) {
                   </SearchSelect>
                 </div>
               )}
-              <div className="col-span-2 space-y-1.5">
-                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Objet *</label>
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">Objet *</label>
                 <input
                   type="text"
                   value={form.objet}
                   onChange={e => setForm(f => ({ ...f, objet: e.target.value }))}
                   placeholder="Objet de l'avenant…"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                  className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                   required
                   autoFocus
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Montant (FCFA) *</label>
+                <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">Montant (FCFA) *</label>
                 <input
                   type="number"
                   value={form.montant}
                   onChange={e => setForm(f => ({ ...f, montant: e.target.value }))}
                   placeholder="Ex: 5000000 ou -2000000"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                  className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                   required
                 />
-                <p className="text-xs text-gray-400">Négatif pour une diminution de montant.</p>
+                <p className="text-[11px] text-ink-500">Négatif pour une diminution de montant.</p>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Date de signature</label>
+                <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">Date de signature</label>
                 <input
                   type="date"
                   value={form.date_signature}
                   onChange={e => setForm(f => ({ ...f, date_signature: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                  className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                 />
               </div>
-              <div className="col-span-2 space-y-1.5">
-                <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Observations</label>
+              <div className="space-y-1.5 sm:col-span-2">
+                <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">Observations</label>
                 <textarea
                   value={form.observations}
                   onChange={e => setForm(f => ({ ...f, observations: e.target.value }))}
                   rows={2}
                   placeholder="Observations éventuelles…"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none resize-none"
+                  className="w-full resize-none rounded-md border border-line-200 bg-white px-2.5 py-2 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                 />
               </div>
-              <div className="col-span-2 flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-2 border-t border-line-200 pt-3 sm:col-span-2 sm:-mx-5 sm:px-5">
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setForm(AVENANT_INIT); }}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+                  className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
                   disabled={saveMut.isPending}
-                  className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60"
                 >
-                  {saveMut.isPending ? <><Loader2 size={14} className="animate-spin" /> Création…</> : <><Plus size={14} /> Créer l'avenant</>}
+                  {saveMut.isPending ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Création…</> : <><Plus className="h-3.5 w-3.5" /> Créer l'avenant</>}
                 </button>
               </div>
             </form>
