@@ -20,6 +20,13 @@ import { SkeletonTable } from "../components/Skeleton";
 import { formatMontantCourt } from "../utils/formatters";
 import SearchSelect from "../components/SearchSelect";
 import Pagination from "../components/Pagination";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter,
+} from "../components/ui/dialog";
+import { cn } from "../lib/utils";
 
 const STATUTS = [
   { value: "brouillon",    label: "Brouillon" },
@@ -42,11 +49,11 @@ const TYPES = [
 ];
 
 const TYPE_BADGE = {
-  provisoire:               "bg-blue-50 text-blue-700",
-  final:                    "bg-purple-50 text-purple-700",
-  restitution_rg_partielle: "bg-amber-50 text-amber-700",
-  restitution_rg_totale:    "bg-orange-50 text-orange-700",
-  definitif_general:        "bg-gray-100 text-gray-600",
+  provisoire:               "bg-green-50 text-green-700 border border-green-200",
+  final:                    "bg-green-100 text-green-700 border border-green-300",
+  restitution_rg_partielle: "bg-amber-50 text-amber-700 border border-amber-200",
+  restitution_rg_totale:    "bg-amber-100 text-amber-700 border border-amber-300",
+  definitif_general:        "bg-surface-50 text-ink-700 border border-line-200",
 };
 
 const STATUTS_INSTANCE = ["soumis", "valide_dacc", "valide_dex", "valide_dga", "valide_dg", "valide_ct", "valide_cp", "valide_daf"];
@@ -58,33 +65,34 @@ const INIT = {
   date_fin:   "",
 };
 
-function MiniKPI({ icon: Icon, label, value, sub, iconColor = "text-gray-500" }) {
+const SELECT_CLS = "h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100";
+
+function MiniKPI({ icon: Icon, label, value, sub }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-3">
-      <div className={`mt-0.5 p-2 rounded-lg bg-gray-50 ${iconColor}`}>
-        <Icon size={16} />
+    <div className="flex items-start gap-3 rounded-xl border border-line-200 bg-white p-4 shadow-xs">
+      <div className="mt-0.5 rounded-lg bg-green-100 p-2">
+        <Icon className="h-4 w-4 text-green-600" strokeWidth={1.75} />
       </div>
       <div className="min-w-0">
-        <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-        <p className="text-base font-bold text-gray-900 truncate">{value}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+        <p className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-ink-500">{label}</p>
+        <p className="truncate text-base font-bold tabular-nums text-ink-900">{value}</p>
+        <p className="mt-0.5 text-xs text-ink-500">{sub}</p>
       </div>
     </div>
   );
 }
 
-function Field({ label, required, children }) {
+function Field({ label, required, error, children }) {
   return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-gray-600 block">
-        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
+    <div className="space-y-1.5">
+      <Label>
+        {label}{required && <span className="ml-0.5 text-red-500">*</span>}
+      </Label>
       {children}
+      {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );
 }
-
-const INPUT = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]";
 
 export default function DecomptesListPage() {
   const navigate     = useNavigate();
@@ -137,7 +145,6 @@ export default function DecomptesListPage() {
   const { data: contratsData } = useContratsPaginated({ count: 100 });
   const contrats = contratsData?.data ?? [];
 
-  // Liste unique des sous-traitants depuis les contrats
   const sttList = useMemo(() => {
     const seen = new Set();
     return contrats
@@ -232,100 +239,105 @@ export default function DecomptesListPage() {
     }
   }
 
-  const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="Décomptes"
-        subtitle={isLoading ? "Chargement…" : `${meta.total ?? 0} décompte${(meta.total ?? 0) !== 1 ? "s" : ""}`}
-        action={
-          peutCreerDecompte && (
-            <button
-              onClick={openModal}
-              className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors"
-            >
-              <Plus size={16} /> Nouveau décompte
-            </button>
-          )
+        description="Suivi des décomptes de sous-traitance et leur circuit de validation."
+        total={meta.total}
+        actions={
+          <>
+            <Button variant="secondary" onClick={exportExcel}>
+              <FileSpreadsheet className="h-4 w-4" /> Excel
+            </Button>
+            {peutCreerDecompte && (
+              <Button onClick={openModal}>
+                <Plus className="h-4 w-4" /> Nouveau décompte
+              </Button>
+            )}
+          </>
         }
       />
 
       {/* ── Stats Banner ── */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-line-200 bg-white shadow-xs">
         <button onClick={() => setShowStats(s => !s)}
-          className="w-full flex items-center justify-between px-5 py-3.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors">
+          className="flex w-full items-center justify-between px-5 py-3.5 text-[13px] font-semibold text-ink-900 hover:bg-surface-50 transition-colors">
           <span className="flex items-center gap-2">
-            <TrendingUp size={15} className="text-[#087F3E]" />
+            <TrendingUp className="h-4 w-4 text-green-600" strokeWidth={1.75} />
             Résumé global — Tous les chantiers
           </span>
-          <ChevronDown size={16} className={`text-gray-400 transition-transform duration-200 ${showStats ? "rotate-180" : ""}`} />
+          <ChevronDown className={cn("h-4 w-4 text-ink-400 transition-transform duration-200", showStats && "rotate-180")} />
         </button>
 
         {showStats && (
-          <div className="border-t border-gray-100 p-5 space-y-5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div className="space-y-5 border-t border-line-200 p-5">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <MiniKPI icon={FileText} label="Contrats de ST" value={statsKPIs.totalContrats} sub="Contrats avec décomptes" />
               <MiniKPI icon={TrendingUp} label="Montants contrats" value={formatMontantCourt(statsKPIs.montantContrats)} sub="Montant actualisé total" />
-              <MiniKPI icon={CheckCircle2} label="Montants engagés" value={formatMontantCourt(statsKPIs.montantEngage)} sub="Total décomptes soumis" iconColor="text-blue-600" />
-              <MiniKPI icon={DollarSign} label="Cumul payé" value={formatMontantCourt(statsKPIs.cumulPaye)} sub="Décomptes à statut payé" iconColor="text-[#087F3E]" />
+              <MiniKPI icon={CheckCircle2} label="Montants engagés" value={formatMontantCourt(statsKPIs.montantEngage)} sub="Total décomptes soumis" />
+              <MiniKPI icon={DollarSign} label="Cumul payé" value={formatMontantCourt(statsKPIs.cumulPaye)} sub="Décomptes à statut payé" />
             </div>
 
-            <div className="grid grid-cols-2 gap-5">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-800">Validations en cours</h3>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="rounded-xl border border-line-200 bg-surface-50 p-4">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-[13px] font-semibold text-ink-900">Validations en cours</h3>
                   {totalEnValidation > 0 && (
-                    <span className="text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full font-semibold">
+                    <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700">
                       {totalEnValidation} en attente
                     </span>
                   )}
                 </div>
                 {validationsEnCours.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-4">Circuit non configuré.</p>
+                  <p className="py-4 text-center text-xs text-ink-400">Circuit non configuré.</p>
                 ) : (
                   <div className="space-y-2">
                     {validationsEnCours.map(v => (
                       <div key={v.profil_code} className="flex items-center gap-3 py-1">
-                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0
-                          ${v.count > 0 ? "bg-amber-100 text-amber-700 border border-amber-300" : "bg-gray-100 text-gray-300 border border-gray-200"}`}>
+                        <span className={cn(
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
+                          v.count > 0
+                            ? "border-amber-300 bg-amber-100 text-amber-700"
+                            : "border-line-200 bg-white text-ink-300"
+                        )}>
                           {v.count}
                         </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-gray-700">{v.profil_code.toUpperCase()}</p>
-                          <p className="text-xs text-gray-400">{v.libelle}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-ink-900">{v.profil_code.toUpperCase()}</p>
+                          <p className="text-xs text-ink-500">{v.libelle}</p>
                         </div>
-                        {v.count > 0 && <span className="text-xs text-amber-600 font-medium whitespace-nowrap">En attente</span>}
+                        {v.count > 0 && <span className="whitespace-nowrap text-xs font-medium text-amber-700">En attente</span>}
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="flex items-start justify-between mb-4">
+              <div className="rounded-xl border border-line-200 bg-surface-50 p-4">
+                <div className="mb-4 flex items-start justify-between">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-800">Règlements en instance</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">Décomptes en circuit, non payés</p>
+                    <h3 className="text-[13px] font-semibold text-ink-900">Règlements en instance</h3>
+                    <p className="mt-0.5 text-xs text-ink-500">Décomptes en circuit, non payés</p>
                   </div>
-                  <div className="text-right flex-shrink-0 ml-4">
-                    <p className="text-xs text-gray-400">{totalReglementsNbr} décompte{totalReglementsNbr !== 1 ? "s" : ""}</p>
-                    <MoneyDisplay amount={totalReglements} className="text-sm font-bold text-[#087F3E]" />
+                  <div className="ml-4 shrink-0 text-right">
+                    <p className="text-xs text-ink-500">{totalReglementsNbr} décompte{totalReglementsNbr !== 1 ? "s" : ""}</p>
+                    <MoneyDisplay amount={totalReglements} className="text-sm font-bold text-green-700" />
                   </div>
                 </div>
                 {reglements.length === 0 ? (
-                  <p className="text-xs text-gray-400 text-center py-4">Aucun règlement en instance.</p>
+                  <p className="py-4 text-center text-xs text-ink-400">Aucun règlement en instance.</p>
                 ) : (
-                  <div className="divide-y divide-gray-200">
+                  <div className="divide-y divide-line-100">
                     {reglements.map(r => (
-                      <div key={r.nom} className="flex items-center justify-between py-2 gap-3">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#087F3E] flex-shrink-0" />
-                          <p className="text-xs text-gray-700 truncate">{r.nom}</p>
+                      <div key={r.nom} className="flex items-center justify-between gap-3 py-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-green-600" />
+                          <p className="truncate text-xs text-ink-700">{r.nom}</p>
                         </div>
-                        <div className="flex items-center gap-4 flex-shrink-0">
-                          <span className="text-xs text-gray-500 tabular-nums w-5 text-right">{r.nbr}</span>
-                          <MoneyDisplay amount={r.montant} variant="small" className="font-semibold text-gray-800" />
+                        <div className="flex shrink-0 items-center gap-4">
+                          <span className="w-5 text-right text-xs tabular-nums text-ink-500">{r.nbr}</span>
+                          <MoneyDisplay amount={r.montant} variant="small" className="font-semibold text-ink-900" />
                         </div>
                       </div>
                     ))}
@@ -338,110 +350,102 @@ export default function DecomptesListPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1 min-w-[180px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
+      <div className="rounded-xl border border-line-200 bg-white p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[180px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+            <Input
               placeholder="Rechercher par code…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+              className="pl-9"
             />
           </div>
-          <SearchSelect value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+          <select value={typeFilter} onChange={e => { setTypeFilter(e.target.value); setPage(1); }} className={SELECT_CLS + " max-w-[180px]"}>
             <option value="">Tous les types</option>
             {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </SearchSelect>
-          <SearchSelect value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+          </select>
+          <select value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }} className={SELECT_CLS + " max-w-[170px]"}>
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </SearchSelect>
-          <SearchSelect value={sttFilter} onChange={e => { setSttFilter(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[180px]">
+          </select>
+          <select value={sttFilter} onChange={e => { setSttFilter(e.target.value); setPage(1); }} className={SELECT_CLS + " max-w-[180px]"}>
             <option value="">Tous les STT</option>
             {sttList.map(s => <option key={s.id} value={String(s.id)}>{s.nom}</option>)}
-          </SearchSelect>
-          <SearchSelect value={contratFilter} onChange={e => { setContratFilter(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[200px]">
+          </select>
+          <select value={contratFilter} onChange={e => { setContratFilter(e.target.value); setPage(1); }} className={SELECT_CLS + " max-w-[220px]"}>
             <option value="">Tous les contrats</option>
             {contrats.map(c => <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale}</option>)}
-          </SearchSelect>
+          </select>
           {hasFilter && (
-            <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
-              <RotateCcw size={13} /> Réinitialiser
-            </button>
+            <Button variant="ghost" size="sm" onClick={reset}>
+              <RotateCcw className="h-3.5 w-3.5" /> Réinitialiser
+            </Button>
           )}
-          <button onClick={exportExcel}
-            className="ml-auto flex items-center gap-1.5 text-sm text-[#087F3E] border border-[#087F3E] px-3 py-2 rounded-lg hover:bg-[#E8F5EE] transition-colors">
-            <FileSpreadsheet size={14} /> Excel
-          </button>
         </div>
       </div>
 
       {isLoading ? (
         <SkeletonTable rows={8} cols={6} />
       ) : isError ? (
-        <div className="text-center py-16 text-red-500 text-sm bg-white rounded-xl border border-gray-200">
+        <div className="rounded-xl border border-line-200 bg-white py-16 text-center text-[13px] text-red-500">
           Impossible de charger les décomptes.
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-          <table className="w-full min-w-[800px]">
+        <div className="overflow-x-auto rounded-xl border border-line-200 bg-white">
+          <table className="w-full min-w-[900px] text-[13px]">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-gray-50 border-b border-gray-200">
+              <tr className="bg-green-800">
                 {["Code", "Type", "Contrat / STT", "Période", "Net HT", "TTC", "Statut", "Circuit"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                  <th key={h} className="whitespace-nowrap px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wide text-white/90">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-line-100">
               {rows.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-16 text-center">
-                    <FileText size={28} className="mx-auto mb-2 text-gray-300" />
-                    <p className="text-sm text-gray-400">Aucun décompte ne correspond aux filtres.</p>
+                    <FileText className="mx-auto mb-2 h-7 w-7 text-ink-300" strokeWidth={1.5} />
+                    <p className="text-[13px] text-ink-500">Aucun décompte ne correspond aux filtres.</p>
                   </td>
                 </tr>
               ) : rows.map(d => (
                 <tr key={d.id} onClick={() => navigate(`/decomptes/${d.id}`)}
-                  className="hover:bg-gray-50 even:bg-gray-50/40 group cursor-pointer transition-colors">
-                  <td className="px-4 py-3.5"><span className="font-mono text-sm font-semibold text-gray-900">{d.code}</span></td>
-                  <td className="px-4 py-3.5">
-                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${TYPE_BADGE[d.type] ?? "bg-gray-100 text-gray-500"}`}>
+                  className="cursor-pointer transition-colors hover:bg-green-50/60">
+                  <td className="px-4 py-3"><span className="font-mono text-[13px] font-semibold text-ink-900">{d.code}</span></td>
+                  <td className="px-4 py-3">
+                    <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-medium", TYPE_BADGE[d.type] ?? "bg-surface-50 text-ink-500 border border-line-200")}>
                       {TYPES.find(t => t.value === d.type)?.label ?? d.type ?? "—"}
                     </span>
                   </td>
-                  <td className="px-4 py-3.5">
-                    <p className="text-sm font-mono text-gray-700">{d.contrat?.code ?? "—"}</p>
-                    <p className="text-xs text-gray-400 truncate max-w-[140px]">{d.contrat?.soustraitant?.raison_sociale}</p>
+                  <td className="px-4 py-3">
+                    <p className="font-mono text-[13px] text-ink-700">{d.contrat?.code ?? "—"}</p>
+                    <p className="max-w-[160px] truncate text-xs text-ink-500">{d.contrat?.soustraitant?.raison_sociale}</p>
                   </td>
-                  <td className="px-4 py-3.5 text-xs text-gray-500 whitespace-nowrap">
+                  <td className="whitespace-nowrap px-4 py-3 text-xs text-ink-500">
                     {d.date_debut && d.date_fin
                       ? `${new Date(d.date_debut).toLocaleDateString("fr-FR", { day:"2-digit", month:"short" })} — ${new Date(d.date_fin).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" })}`
                       : d.etat_cession?.periode_debut
                         ? `${new Date(d.etat_cession.periode_debut).toLocaleDateString("fr-FR", { day:"2-digit", month:"short" })} — ${new Date(d.etat_cession.periode_fin).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" })}`
                         : "—"}
                   </td>
-                  <td className="px-4 py-3.5"><MoneyDisplay amount={d.montant_ht ?? 0} variant="small" className="text-[#087F3E]" /></td>
-                  <td className="px-4 py-3.5"><MoneyDisplay amount={d.montant_ttc ?? 0} variant="small" className="font-semibold text-gray-800" /></td>
-                  <td className="px-4 py-3.5"><StatusBadge statut={d.statut} /></td>
-                  <td className="px-4 py-3.5">
+                  <td className="px-4 py-3"><MoneyDisplay amount={d.montant_ht ?? 0} variant="small" className="font-semibold text-green-700" /></td>
+                  <td className="px-4 py-3"><MoneyDisplay amount={d.montant_ttc ?? 0} variant="small" className="font-semibold text-ink-900" /></td>
+                  <td className="px-4 py-3"><StatusBadge statut={d.statut} /></td>
+                  <td className="px-4 py-3">
                     {d.statut === "rejete" ? (
-                      <span className="text-xs text-red-500">Rejeté</span>
+                      <span className="text-xs text-red-600">Rejeté</span>
                     ) : (
-                      <span className="text-xs text-gray-400 tabular-nums">{circuitStep(d.statut)}</span>
+                      <span className="text-xs tabular-nums text-ink-500">{circuitStep(d.statut)}</span>
                     )}
                   </td>
                   {d.statut === "brouillon" && (
-                    <td className="px-2 py-3.5" onClick={e => e.stopPropagation()}>
+                    <td className="px-2 py-3" onClick={e => e.stopPropagation()}>
                       <button
                         onClick={() => setConfirmDel(d)}
-                        className="p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        className="rounded-md p-1.5 text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600"
                         title="Supprimer">
-                        <Trash2 size={14} />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </td>
                   )}
@@ -455,20 +459,16 @@ export default function DecomptesListPage() {
       )}
 
       {/* ── Modal création ── */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-              <h2 className="text-base font-bold text-gray-900">Nouveau décompte</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
-                <X size={18} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <Field label="Contrat" required>
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Nouveau décompte</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <DialogBody className="space-y-4">
+              <Field label="Contrat" required error={errors.contrat_id}>
                 <SearchSelect value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)}
-                  className={`${INPUT} ${errors.contrat_id ? "border-red-400" : ""}`}>
+                  className={cn(SELECT_CLS, errors.contrat_id && "border-red-400")}>
                   <option value="">— Sélectionner un contrat —</option>
                   {contrats.filter(c => c.statut === "actif").map(c => (
                     <option key={c.id} value={c.id}>
@@ -476,54 +476,45 @@ export default function DecomptesListPage() {
                     </option>
                   ))}
                 </SearchSelect>
-                {errors.contrat_id && <p className="text-xs text-red-500 mt-1">{errors.contrat_id}</p>}
               </Field>
 
               <Field label="Type de décompte">
-                <SearchSelect value={form.type} onChange={e => set("type", e.target.value)} className={INPUT}>
+                <SearchSelect value={form.type} onChange={e => set("type", e.target.value)} className={SELECT_CLS}>
                   {TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </SearchSelect>
               </Field>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Date de début" required>
-                  <input type="date" value={form.date_debut} onChange={e => set("date_debut", e.target.value)}
-                    className={`${INPUT} ${errors.date_debut ? "border-red-400" : ""}`} />
-                  {errors.date_debut && <p className="text-xs text-red-500 mt-1">{errors.date_debut}</p>}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="Date de début" required error={errors.date_debut}>
+                  <Input type="date" value={form.date_debut} onChange={e => set("date_debut", e.target.value)}
+                    className={errors.date_debut ? "border-red-400" : ""} />
                 </Field>
-                <Field label="Date de fin" required>
-                  <input type="date" value={form.date_fin} onChange={e => set("date_fin", e.target.value)}
-                    className={`${INPUT} ${errors.date_fin ? "border-red-400" : ""}`} />
-                  {errors.date_fin && <p className="text-xs text-red-500 mt-1">{errors.date_fin}</p>}
+                <Field label="Date de fin" required error={errors.date_fin}>
+                  <Input type="date" value={form.date_fin} onChange={e => set("date_fin", e.target.value)}
+                    className={errors.date_fin ? "border-red-400" : ""} />
                 </Field>
               </div>
 
-              <p className="text-[11px] text-gray-400 bg-gray-50 rounded-lg px-3 py-2">
+              <p className="rounded-md border border-line-200 bg-surface-50 px-3 py-2 text-[11px] text-ink-500">
                 Les postes A, B, D seront calculés automatiquement depuis l'attachement validé et les paramètres du contrat. Les cessions se sélectionnent dans l'onglet Cessions après création.
               </p>
-
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                  Annuler
-                </button>
-                <button type="submit" disabled={saveMut.isPending}
-                  className="flex-1 py-2.5 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                  {saveMut.isPending && <Loader2 size={14} className="animate-spin" />}
-                  Créer
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </DialogBody>
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>Annuler</Button>
+              <Button type="submit" disabled={saveMut.isPending}>
+                {saveMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Créer
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmModal
         open={!!confirmDel}
         title="Supprimer le décompte"
         message={`Supprimer définitivement ${confirmDel?.code} ? Cette action est irréversible.`}
         confirmLabel="Supprimer"
-        confirmClass="bg-red-600 hover:bg-red-700 text-white"
         onConfirm={async () => {
           try {
             await deleteMut.mutateAsync(confirmDel.id);
