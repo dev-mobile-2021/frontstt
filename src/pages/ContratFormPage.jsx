@@ -74,10 +74,10 @@ const TRANSITIONS = {
 };
 
 const BTN_COLORS = {
-  green: "bg-[#087F3E] hover:bg-[#065A2C] text-white",
+  green: "bg-green-600 hover:bg-green-700 text-white",
   amber: "bg-amber-500 hover:bg-amber-600 text-white",
   red:   "bg-red-500 hover:bg-red-600 text-white",
-  gray:  "bg-gray-500 hover:bg-gray-600 text-white",
+  gray:  "bg-ink-700 hover:bg-ink-900 text-white",
 };
 
 function Field({ label, children, required }) {
@@ -3133,13 +3133,15 @@ export default function ContratFormPage() {
 
       {/* BC warning banner */}
       {!isNew && bcsLoaded && bcsList.length === 0 && !["resilie","archive"].includes(contrat.statut) && (
-        <div className="flex items-center justify-between gap-3 flex-wrap bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-          <p className="flex items-center gap-2 text-sm text-amber-800">
-            <AlertTriangle size={15} className="flex-shrink-0" />
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+          <p className="flex items-center gap-2 text-[13px] text-amber-800">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
             <span><strong>Aucun bon de commande Sage X3 lié.</strong> Le montant reste à 0.</span>
           </p>
-          <button onClick={() => setActiveTab("bonscommande")}
-            className="px-3 py-1.5 text-sm font-medium text-amber-900 border border-amber-300 rounded-lg bg-white hover:bg-amber-100 transition-colors">
+          <button
+            onClick={() => setActiveTab("bonscommande")}
+            className="inline-flex h-8 items-center rounded-md border border-amber-300 bg-white px-3 text-[13px] font-medium text-amber-900 transition-colors hover:bg-amber-100"
+          >
             Récupérer les BC
           </button>
         </div>
@@ -3147,50 +3149,52 @@ export default function ContratFormPage() {
 
       {/* Workflow — view mode only */}
       {!isNew && transitions.length > 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white px-5 py-4">
-          <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-3">Workflow</p>
-          <div className="flex flex-wrap gap-3 items-end">
+        <div className="rounded-xl border border-line-200 bg-white px-5 py-4 shadow-xs">
+          <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Workflow</p>
+          <div className="flex flex-wrap items-end gap-2">
             {transitions.map(t => (
               <button
                 key={t.statut}
                 onClick={() => handleStatut(t.statut)}
                 disabled={statutMut.isPending}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${BTN_COLORS[t.color]} disabled:opacity-50`}
+                className={`inline-flex h-9 items-center rounded-md px-3 text-[13px] font-medium transition-colors disabled:opacity-50 ${BTN_COLORS[t.color]}`}
               >
                 {t.label}
               </button>
             ))}
             {/* Motif input if needed */}
             {pendingStatut && (
-              <div className="flex-1 min-w-[280px] flex gap-2">
+              <div className="flex min-w-[280px] flex-1 gap-2">
                 <input
                   autoFocus
                   placeholder={`Motif de ${pendingStatut === "resilie" ? "résiliation" : "suspension"}…`}
                   value={motif}
                   onChange={e => setMotif(e.target.value)}
-                  className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                  className="h-9 flex-1 rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                 />
                 <button
                   onClick={() => handleStatut(pendingStatut)}
                   disabled={!motif.trim() || statutMut.isPending}
-                  className="px-4 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-50"
+                  className="inline-flex h-9 items-center rounded-md bg-ink-900 px-3 text-[13px] font-medium text-white transition-colors hover:bg-ink-700 disabled:opacity-50"
                 >
                   Confirmer
                 </button>
-                <button onClick={() => { setPendingStatut(null); setMotif(""); }}
-                  className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm">
+                <button
+                  onClick={() => { setPendingStatut(null); setMotif(""); }}
+                  className="inline-flex h-9 items-center rounded-md px-3 text-[13px] text-ink-500 hover:bg-surface-50 hover:text-ink-900"
+                >
                   Annuler
                 </button>
               </div>
             )}
           </div>
           {contrat.motif_suspension && (
-            <p className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
               <strong>Motif de suspension :</strong> {contrat.motif_suspension}
             </p>
           )}
           {contrat.motif_resiliation && (
-            <p className="mt-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <p className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
               <strong>Motif de résiliation :</strong> {contrat.motif_resiliation}
             </p>
           )}
