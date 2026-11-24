@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
-  Search, RotateCcw, Plus, X, Loader2,
-  FileText, FileSpreadsheet, CheckCircle2, Clock, FolderOpen, TrendingUp, Eye, Trash2, ChevronRight,
+  Search, RotateCcw, Plus, Loader2,
+  FileText, FileSpreadsheet, CheckCircle2, Clock, FolderOpen, TrendingUp, Trash2, ChevronDown,
 } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE + "/api";
@@ -21,6 +21,13 @@ import { formatMontantCourt, fmtNum } from "../utils/formatters";
 import SearchSelect from "../components/SearchSelect";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableEmpty } from "../components/Table";
 import Pagination from "../components/Pagination";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter,
+} from "../components/ui/dialog";
+import { cn } from "../lib/utils";
 
 // ─── MoisSelect ─────────────────────────────────────────────────
 const MOIS_FR = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -66,18 +73,21 @@ function MoisSelect({ value, onChange, dateDebut }) {
   return (
     <div ref={ref} className="relative w-full">
       <button type="button" onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white hover:border-[#087F3E] focus:outline-none">
-        <span className={selected ? "text-gray-800" : "text-gray-400"}>
+        className="flex h-9 w-full items-center justify-between rounded-md border border-line-200 bg-white px-2.5 text-[13px] hover:border-ink-300 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100">
+        <span className={selected ? "text-ink-900" : "text-ink-400"}>
           {selected ? selected.label : "— Sélectionner un mois —"}
         </span>
-        <ChevronRight size={13} className={`text-gray-400 transition-transform ${open ? "rotate-90" : ""}`} />
+        <ChevronDown className={cn("h-3.5 w-3.5 text-ink-400 transition-transform", open && "rotate-180")} />
       </button>
       {open && (
-        <div className="absolute z-[999] mt-1 left-0 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
-          <ul className="max-h-52 overflow-y-auto py-1">
+        <div className="absolute left-0 z-[999] mt-1 w-full overflow-hidden rounded-md border border-line-200 bg-white shadow-popover">
+          <ul className="max-h-52 overflow-y-auto scrollbar-thin p-1">
             {options.map(o => (
               <li key={o.key} onClick={() => { onChange(o.key); setOpen(false); }}
-                className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] ${value === o.key ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
+                className={cn(
+                  "cursor-pointer rounded-sm px-3 py-1.5 text-[13px] transition-colors",
+                  value === o.key ? "bg-green-50 font-medium text-green-700" : "text-ink-900 hover:bg-green-50 hover:text-green-700"
+                )}>
                 {o.label}
               </li>
             ))}
@@ -97,27 +107,30 @@ const STATUTS = [
 ];
 
 const INIT = { contrat_id: "", periode_debut: "", periode_fin: "", observations: "" };
-const INPUT = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]";
+const SELECT_CLS = "h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100";
 
-function Field({ label, required, children }) {
+function Field({ label, required, error, children }) {
   return (
-    <div className="space-y-1">
-      <label className="text-xs font-medium text-gray-600 block">
-        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
+    <div className="space-y-1.5">
+      <Label>
+        {label}{required && <span className="ml-0.5 text-red-500">*</span>}
+      </Label>
       {children}
+      {error && <p className="text-xs text-red-500">{error}</p>}
     </div>
   );
 }
 
-function KPICard({ icon: Icon, label, value, sub, color = "text-gray-500", bg = "bg-gray-50" }) {
+function KPICard({ icon: Icon, label, value, sub }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-start gap-3">
-      <div className={`mt-0.5 p-2 rounded-lg ${bg} ${color}`}><Icon size={16} /></div>
+    <div className="flex items-start gap-3 rounded-xl border border-line-200 bg-white p-4 shadow-xs">
+      <div className="mt-0.5 rounded-lg bg-green-100 p-2">
+        <Icon className="h-4 w-4 text-green-600" strokeWidth={1.75} />
+      </div>
       <div>
-        <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-        <p className="text-lg font-bold text-gray-900">{value}</p>
-        {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+        <p className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-ink-500">{label}</p>
+        <p className="text-lg font-bold tabular-nums text-ink-900">{value}</p>
+        {sub && <p className="mt-0.5 text-xs text-ink-500">{sub}</p>}
       </div>
     </div>
   );
@@ -132,7 +145,7 @@ export default function EtatsCessionListPage() {
   const deleteMut    = useDeleteEtatCession();
   const statutMut    = useEtatCessionStatut();
   const [marquantId, setMarquantId] = useState(null);
-  const [confirmDelete, setConfirmDelete] = useState(null); // { id, code }
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   const [search,         setSearch]        = useState("");
   const [statut,         setStatut]        = useState("");
@@ -172,7 +185,7 @@ export default function EtatsCessionListPage() {
   const contrats = contratsData?.data ?? [];
 
   const { data: sttData } = useSousTraitantsPaginated({ count: 500 });
-  const soustraitants = sttData?.data ?? []; // used in modal form only
+  const soustraitants = sttData?.data ?? [];
 
   const { data: chantiersData } = useChantiersPaginated({ count: 500 });
   const chantiers = chantiersData?.data ?? [];
@@ -190,7 +203,6 @@ export default function EtatsCessionListPage() {
     };
   }, [allEC]);
 
-  // Auto-sélection du mois quand le contrat change dans le modal
   useEffect(() => {
     if (!form.contrat_id || !showModal) return;
     const contrat = contrats.find(c => String(c.id) === String(form.contrat_id));
@@ -208,7 +220,6 @@ export default function EtatsCessionListPage() {
         } else if (contrat?.date_debut) {
           debutStr = contrat.date_debut.slice(0, 10);
         } else return;
-        // Retrouve le mois correspondant (début = 26 du mois M-1, donc mois cible = mois de debutStr + 1)
         const d = new Date(debutStr);
         const targetY = d.getDate() >= 26 ? (d.getMonth() === 11 ? d.getFullYear() + 1 : d.getFullYear()) : d.getFullYear();
         const targetM = d.getDate() >= 26 ? (d.getMonth() + 1) % 12 + 1 : d.getMonth() + 1;
@@ -297,53 +308,57 @@ export default function EtatsCessionListPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <PageHeader
         title="États de cession"
-        subtitle="Arrêtés périodiques MTX/MTL/RH, contrôlés et visés, consommés par les décomptes"
-        action={
-          <div className="flex items-center gap-2">
-{peutCreer && (
-              <button onClick={openModal}
-                className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
-                <Plus size={16} /> Nouvel état de cession
-              </button>
+        description="Arrêtés périodiques MTX/MTL/RH, contrôlés et visés, consommés par les décomptes"
+        total={meta.total}
+        actions={
+          <>
+            <Button variant="secondary" onClick={exportExcel}>
+              <FileSpreadsheet className="h-4 w-4" /> Excel
+            </Button>
+            {peutCreer && (
+              <Button onClick={openModal}>
+                <Plus className="h-4 w-4" /> Nouvel état de cession
+              </Button>
             )}
-          </div>
+          </>
         }
       />
 
       {/* KPI Bandeau */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KPICard icon={FolderOpen}    label="États ouverts"           value={kpis.ouverts}    sub="En brouillon"            color="text-gray-500"    bg="bg-gray-100" />
-        <KPICard icon={Clock}         label="États en contrôle"       value={kpis.enControle} sub="Soumis, en attente"       color="text-amber-600"   bg="bg-amber-50" />
-        <KPICard icon={CheckCircle2}  label="Arrêtés"                 value={kpis.arretes}    sub="Validés, consommables"    color="text-[#087F3E]"   bg="bg-[#E8F5EE]" />
-        <KPICard icon={TrendingUp}    label="Total valorisé (mois)"   value={formatMontantCourt(kpis.totalMois)} sub="Mois courant"         color="text-violet-600"  bg="bg-violet-50" />
+      <div className="stagger-in grid grid-cols-2 gap-3 md:grid-cols-4">
+        <KPICard icon={FolderOpen}    label="États ouverts"         value={kpis.ouverts}    sub="En brouillon" />
+        <KPICard icon={Clock}         label="États en contrôle"     value={kpis.enControle} sub="Soumis, en attente" />
+        <KPICard icon={CheckCircle2}  label="Arrêtés"               value={kpis.arretes}    sub="Validés, consommables" />
+        <KPICard icon={TrendingUp}    label="Total valorisé (mois)" value={formatMontantCourt(kpis.totalMois)} sub="Mois courant" />
       </div>
 
       {/* Filtres */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input placeholder="Code EC, code contrat, sous-traitant…" value={search}
+      <div className="rounded-xl border border-line-200 bg-white p-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative min-w-[200px] flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+            <Input
+              placeholder="Code EC, code contrat, sous-traitant…"
+              value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+              className="pl-9"
+            />
           </div>
-          <SearchSelect value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+          <select value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }} className={SELECT_CLS + " max-w-[200px]"}>
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-          </SearchSelect>
-          <SearchSelect value={chantierFilter} onChange={e => { setChantierFilter(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 max-w-[200px]">
+          </select>
+          <select value={chantierFilter} onChange={e => { setChantierFilter(e.target.value); setPage(1); }} className={SELECT_CLS + " max-w-[220px]"}>
             <option value="">Tous les chantiers</option>
             {chantiers.map(c => <option key={c.id} value={c.id}>{c.designation}</option>)}
-          </SearchSelect>
+          </select>
           {hasFilter && (
-            <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
-              <RotateCcw size={13} /> Réinitialiser
-            </button>
+            <Button variant="ghost" size="sm" onClick={reset}>
+              <RotateCcw className="h-3.5 w-3.5" /> Réinitialiser
+            </Button>
           )}
         </div>
       </div>
@@ -352,7 +367,7 @@ export default function EtatsCessionListPage() {
       {isLoading ? (
         <SkeletonTable rows={8} cols={6} />
       ) : isError ? (
-        <div className="text-center py-16 text-red-500 text-sm bg-white rounded-xl border border-gray-200">
+        <div className="rounded-xl border border-line-200 bg-white py-16 text-center text-[13px] text-red-500">
           Impossible de charger les états de cession.
         </div>
       ) : (
@@ -371,31 +386,31 @@ export default function EtatsCessionListPage() {
                 <TableEmpty colSpan={11} icon={FileText} message="Aucun état de cession ne correspond aux filtres." />
               ) : rows.map(e => (
                 <TableRow key={e.id} clickable onClick={() => navigate(`/etats-cession/${e.id}`)}>
-                  <TableCell><span className="font-mono font-semibold">{e.code}</span></TableCell>
+                  <TableCell><span className="font-mono font-semibold text-ink-900">{e.code}</span></TableCell>
                   <TableCell>
-                    <p className="font-mono text-gray-700">{e.contrat?.code ?? "—"}</p>
-                    <p className="text-xs text-gray-400 truncate max-w-[140px]">{e.contrat?.soustraitant?.raison_sociale}</p>
+                    <p className="font-mono text-ink-700">{e.contrat?.code ?? "—"}</p>
+                    <p className="max-w-[160px] truncate text-xs text-ink-500">{e.contrat?.soustraitant?.raison_sociale}</p>
                   </TableCell>
-                  <TableCell><span className="block max-w-[120px] truncate text-xs text-gray-500">{e.contrat?.chantier?.designation ?? "—"}</span></TableCell>
-                  <TableCell className="text-xs text-gray-500 whitespace-nowrap">{fmtPeriode(e.periode_debut, e.periode_fin)}</TableCell>
+                  <TableCell><span className="block max-w-[140px] truncate text-xs text-ink-500">{e.contrat?.chantier?.designation ?? "—"}</span></TableCell>
+                  <TableCell className="whitespace-nowrap text-xs text-ink-500">{fmtPeriode(e.periode_debut, e.periode_fin)}</TableCell>
                   {["MTX", "MTL", "RH", "GASOIL"].map(type => {
                     const lignes = e.lignes ?? [];
                     const total = lignes.filter(l => l.poste === type).reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
                     const hasType = lignes.some(l => l.poste === type);
                     return (
-                      <TableCell key={type} className="text-xs tabular-nums whitespace-nowrap">
+                      <TableCell key={type} className="whitespace-nowrap text-xs tabular-nums">
                         {hasType
-                          ? <span className="font-medium text-gray-700">{fmtNum(Math.round(total))} FCFA</span>
-                          : <span className="text-gray-300">—</span>}
+                          ? <span className="font-medium text-ink-900">{fmtNum(Math.round(total))} FCFA</span>
+                          : <span className="text-ink-300">—</span>}
                       </TableCell>
                     );
                   })}
-                  <TableCell><MoneyDisplay amount={e.montant_total ?? 0} variant="small" /></TableCell>
+                  <TableCell><MoneyDisplay amount={e.montant_total ?? 0} variant="small" className="font-semibold text-green-700" /></TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1.5">
                       <StatusBadge statut={e.statut} />
                       {e.statut === "brouillon" && (e.lignes ?? []).some(l => !l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0) && (
-                        <span title="Lignes sans prix — soumission bloquée" className="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">
+                        <span title="Lignes sans prix — soumission bloquée" className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
                           ⚠ Prix
                         </span>
                       )}
@@ -407,19 +422,19 @@ export default function EtatsCessionListPage() {
                         <button
                           onClick={() => handleMarquerPret(e)}
                           disabled={marquantId === e.id}
-                          className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700 border border-blue-200 bg-blue-50 px-2 py-1 rounded-lg hover:bg-blue-100 disabled:opacity-50 transition-colors whitespace-nowrap"
+                          className="inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-md border border-green-200 bg-green-50 px-2 text-[11px] font-medium text-green-700 transition-colors hover:bg-green-100 disabled:opacity-50"
                           title="Marquer comme prête pour génération note de débit"
                         >
-                          {marquantId === e.id ? <Loader2 size={11} className="animate-spin" /> : <FileText size={11} />}
+                          {marquantId === e.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
                           Prête · ND
                         </button>
                       )}
                       <button
                         onClick={() => setConfirmDelete({ id: e.id, code: e.code })}
-                        className="p-1.5 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-colors"
+                        className="rounded-md p-1.5 text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600"
                         title="Supprimer"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </TableCell>
@@ -434,48 +449,45 @@ export default function EtatsCessionListPage() {
       )}
 
       {/* Modal confirmation suppression */}
-      {confirmDelete && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-red-50"><Trash2 size={18} className="text-red-500" /></div>
-              <h2 className="text-base font-bold text-gray-900">Supprimer {confirmDelete.code} ?</h2>
-            </div>
-            <p className="text-sm text-gray-500">Toutes les lignes seront supprimées. Cette action est irréversible.</p>
-            <div className="flex gap-3 pt-1">
-              <button onClick={() => setConfirmDelete(null)}
-                className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
-                Annuler
-              </button>
-              <button onClick={handleDelete} disabled={deleteMut.isPending}
-                className="flex-1 py-2.5 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                {deleteMut.isPending && <Loader2 size={14} className="animate-spin" />} Supprimer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog open={!!confirmDelete} onOpenChange={o => !o && setConfirmDelete(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-4 w-4 text-ink-500" strokeWidth={1.75} />
+              Supprimer {confirmDelete?.code} ?
+            </DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <p className="text-[13px] text-ink-700">Toutes les lignes seront supprimées. Cette action est irréversible.</p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Annuler</Button>
+            <Button variant="danger" onClick={handleDelete} disabled={deleteMut.isPending}>
+              {deleteMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modal création */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-              <h2 className="text-base font-bold text-gray-900">Nouvel état de cession</h2>
-              <button onClick={() => setShowModal(false)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"><X size={18} /></button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <Field label="Contrat" required>
+      <Dialog open={showModal} onOpenChange={setShowModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Nouvel état de cession</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit}>
+            <DialogBody className="space-y-4">
+              <Field label="Contrat" required error={errors.contrat_id}>
                 <SearchSelect value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)}
-                  className={`${INPUT} ${errors.contrat_id ? "border-red-400" : ""}`}>
+                  className={cn(SELECT_CLS, errors.contrat_id && "border-red-400")}>
                   <option value="">— Sélectionner un contrat actif —</option>
                   {contrats.filter(c => c.statut === "actif").map(c => (
                     <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale ?? "?"}</option>
                   ))}
                 </SearchSelect>
-                {errors.contrat_id && <p className="text-xs text-red-500 mt-1">{errors.contrat_id}</p>}
               </Field>
-              <Field label="Mois" required>
+              <Field label="Mois" required error={errors.periode_debut || errors.periode_fin ? "Sélectionner un mois" : null}>
                 <MoisSelect
                   value={selectedMois}
                   dateDebut={contrats.find(c => String(c.id) === String(form.contrat_id))?.date_debut}
@@ -487,32 +499,32 @@ export default function EtatsCessionListPage() {
                   }}
                 />
                 {form.periode_debut && form.periode_fin && (
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    Période : <span className="font-medium text-gray-700">
+                  <p className="mt-1.5 text-xs text-ink-500">
+                    Période : <span className="font-medium text-ink-900">
                       {new Date(form.periode_debut + "T00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
-                    </span> → <span className="font-medium text-gray-700">
+                    </span> → <span className="font-medium text-ink-900">
                       {new Date(form.periode_fin + "T00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
                     </span>
                   </p>
                 )}
-                {(errors.periode_debut || errors.periode_fin) && <p className="text-xs text-red-500 mt-1">Sélectionner un mois</p>}
               </Field>
               <Field label="Observations">
                 <textarea value={form.observations} onChange={e => set("observations", e.target.value)}
-                  rows={2} className={INPUT} placeholder="Notes optionnelles…" />
+                  rows={2}
+                  className="w-full resize-none rounded-md border border-line-200 bg-white px-2.5 py-2 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
+                  placeholder="Notes optionnelles…" />
               </Field>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">Annuler</button>
-                <button type="submit" disabled={saveMut.isPending}
-                  className="flex-1 py-2.5 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                  {saveMut.isPending && <Loader2 size={14} className="animate-spin" />} Créer
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </DialogBody>
+            <DialogFooter>
+              <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>Annuler</Button>
+              <Button type="submit" disabled={saveMut.isPending}>
+                {saveMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Créer
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
