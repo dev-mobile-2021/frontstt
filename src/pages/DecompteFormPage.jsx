@@ -1001,7 +1001,7 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
 
               <PosteLigne code="B" type="plus"
                 label={`Révisions de prix${tauxRevisionPrix > 0 ? ` (${tauxRevisionPrix}% × A)` : " — taux non configuré"}`}
-                extra={tauxRevisionPrix === 0 ? <Link to={`/contrats/${d.contrat_id}?tab=parametrage`} target="_blank" className="text-[#087F3E] hover:underline">Configurer le taux dans l'onglet Paramétrage du contrat ↗</Link> : null}
+                extra={tauxRevisionPrix === 0 ? <Link to={`/contrats/${d.contrat_id}?tab=parametrage`} target="_blank" className="font-medium text-green-600 hover:text-green-700">Configurer le taux dans l'onglet Paramétrage du contrat ↗</Link> : null}
                 cumulM1={cM1("B")} mensuelM={mensuelB} cumulM={cumulB} editable={false} />
 
               <PosteLigne code="B2" type="plus" label="Sommes à faire valoir"
@@ -1658,15 +1658,17 @@ function NouveauForm({ onSave, saving, initialContratId }) {
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
+  const SELECT_CLS = "h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100";
+  const LABEL_CLS = "mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-ink-500";
+
   return (
     <div className="max-w-xl space-y-5">
-      <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Informations générales</h3>
+      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Informations générales</h3>
 
       <div className="space-y-4">
         <div>
-          <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-1.5">Contrat *</label>
-          <SearchSelect value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)}
-            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white">
+          <label className={LABEL_CLS}>Contrat *</label>
+          <SearchSelect value={form.contrat_id} onChange={e => set("contrat_id", e.target.value)} className={SELECT_CLS}>
             <option value="">— Sélectionner un contrat —</option>
             {contrats.map(c => (
               <option key={c.id} value={c.id}>{c.code} — {c.objet ?? c.soustraitant?.raison_sociale ?? ""}</option>
@@ -1675,35 +1677,32 @@ function NouveauForm({ onSave, saving, initialContratId }) {
         </div>
 
         <div>
-          <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-1.5">Type de décompte *</label>
-          <SearchSelect value={form.type} onChange={e => set("type", e.target.value)}
-            className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none bg-white">
+          <label className={LABEL_CLS}>Type de décompte *</label>
+          <SearchSelect value={form.type} onChange={e => set("type", e.target.value)} className={SELECT_CLS}>
             {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </SearchSelect>
         </div>
 
-        <div className="p-3 bg-gray-50 rounded-xl">
-          <p className="text-xs text-gray-400 mb-0.5">Mode de renseignement</p>
-          <p className="text-sm font-medium text-gray-700">Saisie manuelle</p>
+        <div className="rounded-md border border-line-200 bg-surface-50 p-3">
+          <p className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-ink-500">Mode de renseignement</p>
+          <p className="text-[13px] font-medium text-ink-900">Saisie manuelle</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-1.5">Date de début *</label>
-            <input type="date" value={form.date_debut} onChange={e => set("date_debut", e.target.value)}
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+            <label className={LABEL_CLS}>Date de début *</label>
+            <input type="date" value={form.date_debut} onChange={e => set("date_debut", e.target.value)} className={SELECT_CLS} />
           </div>
           <div>
-            <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block mb-1.5">Date de fin *</label>
-            <input type="date" value={form.date_fin} onChange={e => set("date_fin", e.target.value)}
-              className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+            <label className={LABEL_CLS}>Date de fin *</label>
+            <input type="date" value={form.date_fin} onChange={e => set("date_fin", e.target.value)} className={SELECT_CLS} />
           </div>
         </div>
       </div>
 
       <button onClick={() => onSave(form)} disabled={!form.contrat_id || !form.date_debut || !form.date_fin || saving}
-        className="w-full flex items-center justify-center gap-2 px-5 py-2.5 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50">
-        {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={14} />}
+        className="inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-md bg-green-600 px-5 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-50">
+        {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-3.5 w-3.5" />}
         Enregistrer le brouillon
       </button>
     </div>
