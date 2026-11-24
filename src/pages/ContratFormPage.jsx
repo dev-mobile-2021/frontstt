@@ -2192,12 +2192,16 @@ function DqeTab({ contratId, contrat }) {
 
       {/* Modal confirmation validation DQE */}
       {showConfirmValider && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm space-y-4">
-            <h3 className="text-base font-semibold text-gray-800">Confirmer la validation</h3>
-            <p className="text-sm text-gray-600">Valider ce DQE en tant que <strong>{showConfirmValider}</strong> ?</p>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => setShowConfirmValider(false)} className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Annuler</button>
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4">
+          <div className="dialog-content w-full max-w-sm rounded-lg border border-line-200 bg-white shadow-popover">
+            <div className="border-b border-line-200 px-5 py-4">
+              <h3 className="text-sm font-semibold text-ink-900">Confirmer la validation</h3>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-[13px] text-ink-700">Valider ce DQE en tant que <strong>{showConfirmValider}</strong> ?</p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-line-200 px-5 py-3">
+              <button onClick={() => setShowConfirmValider(false)} className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300">Annuler</button>
               <button
                 disabled={validLoading}
                 onClick={async () => {
@@ -2210,9 +2214,9 @@ function DqeTab({ contratId, contrat }) {
                     setValidLoading(false);
                   }
                 }}
-                className="px-4 py-2 text-sm bg-[#087F3E] text-white rounded-lg font-medium hover:bg-[#076a34] disabled:opacity-50 inline-flex items-center gap-1.5"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-50"
               >
-                {validLoading && <Loader2 size={13} className="animate-spin" />} Confirmer
+                {validLoading && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Confirmer
               </button>
             </div>
           </div>
@@ -2709,29 +2713,29 @@ function DqeTab({ contratId, contrat }) {
 
       {/* Confirm delete modal */}
       {confirmDel && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
-                <Trash2 size={18} className="text-red-500" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">Supprimer {confirmDel.type}</p>
-                <p className="text-xs text-gray-500">{confirmDel.label}</p>
-              </div>
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4">
+          <div className="dialog-content w-full max-w-sm rounded-lg border border-line-200 bg-white shadow-popover">
+            <div className="border-b border-line-200 px-5 py-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+                <Trash2 className="h-4 w-4 text-ink-500" strokeWidth={1.75} />
+                Supprimer {confirmDel.type}
+              </h3>
+              <p className="mt-1 font-mono text-xs text-ink-500">{confirmDel.label}</p>
             </div>
-            <p className="text-sm text-gray-600">
-              {confirmDel.type === "rubrique" && "La rubrique et tous ses postes/lignes seront supprimés."}
-              {confirmDel.type === "poste" && "Le poste et toutes ses lignes seront supprimés."}
-              {confirmDel.type === "ligne" && "La ligne sera supprimée."}
-            </p>
-            <div className="flex gap-3 pt-1">
+            <div className="px-5 py-4">
+              <p className="text-[13px] text-ink-700">
+                {confirmDel.type === "rubrique" && "La rubrique et tous ses postes/lignes seront supprimés."}
+                {confirmDel.type === "poste" && "Le poste et toutes ses lignes seront supprimés."}
+                {confirmDel.type === "ligne" && "La ligne sera supprimée."}
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-line-200 px-5 py-3">
               <button onClick={() => setConfirmDel(null)}
-                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">
+                className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300">
                 Annuler
               </button>
               <button onClick={doDelete}
-                className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600">
+                className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 transition-colors hover:bg-ink-900 hover:text-white">
                 Supprimer
               </button>
             </div>
@@ -2739,16 +2743,19 @@ function DqeTab({ contratId, contrat }) {
         </div>
       )}
 
-      {/* Modale historique ligne */}
       {/* Modal confirmation BIS */}
       {confirmBisLigneId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm space-y-4 p-6">
-            <h3 className="text-base font-semibold text-gray-800">Ligne utilisée dans un décompte</h3>
-            <p className="text-sm text-gray-600">Cette ligne est déjà utilisée dans un décompte ou attachement. La modification créera automatiquement une <strong>ligne BIS</strong>. Continuer ?</p>
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => { setConfirmBisLigneId(null); setEditLigneId(null); }} className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">Annuler</button>
-              <button onClick={() => submitEditLigneConfirmed(confirmBisLigneId)} className="px-4 py-2 text-sm bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 inline-flex items-center gap-1.5">
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4">
+          <div className="dialog-content w-full max-w-sm rounded-lg border border-line-200 bg-white shadow-popover">
+            <div className="border-b border-line-200 px-5 py-4">
+              <h3 className="text-sm font-semibold text-ink-900">Ligne utilisée dans un décompte</h3>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-[13px] text-ink-700">Cette ligne est déjà utilisée dans un décompte ou attachement. La modification créera automatiquement une <strong>ligne BIS</strong>. Continuer ?</p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-line-200 px-5 py-3">
+              <button onClick={() => { setConfirmBisLigneId(null); setEditLigneId(null); }} className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300">Annuler</button>
+              <button onClick={() => submitEditLigneConfirmed(confirmBisLigneId)} className="inline-flex h-9 items-center gap-1.5 rounded-md bg-amber-500 px-4 text-[13px] font-medium text-white transition-colors hover:bg-amber-600">
                 Créer une ligne BIS
               </button>
             </div>
@@ -2756,43 +2763,44 @@ function DqeTab({ contratId, contrat }) {
         </div>
       )}
 
+      {/* Modale historique ligne */}
       {historiqueModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] flex flex-col">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">Historique des modifications</p>
-                <p className="text-xs text-gray-400 truncate max-w-xs">{historiqueModal.designation}</p>
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4">
+          <div className="dialog-content flex max-h-[80vh] w-full max-w-lg flex-col rounded-lg border border-line-200 bg-white shadow-popover">
+            <div className="flex items-center justify-between border-b border-line-200 px-5 py-4">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-ink-900">Historique des modifications</p>
+                <p className="max-w-xs truncate text-xs text-ink-500">{historiqueModal.designation}</p>
               </div>
-              <button onClick={() => setHistoriqueModal(null)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400">
-                <XCircle size={16} />
+              <button onClick={() => setHistoriqueModal(null)} className="rounded-md p-1 text-ink-500 hover:bg-surface-50 hover:text-ink-900">
+                <XCircle className="h-4 w-4" />
               </button>
             </div>
-            <div className="overflow-y-auto flex-1 p-4">
+            <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
               {historiqueLoading ? (
-                <div className="flex justify-center py-8"><div className="w-5 h-5 border-2 border-[#087F3E] border-t-transparent rounded-full animate-spin" /></div>
+                <div className="flex justify-center py-8"><div className="h-5 w-5 animate-spin rounded-full border-2 border-green-600 border-t-transparent" /></div>
               ) : historiqueData.length === 0 ? (
-                <p className="text-sm text-gray-400 text-center py-8">Aucun historique pour cette ligne.</p>
+                <p className="py-8 text-center text-[13px] text-ink-400">Aucun historique pour cette ligne.</p>
               ) : (
                 <div className="space-y-2">
                   {historiqueData.map(h => (
-                    <div key={h.id} className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
-                      <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${h.action === 'bis_cree' ? 'bg-amber-400' : h.action === 'modifie' ? 'bg-blue-400' : 'bg-emerald-400'}`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${h.action === 'bis_cree' ? 'bg-amber-100 text-amber-700' : h.action === 'modifie' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                    <div key={h.id} className="flex items-start gap-3 rounded-md border border-line-200 bg-surface-50 p-3">
+                      <div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${h.action === 'bis_cree' ? 'bg-amber-500' : h.action === 'modifie' ? 'bg-green-500' : 'bg-green-600'}`} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${h.action === 'bis_cree' ? 'bg-amber-100 text-amber-700' : h.action === 'modifie' ? 'bg-green-100 text-green-700' : 'bg-green-100 text-green-700'}`}>
                             {h.action === 'bis_cree' ? 'Ligne BIS créée' : h.action === 'modifie' ? 'Modifié' : 'Créé'}
                           </span>
-                          {h.champ && <span className="text-[10px] text-gray-500 font-mono">{h.champ}</span>}
+                          {h.champ && <span className="font-mono text-[10px] text-ink-500">{h.champ}</span>}
                         </div>
                         {h.ancienne_valeur && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            <span className="line-through text-red-400">{h.ancienne_valeur}</span>
-                            <span className="mx-1 text-gray-300">→</span>
-                            <span className="text-emerald-600 font-medium">{h.nouvelle_valeur}</span>
+                          <p className="mt-1 text-xs text-ink-500">
+                            <span className="text-red-500 line-through">{h.ancienne_valeur}</span>
+                            <span className="mx-1 text-ink-300">→</span>
+                            <span className="font-medium text-green-700">{h.nouvelle_valeur}</span>
                           </p>
                         )}
-                        <p className="text-[10px] text-gray-400 mt-1">{h.user ?? "—"} · {h.created_at}</p>
+                        <p className="mt-1 text-[10px] text-ink-400">{h.user ?? "—"} · {h.created_at}</p>
                       </div>
                     </div>
                   ))}
