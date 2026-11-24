@@ -13,6 +13,7 @@ import { useUser } from "../context/UserContext";
 import http from "../services/http";
 import SearchSelect from "../components/SearchSelect";
 import ConfirmModal from "../components/ConfirmModal";
+import { cn } from "../lib/utils";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const num  = v => new Intl.NumberFormat("fr-FR").format(Math.round(Math.abs(v ?? 0)));
@@ -28,14 +29,14 @@ const TYPE_LABELS = {
 };
 
 const STATUT_COLORS = {
-  brouillon:    "bg-gray-100 text-gray-600 border-gray-200",
-  soumis:       "bg-blue-100 text-blue-700 border-blue-200",
-  rejete:       "bg-red-100 text-red-700 border-red-200",
-  paye:         "bg-emerald-100 text-emerald-700 border-emerald-200",
+  brouillon:    "bg-surface-50 text-ink-700 border-line-200",
+  soumis:       "bg-green-50 text-green-700 border-green-200",
+  rejete:       "bg-red-50 text-red-700 border-red-200",
+  paye:         "bg-green-100 text-green-800 border-green-300",
 };
 
 function statutColor(statut) {
-  return STATUT_COLORS[statut] || "bg-purple-100 text-purple-700 border-purple-200";
+  return STATUT_COLORS[statut] || "bg-amber-50 text-amber-700 border-amber-200";
 }
 
 // ─── Checklists par étape ────────────────────────────────────────────────────
@@ -2305,15 +2306,15 @@ export default function DecompteFormPage() {
   if (!isNew && isLoading) {
     return (
       <div className="space-y-4">
-        {[1,2,3].map(i => <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />)}
+        {[1,2,3].map(i => <div key={i} className="h-24 animate-pulse rounded-xl bg-line-100" />)}
       </div>
     );
   }
   if (!isNew && (isError || !d)) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-        <p className="font-medium">Décompte introuvable</p>
-        <button onClick={() => navigate("/decomptes")} className="mt-4 text-sm text-[#087F3E] hover:underline">Retour</button>
+      <div className="flex flex-col items-center justify-center py-24">
+        <p className="text-base font-semibold text-ink-700">Décompte introuvable</p>
+        <button onClick={() => navigate("/decomptes")} className="mt-4 text-[13px] font-medium text-green-600 hover:text-green-700">Retour</button>
       </div>
     );
   }
@@ -2342,44 +2343,42 @@ export default function DecompteFormPage() {
   return (
     <div className="space-y-5">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <button onClick={() => navigate("/decomptes")} className="hover:text-[#087F3E] flex items-center gap-1">
-          <ArrowLeft size={14} /> Décomptes
+      <div className="flex items-center gap-2 text-[13px] text-ink-500">
+        <button onClick={() => navigate("/decomptes")} className="flex items-center gap-1 hover:text-green-600">
+          <ArrowLeft className="h-3.5 w-3.5" /> Décomptes
         </button>
-        <ChevronRight size={14} />
+        <ChevronRight className="h-3.5 w-3.5 text-ink-300" />
         {!isNew && d && (
-          <>
-            <button className="hover:text-[#087F3E] truncate max-w-[160px]">{d.code}</button>
-          </>
+          <span className="max-w-[160px] truncate font-medium text-ink-900">{d.code}</span>
         )}
-        {isNew && <span className="text-gray-900 font-medium">Nouveau décompte</span>}
+        {isNew && <span className="font-medium text-ink-900">Nouveau décompte</span>}
       </div>
 
       {/* Header */}
       {isNew ? (
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Nouveau décompte</h1>
+          <h1 className="text-[26px] font-semibold leading-tight text-ink-900">Nouveau décompte</h1>
         </div>
       ) : d && (
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-xl font-bold text-gray-900">{d.code}</h1>
-              <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${statutColor(d.statut)}`}>
+        <div className="flex flex-wrap items-start justify-between gap-4 pb-1">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-[26px] font-semibold leading-tight text-ink-900">{d.code}</h1>
+              <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${statutColor(d.statut)}`}>
                 {d.statut === "paye" ? "Payé" : d.statut === "brouillon" ? "Brouillon" : d.statut === "rejete" ? "Rejeté" : "En validation"}
               </span>
             </div>
-            <p className="text-sm text-gray-500 mt-0.5">
+            <p className="mt-1 text-[13px] text-ink-500">
               Contrat {d.contrat?.code} — {d.contrat?.objet ?? ""} · {fmtD(d.date_debut)} → {fmtD(d.date_fin)}
               {d.contrat?.soustraitant?.raison_sociale && <span className="ml-2">{d.contrat.soustraitant.raison_sociale}</span>}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">Mode : Saisie manuelle</p>
+            <p className="mt-0.5 text-xs text-ink-400">Mode : Saisie manuelle</p>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
             {/* Bandeau verrouillage DG */}
             {lockedByDg && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs">
-                <XCircle size={12} /> Verrouillé — validé par le DG, aucune modification possible
+              <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                <XCircle className="h-3 w-3" /> Verrouillé — validé par le DG, aucune modification possible
               </div>
             )}
             {/* Bandeau statut en validation */}
@@ -2387,8 +2386,8 @@ export default function DecompteFormPage() {
               const etapes = [...circuit].sort((a, b) => a.ordre - b.ordre);
               const cur = etapes.find(e => e.statut_avant === d.statut);
               return cur ? (
-                <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs">
-                  <Clock size={12} /> En attente de validation par <strong>{cur.profil_code.toUpperCase()}</strong>
+                <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <Clock className="h-3 w-3" /> En attente de validation par <strong>{cur.profil_code.toUpperCase()}</strong>
                 </div>
               ) : null;
             })()}
@@ -2401,17 +2400,17 @@ export default function DecompteFormPage() {
             />
             {canEdit && !isNew && (
               <button onClick={() => setConfirmDel(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm text-red-600 border border-red-200 rounded-xl hover:bg-red-50">
-                <Trash2 size={14} /> Supprimer
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 transition-colors hover:bg-ink-900 hover:text-white">
+                <Trash2 className="h-3.5 w-3.5" /> Supprimer
               </button>
             )}
             <button onClick={handleExcel}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-emerald-700 border border-emerald-200 rounded-xl hover:bg-emerald-50">
-              <FileDown size={14} /> Excel
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 transition-colors hover:bg-surface-50 hover:border-ink-300">
+              <FileDown className="h-3.5 w-3.5" /> Excel
             </button>
             <button onClick={handlePdf}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
-              <FileDown size={14} /> PDF
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 transition-colors hover:bg-surface-50 hover:border-ink-300">
+              <FileDown className="h-3.5 w-3.5" /> PDF
             </button>
           </div>
         </div>
@@ -2419,20 +2418,15 @@ export default function DecompteFormPage() {
 
       {/* Nouveau décompte — form simple */}
       {isNew ? (
-        <div className="bg-white border border-gray-200 rounded-2xl p-6">
-          <div className="grid grid-cols-[1fr_auto] gap-6">
-            <NouveauForm onSave={handleCreate} saving={saveMut.isPending} initialContratId={initialContratId} />
-            {/* Tabs vides pour respecter la maquette */}
-            <div className="w-56" />
-          </div>
-          {/* Tabs factices */}
-          <div className="mt-6 border-t border-gray-100 pt-4">
-            <div className="flex gap-1 border-b border-gray-100">
+        <div className="rounded-xl border border-line-200 bg-white p-6 shadow-xs">
+          <NouveauForm onSave={handleCreate} saving={saveMut.isPending} initialContratId={initialContratId} />
+          <div className="mt-6 border-t border-line-200 pt-4">
+            <div className="flex gap-1 border-b border-line-200">
               {["Structure", "Cessions 0", "Workflow & Discussion 0", "Pièces jointes 0"].map(t => (
-                <span key={t} className="px-3 py-2 text-xs text-gray-400 border-b-2 border-transparent">{t}</span>
+                <span key={t} className="-mb-px border-b-2 border-transparent px-3 py-2 text-xs text-ink-400">{t}</span>
               ))}
             </div>
-            <div className="py-8 text-center text-sm text-gray-400">
+            <div className="py-8 text-center text-[13px] text-ink-400">
               Enregistrer d'abord le brouillon pour accéder aux onglets.
             </div>
           </div>
@@ -2440,35 +2434,40 @@ export default function DecompteFormPage() {
       ) : d && (
         <div className="space-y-4">
         {/* ── 3 cartes résumé ── */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">Montant partiel</p>
-            <p className="text-xl font-bold text-gray-900 tabular-nums">{num(d.payload?.postes?.A?.mensuelM ?? 0)} <span className="text-sm font-normal text-gray-400">FCFA</span></p>
-            <p className="text-[10px] text-gray-400 mt-1">Travaux exécutés ce mois</p>
+        <div className="stagger-in grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border border-line-200 bg-white px-5 py-4 shadow-xs">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-500">Montant partiel</p>
+            <p className="text-xl font-bold tabular-nums text-ink-900">{num(d.payload?.postes?.A?.mensuelM ?? 0)} <span className="text-sm font-normal text-ink-500">FCFA</span></p>
+            <p className="mt-1 text-[10px] text-ink-500">Travaux exécutés ce mois</p>
           </div>
-          <div className="bg-white border border-[#087F3E]/40 rounded-2xl px-5 py-4">
-            <p className="text-xs text-[#087F3E] font-medium uppercase tracking-wide mb-1">Net TTC à payer</p>
-            <p className="text-xl font-bold text-[#087F3E] tabular-nums">{num(d.montant_ttc ?? 0)} <span className="text-sm font-normal text-[#087F3E]/60">FCFA</span></p>
-            <p className="text-[10px] text-gray-400 mt-1">TVA {d.taux_tva ?? 18}% incluse</p>
+          <div className="rounded-xl border border-green-300 bg-green-50 px-5 py-4 shadow-xs">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-green-700">Net TTC à payer</p>
+            <p className="text-xl font-bold tabular-nums text-green-700">{num(d.montant_ttc ?? 0)} <span className="text-sm font-normal text-green-600">FCFA</span></p>
+            <p className="mt-1 text-[10px] text-ink-500">TVA {d.taux_tva ?? 18}% incluse</p>
           </div>
-          <div className="bg-white border border-dashed border-gray-300 rounded-2xl px-5 py-4 flex flex-col justify-center items-center text-center">
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-1">À définir</p>
-            <p className="text-sm text-gray-300 mt-1">—</p>
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-line-200 bg-white px-5 py-4 text-center">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-500">À définir</p>
+            <p className="mt-1 text-sm text-ink-300">—</p>
           </div>
         </div>
 
-        <div className="flex gap-5 items-start">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
           {/* Contenu principal */}
-          <div className="flex-1 min-w-0">
-            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="min-w-0 flex-1">
+            <div className="overflow-hidden rounded-xl border border-line-200 bg-white shadow-xs">
               {/* Tabs */}
-              <div className="flex border-b border-gray-200 px-2 pt-1">
+              <div className="flex border-b border-line-200 px-2 pt-1 overflow-x-auto scrollbar-thin">
                 {tabs.map(t => (
                   <button key={t.id} onClick={() => setActiveTab(t.id)}
-                    className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${activeTab === t.id ? "border-[#087F3E] text-[#087F3E]" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+                    className={cn(
+                      "-mb-px flex items-center gap-1.5 whitespace-nowrap border-b-2 px-4 py-3 text-[13px] font-medium transition-colors",
+                      activeTab === t.id
+                        ? "border-green-600 text-green-600"
+                        : "border-transparent text-ink-500 hover:text-ink-900"
+                    )}>
                     {t.label}
                     {t.pendingLabel && (
-                      <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full leading-none">
+                      <span className="rounded-full border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-amber-700">
                         {t.pendingLabel}
                       </span>
                     )}
