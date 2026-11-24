@@ -62,28 +62,28 @@ function MoisSelect({ value, onChange, options }) {
   return (
     <div ref={ref} className="relative w-full">
       <button type="button" onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
-        <span className={selected ? "text-gray-800 truncate" : "text-gray-400"}>
+        className="flex h-9 w-full items-center justify-between rounded-md border border-line-200 bg-white px-2.5 text-[13px] transition-colors hover:border-ink-300 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100">
+        <span className={selected ? "truncate text-ink-900" : "text-ink-400"}>
           {selected ? selected.label : "— Sélectionner un mois —"}
         </span>
-        <ChevronDown size={14} className={`ml-2 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`ml-2 h-3.5 w-3.5 shrink-0 text-ink-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute z-[999] mt-1 left-0 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
-          <div className="p-2 border-b border-gray-100">
-            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
-              <Search size={13} className="text-gray-400 shrink-0" />
+        <div className="absolute left-0 z-[999] mt-1 w-full overflow-hidden rounded-md border border-line-200 bg-white shadow-popover">
+          <div className="border-b border-line-100 p-2">
+            <div className="flex items-center gap-2 rounded-md bg-surface-50 px-3 py-1.5">
+              <Search className="h-3 w-3 shrink-0 text-ink-400" />
               <input autoFocus type="text" placeholder="Rechercher un mois..." value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400" />
-              {search && <button type="button" onClick={() => setSearch("")}><X size={12} className="text-gray-400 hover:text-gray-600" /></button>}
+                className="flex-1 bg-transparent text-[13px] text-ink-900 outline-none placeholder:text-ink-400" />
+              {search && <button type="button" onClick={() => setSearch("")}><X className="h-3 w-3 text-ink-400 hover:text-ink-700" /></button>}
             </div>
           </div>
-          <ul className="max-h-60 overflow-y-auto py-1">
-            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-gray-400 text-center">Aucun résultat</li>}
+          <ul className="max-h-60 overflow-y-auto scrollbar-thin p-1">
+            {filtered.length === 0 && <li className="px-3 py-3 text-center text-[13px] text-ink-400">Aucun résultat</li>}
             {filtered.map(o => (
               <li key={o.key} onClick={() => pick(o.key)}
-                className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] transition-colors ${value === o.key ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
+                className={`cursor-pointer rounded-sm px-3 py-1.5 text-[13px] transition-colors hover:bg-green-50 hover:text-green-700 ${value === o.key ? "bg-green-50 font-medium text-green-700" : "text-ink-900"}`}>
                 {o.label}
               </li>
             ))}
@@ -123,28 +123,28 @@ function ContratSelect({ value, onChange, contrats }) {
   return (
     <div ref={ref} className="relative w-full">
       <button type="button" onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2.5 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
-        <span className={selected ? "text-gray-800 truncate text-left" : "text-gray-400"}>
+        className="flex h-9 w-full items-center justify-between rounded-md border border-line-200 bg-white px-2.5 text-[13px] transition-colors hover:border-ink-300 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100">
+        <span className={selected ? "truncate text-left text-ink-900" : "text-ink-400"}>
           {selected ? render(selected) : "— Sélectionner un contrat actif —"}
         </span>
-        <ChevronDown size={14} className={`ml-2 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={`ml-2 h-3.5 w-3.5 shrink-0 text-ink-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute z-[999] mt-1 left-0 w-full bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
-          <div className="p-2 border-b border-gray-100">
-            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
-              <Search size={13} className="text-gray-400 shrink-0" />
+        <div className="absolute left-0 z-[999] mt-1 w-full overflow-hidden rounded-md border border-line-200 bg-white shadow-popover">
+          <div className="border-b border-line-100 p-2">
+            <div className="flex items-center gap-2 rounded-md bg-surface-50 px-3 py-1.5">
+              <Search className="h-3 w-3 shrink-0 text-ink-400" />
               <input autoFocus type="text" placeholder="Rechercher (code, STT, objet)..." value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400" />
-              {search && <button type="button" onClick={() => setSearch("")}><X size={12} className="text-gray-400 hover:text-gray-600" /></button>}
+                className="flex-1 bg-transparent text-[13px] text-ink-900 outline-none placeholder:text-ink-400" />
+              {search && <button type="button" onClick={() => setSearch("")}><X className="h-3 w-3 text-ink-400 hover:text-ink-700" /></button>}
             </div>
           </div>
-          <ul className="max-h-60 overflow-y-auto py-1">
-            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-gray-400 text-center">Aucun contrat actif</li>}
+          <ul className="max-h-60 overflow-y-auto scrollbar-thin p-1">
+            {filtered.length === 0 && <li className="px-3 py-3 text-center text-[13px] text-ink-400">Aucun contrat actif</li>}
             {filtered.map(c => (
               <li key={c.id} onClick={() => pick(String(c.id))}
-                className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] transition-colors ${String(value) === String(c.id) ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
+                className={`cursor-pointer rounded-sm px-3 py-1.5 text-[13px] transition-colors hover:bg-green-50 hover:text-green-700 ${String(value) === String(c.id) ? "bg-green-50 font-medium text-green-700" : "text-ink-900"}`}>
                 {render(c)}
               </li>
             ))}
@@ -183,23 +183,23 @@ const DCG_ROLES = ["DCG", "Assistant DCG"];
 const POSTE_CONFIG = {
   MTX: {
     label:  "Cession Matériaux (MTX)",
-    color:  { bg: "bg-blue-50", border: "border-blue-200", badge: "bg-blue-100 text-blue-700", dot: "bg-blue-500", btn: "text-blue-600" },
+    color:  { bg: "bg-green-50", border: "border-green-200", badge: "bg-green-100 text-green-700", dot: "bg-green-600", btn: "text-green-700" },
     prixEditable: true,
   },
   GASOIL: {
     label:  "Gasoil",
-    color:  { bg: "bg-orange-50", border: "border-orange-200", badge: "bg-orange-100 text-orange-700", dot: "bg-orange-400", btn: "text-orange-600" },
+    color:  { bg: "bg-amber-50", border: "border-amber-200", badge: "bg-amber-100 text-amber-700", dot: "bg-amber-500", btn: "text-amber-700" },
     prixEditable: true,
   },
   MTL: {
     label:  "Cession Matériel (MTL)",
-    color:  { bg: "bg-violet-50", border: "border-violet-200", badge: "bg-violet-100 text-violet-700", dot: "bg-violet-500", btn: "text-violet-600" },
+    color:  { bg: "bg-surface-50", border: "border-line-200", badge: "bg-line-100 text-ink-700", dot: "bg-ink-500", btn: "text-ink-700" },
     prixEditable: false,
     gmao: true,
   },
   RH: {
     label:  "Ressources Humaines (RH)",
-    color:  { bg: "bg-green-50", border: "border-green-200", badge: "bg-green-100 text-green-700", dot: "bg-green-500", btn: "text-green-600" },
+    color:  { bg: "bg-green-50", border: "border-green-300", badge: "bg-green-100 text-green-800", dot: "bg-green-700", btn: "text-green-700" },
     prixEditable: false,
   },
 };
@@ -211,11 +211,11 @@ const POSTE_TO_TYPE = { MTX: "mtx", GASOIL: "gasoil", MTL: "mtl", RH: "rh" };
 
 // Labels statuts bloc
 const STATUT_BLOC_LABEL = {
-  vide:         { label: "Vide",               color: "bg-gray-100 text-gray-500" },
-  alimente:     { label: "Alimenté",           color: "bg-blue-100 text-blue-700" },
-  qte_visees:   { label: "Quantités visées",   color: "bg-amber-100 text-amber-700" },
-  prix_valides: { label: "Prix validés",       color: "bg-green-100 text-green-700" },
-  arrete:       { label: "Arrêté",             color: "bg-purple-100 text-purple-700" },
+  vide:         { label: "Vide",               color: "bg-surface-50 text-ink-500 border border-line-200" },
+  alimente:     { label: "Alimenté",           color: "bg-green-50 text-green-700 border border-green-200" },
+  qte_visees:   { label: "Quantités visées",   color: "bg-amber-50 text-amber-700 border border-amber-200" },
+  prix_valides: { label: "Prix validés",       color: "bg-green-100 text-green-700 border border-green-300" },
+  arrete:       { label: "Arrêté",             color: "bg-green-100 text-green-800 border border-green-300" },
 };
 
 // ─── Bons de Transfert dynamiques ────────────────────────────────
@@ -249,7 +249,7 @@ function BtDocumentsBloc({ x3Config }) {
   }
 
   if (isLoading) return (
-    <div className="px-5 py-3 border-b border-blue-100 bg-blue-50/30 text-xs text-blue-400">
+    <div className="border-b border-line-100 bg-surface-50 px-5 py-3 text-xs text-ink-500">
       Chargement des bons de transfert…
     </div>
   );
@@ -257,15 +257,15 @@ function BtDocumentsBloc({ x3Config }) {
   if (!btDocs.length) return null;
 
   return (
-    <div className="px-5 py-3 border-b border-blue-100 bg-blue-50/30">
-      <p className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1.5">
-        <FileText size={11} /> Bons de transfert ({btDocs.length})
+    <div className="border-b border-line-100 bg-surface-50 px-5 py-3">
+      <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
+        <FileText className="h-3 w-3" /> Bons de transfert ({btDocs.length})
       </p>
       <div className="flex flex-wrap gap-2">
         {btDocs.map(doc => (
           <button key={doc.id} onClick={() => handleDownload(doc)}
-            className="inline-flex items-center gap-1.5 text-xs bg-white border border-blue-200 text-blue-700 px-2.5 py-1 rounded-full font-mono hover:bg-blue-50 hover:border-blue-400 transition-colors cursor-pointer">
-            <FileDown size={10} />
+            className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-line-200 bg-white px-2.5 py-1 font-mono text-xs text-green-700 transition-colors hover:border-green-400 hover:bg-green-50">
+            <FileDown className="h-2.5 w-2.5" />
             {doc.filename}
           </button>
         ))}
