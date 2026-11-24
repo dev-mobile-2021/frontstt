@@ -924,7 +924,7 @@ function CircuitContratTab({ contrat, contratId, isNew }) {
   const validerM   = useValiderContrat();
   const rejeterM   = useRejeterContrat();
 
-  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour accéder au circuit.</p>;
+  if (isNew) return <p className="py-8 text-center text-[13px] text-ink-400">Enregistrez le contrat pour accéder au circuit.</p>;
 
   const statut      = contrat?.statut ?? "brouillon";
   const validations = contrat?.validations ?? [];
@@ -977,19 +977,19 @@ function CircuitContratTab({ contrat, contratId, isNew }) {
   return (
     <div className="space-y-6">
       {/* Stepper */}
-      <div className="bg-gray-50 border border-gray-100 rounded-xl p-5">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Circuit de validation</p>
+      <div className="rounded-xl border border-line-200 bg-surface-50 p-5">
+        <p className="mb-4 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Circuit de validation</p>
 
         {circuit.length === 0 ? (
-          <div className="text-center py-6 text-gray-400 text-sm">
-            <p>Aucun circuit configuré pour les contrats.</p>
-            <a href="/parametrage" className="text-xs text-[#087F3E] hover:underline mt-1 inline-block">Configurer dans Paramétrage → Circuit →</a>
+          <div className="py-6 text-center">
+            <p className="text-[13px] text-ink-400">Aucun circuit configuré pour les contrats.</p>
+            <a href="/parametrage" className="mt-1 inline-block text-xs font-medium text-green-600 hover:text-green-700">Configurer dans Paramétrage → Circuit →</a>
           </div>
         ) : statut === "rejete" ? (
-          <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
-            <XCircle size={16} /> Rejeté
+          <div className="flex items-center gap-2 text-[13px] font-medium text-red-600">
+            <XCircle className="h-4 w-4" /> Rejeté
             {contrat?.motif_rejet && (
-              <span className="ml-2 text-xs font-normal text-red-700 bg-red-50 border border-red-200 rounded px-2 py-0.5">
+              <span className="ml-2 rounded-md border border-red-200 bg-red-50 px-2 py-0.5 text-xs font-normal text-red-700">
                 {contrat.motif_rejet}
               </span>
             )}
@@ -1001,24 +1001,24 @@ function CircuitContratTab({ contrat, contratId, isNew }) {
               const current = idx === currentIdx;
               const val     = step.profil ? findVal(step.profil) : step.statut === "soumis" ? soumisVal : null;
               return (
-                <div key={step.statut} className="flex-1 flex flex-col items-center">
-                  <div className="flex items-center w-full">
-                    <div className={`flex-1 h-0.5 ${idx === 0 ? "opacity-0" : done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border-2 transition-colors
-                      ${done ? "bg-[#087F3E] border-[#087F3E] text-white" : current ? "bg-white border-[#087F3E] text-[#087F3E]" : "bg-white border-gray-200 text-gray-300"}`}>
-                      {done ? <CheckCircle2 size={16} /> : current ? <Clock size={14} /> : <Circle size={14} />}
+                <div key={step.statut} className="flex flex-1 flex-col items-center">
+                  <div className="flex w-full items-center">
+                    <div className={`h-0.5 flex-1 ${idx === 0 ? "opacity-0" : done ? "bg-green-600" : "bg-line-200"}`} />
+                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-colors
+                      ${done ? "border-green-600 bg-green-600 text-white" : current ? "border-green-600 bg-white text-green-600" : "border-line-200 bg-white text-ink-300"}`}>
+                      {done ? <CheckCircle2 className="h-4 w-4" /> : current ? <Clock className="h-3.5 w-3.5" /> : <Circle className="h-3.5 w-3.5" />}
                     </div>
-                    <div className={`flex-1 h-0.5 ${idx === steps.length - 1 ? "opacity-0" : done ? "bg-[#087F3E]" : "bg-gray-200"}`} />
+                    <div className={`h-0.5 flex-1 ${idx === steps.length - 1 ? "opacity-0" : done ? "bg-green-600" : "bg-line-200"}`} />
                   </div>
-                  <div className="mt-2 text-center px-1 w-full">
-                    <p className={`text-xs font-semibold ${done ? "text-[#087F3E]" : current ? "text-gray-900" : "text-gray-400"}`}>{step.label}</p>
+                  <div className="mt-2 w-full px-1 text-center">
+                    <p className={`text-xs font-semibold ${done ? "text-green-700" : current ? "text-ink-900" : "text-ink-400"}`}>{step.label}</p>
                     {val ? (
                       <>
-                        <p className="text-[10px] text-[#087F3E] mt-0.5">{fmtD(val.validated_at)}</p>
-                        {val.user && <p className="text-[10px] text-gray-500 truncate">{val.user.prenom} {val.user.nom}</p>}
+                        <p className="mt-0.5 text-[10px] text-green-700">{fmtD(val.validated_at)}</p>
+                        {val.user && <p className="truncate text-[10px] text-ink-500">{val.user.prenom} {val.user.nom}</p>}
                       </>
                     ) : current && step.profil ? (
-                      <p className="text-[10px] text-amber-500 mt-0.5">En attente</p>
+                      <p className="mt-0.5 text-[10px] text-amber-600">En attente</p>
                     ) : null}
                   </div>
                 </div>
@@ -1029,42 +1029,42 @@ function CircuitContratTab({ contrat, contratId, isNew }) {
 
         {/* Actions */}
         {!isTerminal && circuit.length > 0 && (
-          <div className="border-t border-gray-200 mt-5 pt-4 space-y-3">
+          <div className="mt-5 space-y-3 border-t border-line-200 pt-4">
             {statut === "brouillon" && (
               <button onClick={handleSoumettre} disabled={soumettreM.isPending}
-                className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
+                className="inline-flex h-9 items-center rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60">
                 Soumettre au circuit
               </button>
             )}
             {statut !== "brouillon" && !isAfterLast && canValidate && !showRejet && (
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button onClick={handleValider} disabled={validerM.isPending}
-                  className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-60">
+                  className="inline-flex h-9 items-center rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60">
                   Valider — {currentEtape?.profil_code?.toUpperCase() ?? ""}
                 </button>
                 <button onClick={() => setShowRejet(true)}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors">
+                  className="inline-flex h-9 items-center rounded-md bg-red-500 px-4 text-[13px] font-medium text-white transition-colors hover:bg-red-600">
                   Rejeter
                 </button>
               </div>
             )}
             {statut !== "brouillon" && !isAfterLast && !canValidate && (
-              <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                 En attente de validation par <strong>{currentEtape?.profil_code?.toUpperCase()}</strong>. Vous n'avez pas le profil requis.
               </p>
             )}
             {showRejet && (
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex flex-wrap gap-2">
                 <input autoFocus placeholder="Motif du rejet (obligatoire)…" value={motifRejet}
                   onChange={e => setMotifRejet(e.target.value)}
-                  className="flex-1 min-w-[240px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 outline-none" />
+                  className="h-9 min-w-[240px] flex-1 rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-100" />
                 <button onClick={() => { handleRejeter(motifRejet); setShowRejet(false); setMotifRejet(""); }}
                   disabled={!motifRejet.trim()}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium disabled:opacity-50">
+                  className="inline-flex h-9 items-center rounded-md bg-red-500 px-4 text-[13px] font-medium text-white hover:bg-red-600 disabled:opacity-50">
                   Confirmer
                 </button>
                 <button onClick={() => { setShowRejet(false); setMotifRejet(""); }}
-                  className="px-3 py-2 text-gray-500 border border-gray-200 rounded-lg text-sm">
+                  className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] text-ink-700 hover:bg-surface-50">
                   Annuler
                 </button>
               </div>
@@ -1076,16 +1076,16 @@ function CircuitContratTab({ contrat, contratId, isNew }) {
       {/* Historique */}
       {validations.length > 0 && (
         <div>
-          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Historique</h3>
+          <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Historique</h3>
           <div className="space-y-2">
             {validations.map((v, i) => (
-              <div key={i} className="flex items-start gap-3 text-sm">
-                <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${v.action === "valide" ? "bg-[#087F3E]" : v.action === "soumis" ? "bg-blue-400" : "bg-red-400"}`} />
+              <div key={i} className="flex items-start gap-3 text-[13px]">
+                <div className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${v.action === "valide" ? "bg-green-600" : v.action === "soumis" ? "bg-green-400" : "bg-red-500"}`} />
                 <div>
-                  <span className="font-medium text-gray-800">{v.libelle}</span>
-                  {v.user && <span className="text-gray-500"> — {v.user.prenom} {v.user.nom}</span>}
-                  <span className="text-gray-400 text-xs ml-2">{fmtD(v.validated_at)}</span>
-                  {v.motif && <p className="text-xs text-red-600 mt-0.5">{v.motif}</p>}
+                  <span className="font-medium text-ink-900">{v.libelle}</span>
+                  {v.user && <span className="text-ink-500"> — {v.user.prenom} {v.user.nom}</span>}
+                  <span className="ml-2 text-xs text-ink-400">{fmtD(v.validated_at)}</span>
+                  {v.motif && <p className="mt-0.5 text-xs text-red-600">{v.motif}</p>}
                 </div>
               </div>
             ))}
@@ -1116,7 +1116,7 @@ function PiecesJointesTab({ contratId, isNew }) {
   const uploadMut = useUploadPieceJointe();
   const deleteMut = useDeletePieceJointe();
 
-  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer les pièces jointes.</p>;
+  if (isNew) return <p className="py-8 text-center text-[13px] text-ink-400">Enregistrez le contrat pour gérer les pièces jointes.</p>;
 
   const filtered = filterCat === "all" ? pieces : pieces.filter(p => p.categorie === filterCat);
 
@@ -1165,13 +1165,13 @@ function PiecesJointesTab({ contratId, isNew }) {
   return (
     <div className="space-y-5">
       {/* Upload zone */}
-      <div className="grid grid-cols-[200px_1fr] gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-[200px_1fr]">
         <div className="space-y-1.5">
-          <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">Catégorie</label>
+          <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">Catégorie</label>
           <SearchSelect
             value={categorie}
             onChange={e => setCategorie(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+            className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
           >
             {CATEGORIES_PJ.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
           </SearchSelect>
@@ -1180,13 +1180,13 @@ function PiecesJointesTab({ contratId, isNew }) {
           onDragOver={e => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={e => { e.preventDefault(); setDragging(false); handleFiles(e.dataTransfer.files); }}
-          className={`border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-2 py-6 cursor-pointer transition-colors
-            ${dragging ? "border-[#087F3E] bg-[#E8F5EE]/60" : "border-gray-200 hover:border-[#087F3E]/50 hover:bg-gray-50"}`}
+          className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed py-6 transition-colors
+            ${dragging ? "border-green-600 bg-green-50" : "border-line-200 hover:border-green-600 hover:bg-surface-50"}`}
           onClick={() => !uploadMut.isPending && document.getElementById("pj-file-input").click()}
         >
           {uploadMut.isPending
-            ? <><div className="w-5 h-5 border-2 border-[#087F3E] border-t-transparent rounded-full animate-spin" /><p className="text-sm text-[#087F3E]">Upload en cours…</p></>
-            : <><Upload size={20} className="text-gray-400" /><p className="text-sm text-gray-500">Glissez-déposez vos fichiers ici ou <span className="text-[#087F3E] font-medium">cliquez pour parcourir</span></p><p className="text-xs text-gray-400">PDF, DOCX, XLSX, JPG, PNG — max 10 MB par fichier</p></>
+            ? <><div className="h-5 w-5 animate-spin rounded-full border-2 border-green-600 border-t-transparent" /><p className="text-[13px] text-green-700">Upload en cours…</p></>
+            : <><Upload className="h-5 w-5 text-ink-400" /><p className="text-[13px] text-ink-500">Glissez-déposez vos fichiers ici ou <span className="font-medium text-green-600">cliquez pour parcourir</span></p><p className="text-xs text-ink-400">PDF, DOCX, XLSX, JPG, PNG — max 10 MB par fichier</p></>
           }
           <input
             id="pj-file-input"
@@ -1200,62 +1200,66 @@ function PiecesJointesTab({ contratId, isNew }) {
       </div>
 
       {/* Filter tabs */}
-      <div className="flex items-center gap-1 border-b border-gray-100 pb-0">
+      <div className="flex items-center gap-1 border-b border-line-200">
         {[{ value: "all", label: "Toutes", count: pieces.length }, ...CATEGORIES_PJ.map(c => ({ ...c, count: counts[c.value] }))].map(t => (
           <button
             key={t.value}
             onClick={() => setFilterCat(t.value)}
-            className={`px-3 py-2 text-xs font-medium rounded-t-lg transition-colors border-b-2 -mb-px
+            className={`-mb-px rounded-t-md border-b-2 px-3 py-2 text-xs font-medium transition-colors
               ${filterCat === t.value
-                ? "border-[#087F3E] text-[#087F3E]"
-                : "border-transparent text-gray-500 hover:text-gray-700"}`}
+                ? "border-green-600 text-green-600"
+                : "border-transparent text-ink-500 hover:text-ink-900"}`}
           >
             {t.label}
-            {t.count > 0 && <span className="ml-1 text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">{t.count}</span>}
+            {t.count > 0 && (
+              <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${filterCat === t.value ? "bg-green-100 text-green-700" : "bg-surface-50 text-ink-500"}`}>
+                {t.count}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
       {/* File list */}
       {isLoading ? (
-        <p className="text-sm text-gray-400 text-center py-6">Chargement…</p>
+        <p className="py-6 text-center text-[13px] text-ink-400">Chargement…</p>
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">Aucun fichier dans cette catégorie.</p>
+        <p className="py-8 text-center text-[13px] text-ink-400">Aucun fichier dans cette catégorie.</p>
       ) : (
         <div className="space-y-2">
           {filtered.map(pj => (
-            <div key={pj.id} className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 hover:border-gray-200 transition-colors">
-              <File size={18} className="text-gray-400 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-800 truncate">{pj.nom_original}</p>
-                <p className="text-xs text-gray-400">
+            <div key={pj.id} className="flex items-center gap-3 rounded-md border border-line-200 bg-surface-50 px-4 py-3 transition-colors hover:border-ink-300">
+              <File className="h-4 w-4 shrink-0 text-ink-400" strokeWidth={1.75} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[13px] font-medium text-ink-900">{pj.nom_original}</p>
+                <p className="text-xs text-ink-500">
                   {pj.taille_fmt} · Ajouté le {pj.created_at}
                   {pj.uploaded_by && <span> par {pj.uploaded_by}</span>}
                 </p>
               </div>
-              <span className="text-[10px] bg-white border border-gray-200 text-gray-500 px-2 py-0.5 rounded-full shrink-0">
+              <span className="shrink-0 rounded-full border border-line-200 bg-white px-2 py-0.5 text-[10px] text-ink-500">
                 {CATEGORIES_PJ.find(c => c.value === pj.categorie)?.label ?? pj.categorie}
               </span>
               <button
                 onClick={() => handleDownload(pj)}
                 title="Télécharger"
-                className="p-1.5 text-gray-400 hover:text-[#087F3E] transition-colors"
+                className="rounded-md p-1.5 text-ink-500 transition-colors hover:bg-white hover:text-green-600"
               >
-                <Download size={15} />
+                <Download className="h-3.5 w-3.5" />
               </button>
               {confirmDel === pj.id ? (
                 <span className="inline-flex items-center gap-2 text-xs">
                   <span className="text-red-600">Supprimer ?</span>
-                  <button onClick={() => handleDelete(pj)} className="text-red-600 hover:text-red-800 font-medium">Oui</button>
-                  <button onClick={() => setConfirmDel(null)} className="text-gray-400 hover:text-gray-600">Non</button>
+                  <button onClick={() => handleDelete(pj)} className="font-medium text-red-600 hover:text-red-700">Oui</button>
+                  <button onClick={() => setConfirmDel(null)} className="text-ink-400 hover:text-ink-700">Non</button>
                 </span>
               ) : (
                 <button
                   onClick={() => setConfirmDel(pj.id)}
                   title="Supprimer"
-                  className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"
+                  className="rounded-md p-1.5 text-ink-400 transition-colors hover:bg-white hover:text-red-600"
                 >
-                  <Trash2 size={15} />
+                  <Trash2 className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
@@ -2971,9 +2975,9 @@ export default function ContratFormPage() {
 
   if (!isNew && (isError || !contrat)) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-        <p className="text-lg font-semibold">Contrat introuvable</p>
-        <button onClick={() => navigate("/contrats")} className="mt-4 text-sm text-[#087F3E] hover:underline">
+      <div className="flex flex-col items-center justify-center py-24">
+        <p className="text-base font-semibold text-ink-700">Contrat introuvable</p>
+        <button onClick={() => navigate("/contrats")} className="mt-4 text-[13px] font-medium text-green-600 hover:text-green-700">
           Retour à la liste
         </button>
       </div>
@@ -3432,26 +3436,26 @@ export default function ContratFormPage() {
 
       {/* ── Modal suppression contrat ── */}
       {confirmDelContrat && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
-                <Trash2 size={18} className="text-red-500" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">Supprimer le contrat</p>
-                <p className="text-xs text-gray-500 font-mono">{contrat?.code}</p>
-              </div>
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4">
+          <div className="dialog-content w-full max-w-sm rounded-lg border border-line-200 bg-white shadow-popover">
+            <div className="border-b border-line-200 px-5 py-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+                <Trash2 className="h-4 w-4 text-ink-500" strokeWidth={1.75} />
+                Supprimer le contrat
+              </h3>
+              <p className="mt-1 font-mono text-xs text-ink-500">{contrat?.code}</p>
             </div>
-            <p className="text-sm text-gray-600">Cette action est irréversible. Le contrat et ses données associées seront supprimés définitivement.</p>
-            <div className="flex gap-3 pt-1">
+            <div className="px-5 py-4">
+              <p className="text-[13px] text-ink-700">Cette action est irréversible. Le contrat et ses données associées seront supprimés définitivement.</p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-line-200 px-5 py-3">
               <button onClick={() => setConfirmDelContrat(false)}
-                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300">
                 Annuler
               </button>
               <button onClick={handleDeleteContrat} disabled={deleteMut.isPending}
-                className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
-                {deleteMut.isPending && <Loader2 size={13} className="animate-spin" />}
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 transition-colors hover:bg-ink-900 hover:text-white disabled:opacity-60">
+                {deleteMut.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Supprimer
               </button>
             </div>
