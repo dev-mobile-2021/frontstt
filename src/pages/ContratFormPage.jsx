@@ -655,7 +655,7 @@ function CircuitConfigTab({ contratId, isNew }) {
     }
   }, [circuitData, circuitError, activeModule]);
 
-  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour configurer les circuits.</p>;
+  if (isNew) return <p className="py-8 text-center text-[13px] text-ink-400">Enregistrez le contrat pour configurer les circuits.</p>;
 
   const hasCircuit = circuitData && circuitData.etapes;
 
@@ -731,17 +731,17 @@ function CircuitConfigTab({ contratId, isNew }) {
     <div className="space-y-5">
       {/* Module tabs */}
       {modulesLoading ? (
-        <div className="h-9 bg-gray-100 rounded-lg animate-pulse w-64" />
+        <div className="h-9 w-64 animate-pulse rounded-md bg-line-100" />
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {modules.map((m) => (
             <button
               key={m}
               onClick={() => setActiveModule(m)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+              className={`inline-flex h-8 items-center rounded-md px-3 text-xs font-semibold transition-colors ${
                 activeModule === m
-                  ? "bg-[#087F3E] text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-green-600 text-white"
+                  : "bg-surface-50 text-ink-700 hover:bg-line-100"
               }`}
             >
               {MODULE_LABELS[m] ?? m}
@@ -752,29 +752,29 @@ function CircuitConfigTab({ contratId, isNew }) {
 
       {/* Circuit body */}
       {activeModule && (
-        <div className="border border-gray-200 rounded-xl p-5 space-y-4">
+        <div className="space-y-4 rounded-xl border border-line-200 bg-white p-5 shadow-xs">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-700">
+            <h3 className="text-[13px] font-semibold text-ink-900">
               Circuit — {MODULE_LABELS[activeModule] ?? activeModule}
             </h3>
             <button
               onClick={handleCopier}
               disabled={copierM.isPending}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-[#087F3E] text-[#087F3E] rounded-lg hover:bg-green-50 transition-colors disabled:opacity-50"
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-green-600 bg-white px-3 text-xs font-medium text-green-600 transition-colors hover:bg-green-50 disabled:opacity-50"
             >
-              {copierM.isPending ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              {copierM.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
               Copier depuis défaut
             </button>
           </div>
 
           {/* Type circuit + seuil */}
-          <div className="flex flex-wrap items-end gap-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
-            <div className="flex-1 min-w-[160px]">
-              <label className="block text-xs font-semibold text-gray-500 mb-1.5">Type de circuit</label>
+          <div className="flex flex-wrap items-end gap-4 rounded-md border border-line-200 bg-surface-50 p-4">
+            <div className="min-w-[160px] flex-1">
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-ink-500">Type de circuit</label>
               <select
                 value={typeCircuit}
                 onChange={e => setTypeCircuit(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#087F3E] outline-none bg-white"
+                className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
               >
                 <option value="sequentiel">Séquentiel — étape par étape</option>
                 <option value="parallele">Parallèle — plusieurs validateurs simultanés</option>
@@ -782,9 +782,9 @@ function CircuitConfigTab({ contratId, isNew }) {
             </div>
             {typeCircuit === "parallele" && (
               <div className="min-w-[140px]">
-                <label className="block text-xs font-semibold text-gray-500 mb-1.5">
+                <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-ink-500">
                   Seuil de validation
-                  <span className="text-gray-400 font-normal ml-1">(nb de validateurs requis)</span>
+                  <span className="ml-1 font-normal normal-case text-ink-400">(nb de validateurs requis)</span>
                 </label>
                 <input
                   type="number"
@@ -792,11 +792,11 @@ function CircuitConfigTab({ contratId, isNew }) {
                   max={etapes.length || 10}
                   value={seuilValidation}
                   onChange={e => setSeuilValidation(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-[#087F3E] outline-none"
+                  className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                 />
               </div>
             )}
-            <div className="text-xs text-gray-400 max-w-xs">
+            <div className="max-w-xs text-[11px] text-ink-500">
               {typeCircuit === "sequentiel"
                 ? "Chaque étape doit être validée avant de passer à la suivante."
                 : seuilValidation <= 1
@@ -808,16 +808,16 @@ function CircuitConfigTab({ contratId, isNew }) {
           {circuitLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-12 bg-gray-100 rounded-lg animate-pulse" />
+                <div key={i} className="h-12 animate-pulse rounded-md bg-line-100" />
               ))}
             </div>
           ) : !hasCircuit && etapes.length === 0 ? (
-            <div className="text-center py-6 text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
-              <p>Aucun circuit configuré — utilise le circuit par défaut.</p>
+            <div className="rounded-lg border border-dashed border-line-200 py-6 text-center">
+              <p className="text-[13px] text-ink-400">Aucun circuit configuré — utilise le circuit par défaut.</p>
               <button
                 onClick={handleCopier}
                 disabled={copierM.isPending}
-                className="mt-2 text-xs text-[#087F3E] hover:underline font-medium"
+                className="mt-2 text-xs font-medium text-green-600 hover:text-green-700"
               >
                 Copier depuis défaut →
               </button>
@@ -827,9 +827,9 @@ function CircuitConfigTab({ contratId, isNew }) {
               {etapes.map((etape, idx) => (
                 <div
                   key={etape._key}
-                  className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5"
+                  className="flex items-center gap-2 rounded-md border border-line-200 bg-surface-50 px-3 py-2.5"
                 >
-                  <span className="text-xs font-semibold text-gray-400 w-12 shrink-0">
+                  <span className="w-12 shrink-0 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
                     Étape {idx + 1}
                   </span>
                   <input
@@ -837,12 +837,12 @@ function CircuitConfigTab({ contratId, isNew }) {
                     value={etape.libelle ?? ""}
                     onChange={(e) => updateEtape(etape._key, "libelle", e.target.value)}
                     placeholder="Libellé…"
-                    className="flex-1 min-w-0 border border-gray-300 rounded-md px-2.5 py-1.5 text-sm focus:ring-1 focus:ring-[#087F3E] outline-none"
+                    className="h-8 min-w-0 flex-1 rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                   />
                   <select
                     value={etape.profil_code ?? ""}
                     onChange={(e) => updateEtape(etape._key, "profil_code", e.target.value)}
-                    className="border border-gray-300 rounded-md px-2 py-1.5 text-sm focus:ring-1 focus:ring-[#087F3E] outline-none bg-white"
+                    className="h-8 rounded-md border border-line-200 bg-white px-2 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                   >
                     <option value="">— Rôle —</option>
                     {ROLES_DEFAUT.map((r) => (
@@ -851,20 +851,20 @@ function CircuitConfigTab({ contratId, isNew }) {
                   </select>
                   <button
                     onClick={() => updateEtape(etape._key, "obligatoire", !etape.obligatoire)}
-                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-colors shrink-0 ${
+                    className={`inline-flex h-8 shrink-0 items-center gap-1 rounded-md border px-2.5 text-xs font-medium transition-colors ${
                       etape.obligatoire
-                        ? "bg-red-50 border-red-200 text-red-600"
-                        : "bg-gray-100 border-gray-200 text-gray-500"
+                        ? "border-red-200 bg-red-50 text-red-600"
+                        : "border-line-200 bg-white text-ink-500"
                     }`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full ${etape.obligatoire ? "bg-red-500" : "bg-gray-400"}`} />
+                    <span className={`h-1.5 w-1.5 rounded-full ${etape.obligatoire ? "bg-red-500" : "bg-ink-300"}`} />
                     {etape.obligatoire ? "Bloquant" : "Facultatif"}
                   </button>
-                  <div className="flex gap-1 shrink-0">
+                  <div className="flex shrink-0 gap-1">
                     <button
                       onClick={() => moveEtape(etape._key, -1)}
                       disabled={idx === 0}
-                      className="p-1.5 rounded-md text-gray-400 hover:bg-gray-200 disabled:opacity-30 transition-colors"
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-line-100 hover:text-ink-900 disabled:opacity-30"
                       title="Monter"
                     >
                       ↑
@@ -872,17 +872,17 @@ function CircuitConfigTab({ contratId, isNew }) {
                     <button
                       onClick={() => moveEtape(etape._key, 1)}
                       disabled={idx === etapes.length - 1}
-                      className="p-1.5 rounded-md text-gray-400 hover:bg-gray-200 disabled:opacity-30 transition-colors"
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-ink-500 transition-colors hover:bg-line-100 hover:text-ink-900 disabled:opacity-30"
                       title="Descendre"
                     >
                       ↓
                     </button>
                     <button
                       onClick={() => removeEtape(etape._key)}
-                      className="p-1.5 rounded-md text-red-400 hover:bg-red-50 transition-colors"
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-ink-400 transition-colors hover:bg-red-50 hover:text-red-600"
                       title="Supprimer"
                     >
-                      <X size={14} />
+                      <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
@@ -893,16 +893,16 @@ function CircuitConfigTab({ contratId, isNew }) {
           <div className="flex items-center justify-between pt-1">
             <button
               onClick={addEtape}
-              className="flex items-center gap-1.5 text-sm text-[#087F3E] hover:text-[#065A2C] font-medium transition-colors"
+              className="inline-flex items-center gap-1.5 text-[13px] font-medium text-green-600 transition-colors hover:text-green-700"
             >
-              <Plus size={15} /> Ajouter une étape
+              <Plus className="h-3.5 w-3.5" /> Ajouter une étape
             </button>
             <button
               onClick={handleSave}
               disabled={saveM.isPending || etapes.length === 0}
-              className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-50"
             >
-              {saveM.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              {saveM.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
               Enregistrer
             </button>
           </div>
