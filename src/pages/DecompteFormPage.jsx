@@ -1427,8 +1427,8 @@ function PiecesJointesTab({ decompteId }) {
 const POSTE_LABELS = { MTX: "Matériaux", MTL: "Matériel", RH: "Ressources humaines" };
 const POSTE_COLORS = {
   MTX: "bg-amber-50 text-amber-700 border-amber-200",
-  MTL: "bg-blue-50 text-blue-700 border-blue-200",
-  RH:  "bg-purple-50 text-purple-700 border-purple-200",
+  MTL: "bg-green-50 text-green-700 border-green-200",
+  RH:  "bg-green-100 text-green-800 border-green-300",
 };
 
 function EcRow({ ec, canEdit, selected, onToggle, fmtPeriode }) {
@@ -1444,37 +1444,37 @@ function EcRow({ ec, canEdit, selected, onToggle, fmtPeriode }) {
 
   return (
     <>
-      <tr className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer" onClick={() => lignes.length > 0 && setOpen(o => !o)}>
+      <tr className="cursor-pointer border-b border-line-100 hover:bg-green-50/60 transition-colors" onClick={() => lignes.length > 0 && setOpen(o => !o)}>
         {canEdit && (
           <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
-            <input type="checkbox" checked={selected} onChange={() => onToggle(ec.id)} className="accent-[#087F3E]" />
+            <input type="checkbox" checked={selected} onChange={() => onToggle(ec.id)} className="accent-green-600" />
           </td>
         )}
         <td className="px-3 py-2">
           <div className="flex items-center gap-1.5">
             {lignes.length > 0 && (
-              <span className="text-gray-400">{open ? "▼" : "▶"}</span>
+              <span className="text-ink-400">{open ? "▼" : "▶"}</span>
             )}
-            <span className="font-mono text-xs text-gray-700">{ec.code}</span>
+            <span className="font-mono text-xs text-ink-900">{ec.code}</span>
           </div>
         </td>
-        <td className="px-3 py-2 text-xs text-gray-500">{fmtPeriode(ec.periode_debut, ec.periode_fin)}</td>
-        <td className="px-3 py-2 text-right text-xs font-medium text-gray-800 tabular-nums">{num(ec.montant_total)} FCFA</td>
+        <td className="px-3 py-2 text-xs text-ink-500">{fmtPeriode(ec.periode_debut, ec.periode_fin)}</td>
+        <td className="px-3 py-2 text-right text-xs font-medium tabular-nums text-ink-900">{num(ec.montant_total)} FCFA</td>
       </tr>
       {open && postes.map(poste => (
         <React.Fragment key={poste}>
-          <tr className="bg-gray-50 border-b border-gray-100">
+          <tr className="border-b border-line-100 bg-surface-50">
             <td colSpan={canEdit ? 4 : 3} className="px-4 py-1">
-              <span className={`text-[10px] font-semibold px-2 py-0.5 rounded border ${POSTE_COLORS[poste] ?? "bg-gray-100 text-gray-600 border-gray-200"}`}>
+              <span className={cn("rounded border px-2 py-0.5 text-[10px] font-semibold", POSTE_COLORS[poste] ?? "bg-surface-50 text-ink-500 border-line-200")}>
                 {POSTE_LABELS[poste] ?? poste} — {num(grouped[poste].reduce((s, l) => s + (l.montant ?? 0), 0))} FCFA
               </span>
             </td>
           </tr>
           {grouped[poste].map((l, i) => (
-            <tr key={i} className="border-b border-gray-50 bg-white">
+            <tr key={i} className="border-b border-line-100 bg-white">
               {canEdit && <td />}
-              <td colSpan={2} className="px-6 py-1.5 text-[11px] text-gray-600">{l.designation}</td>
-              <td className="px-3 py-1.5 text-right text-[11px] text-gray-700 tabular-nums">{num(l.montant)} FCFA</td>
+              <td colSpan={2} className="px-6 py-1.5 text-[11px] text-ink-700">{l.designation}</td>
+              <td className="px-3 py-1.5 text-right text-[11px] tabular-nums text-ink-900">{num(l.montant)} FCFA</td>
             </tr>
           ))}
         </React.Fragment>
@@ -1522,24 +1522,24 @@ function CessionsTab({ decompte, canEdit, onSave, saving }) {
     return sum + (ec?.montant_total ?? 0);
   }, 0);
 
-  if (isLoading) return <div className="py-10 text-center text-sm text-gray-400">Chargement…</div>;
+  if (isLoading) return <div className="py-10 text-center text-[13px] text-ink-400">Chargement…</div>;
 
   return (
     <div className="space-y-6">
       {/* Résumé */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-gray-800">
-            {selected.size} état(s) sélectionné(s) · Total : <span className="text-[#087F3E]">{num(totalSelected)} FCFA</span>
+          <p className="text-[13px] font-semibold text-ink-900">
+            {selected.size} état(s) sélectionné(s) · Total : <span className="tabular-nums text-green-700">{num(totalSelected)} FCFA</span>
           </p>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="mt-0.5 text-xs text-ink-500">
             {disponibles.length} état(s) disponible(s) non consommé(s)
           </p>
         </div>
         {canEdit && (
           <button onClick={handleSave} disabled={saving}
-            className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
-            {saving ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={13} />}
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60">
+            {saving ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-3.5 w-3.5" />}
             Enregistrer la sélection
           </button>
         )}
@@ -1547,20 +1547,20 @@ function CessionsTab({ decompte, canEdit, onSave, saving }) {
 
       {/* États attachés à ce décompte */}
       <div>
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
           Attachés à ce décompte ({attachees.length})
         </p>
         {attachees.length === 0 ? (
-          <p className="text-sm text-gray-400 py-3">Aucun état de cession sélectionné.</p>
+          <p className="py-3 text-[13px] text-ink-400">Aucun état de cession sélectionné.</p>
         ) : (
-          <div className="border border-gray-200 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-100">
+          <div className="overflow-hidden rounded-xl border border-line-200 shadow-xs">
+            <table className="w-full text-[13px]">
+              <thead className="border-b border-line-200 bg-surface-50">
                 <tr>
-                  {canEdit && <th className="px-3 py-2 w-8" />}
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Code</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Période</th>
-                  <th className="px-3 py-2 text-right text-[10px] font-semibold text-gray-400 uppercase">Montant</th>
+                  {canEdit && <th className="w-8 px-3 py-2" />}
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-500">Code</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-500">Période</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-ink-500">Montant</th>
                 </tr>
               </thead>
               <tbody>
@@ -1576,17 +1576,17 @@ function CessionsTab({ decompte, canEdit, onSave, saving }) {
       {/* États disponibles non consommés */}
       {canEdit && disponibles.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-ink-500">
             Disponibles — non consommés ({disponibles.length})
           </p>
-          <div className="border border-blue-100 rounded-xl overflow-hidden bg-blue-50/30">
-            <table className="w-full text-sm">
-              <thead className="bg-blue-50 border-b border-blue-100">
+          <div className="overflow-hidden rounded-xl border border-green-200 bg-green-50/40 shadow-xs">
+            <table className="w-full text-[13px]">
+              <thead className="border-b border-green-200 bg-green-50">
                 <tr>
-                  <th className="px-3 py-2 w-8" />
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-blue-400 uppercase">Code</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-blue-400 uppercase">Période</th>
-                  <th className="px-3 py-2 text-right text-[10px] font-semibold text-blue-400 uppercase">Montant</th>
+                  <th className="w-8 px-3 py-2" />
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-green-700">Code</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-green-700">Période</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-green-700">Montant</th>
                 </tr>
               </thead>
               <tbody>
@@ -1596,12 +1596,12 @@ function CessionsTab({ decompte, canEdit, onSave, saving }) {
               </tbody>
             </table>
           </div>
-          <p className="text-[10px] text-gray-400 mt-1.5">Cochez les états à inclure dans ce décompte puis enregistrez.</p>
+          <p className="mt-1.5 text-[10px] text-ink-500">Cochez les états à inclure dans ce décompte puis enregistrez.</p>
         </div>
       )}
 
       {!canEdit && disponibles.length > 0 && (
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-ink-500">
           {disponibles.length} état(s) de cession disponible(s) non inclus dans ce décompte.
         </p>
       )}
@@ -1610,28 +1610,28 @@ function CessionsTab({ decompte, canEdit, onSave, saving }) {
       {nonEligibles.length > 0 && (
         <div>
           <button onClick={() => setShowNonElig(v => !v)}
-            className="flex items-center gap-2 text-xs text-gray-400 hover:text-gray-600 transition-colors">
-            <ChevronRight size={13} className={`transition-transform ${showNonElig ? "rotate-90" : ""}`} />
+            className="flex items-center gap-2 text-xs text-ink-500 transition-colors hover:text-ink-900">
+            <ChevronRight className={cn("h-3.5 w-3.5 transition-transform", showNonElig && "rotate-90")} />
             {nonEligibles.length} état(s) non éligible(s)
           </button>
           {showNonElig && (
-            <div className="mt-2 border border-gray-100 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-100">
+            <div className="mt-2 overflow-hidden rounded-xl border border-line-200">
+              <table className="w-full text-[13px]">
+                <thead className="border-b border-line-200 bg-surface-50">
                   <tr>
-                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Code</th>
-                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Période</th>
-                    <th className="px-3 py-2 text-right text-[10px] font-semibold text-gray-400 uppercase">Montant</th>
-                    <th className="px-3 py-2 text-left text-[10px] font-semibold text-gray-400 uppercase">Motif</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-500">Code</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-500">Période</th>
+                    <th className="px-3 py-2 text-right text-[10px] font-semibold uppercase tracking-wide text-ink-500">Montant</th>
+                    <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-500">Motif</th>
                   </tr>
                 </thead>
                 <tbody>
                   {nonEligibles.map(ec => (
-                    <tr key={ec.id} className="border-b border-gray-50 bg-gray-50/50">
-                      <td className="px-3 py-2 font-mono text-xs text-gray-500">{ec.code}</td>
-                      <td className="px-3 py-2 text-xs text-gray-400">{fmtPeriode(ec.periode_debut, ec.periode_fin)}</td>
-                      <td className="px-3 py-2 text-right text-xs text-gray-400 tabular-nums">{num(ec.montant_total)} FCFA</td>
-                      <td className="px-3 py-2 text-xs text-amber-600">{ec.motif}</td>
+                    <tr key={ec.id} className="border-b border-line-100 bg-surface-50/40">
+                      <td className="px-3 py-2 font-mono text-xs text-ink-500">{ec.code}</td>
+                      <td className="px-3 py-2 text-xs text-ink-400">{fmtPeriode(ec.periode_debut, ec.periode_fin)}</td>
+                      <td className="px-3 py-2 text-right text-xs tabular-nums text-ink-400">{num(ec.montant_total)} FCFA</td>
+                      <td className="px-3 py-2 text-xs text-amber-700">{ec.motif}</td>
                     </tr>
                   ))}
                 </tbody>
