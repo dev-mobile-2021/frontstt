@@ -128,12 +128,12 @@ function calcDuree(d1, d2) {
 // ─── Sub-tab: Décomptes ──────────────────────────────────────────
 function DecomptesTab({ decomptes, contratId, isNew }) {
   if (isNew) return (
-    <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour voir les décomptes.</p>
+    <p className="py-8 text-center text-[13px] text-ink-400">Enregistrez le contrat pour voir les décomptes.</p>
   );
   if (decomptes.length === 0) return (
-    <div className="text-center py-12 text-gray-400 text-sm">
-      <p className="font-medium text-gray-500">Aucun décompte</p>
-      <Link to={`/decomptes/nouveau?contrat_id=${contratId}`} className="mt-3 inline-block text-xs text-[#087F3E] hover:underline">
+    <div className="py-12 text-center">
+      <p className="text-[13px] font-medium text-ink-700">Aucun décompte</p>
+      <Link to={`/decomptes/nouveau?contrat_id=${contratId}`} className="mt-3 inline-block text-xs font-medium text-green-600 hover:text-green-700">
         Créer un décompte →
       </Link>
     </div>
@@ -141,35 +141,35 @@ function DecomptesTab({ decomptes, contratId, isNew }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Link to={`/decomptes/nouveau?contrat_id=${contratId}`} className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors">
-          + Nouveau décompte
+        <Link to={`/decomptes/nouveau?contrat_id=${contratId}`} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-green-600 px-3 text-xs font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800">
+          <Plus className="h-3 w-3" /> Nouveau décompte
         </Link>
       </div>
-      <table className="w-full text-sm">
+      <table className="w-full text-[13px]">
         <thead>
-          <tr className="border-b border-gray-100">
-            <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Code</th>
-            <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Période</th>
-            <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Net HT</th>
-            <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">TTC</th>
-            <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2">Statut</th>
+          <tr className="border-b border-line-200">
+            <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Code</th>
+            <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Période</th>
+            <th className="pb-2 pr-3 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-500">Net HT</th>
+            <th className="pb-2 pr-3 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-500">TTC</th>
+            <th className="pb-2 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Statut</th>
             <th className="pb-2"></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-50">
+        <tbody className="divide-y divide-line-100">
           {decomptes.map(d => (
-            <tr key={d.id} className="hover:bg-gray-50 transition-colors">
-              <td className="py-2.5 pr-3 font-mono text-xs font-medium text-gray-900">{d.code}</td>
-              <td className="py-2.5 pr-3 text-gray-500 text-xs">
+            <tr key={d.id} className="transition-colors hover:bg-green-50/60">
+              <td className="py-2.5 pr-3 font-mono text-xs font-medium text-ink-900">{d.code}</td>
+              <td className="py-2.5 pr-3 text-xs text-ink-500">
                 {d.periode_debut
                   ? new Date(d.periode_debut).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })
                   : d.date_echeance ? formatDate(d.date_echeance) : "—"}
               </td>
-              <td className="py-2.5 pr-3 text-right font-semibold text-gray-800">{formatMontantCourt(parseFloat(d.montant_ht ?? 0))}</td>
-              <td className="py-2.5 pr-3 text-right text-gray-600">{formatMontantCourt(parseFloat(d.montant_ttc ?? 0))}</td>
+              <td className="py-2.5 pr-3 text-right font-semibold tabular-nums text-ink-900">{formatMontantCourt(parseFloat(d.montant_ht ?? 0))}</td>
+              <td className="py-2.5 pr-3 text-right tabular-nums text-ink-700">{formatMontantCourt(parseFloat(d.montant_ttc ?? 0))}</td>
               <td className="py-2.5"><StatusBadge statut={d.statut} /></td>
               <td className="py-2.5 text-right">
-                <Link to={`/decomptes/${d.id}`} className="text-xs text-[#087F3E] hover:underline">Voir</Link>
+                <Link to={`/decomptes/${d.id}`} className="text-xs font-medium text-green-600 hover:text-green-700">Voir</Link>
               </td>
             </tr>
           ))}
@@ -539,49 +539,49 @@ function CessionsTab({ contratId, isNew }) {
   const fmtMontant = n => fmtNum(Math.round(n ?? 0));
   const fmtDate    = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
 
-  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour voir les états de cession.</p>;
-  if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
+  if (isNew) return <p className="py-8 text-center text-[13px] text-ink-400">Enregistrez le contrat pour voir les états de cession.</p>;
+  if (isLoading) return <p className="py-8 text-center text-[13px] text-ink-400">Chargement…</p>;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{cessions.length} état(s) de cession pour ce contrat</p>
+        <p className="text-[13px] text-ink-500">{cessions.length} état(s) de cession pour ce contrat</p>
         {peutCreerEC && (
           <Link
             to={`/etats-cession/nouveau?contrat_id=${contratId}`}
-            className="inline-flex items-center gap-1.5 text-xs bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] transition-colors"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-green-600 px-3 text-xs font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800"
           >
-            <Plus size={13} /> Créer un état de cession
+            <Plus className="h-3 w-3" /> Créer un état de cession
           </Link>
         )}
       </div>
 
       {cessions.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-10">Aucun état de cession pour ce contrat.</p>
+        <p className="py-10 text-center text-[13px] text-ink-400">Aucun état de cession pour ce contrat.</p>
       ) : (
-        <table className="w-full text-sm">
+        <table className="w-full text-[13px]">
           <thead>
-            <tr className="border-b border-gray-100">
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Code</th>
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Période</th>
-              <th className="text-right text-xs uppercase tracking-wide font-medium text-gray-500 pb-2 pr-3">Montant</th>
-              <th className="text-left text-xs uppercase tracking-wide font-medium text-gray-500 pb-2">Statut</th>
+            <tr className="border-b border-line-200">
+              <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Code</th>
+              <th className="pb-2 pr-3 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Période</th>
+              <th className="pb-2 pr-3 text-right text-[11px] font-semibold uppercase tracking-wide text-ink-500">Montant</th>
+              <th className="pb-2 text-left text-[11px] font-semibold uppercase tracking-wide text-ink-500">Statut</th>
               <th className="pb-2"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-50">
+          <tbody className="divide-y divide-line-100">
             {cessions.map(ec => (
-              <tr key={ec.id} className="hover:bg-gray-50 transition-colors">
-                <td className="py-2.5 pr-3 font-mono text-xs font-medium text-gray-900">{ec.code}</td>
-                <td className="py-2.5 pr-3 text-gray-600 text-xs">
+              <tr key={ec.id} className="transition-colors hover:bg-green-50/60">
+                <td className="py-2.5 pr-3 font-mono text-xs font-medium text-ink-900">{ec.code}</td>
+                <td className="py-2.5 pr-3 text-xs text-ink-500">
                   {fmtDate(ec.periode_debut)} → {fmtDate(ec.periode_fin)}
                 </td>
-                <td className="py-2.5 pr-3 text-right font-semibold text-gray-800">
+                <td className="py-2.5 pr-3 text-right font-semibold tabular-nums text-ink-900">
                   {fmtMontant(ec.montant_total)} FCFA
                 </td>
                 <td className="py-2.5"><StatusBadge statut={ec.statut} /></td>
                 <td className="py-2.5 text-right">
-                  <Link to={`/etats-cession/${ec.id}`} className="text-xs text-[#087F3E] hover:underline">Voir</Link>
+                  <Link to={`/etats-cession/${ec.id}`} className="text-xs font-medium text-green-600 hover:text-green-700">Voir</Link>
                 </td>
               </tr>
             ))}
