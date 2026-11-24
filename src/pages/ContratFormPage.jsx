@@ -365,8 +365,8 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
   const [selected, setSelected] = useState([]); // contrat_bareme_ids en attente sélectionnés
   const [nouveau, setNouveau] = useState({ code_article: "", designation: "", unite: "", prix: "", date_effet: "" });
 
-  if (isNew) return <p className="text-sm text-gray-400 text-center py-8">Enregistrez le contrat pour gérer son barème.</p>;
-  if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
+  if (isNew) return <p className="py-8 text-center text-[13px] text-ink-400">Enregistrez le contrat pour gérer son barème.</p>;
+  if (isLoading) return <p className="py-8 text-center text-[13px] text-ink-400">Chargement…</p>;
 
   const err = e => e?.response?.data?.error ?? e?.response?.data?.errors?.[0] ?? "Erreur.";
   const lignes = data?.lignes ?? [];
@@ -406,22 +406,22 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
   return (
     <div className="space-y-3">
       {fige ? (
-        <p className="text-xs text-violet-800 bg-violet-50 border border-violet-200 rounded-lg px-3 py-2">
+        <p className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800">
           <strong>Prix figés à l'activation du contrat.</strong> Les évolutions du barème général ou du chantier ne les modifient plus.
           Toute modification passe par une validation du DACC.
         </p>
       ) : (
-        <p className="text-xs text-blue-800 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+        <p className="rounded-md border border-ink-900/15 bg-surface-50 px-3 py-2 text-xs text-ink-900">
           <strong>Prix vivants.</strong> Ce contrat suit le barème de son chantier (hérité du barème général) : seuls les écarts sont à saisir.
           Les prix seront figés à l'activation, qui est impossible tant qu'un écart attend la validation DACC.
         </p>
       )}
       {!bloque && peutGererBareme && (
-        <div className="border border-dashed border-gray-300 rounded-xl p-4 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ajouter un article Sage X3</p>
-          <div className="grid md:grid-cols-[1fr_110px_140px_140px_auto] gap-3 items-end">
+        <div className="space-y-3 rounded-xl border border-dashed border-line-200 p-4">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Ajouter un article Sage X3</p>
+          <div className="grid gap-3 md:grid-cols-[1fr_110px_140px_140px_auto] items-end">
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Article (classes MTX, BAS, PRP)</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">Article (classes MTX, BAS, PRP)</label>
               <ArticleX3Select
                 value={nouveau.code_article}
                 classe="MTX,BAS,PRP"
@@ -439,30 +439,30 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
               />
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Unité</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">Unité</label>
               <input list="unites-bareme-contrat" value={nouveau.unite}
                 onChange={e => setNouveau(n => ({ ...n, unite: e.target.value.toUpperCase() }))}
                 placeholder="Unité X3"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+                className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] uppercase text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
               <datalist id="unites-bareme-contrat">
                 {["T","KG","L","M3","M2","ML","M","SAC","U","PC","BARRE","H","JOUR","MOIS"].map(u => <option key={u} value={u} />)}
               </datalist>
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Prix chantier = Prix appliqué (FCFA)</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">Prix chantier = Prix appliqué (FCFA)</label>
               <input type="number" min="0" step="any" value={nouveau.prix}
                 onChange={e => setNouveau(n => ({ ...n, prix: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+                className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-right text-[13px] tabular-nums text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Date d'effet (option)</label>
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">Date d'effet (option)</label>
               <input type="date" value={nouveau.date_effet}
                 onChange={e => setNouveau(n => ({ ...n, date_effet: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+                className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
             </div>
             <button onClick={handleAdd} disabled={addMut.isPending}
-              className="inline-flex items-center gap-1.5 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
-              {addMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Ajouter
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60">
+              {addMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} Ajouter
             </button>
           </div>
         </div>
@@ -474,13 +474,13 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
               provenance: l.source === "contrat" ? "Écart du contrat" : "Barème chantier" })),
             "bareme_contrat", [["Prix du chantier", "prix_chantier"], ["Provenance", "provenance"]])}
           title="Fichier Excel (CodeArticle, Désignation, Unité, Prix unitaire) pré-rempli avec les prix appliqués au contrat"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-700 font-medium border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">
-          <Download size={14} /> Exporter en Excel
+          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 transition-colors hover:bg-surface-50 hover:border-ink-300">
+          <Download className="h-3.5 w-3.5" /> Exporter en Excel
         </button>
         {!bloque && peutGererBareme && (
           <button onClick={() => setShowImport(true)}
-            className="inline-flex items-center gap-1.5 text-sm text-[#087F3E] font-medium border border-[#087F3E]/40 px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE]">
-            <Upload size={14} /> Importer un fichier
+            className="inline-flex h-8 items-center gap-1.5 rounded-md border border-green-600 bg-white px-3 text-[13px] font-medium text-green-600 transition-colors hover:bg-green-50">
+            <Upload className="h-3.5 w-3.5" /> Importer un fichier
           </button>
         )}
       </div>
@@ -500,14 +500,14 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
         />
       )}
       {peutValiderBareme && selected.length > 0 && (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
-          <span className="text-sm text-amber-800 font-medium">{selected.length} ligne{selected.length > 1 ? "s" : ""} sélectionnée{selected.length > 1 ? "s" : ""}</span>
+        <div className="flex items-center gap-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-2.5">
+          <span className="text-[13px] font-medium text-amber-800">{selected.length} ligne{selected.length > 1 ? "s" : ""} sélectionnée{selected.length > 1 ? "s" : ""}</span>
           <button onClick={handleValiderSelection} disabled={validerBulk.isPending}
-            className="inline-flex items-center gap-1.5 text-sm font-semibold bg-[#087F3E] text-white px-3 py-1.5 rounded-lg hover:bg-[#065A2C] disabled:opacity-60">
-            {validerBulk.isPending ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle size={13} />}
+            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-green-600 px-3 text-[13px] font-semibold text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60">
+            {validerBulk.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle className="h-3 w-3" />}
             Valider la sélection
           </button>
-          <button onClick={() => setSelected([])} className="text-xs text-amber-600 hover:underline">Tout désélectionner</button>
+          <button onClick={() => setSelected([])} className="text-xs text-amber-700 hover:underline">Tout désélectionner</button>
         </div>
       )}
       <BaremePrixTable
@@ -522,7 +522,7 @@ function BaremeCessionsTab({ contratId, isNew, statut }) {
         onReset={(r) => run(r.bareme_id, () => reset.mutateAsync(r.bareme_id), "Prix hérité rétabli.")}
         onValider={(r) => run(r.bareme_id, () => valider.mutateAsync(r.contrat_bareme_id), "Prix validé.")}
       />
-      <p className="text-[11px] text-gray-400">Ressources humaines et matériel (GMAO) : en attente, non gérés dans le barème.</p>
+      <p className="text-[11px] text-ink-400">Ressources humaines et matériel (GMAO) : en attente, non gérés dans le barème.</p>
     </div>
   );
 }
