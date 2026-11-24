@@ -83,8 +83,8 @@ const BTN_COLORS = {
 function Field({ label, children, required }) {
   return (
     <div className="space-y-1.5">
-      <label className="text-xs uppercase tracking-wide font-medium text-gray-500 block">
-        {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+      <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">
+        {label}{required && <span className="ml-0.5 text-red-500">*</span>}
       </label>
       {children}
     </div>
@@ -99,14 +99,20 @@ function Input({ value, onChange, type = "text", placeholder, disabled }) {
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none transition-all disabled:bg-gray-50 disabled:text-gray-500"
+      className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 transition-colors duration-150 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-line-100 disabled:text-ink-500"
     />
   );
 }
 
 function ReadonlyVal({ value, highlight }) {
   return (
-    <div className={`border rounded-lg px-4 py-2.5 text-sm ${highlight ? "bg-[#E8F5EE] border-[#087F3E]/30 text-[#087F3E] font-medium" : "bg-gray-50 border-gray-200 text-gray-700"}`}>
+    <div
+      className={
+        highlight
+          ? "flex h-9 items-center rounded-md border border-green-200 bg-green-50 px-2.5 text-[13px] font-medium text-green-700"
+          : "flex h-9 items-center rounded-md border border-line-200 bg-line-100 px-2.5 text-[13px] text-ink-700"
+      }
+    >
       {value || "—"}
     </div>
   );
@@ -3210,11 +3216,11 @@ export default function ContratFormPage() {
 
           {/* Tab: Info */}
           {activeTab === "info" && (
-            <div className="space-y-8">
+            <div className="space-y-7">
               {/* Identification */}
               <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Identification</h3>
-                <div className="grid grid-cols-2 gap-5">
+                <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Identification</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {!isNew && (
                     <Field label="Code contrat">
                       <ReadonlyVal value={contrat.code} highlight />
@@ -3243,10 +3249,10 @@ export default function ContratFormPage() {
                   </Field>
                   {!isNew && (
                     <Field label="Montant HT (calculé)">
-                      <div className="w-full border border-gray-200 bg-gray-50 rounded-lg px-4 py-2.5 text-sm text-gray-700">
+                      <div className="flex h-9 items-center rounded-md border border-line-200 bg-line-100 px-2.5 text-[13px] text-ink-700">
                         {fmtNum(Math.round(parseFloat(contrat?.montant_initial ?? 0)))} FCFA
                       </div>
-                      <p className="text-[11px] text-gray-400 mt-1">Somme des BC Sage X3 liés. Non modifiable.</p>
+                      <p className="mt-1 text-[11px] text-ink-500">Somme des BC Sage X3 liés. Non modifiable.</p>
                     </Field>
                   )}
                 </div>
@@ -3254,13 +3260,13 @@ export default function ContratFormPage() {
 
               {/* Parties */}
               <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Parties</h3>
-                <div className="grid grid-cols-2 gap-5">
+                <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Parties</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Chantier" required>
                     <SearchSelect
                       value={form.chantier_id}
                       onChange={e => setForm(f => ({ ...f, chantier_id: e.target.value, soustraitant_id: isNew ? "" : f.soustraitant_id }))}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                      className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                     >
                       <option value="">Sélectionner un chantier…</option>
                       {chantiersList.map(c => (
@@ -3268,7 +3274,7 @@ export default function ContratFormPage() {
                       ))}
                     </SearchSelect>
                     {!isNew && contrat?.chantier_id && (
-                      <Link to={`/chantiers/${contrat.chantier_id}`} className="mt-1 inline-block text-xs text-[#087F3E] hover:underline">
+                      <Link to={`/chantiers/${contrat.chantier_id}`} className="mt-1 inline-block text-xs font-medium text-green-600 hover:text-green-700">
                         Voir le chantier →
                       </Link>
                     )}
@@ -3278,23 +3284,23 @@ export default function ContratFormPage() {
                       chantierId={form.chantier_id}
                       value={form.soustraitant_id}
                       onChange={e => setForm(f => ({ ...f, soustraitant_id: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none"
+                      className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
                       placeholderOption="Sélectionner un sous-traitant…"
                     />
                     {sttSelected?.statut === "suspendu" && (
-                      <div className="mt-2 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
-                        <AlertTriangle size={12} /> Ce sous-traitant est actuellement suspendu.
+                      <div className="mt-2 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                        <AlertTriangle className="h-3 w-3" /> Ce sous-traitant est actuellement suspendu.
                       </div>
                     )}
                     {!isNew && contrat?.soustraitant && (
                       <div className="mt-2 space-y-0.5">
                         {contrat.soustraitant.ninea && (
-                          <p className="text-xs text-gray-500">NINEA : <span className="font-mono font-medium text-gray-700">{contrat.soustraitant.ninea}</span></p>
+                          <p className="text-xs text-ink-500">NINEA : <span className="font-mono font-medium text-ink-900">{contrat.soustraitant.ninea}</span></p>
                         )}
                         {contrat.soustraitant.telephone && (
-                          <p className="text-xs text-gray-500">Tél : <span className="font-medium text-gray-700">{contrat.soustraitant.telephone}</span></p>
+                          <p className="text-xs text-ink-500">Tél : <span className="font-medium text-ink-900">{contrat.soustraitant.telephone}</span></p>
                         )}
-                        <Link to={`/sous-traitants/${contrat.soustraitant_id}`} className="inline-block text-xs text-[#087F3E] hover:underline mt-0.5">
+                        <Link to={`/sous-traitants/${contrat.soustraitant_id}`} className="mt-0.5 inline-block text-xs font-medium text-green-600 hover:text-green-700">
                           Voir la fiche →
                         </Link>
                       </div>
@@ -3305,8 +3311,8 @@ export default function ContratFormPage() {
 
               {/* Dates */}
               <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Dates</h3>
-                <div className="grid grid-cols-3 gap-5">
+                <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Dates</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <Field label="Date de début">
                     <Input type="date" value={form.date_debut} onChange={v => setForm(f => ({ ...f, date_debut: v }))} />
                   </Field>
@@ -3329,11 +3335,11 @@ export default function ContratFormPage() {
                 <button
                   onClick={handleSave}
                   disabled={saveMut.isPending}
-                  className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-6 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60"
                 >
                   {saveMut.isPending
-                    ? <><Loader2 size={15} className="animate-spin" /> Enregistrement…</>
-                    : <><Save size={15} /> {isNew ? "Créer le contrat" : "Enregistrer"}</>
+                    ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Enregistrement…</>
+                    : <><Save className="h-3.5 w-3.5" /> {isNew ? "Créer le contrat" : "Enregistrer"}</>
                   }
                 </button>
               </div>
