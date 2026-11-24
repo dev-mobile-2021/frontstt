@@ -961,28 +961,28 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
   const nbCessionsCourants = (p.G?.cessionsIds ?? []).length + (p.I?.cessionsIds ?? []).length + (p.K?.cessionsIds ?? []).length;
 
   return (
-    <div className="flex gap-5 items-start">
+    <div className="space-y-4">
       {/* Tableau principal */}
-      <div className="flex-[3] min-w-0 space-y-4">
+      <div className="min-w-0 space-y-4">
         <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-400">Mode : {mode === "cumulatif" ? "Saisie cumulative" : "Saisie mensuelle"}</p>
+          <p className="text-xs text-ink-500">Mode : {mode === "cumulatif" ? "Saisie cumulative" : "Saisie mensuelle"}</p>
           {canEdit && (
-            <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 text-xs">
-              <button onClick={() => setMode("cumulatif")} className={`px-3 py-1.5 rounded-md font-medium transition-colors ${mode === "cumulatif" ? "bg-white shadow text-gray-900" : "text-gray-500"}`}>Saisie cumulative</button>
-              <button onClick={() => setMode("mensuel")} className={`px-3 py-1.5 rounded-md font-medium transition-colors ${mode === "mensuel" ? "bg-white shadow text-gray-900" : "text-gray-500"}`}>Saisie mensuelle</button>
+            <div className="flex items-center gap-1 rounded-md bg-line-100 p-0.5 text-xs">
+              <button onClick={() => setMode("cumulatif")} className={cn("rounded-md px-3 py-1.5 font-medium transition-colors", mode === "cumulatif" ? "bg-white text-ink-900 shadow-xs" : "text-ink-500")}>Saisie cumulative</button>
+              <button onClick={() => setMode("mensuel")} className={cn("rounded-md px-3 py-1.5 font-medium transition-colors", mode === "mensuel" ? "bg-white text-ink-900 shadow-xs" : "text-ink-500")}>Saisie mensuelle</button>
             </div>
           )}
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div className="overflow-hidden rounded-xl border border-line-200 bg-white shadow-xs">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-12">Poste</th>
-                <th className="px-2 py-3 text-left text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Désignation</th>
-                <th className="px-3 py-3 text-right text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-32">Cumul(M-1)</th>
-                <th className="px-3 py-3 text-right text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-32">Mois(M)</th>
-                <th className="px-4 py-3 text-right text-[10px] font-semibold text-blue-500 uppercase tracking-wide w-36">
+              <tr className="border-b border-line-200 bg-surface-50">
+                <th className="w-12 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-500">Poste</th>
+                <th className="px-2 py-3 text-left text-[10px] font-semibold uppercase tracking-wide text-ink-500">Désignation</th>
+                <th className="w-32 px-3 py-3 text-right text-[10px] font-semibold uppercase tracking-wide text-ink-500">Cumul(M-1)</th>
+                <th className="w-32 px-3 py-3 text-right text-[10px] font-semibold uppercase tracking-wide text-ink-500">Mois(M)</th>
+                <th className="w-36 px-4 py-3 text-right text-[10px] font-semibold uppercase tracking-wide text-green-700">
                   Cumul(M){canEdit ? " ↑ saisie" : ""}
                 </th>
               </tr>
@@ -1030,17 +1030,17 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
                 extra={`Reliquat RG disponible : ${num(reliquatRgM1)} FCFA`}
                 cumulM1={prevCumulE} mensuelM={mensuelE} cumulM={cumulE} editable={false}>
                 {canEdit && (
-                  <tr className="bg-blue-50/60 border-b border-gray-50">
-                    <td className="px-4 py-1.5 w-12" />
+                  <tr className="border-b border-line-100 bg-green-50/60">
+                    <td className="w-12 px-4 py-1.5" />
                     <td className="px-2 py-1.5 pl-8">
-                      <span className="text-[11px] text-blue-600">└ Taux restitution (%)</span>
+                      <span className="text-[11px] text-green-700">└ Taux restitution (%)</span>
                     </td>
                     <td colSpan={2} />
                     <td className="px-4 py-1.5 text-right">
                       <input type="number" min={0} max={100} step={1}
                         value={postes.tauxE}
                         onChange={e => handleSet("tauxE", Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                        className="w-20 text-right px-2 py-1 rounded-lg border border-blue-200 bg-white text-blue-800 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                        className="w-20 rounded-md border border-line-200 bg-white px-2 py-1 text-right text-xs font-medium text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                     </td>
                   </tr>
                 )}
@@ -1067,17 +1067,17 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
                 extra2={`Reliquat MTX : ${num(reliquatG)} FCFA`}
                 cumulM1={cumulHM1} mensuelM={rembMensuelH} cumulM={cumulH} editable={false}>
                 {canEdit && (
-                  <tr className="bg-blue-50/60 border-b border-gray-50">
-                    <td className="px-4 py-1.5 w-12" />
+                  <tr className="border-b border-line-100 bg-green-50/60">
+                    <td className="w-12 px-4 py-1.5" />
                     <td className="px-2 py-1.5 pl-8">
-                      <span className="text-[11px] text-blue-600">└ Taux remboursement (%)</span>
+                      <span className="text-[11px] text-green-700">└ Taux remboursement (%)</span>
                     </td>
                     <td colSpan={2} />
                     <td className="px-4 py-1.5 text-right">
                       <input type="number" min={0} max={100} step={1}
                         value={postes.tauxH}
                         onChange={e => handleSet("tauxH", Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                        className="w-20 text-right px-2 py-1 rounded-lg border border-blue-200 bg-white text-blue-800 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                        className="w-20 rounded-md border border-line-200 bg-white px-2 py-1 text-right text-xs font-medium text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                     </td>
                   </tr>
                 )}
@@ -1100,17 +1100,17 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
                 extra2={`Reliquat MTL : ${num(reliquatI)} FCFA`}
                 cumulM1={cumulJM1} mensuelM={rembMensuelJ} cumulM={cumulJ} editable={false}>
                 {canEdit && (
-                  <tr className="bg-blue-50/60 border-b border-gray-50">
-                    <td className="px-4 py-1.5 w-12" />
+                  <tr className="border-b border-line-100 bg-green-50/60">
+                    <td className="w-12 px-4 py-1.5" />
                     <td className="px-2 py-1.5 pl-8">
-                      <span className="text-[11px] text-blue-600">└ Taux remboursement (%)</span>
+                      <span className="text-[11px] text-green-700">└ Taux remboursement (%)</span>
                     </td>
                     <td colSpan={2} />
                     <td className="px-4 py-1.5 text-right">
                       <input type="number" min={0} max={100} step={1}
                         value={postes.tauxJ}
                         onChange={e => handleSet("tauxJ", Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                        className="w-20 text-right px-2 py-1 rounded-lg border border-blue-200 bg-white text-blue-800 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                        className="w-20 rounded-md border border-line-200 bg-white px-2 py-1 text-right text-xs font-medium text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                     </td>
                   </tr>
                 )}
@@ -1133,17 +1133,17 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
                 extra2={`Reliquat RH : ${num(reliquatK)} FCFA`}
                 cumulM1={cumulLM1} mensuelM={rembMensuelL} cumulM={cumulL} editable={false}>
                 {canEdit && (
-                  <tr className="bg-blue-50/60 border-b border-gray-50">
-                    <td className="px-4 py-1.5 w-12" />
+                  <tr className="border-b border-line-100 bg-green-50/60">
+                    <td className="w-12 px-4 py-1.5" />
                     <td className="px-2 py-1.5 pl-8">
-                      <span className="text-[11px] text-blue-600">└ Taux remboursement (%)</span>
+                      <span className="text-[11px] text-green-700">└ Taux remboursement (%)</span>
                     </td>
                     <td colSpan={2} />
                     <td className="px-4 py-1.5 text-right">
                       <input type="number" min={0} max={100} step={1}
                         value={postes.tauxL}
                         onChange={e => handleSet("tauxL", Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
-                        className="w-20 text-right px-2 py-1 rounded-lg border border-blue-200 bg-white text-blue-800 font-medium text-xs focus:outline-none focus:ring-2 focus:ring-blue-300" />
+                        className="w-20 rounded-md border border-line-200 bg-white px-2 py-1 text-right text-xs font-medium text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                     </td>
                   </tr>
                 )}
@@ -1159,18 +1159,20 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
                 cumulM1={cM1("M")} mensuelM={mensuelM} cumulM={postes.M}
                 editable={canEdit} onChange={v => handleSet("M", v)}>
                 {canEdit && (
-                  <tr className="bg-gray-50/70 border-b border-gray-50">
-                    <td className="px-4 py-1.5 w-12" />
+                  <tr className="border-b border-line-100 bg-surface-50">
+                    <td className="w-12 px-4 py-1.5" />
                     <td className="px-2 py-1.5 pl-8" colSpan={4}>
                       <input
                         type="text"
                         placeholder="Libellé obligatoire si montant ≠ 0 …"
                         value={libelleM}
                         onChange={e => setLibelleM(e.target.value)}
-                        className={`w-full text-xs px-2 py-1 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-300
-                          ${postes.M !== 0 && !libelleM.trim()
-                            ? "border-red-300 bg-red-50 text-red-700 placeholder-red-300"
-                            : "border-gray-200 bg-white text-gray-700"}`}
+                        className={cn(
+                          "w-full rounded-md border px-2 py-1 text-xs focus:outline-none focus:ring-2",
+                          postes.M !== 0 && !libelleM.trim()
+                            ? "border-red-300 bg-red-50 text-red-700 placeholder:text-red-400 focus:border-red-400 focus:ring-red-100"
+                            : "border-line-200 bg-white text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:ring-green-100"
+                        )}
                       />
                     </td>
                   </tr>
@@ -1180,34 +1182,34 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
           </table>
 
           {/* Totaux */}
-          <div className="border-t-2 border-gray-200 px-4 py-3 space-y-1.5">
-            <div className="flex justify-between text-sm">
-              <span className="font-semibold text-gray-700">NET À RÉGLER (HT)</span>
-              <span className={`font-bold tabular-nums ${netHt < 0 ? "text-red-600" : "text-gray-900"}`}>{netHt < 0 ? "−" : ""}{num(netHt)} FCFA</span>
+          <div className="space-y-1.5 border-t-2 border-line-200 px-4 py-3">
+            <div className="flex justify-between text-[13px]">
+              <span className="font-semibold text-ink-900">NET À RÉGLER (HT)</span>
+              <span className={cn("font-bold tabular-nums", netHt < 0 ? "text-red-600" : "text-ink-900")}>{netHt < 0 ? "−" : ""}{num(netHt)} FCFA</span>
             </div>
-            <div className="flex justify-between text-sm text-gray-500">
+            <div className="flex justify-between text-[13px] text-ink-500">
               <span>TVA ({d.taux_tva ?? 18}%)</span>
               <span className="tabular-nums">{num(tva)} FCFA</span>
             </div>
-            <div className="flex justify-between text-base font-bold border-t border-gray-100 pt-2">
-              <span className="text-gray-900">NET TTC À PAYER</span>
-              <span className={`tabular-nums ${netHt < 0 ? "text-red-600" : "text-[#087F3E]"}`}>{netHt < 0 ? "−" : ""}{num(netTtc)} FCFA</span>
+            <div className="flex justify-between border-t border-line-100 pt-2 text-base font-bold">
+              <span className="text-ink-900">NET TTC À PAYER</span>
+              <span className={cn("tabular-nums", netHt < 0 ? "text-red-600" : "text-green-700")}>{netHt < 0 ? "−" : ""}{num(netTtc)} FCFA</span>
             </div>
           </div>
         </div>
 
         {netHt < 0 && (
-          <div className="flex items-center gap-2 px-4 py-3 bg-orange-50 border border-orange-200 rounded-xl text-orange-800 text-sm">
-            <AlertTriangle size={14} className="flex-shrink-0" />
+          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
             Net HT négatif — les cessions dépassent les travaux certifiés. Une alerte est émise vers le DCG et la DGA.
           </div>
         )}
 
         {/* Cards résumé */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5">
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
+        <div className="rounded-xl border border-line-200 bg-white p-5 shadow-xs">
+          <div className="grid grid-cols-3 gap-4 md:grid-cols-6">
             {[
-              { label: "Travaux exécutés",       value: mensuelA,  color: "text-gray-900" },
+              { label: "Travaux exécutés",       value: mensuelA,  color: "text-ink-900" },
               { label: "Révisions de prix",       value: mensuelB,  color: "text-green-700" },
               { label: "Sommes à faire valoir",   value: mensuelB2, color: "text-green-700" },
               { label: "Retenue de garantie",     value: -mensuelD, color: "text-red-600" },
@@ -1216,45 +1218,45 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
               { label: "Remboursement MTL",       value: -rembMensuelJ, color: "text-red-600" },
               { label: "Remboursement RH",        value: -rembMensuelL, color: "text-red-600" },
               { label: "Autres retenues",         value: -mensuelM, color: "text-red-600" },
-              { label: "Net HT",                  value: netHt,     color: netHt < 0 ? "text-red-600 font-bold" : "text-[#087F3E] font-bold" },
-              { label: `TVA ${d.taux_tva ?? 18}%`, value: tva,     color: "text-gray-600" },
+              { label: "Net HT",                  value: netHt,     color: netHt < 0 ? "text-red-600 font-bold" : "text-green-700 font-bold" },
+              { label: `TVA ${d.taux_tva ?? 18}%`, value: tva,     color: "text-ink-700" },
             ].filter(item => item.value !== 0).map(item => (
               <div key={item.label} className="text-center">
-                <p className="text-[9px] text-gray-400 uppercase tracking-wide mb-1 leading-tight">{item.label}</p>
-                <p className={`text-sm ${item.color}`}>{item.value < 0 ? "−" : ""}{num(item.value)}<span className="text-[9px] text-gray-400 ml-0.5">FCFA</span></p>
+                <p className="mb-1 text-[9px] font-medium uppercase leading-tight tracking-wide text-ink-500">{item.label}</p>
+                <p className={cn("text-sm tabular-nums", item.color)}>{item.value < 0 ? "−" : ""}{num(item.value)}<span className="ml-0.5 text-[9px] text-ink-500">FCFA</span></p>
               </div>
             ))}
           </div>
-          <div className="mt-4 pt-4 border-t border-gray-100 text-center">
-            <p className="text-[10px] text-gray-400 uppercase tracking-wide mb-1">Net TTC à régler · TVA {d.taux_tva ?? 18}% incluse</p>
-            <p className={`text-2xl font-bold ${netHt < 0 ? "text-red-600" : "text-gray-900"}`}>{netHt < 0 ? "−" : ""}{num(netTtc)} FCFA</p>
+          <div className="mt-4 border-t border-line-100 pt-4 text-center">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-500">Net TTC à régler · TVA {d.taux_tva ?? 18}% incluse</p>
+            <p className={cn("text-2xl font-bold tabular-nums", netHt < 0 ? "text-red-600" : "text-ink-900")}>{netHt < 0 ? "−" : ""}{num(netTtc)} FCFA</p>
           </div>
         </div>
 
         {canEdit && (
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Réinitialisation par niveau */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-400">Réinitialiser :</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs text-ink-500">Réinitialiser :</span>
               <button
                 onClick={() => setConfirmAtt(true)}
                 disabled={saving}
                 title="Re-lit le Poste A depuis l'attachement validé"
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg hover:bg-amber-100 disabled:opacity-50">
-                <RefreshCw size={11} /> Attachement
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-3 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-50">
+                <RefreshCw className="h-3 w-3" /> Attachement
               </button>
               <button
                 onClick={() => setConfirmCessions(true)}
                 disabled={saving}
                 title="Taux remboursement → 100% pour MTX, MTL, RH"
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 disabled:opacity-50">
-                <RefreshCw size={11} /> Cessions 100% (MTX/MTL/RH)
+                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-green-200 bg-green-50 px-3 text-xs font-medium text-green-700 transition-colors hover:bg-green-100 disabled:opacity-50">
+                <RefreshCw className="h-3 w-3" /> Cessions 100% (MTX/MTL/RH)
               </button>
             </div>
 
             <button onClick={handleSaveWithValidation} disabled={saving}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
-              {saving ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Save size={14} />}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60">
+              {saving ? <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Save className="h-3.5 w-3.5" />}
               Enregistrer le brouillon
             </button>
           </div>
@@ -1275,7 +1277,7 @@ function StructureTab({ decompte, canEdit, onSave, saving }) {
         title="Réinitialiser taux cessions à 100%"
         message="Les taux de remboursement MTX, MTL et RH (postes H, J, L) seront réinitialisés à 100%. Cette action écrasera les taux saisis manuellement."
         confirmLabel="Réinitialiser à 100%"
-        confirmClass="bg-blue-600 hover:bg-blue-700 text-white"
+        confirmClass="bg-green-600 hover:bg-green-700 text-white"
         onConfirm={() => {
           setConfirmCessions(false);
           setPostes(prev => ({ ...prev, tauxH: 100, tauxJ: 100, tauxL: 100 }));
