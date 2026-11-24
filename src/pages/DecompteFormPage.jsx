@@ -388,30 +388,30 @@ function WorkflowTab({ decompte, circuit, onValider, onRejeter, onPayer, onSoume
   const findRej = profil => validations.find(v => v.profil_code === profil && v.action === "rejete");
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="max-w-2xl space-y-6">
       {/* Rejeté */}
       {statut === "rejete" && (
-        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
-          <XCircle size={18} className="text-red-500 mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-4">
+          <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
           <div>
-            <p className="text-sm font-semibold text-red-700">Décompte rejeté</p>
-            {decompte?.motif_rejet && <p className="text-xs text-red-600 mt-1">{decompte.motif_rejet}</p>}
+            <p className="text-[13px] font-semibold text-red-700">Décompte rejeté</p>
+            {decompte?.motif_rejet && <p className="mt-1 text-xs text-red-600">{decompte.motif_rejet}</p>}
           </div>
         </div>
       )}
 
       {/* Brouillon */}
       {isBrouillon && (
-        <div className="flex items-center gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl">
-          <Circle size={16} className="text-gray-400 flex-shrink-0" />
-          <p className="text-sm text-gray-500">Ce décompte est en brouillon. Soumettez-le au circuit pour démarrer l'approbation.</p>
+        <div className="flex items-center gap-3 rounded-md border border-line-200 bg-surface-50 p-4">
+          <Circle className="h-4 w-4 shrink-0 text-ink-400" />
+          <p className="text-[13px] text-ink-500">Ce décompte est en brouillon. Soumettez-le au circuit pour démarrer l'approbation.</p>
         </div>
       )}
 
       {/* Parcours d'approbation */}
       <div>
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Parcours d'approbation</p>
-        <div className="border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Parcours d'approbation</p>
+        <div className="divide-y divide-line-100 overflow-hidden rounded-xl border border-line-200 shadow-xs">
           {etapes.map((etape, idx) => {
             const val = findVal(etape.profil_code);
             const rej = !val ? findRej(etape.profil_code) : null;
@@ -421,58 +421,58 @@ function WorkflowTab({ decompte, circuit, onValider, onRejeter, onPayer, onSoume
             const isPending  = !val && !rej && !isCurrent;
 
             return (
-              <div key={etape.profil_code} className={`flex items-start gap-4 px-5 py-4 ${isCurrent ? "bg-amber-50" : "bg-white"}`}>
+              <div key={etape.profil_code} className={cn("flex items-start gap-4 px-5 py-4", isCurrent ? "bg-amber-50" : "bg-white")}>
                 {/* Icône statut */}
-                <div className="flex-shrink-0 mt-0.5">
-                  {val        ? <CheckCircle2 size={18} className="text-[#087F3E]" />
-                  : rej       ? <XCircle size={18} className="text-red-500" />
-                  : isCurrent ? <Clock size={18} className="text-amber-500" />
-                  :             <Circle size={18} className="text-gray-300" />}
+                <div className="mt-0.5 shrink-0">
+                  {val        ? <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  : rej       ? <XCircle className="h-4 w-4 text-red-500" />
+                  : isCurrent ? <Clock className="h-4 w-4 text-amber-500" />
+                  :             <Circle className="h-4 w-4 text-ink-300" />}
                 </div>
 
                 {/* Contenu */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800">{etape.libelle ?? etape.profil_code?.toUpperCase()}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold text-ink-900">{etape.libelle ?? etape.profil_code?.toUpperCase()}</p>
                   {val && (
-                    <p className="text-xs text-[#087F3E] mt-0.5">
+                    <p className="mt-0.5 text-xs text-green-700">
                       ✓ {val.user ? `${val.user.prenom} ${val.user.nom}` : etape.profil_code} — approuvé le {fmtD(val.validated_at?.slice(0,10))}
                     </p>
                   )}
                   {rej && (
-                    <p className="text-xs text-red-600 mt-0.5">
+                    <p className="mt-0.5 text-xs text-red-600">
                       ✗ {rej.user ? `${rej.user.prenom} ${rej.user.nom}` : etape.profil_code} — refusé le {fmtD(rej.validated_at?.slice(0,10))}
                       {rej.motif && <span className="ml-1 italic">"{rej.motif}"</span>}
                     </p>
                   )}
                   {isCurrent && (
-                    <p className="text-xs text-amber-700 font-medium mt-0.5">
+                    <p className="mt-0.5 text-xs font-medium text-amber-700">
                       En attente de validation — {etape.libelle ?? etape.profil_code?.toUpperCase()}
                     </p>
                   )}
-                  {isPending && <p className="text-xs text-gray-400 mt-0.5">En attente</p>}
+                  {isPending && <p className="mt-0.5 text-xs text-ink-400">En attente</p>}
                 </div>
 
                 {/* Badge */}
-                <div className="flex-shrink-0">
-                  {val        && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">Approuvé</span>}
-                  {rej        && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-100 text-red-700">Refusé</span>}
-                  {isCurrent  && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">À valider</span>}
-                  {isPending   && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">En attente</span>}
+                <div className="shrink-0">
+                  {val        && <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">Approuvé</span>}
+                  {rej        && <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-semibold text-red-700">Refusé</span>}
+                  {isCurrent  && <span className="rounded-full border border-amber-200 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">À valider</span>}
+                  {isPending   && <span className="rounded-full border border-line-200 bg-surface-50 px-2 py-0.5 text-[10px] font-semibold text-ink-400">En attente</span>}
                 </div>
               </div>
             );
           })}
         </div>
 
-        <div className="flex justify-between text-[10px] text-gray-400 mt-2 px-1">
+        <div className="mt-2 flex justify-between px-1 text-[10px] text-ink-500">
           <span>{validatedProfils.length}/{etapes.length} approbation(s)</span>
-          {allValidated && statut !== "paye" && <span className="text-violet-600 font-medium">✓ Toutes les approbations obtenues</span>}
-          {statut === "paye" && <span className="text-emerald-600 font-medium">✓ Payé</span>}
+          {allValidated && statut !== "paye" && <span className="font-medium text-green-700">✓ Toutes les approbations obtenues</span>}
+          {statut === "paye" && <span className="font-medium text-green-700">✓ Payé</span>}
         </div>
       </div>
 
       {/* Discussion */}
-      <div className="border-t border-gray-100 pt-6">
+      <div className="border-t border-line-100 pt-6">
         <DiscussionSection decompteId={decompte.id} />
       </div>
     </div>
