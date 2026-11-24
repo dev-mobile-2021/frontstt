@@ -3202,7 +3202,7 @@ export default function ContratFormPage() {
       )}
 
       {/* Tabs */}
-      <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-line-200 bg-white shadow-xs">
         <div className="px-2 pt-1">
           <Tabs items={tabs} activeTab={activeTab} onChange={setActiveTab} />
         </div>
