@@ -1716,56 +1716,56 @@ function FacturesAnnuleesSection({ factures }) {
   const [openId, setOpenId] = useState(null);
 
   return (
-    <div className="border border-red-100 rounded-xl overflow-hidden">
+    <div className="overflow-hidden rounded-xl border border-red-200">
       {/* En-tête — toggle toute la section */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-red-50/40 transition-colors">
-        <p className="text-xs font-semibold text-red-500 uppercase tracking-wide">
+        className="flex w-full items-center justify-between px-4 py-3 transition-colors hover:bg-red-50/40">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-red-600">
           Factures annulées ({factures.length})
         </p>
-        <ChevronDown size={13} className={`text-red-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown className={cn("h-3.5 w-3.5 text-red-400 transition-transform", open && "rotate-180")} />
       </button>
 
       {!open && (
-        <p className="px-4 pb-3 text-xs text-gray-400">
+        <p className="px-4 pb-3 text-xs text-ink-500">
           {factures.length} facture{factures.length > 1 ? "s" : ""} — cliquez pour afficher
         </p>
       )}
 
       {open && (
-      <div className="divide-y divide-red-50 border-t border-red-100">
+      <div className="divide-y divide-red-100 border-t border-red-100">
         {factures.map(f => (
           <div key={f.id}>
             {/* Ligne principale */}
             <button
               onClick={() => setOpenId(openId === f.id ? null : f.id)}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50/50 text-left transition-colors">
-              <XCircle size={14} className="text-red-400 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-700">{f.code}</p>
-                {f.motif_annulation && <p className="text-xs text-red-500 italic">"{f.motif_annulation}"</p>}
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-red-50/50">
+              <XCircle className="h-3.5 w-3.5 shrink-0 text-red-500" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[13px] font-medium text-ink-900">{f.code}</p>
+                {f.motif_annulation && <p className="text-xs italic text-red-600">"{f.motif_annulation}"</p>}
               </div>
-              <p className="text-[10px] text-gray-400 flex-shrink-0">
+              <p className="shrink-0 text-[10px] text-ink-500">
                 {f.created_at ? new Date(f.created_at).toLocaleDateString("fr-FR") : ""}
               </p>
-              <ChevronDown size={13} className={`text-gray-400 flex-shrink-0 transition-transform ${openId === f.id ? "rotate-180" : ""}`} />
+              <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 text-ink-400 transition-transform", openId === f.id && "rotate-180")} />
             </button>
 
             {/* Détail expandable */}
             {openId === f.id && (
-              <div className="px-4 pb-4 space-y-3 bg-red-50/30">
+              <div className="space-y-3 bg-red-50/30 px-4 pb-4">
                 {/* Scan */}
                 {f.fichier_courant && f.scans?.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Scan déposé</p>
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500">Scan déposé</p>
                     {f.scans.map(s => (
                       <div key={s.id} className="flex items-center gap-2">
-                        <FileDown size={12} className="text-gray-400" />
-                        <span className="text-xs text-gray-600 flex-1 truncate">{s.nom_original}</span>
+                        <FileDown className="h-3 w-3 text-ink-400" />
+                        <span className="flex-1 truncate text-xs text-ink-700">{s.nom_original}</span>
                         <button
                           onClick={() => window.open(`${http.defaults.baseURL}/facture/scan/${s.id}/download`, "_blank")}
-                          className="text-[10px] text-gray-500 border border-gray-200 rounded-lg px-2 py-0.5 hover:bg-white">
+                          className="inline-flex h-6 items-center rounded-md border border-line-200 bg-white px-2 text-[10px] text-ink-700 hover:bg-surface-50 hover:border-ink-300">
                           Télécharger
                         </button>
                       </div>
@@ -1776,24 +1776,30 @@ function FacturesAnnuleesSection({ factures }) {
                 {/* Historique validations */}
                 {f.validations?.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1.5">Historique circuit</p>
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500">Historique circuit</p>
                     <div className="space-y-1.5">
                       {f.validations.map((v, i) => (
                         <div key={i} className="flex items-start gap-2">
-                          <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${
-                            v.action === "valide" ? "bg-emerald-400" : v.action === "rejete" ? "bg-red-400" : "bg-gray-300"
-                          }`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-700">
+                          <div className={cn(
+                            "mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full",
+                            v.action === "valide" ? "bg-green-600" : v.action === "rejete" ? "bg-red-500" : "bg-ink-300"
+                          )} />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-ink-900">
                               <span className="font-medium">{v.libelle ?? v.profil_code?.toUpperCase()}</span>
-                              {v.user && <span className="text-gray-400"> · {v.user}</span>}
-                              {v.validated_at && <span className="text-gray-400"> · {new Date(v.validated_at).toLocaleDateString("fr-FR")}</span>}
+                              {v.user && <span className="text-ink-500"> · {v.user}</span>}
+                              {v.validated_at && <span className="text-ink-500"> · {new Date(v.validated_at).toLocaleDateString("fr-FR")}</span>}
                             </p>
-                            {v.motif && <p className="text-[10px] text-red-500 italic">"{v.motif}"</p>}
+                            {v.motif && <p className="text-[10px] italic text-red-600">"{v.motif}"</p>}
                           </div>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium flex-shrink-0 ${
-                            v.action === "valide" ? "bg-emerald-100 text-emerald-700" : v.action === "rejete" ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-500"
-                          }`}>
+                          <span className={cn(
+                            "shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-medium",
+                            v.action === "valide"
+                              ? "border-green-200 bg-green-50 text-green-700"
+                              : v.action === "rejete"
+                                ? "border-red-200 bg-red-50 text-red-600"
+                                : "border-line-200 bg-surface-50 text-ink-500"
+                          )}>
                             {v.action === "valide" ? "Approuvé" : v.action === "rejete" ? "Rejeté" : v.action}
                           </span>
                         </div>
@@ -1944,15 +1950,15 @@ function FactureSttTab({ decompte, onPayer }) {
 
   const num = v => new Intl.NumberFormat("fr-FR").format(Math.round(Math.abs(v ?? 0)));
 
-  if (loading) return <div className="flex justify-center py-12"><div className="w-5 h-5 border-2 border-[#087F3E] border-t-transparent rounded-full animate-spin" /></div>;
+  if (loading) return <div className="flex justify-center py-12"><div className="h-5 w-5 animate-spin rounded-full border-2 border-green-600 border-t-transparent" /></div>;
 
   return (
     <div className="space-y-6">
       {/* Bouton liasse toujours accessible */}
       <div className="flex justify-end">
         <button onClick={handleGenererLiasse} disabled={genLiasse}
-          className="flex items-center gap-2 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-xl text-xs font-medium hover:bg-gray-50 disabled:opacity-50">
-          {genLiasse ? <div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> : <FileDown size={12} />}
+          className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line-200 bg-white px-3 text-xs font-medium text-ink-900 transition-colors hover:bg-surface-50 hover:border-ink-300 disabled:opacity-50">
+          {genLiasse ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-ink-400 border-t-transparent" /> : <FileDown className="h-3 w-3" />}
           Générer la liasse
         </button>
       </div>
@@ -1961,27 +1967,27 @@ function FactureSttTab({ decompte, onPayer }) {
       {!factureCourante && (
         <div className="space-y-5">
           <div className="flex flex-col items-center gap-3 py-6">
-            <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center">
-              <FileDown size={24} className="text-[#087F3E]" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-100">
+              <FileDown className="h-6 w-6 text-green-600" />
             </div>
             <div className="text-center">
-              <p className="font-semibold text-gray-800">Aucune facture STT</p>
-              <p className="text-sm text-gray-400 mt-1">Générez la liasse et envoyez-la au STT, puis déposez sa facture ici.</p>
+              <p className="text-[13px] font-semibold text-ink-900">Aucune facture STT</p>
+              <p className="mt-1 text-[13px] text-ink-500">Générez la liasse et envoyez-la au STT, puis déposez sa facture ici.</p>
             </div>
           </div>
-          <form onSubmit={handleDeposer} className="border border-dashed border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Déposer la facture STT</p>
-            <div className="flex gap-3 flex-wrap">
+          <form onSubmit={handleDeposer} className="space-y-3 rounded-xl border border-dashed border-line-200 bg-surface-50 p-4">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Déposer la facture STT</p>
+            <div className="flex flex-wrap gap-3">
               <input type="file" accept=".pdf,.jpg,.jpeg,.png"
                 onChange={e => setFichier(e.target.files[0] ?? null)}
-                className="flex-1 min-w-48 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white file:mr-2 file:text-xs file:border-0 file:bg-[#087F3E]/10 file:text-[#087F3E] file:rounded-lg file:px-2 file:py-1" />
+                className="h-9 min-w-48 flex-1 rounded-md border border-line-200 bg-white px-2.5 py-1.5 text-[13px] file:mr-2 file:rounded-md file:border-0 file:bg-green-100 file:px-2 file:py-1 file:text-xs file:text-green-700 hover:file:bg-green-200" />
               <input type="text" placeholder="Note (optionnel)…" value={note}
                 onChange={e => setNote(e.target.value)}
-                className="flex-1 min-w-36 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 outline-none bg-white" />
+                className="h-9 min-w-36 flex-1 rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
             </div>
             <button type="submit" disabled={!fichier || uploading}
-              className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50">
-              {uploading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus size={13} />}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-50">
+              {uploading ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Plus className="h-3.5 w-3.5" />}
               Déposer la facture STT
             </button>
           </form>
@@ -1992,18 +1998,19 @@ function FactureSttTab({ decompte, onPayer }) {
       {factureCourante && (
         <div className="space-y-5">
           {/* En-tête facture */}
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="font-semibold text-gray-900">{factureCourante.code}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{factureCourante.objet}</p>
+              <p className="font-semibold text-ink-900">{factureCourante.code}</p>
+              <p className="mt-0.5 text-xs text-ink-500">{factureCourante.objet}</p>
             </div>
-            <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${
-              factureCourante.statut === "validee"   ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-              factureCourante.statut === "annulee"   ? "bg-red-50 text-red-600 border-red-200" :
-              factureCourante.statut === "en_circuit"? "bg-blue-50 text-blue-700 border-blue-200" :
-              factureCourante.statut === "deposee"   ? "bg-amber-50 text-amber-700 border-amber-200" :
-              "bg-gray-100 text-gray-600 border-gray-200"
-            }`}>
+            <span className={cn(
+              "rounded-full border px-3 py-1 text-xs font-semibold",
+              factureCourante.statut === "validee"   ? "border-green-200 bg-green-50 text-green-700" :
+              factureCourante.statut === "annulee"   ? "border-red-200 bg-red-50 text-red-600" :
+              factureCourante.statut === "en_circuit"? "border-green-300 bg-green-100 text-green-800" :
+              factureCourante.statut === "deposee"   ? "border-amber-200 bg-amber-50 text-amber-700" :
+              "border-line-200 bg-surface-50 text-ink-700"
+            )}>
               {factureCourante.statut === "brouillon"  ? "Brouillon" :
                factureCourante.statut === "deposee"    ? "Déposée" :
                factureCourante.statut === "en_circuit" ? "En circuit" :
@@ -2012,34 +2019,34 @@ function FactureSttTab({ decompte, onPayer }) {
           </div>
 
           {/* Montants */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { label: "Montant HT",  val: factureCourante.montant_ht,  unit: "FCFA" },
               { label: "TVA",          val: factureCourante.montant_tva, unit: "FCFA" },
               { label: "Montant TTC",  val: factureCourante.montant_ttc, unit: "FCFA" },
             ].map(c => (
-              <div key={c.label} className="bg-gray-50 border border-gray-100 rounded-xl px-4 py-3">
-                <p className="text-[10px] text-gray-400 uppercase tracking-wide">{c.label}</p>
-                <p className="text-base font-bold text-gray-800 tabular-nums mt-0.5">{num(c.val)} <span className="text-xs font-normal text-gray-400">{c.unit}</span></p>
+              <div key={c.label} className="rounded-xl border border-line-200 bg-white px-4 py-3 shadow-xs">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-ink-500">{c.label}</p>
+                <p className="mt-0.5 text-base font-bold tabular-nums text-ink-900">{num(c.val)} <span className="text-xs font-normal text-ink-500">{c.unit}</span></p>
               </div>
             ))}
           </div>
 
           {/* Upload scan */}
           {peutUploader && factureCourante.statut !== "validee" && (
-            <form onSubmit={handleUpload} className="border border-dashed border-gray-200 rounded-xl p-4 space-y-3 bg-gray-50">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Uploader un scan de la facture</p>
-              <div className="flex gap-3 flex-wrap">
+            <form onSubmit={handleUpload} className="space-y-3 rounded-xl border border-dashed border-line-200 bg-surface-50 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Uploader un scan de la facture</p>
+              <div className="flex flex-wrap gap-3">
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png"
                   onChange={e => setFichier(e.target.files[0] ?? null)}
-                  className="flex-1 min-w-48 border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white file:mr-2 file:text-xs file:border-0 file:bg-[#087F3E]/10 file:text-[#087F3E] file:rounded-lg file:px-2 file:py-1" />
+                  className="h-9 min-w-48 flex-1 rounded-md border border-line-200 bg-white px-2.5 py-1.5 text-[13px] file:mr-2 file:rounded-md file:border-0 file:bg-green-100 file:px-2 file:py-1 file:text-xs file:text-green-700 hover:file:bg-green-200" />
                 <input type="text" placeholder="Note (optionnel)…" value={note}
                   onChange={e => setNote(e.target.value)}
-                  className="flex-1 min-w-36 border border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 outline-none bg-white" />
+                  className="h-9 min-w-36 flex-1 rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
               </div>
               <button type="submit" disabled={!fichier || uploading}
-                className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white rounded-xl text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50">
-                {uploading ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus size={13} />}
+                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-50">
+                {uploading ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Plus className="h-3.5 w-3.5" />}
                 Uploader le scan
               </button>
             </form>
@@ -2047,18 +2054,18 @@ function FactureSttTab({ decompte, onPayer }) {
 
           {/* Scan courant */}
           {factureCourante.fichier_courant && (
-            <div className="flex items-center justify-between px-4 py-3 bg-blue-50 border border-blue-100 rounded-xl">
+            <div className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-4 py-3">
               <div className="flex items-center gap-2">
-                <FileDown size={16} className="text-blue-600" />
+                <FileDown className="h-4 w-4 text-green-600" />
                 <div>
-                  <p className="text-sm font-medium text-blue-800">Scan courant</p>
+                  <p className="text-[13px] font-medium text-green-700">Scan courant</p>
                   {factureCourante.scans?.[0] && (
-                    <p className="text-xs text-blue-500">{factureCourante.scans[0].nom_original} · {factureCourante.scans[0].uploaded_by}</p>
+                    <p className="text-xs text-green-600">{factureCourante.scans[0].nom_original} · {factureCourante.scans[0].uploaded_by}</p>
                   )}
                 </div>
               </div>
               <button onClick={() => window.open(`${http.defaults.baseURL}/facture/scan/${factureCourante.scans[0]?.id}/download`, "_blank")}
-                className="text-xs text-blue-700 border border-blue-200 rounded-lg px-3 py-1.5 hover:bg-blue-100">
+                className="inline-flex h-8 items-center rounded-md border border-green-600 bg-white px-3 text-xs font-medium text-green-600 transition-colors hover:bg-green-100">
                 Télécharger
               </button>
             </div>
@@ -2066,21 +2073,26 @@ function FactureSttTab({ decompte, onPayer }) {
 
           {/* Circuit validation */}
           {factureCourante.validations?.length > 0 && (
-            <div className="border border-gray-100 rounded-xl overflow-hidden">
-              <p className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">Circuit de validation</p>
-              <div className="divide-y divide-gray-50">
+            <div className="overflow-hidden rounded-xl border border-line-200 shadow-xs">
+              <p className="border-b border-line-200 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Circuit de validation</p>
+              <div className="divide-y divide-line-100">
                 {factureCourante.validations.map((v, i) => (
                   <div key={i} className="flex items-center gap-3 px-4 py-3">
-                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${v.action === "valide" ? "bg-emerald-400" : v.action === "rejete" ? "bg-red-400" : "bg-amber-400"}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800">{v.libelle ?? v.profil_code?.toUpperCase()}</p>
-                      {v.user && <p className="text-xs text-gray-400">{v.user}</p>}
-                      {v.motif && <p className="text-xs text-red-500 italic">"{v.motif}"</p>}
+                    <div className={cn("h-2 w-2 shrink-0 rounded-full", v.action === "valide" ? "bg-green-600" : v.action === "rejete" ? "bg-red-500" : "bg-amber-500")} />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] font-medium text-ink-900">{v.libelle ?? v.profil_code?.toUpperCase()}</p>
+                      {v.user && <p className="text-xs text-ink-500">{v.user}</p>}
+                      {v.motif && <p className="text-xs italic text-red-600">"{v.motif}"</p>}
                     </div>
-                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${v.action === "valide" ? "bg-emerald-100 text-emerald-700" : v.action === "rejete" ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-500"}`}>
+                    <span className={cn(
+                      "rounded-full border px-2 py-0.5 text-xs font-medium",
+                      v.action === "valide" ? "border-green-200 bg-green-50 text-green-700" :
+                      v.action === "rejete" ? "border-red-200 bg-red-50 text-red-600" :
+                      "border-line-200 bg-surface-50 text-ink-500"
+                    )}>
                       {v.action === "valide" ? "Approuvé" : v.action === "rejete" ? "Rejeté" : v.action}
                     </span>
-                    <p className="text-[10px] text-gray-400 flex-shrink-0">
+                    <p className="shrink-0 text-[10px] text-ink-500">
                       {v.validated_at ? new Date(v.validated_at).toLocaleDateString("fr-FR") : ""}
                     </p>
                   </div>
@@ -2091,21 +2103,21 @@ function FactureSttTab({ decompte, onPayer }) {
 
           {/* Boutons approbation — visibles uniquement si c'est le tour de ce profil */}
           {fcCanValidate && !showRejet && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={() => setShowConfirmApprove(true)} disabled={validating}
-                className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold disabled:opacity-50">
-                <CheckCircle2 size={13} /> Approuver
+                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-50">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Approuver
               </button>
               <button onClick={() => setShowRejet(true)}
-                className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50">
-                <XCircle size={13} /> Rejeter la facture
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-red-200 bg-white px-4 text-[13px] font-medium text-red-600 transition-colors hover:bg-red-50">
+                <XCircle className="h-3.5 w-3.5" /> Rejeter la facture
               </button>
             </div>
           )}
           {/* En attente d'une autre étape */}
           {!fcIsTerminal && fcHasScan && !fcCanValidate && fcCurrentEtape && (
-            <p className="text-xs text-amber-600 flex items-center gap-1.5">
-              <Clock size={11} />
+            <p className="flex items-center gap-1.5 text-xs text-amber-700">
+              <Clock className="h-3 w-3" />
               En attente — <span className="font-semibold">{fcCurrentEtape.libelle ?? fcCurrentEtape.profil_code?.toUpperCase()}</span>
             </p>
           )}
@@ -2113,24 +2125,24 @@ function FactureSttTab({ decompte, onPayer }) {
           {/* Marquer comme payé — uniquement quand la facture STT est validée */}
           {factureCourante.statut === "validee" && (
             <button onClick={onPayer}
-              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-semibold">
-              <CheckCircle2 size={13} /> Marquer comme payé
+              className="inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-md bg-green-700 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-green-800">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Marquer comme payé
             </button>
           )}
 
           {showRejet && (
-            <div className="border border-red-100 rounded-xl p-4 space-y-3 bg-red-50">
-              <p className="text-xs font-semibold text-red-700 uppercase tracking-wide">Motif du rejet (obligatoire)</p>
+            <div className="space-y-3 rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-red-700">Motif du rejet (obligatoire)</p>
               <textarea rows={3} value={motifRejet} onChange={e => setMotifRejet(e.target.value)}
                 placeholder="Expliquez la raison du rejet…"
-                className="w-full border border-red-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-red-200 resize-none bg-white" />
+                className="w-full resize-none rounded-md border border-red-200 bg-white px-3 py-2 text-[13px] text-ink-900 placeholder:text-ink-400 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100" />
               <div className="flex gap-2">
                 <button onClick={handleRejeter} disabled={!motifRejet.trim()}
-                  className="px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-medium disabled:opacity-50">
+                  className="inline-flex h-9 items-center rounded-md bg-red-500 px-4 text-[13px] font-medium text-white hover:bg-red-600 disabled:opacity-50">
                   Confirmer le rejet
                 </button>
                 <button onClick={() => { setShowRejet(false); setMotifRejet(""); }}
-                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl text-sm">
+                  className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-4 text-[13px] text-ink-900 hover:bg-surface-50 hover:border-ink-300">
                   Annuler
                 </button>
               </div>
@@ -2139,19 +2151,19 @@ function FactureSttTab({ decompte, onPayer }) {
 
           {/* Historique scans */}
           {factureCourante.scans?.length > 1 && (
-            <div className="border border-gray-100 rounded-xl overflow-hidden">
-              <p className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">Historique des scans</p>
-              <div className="divide-y divide-gray-50">
+            <div className="overflow-hidden rounded-xl border border-line-200 shadow-xs">
+              <p className="border-b border-line-200 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-ink-500">Historique des scans</p>
+              <div className="divide-y divide-line-100">
                 {factureCourante.scans.map((s, i) => (
                   <div key={s.id} className="flex items-center gap-3 px-4 py-2.5">
-                    <FileDown size={13} className="text-gray-400 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-700 truncate">{s.nom_original}</p>
-                      <p className="text-xs text-gray-400">{s.uploaded_by} · {s.created_at ? new Date(s.created_at).toLocaleDateString("fr-FR") : ""}{s.note ? ` · ${s.note}` : ""}</p>
+                    <FileDown className="h-3 w-3 shrink-0 text-ink-400" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] text-ink-900">{s.nom_original}</p>
+                      <p className="text-xs text-ink-500">{s.uploaded_by} · {s.created_at ? new Date(s.created_at).toLocaleDateString("fr-FR") : ""}{s.note ? ` · ${s.note}` : ""}</p>
                     </div>
-                    {i === 0 && <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">Courant</span>}
+                    {i === 0 && <span className="rounded-full border border-green-200 bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">Courant</span>}
                     <button onClick={() => window.open(`${http.defaults.baseURL}/facture/scan/${s.id}/download`, "_blank")}
-                      className="text-xs text-gray-500 border border-gray-200 rounded-lg px-2 py-1 hover:bg-gray-50">
+                      className="inline-flex h-7 items-center rounded-md border border-line-200 bg-white px-2 text-xs text-ink-700 hover:bg-surface-50 hover:border-ink-300">
                       DL
                     </button>
                   </div>
@@ -2169,25 +2181,25 @@ function FactureSttTab({ decompte, onPayer }) {
 
       {/* Modale confirmation approbation */}
       {showConfirmApprove && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 size={20} className="text-[#087F3E]" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-800">Confirmer l'approbation</p>
-                <p className="text-sm text-gray-500">{factureCourante?.code}</p>
-              </div>
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4">
+          <div className="dialog-content w-full max-w-md rounded-lg border border-line-200 bg-white shadow-popover">
+            <div className="border-b border-line-200 px-5 py-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+                <CheckCircle2 className="h-4 w-4 text-green-600" strokeWidth={1.75} />
+                Confirmer l'approbation
+              </h3>
+              <p className="mt-1 font-mono text-xs text-ink-500">{factureCourante?.code}</p>
             </div>
-            <p className="text-sm text-gray-600">Êtes-vous sûr de vouloir approuver cette facture STT ?</p>
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="px-5 py-4">
+              <p className="text-[13px] text-ink-700">Êtes-vous sûr de vouloir approuver cette facture STT ?</p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-line-200 px-5 py-3">
               <button onClick={() => setShowConfirmApprove(false)}
-                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
+                className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300">
                 Annuler
               </button>
               <button onClick={handleValider}
-                className="px-4 py-2 text-sm font-semibold text-white bg-[#087F3E] hover:bg-[#065A2C] rounded-xl">
+                className="inline-flex h-9 items-center rounded-md bg-green-600 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-green-700 active:bg-green-800">
                 Approuver
               </button>
             </div>
