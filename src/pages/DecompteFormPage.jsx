@@ -82,29 +82,39 @@ function ChecklistEtape({ profil }) {
   }
 
   return (
-    <div className="mb-5 bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-3">
+    <div className="mb-5 space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">
           Checklist de contrôle — {profil?.toUpperCase()}
         </p>
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${nbOk === items.length ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700"}`}>
+        <span className={cn(
+          "rounded-full border px-2 py-0.5 text-xs font-medium",
+          nbOk === items.length
+            ? "border-green-200 bg-green-50 text-green-700"
+            : "border-amber-200 bg-amber-100 text-amber-700"
+        )}>
           {nbOk}/{items.length}
         </span>
       </div>
       <ul className="space-y-2">
         {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-2.5 cursor-pointer" onClick={() => toggle(i)}>
-            <div className={`mt-0.5 w-4 h-4 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors
-              ${checked[i] ? "bg-[#087F3E] border-[#087F3E]" : "border-amber-400 bg-white"}`}>
-              {checked[i] && <CheckCircle2 size={10} className="text-white" />}
+          <li key={i} className="flex cursor-pointer items-start gap-2.5" onClick={() => toggle(i)}>
+            <div className={cn(
+              "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border-2 transition-colors",
+              checked[i] ? "border-green-600 bg-green-600" : "border-amber-400 bg-white"
+            )}>
+              {checked[i] && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
             </div>
-            <span className={`text-xs leading-relaxed ${checked[i] ? "text-gray-400 line-through" : "text-amber-900"}`}>
+            <span className={cn(
+              "text-xs leading-relaxed",
+              checked[i] ? "text-ink-400 line-through" : "text-amber-900"
+            )}>
               {item}
             </span>
           </li>
         ))}
       </ul>
-      <p className="text-[10px] text-amber-600">Ces cases sont locales — elles ne sont pas enregistrées. Le bouton Valider reste actif indépendamment.</p>
+      <p className="text-[10px] text-amber-700">Ces cases sont locales — elles ne sont pas enregistrées. Le bouton Valider reste actif indépendamment.</p>
     </div>
   );
 }
@@ -162,8 +172,8 @@ function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumett
 
   if (isTerminal && statut !== "paye") return null;
   if (statut === "paye") return (
-    <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-700 font-medium">
-      <CheckCircle2 size={14} /> Décompte payé
+    <div className="inline-flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-4 py-2.5 text-[13px] font-medium text-green-700">
+      <CheckCircle2 className="h-4 w-4" /> Décompte payé
     </div>
   );
 
@@ -171,55 +181,55 @@ function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumett
 
   return (
     <>
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex flex-wrap items-center gap-2">
         {showApproveBtn && (
           <>
             <button onClick={() => setShowConfirmApprove(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold">
-              <CheckCircle2 size={13} /> Approuver — {approveLabel}
+              className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-green-700 active:bg-green-800">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Approuver — {approveLabel}
             </button>
             <button onClick={() => setShowConfirmRejet(true)}
-              className="flex items-center gap-2 px-4 py-2 text-red-600 border border-red-200 rounded-xl text-sm font-medium hover:bg-red-50">
-              <XCircle size={13} /> Refuser
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-red-200 bg-white px-4 text-[13px] font-medium text-red-600 transition-colors hover:bg-red-50">
+              <XCircle className="h-3.5 w-3.5" /> Refuser
             </button>
           </>
         )}
         {isBrouillon && !ctCanApprove && peutCreer && (
           <button onClick={onSoumettre}
-            className="flex items-center gap-2 px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-xl text-sm font-semibold">
-            <Send size={13} /> Soumettre au circuit
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-green-700 active:bg-green-800">
+            <Send className="h-3.5 w-3.5" /> Soumettre au circuit
           </button>
         )}
         {!isBrouillon && !allValidated && currentEtape && !canValidate && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700">
-            <Clock size={12} /> En attente de <strong>{currentEtape.libelle ?? currentEtape.profil_code?.toUpperCase()}</strong>
+          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            <Clock className="h-3 w-3" /> En attente de <strong>{currentEtape.libelle ?? currentEtape.profil_code?.toUpperCase()}</strong>
           </div>
         )}
       </div>
 
       {/* Modale confirmation approbation */}
       {showConfirmApprove && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 size={20} className="text-[#087F3E]" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-800">Confirmer l'approbation</p>
-                <p className="text-sm text-gray-500">Étape : <strong>{approveLabel}</strong></p>
-              </div>
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4">
+          <div className="dialog-content w-full max-w-md rounded-lg border border-line-200 bg-white shadow-popover">
+            <div className="border-b border-line-200 px-5 py-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+                <CheckCircle2 className="h-4 w-4 text-green-600" strokeWidth={1.75} />
+                Confirmer l'approbation
+              </h3>
+              <p className="mt-1 text-xs text-ink-500">Étape : <strong className="text-ink-900">{approveLabel}</strong></p>
             </div>
-            <p className="text-sm text-gray-600">
-              Êtes-vous sûr de vouloir approuver ce décompte ? Cette action est enregistrée dans le circuit de validation.
-            </p>
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="px-5 py-4">
+              <p className="text-[13px] text-ink-700">
+                Êtes-vous sûr de vouloir approuver ce décompte ? Cette action est enregistrée dans le circuit de validation.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-line-200 px-5 py-3">
               <button onClick={() => setShowConfirmApprove(false)}
-                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
+                className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300">
                 Annuler
               </button>
               <button onClick={handleConfirmApprove}
-                className="px-4 py-2 text-sm font-semibold text-white bg-[#087F3E] hover:bg-[#065A2C] rounded-xl">
+                className="inline-flex h-9 items-center rounded-md bg-green-600 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-green-700 active:bg-green-800">
                 Approuver
               </button>
             </div>
@@ -229,36 +239,34 @@ function ActionBar({ decompte, circuit, onValider, onRejeter, onPayer, onSoumett
 
       {/* Modale refus avec motif obligatoire */}
       {showConfirmRejet && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                <XCircle size={20} className="text-red-500" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-800">Refuser le décompte</p>
-                <p className="text-sm text-gray-500">Un motif est obligatoire</p>
-              </div>
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4">
+          <div className="dialog-content w-full max-w-md rounded-lg border border-line-200 bg-white shadow-popover">
+            <div className="border-b border-line-200 px-5 py-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+                <XCircle className="h-4 w-4 text-red-500" strokeWidth={1.75} />
+                Refuser le décompte
+              </h3>
+              <p className="mt-1 text-xs text-ink-500">Un motif est obligatoire</p>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Motif du refus</label>
+            <div className="px-5 py-4">
+              <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">Motif du refus</label>
               <textarea
                 autoFocus
                 rows={3}
                 placeholder="Expliquez la raison du refus…"
                 value={motif}
                 onChange={e => setMotif(e.target.value)}
-                className="w-full border border-red-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-red-200 outline-none resize-none"
+                className="w-full resize-none rounded-md border border-line-200 bg-white px-2.5 py-2 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-red-400 focus:outline-none focus:ring-2 focus:ring-red-100"
               />
             </div>
-            <div className="flex justify-end gap-2 pt-1">
+            <div className="flex items-center justify-end gap-2 border-t border-line-200 px-5 py-3">
               <button onClick={() => { setShowConfirmRejet(false); setMotif(""); }}
-                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
+                className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300">
                 Annuler
               </button>
               <button onClick={handleConfirmRejet}
                 disabled={!motif.trim()}
-                className="px-4 py-2 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 rounded-xl disabled:opacity-50">
+                className="inline-flex h-9 items-center rounded-md bg-red-500 px-4 text-[13px] font-semibold text-white hover:bg-red-600 disabled:opacity-50">
                 Confirmer le refus
               </button>
             </div>
@@ -309,31 +317,36 @@ function DiscussionSection({ decompteId }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Discussion & Observations</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Discussion & Observations</p>
 
       {/* Fil de messages */}
-      <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
+      <div className="max-h-80 space-y-3 overflow-y-auto scrollbar-thin pr-1">
         {messages.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-4">Aucune observation pour l'instant.</p>
+          <p className="py-4 text-center text-[13px] text-ink-400">Aucune observation pour l'instant.</p>
         )}
         {messages.map(msg => {
           const isMe = msg.user_id === currentUser?.id;
           return (
-            <div key={msg.id} className={`flex gap-3 ${isMe ? "flex-row-reverse" : ""}`}>
+            <div key={msg.id} className={cn("flex gap-3", isMe && "flex-row-reverse")}>
               {/* Avatar */}
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold
-                ${isMe ? "bg-[#087F3E] text-white" : "bg-gray-200 text-gray-600"}`}>
+              <div className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+                isMe ? "bg-green-600 text-white" : "bg-line-100 text-ink-700"
+              )}>
                 {initiales(msg.user)}
               </div>
               {/* Bulle */}
-              <div className={`max-w-sm ${isMe ? "items-end" : "items-start"} flex flex-col`}>
-                <div className={`px-3 py-2 rounded-2xl text-sm ${isMe ? "bg-[#087F3E] text-white rounded-tr-sm" : "bg-gray-100 text-gray-800 rounded-tl-sm"}`}>
+              <div className={cn("flex max-w-sm flex-col", isMe ? "items-end" : "items-start")}>
+                <div className={cn(
+                  "rounded-2xl px-3 py-2 text-[13px]",
+                  isMe ? "rounded-tr-sm bg-green-600 text-white" : "rounded-tl-sm bg-surface-50 text-ink-900"
+                )}>
                   {msg.contenu}
                 </div>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-[10px] text-gray-400">{nomComplet(msg.user)} · {msg.created_at}</p>
+                <div className="mt-0.5 flex items-center gap-2">
+                  <p className="text-[10px] text-ink-500">{nomComplet(msg.user)} · {msg.created_at}</p>
                   {isMe && (
-                    <button onClick={() => handleDelete(msg.id)} className="text-[10px] text-red-400 hover:text-red-600">
+                    <button onClick={() => handleDelete(msg.id)} className="text-[10px] text-ink-400 hover:text-red-600">
                       Supprimer
                     </button>
                   )}
@@ -346,19 +359,19 @@ function DiscussionSection({ decompteId }) {
       </div>
 
       {/* Zone de saisie */}
-      <form onSubmit={handleSend} className="border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-[#087F3E]/30">
+      <form onSubmit={handleSend} className="overflow-hidden rounded-md border border-line-200 focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100">
         <textarea
           value={contenu} onChange={e => setContenu(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(e); } }}
           placeholder="Ajouter une observation…"
           rows={3}
-          className="w-full px-4 py-3 text-sm outline-none resize-none border-0 bg-white placeholder-gray-400"
+          className="w-full resize-none border-0 bg-white px-4 py-3 text-[13px] text-ink-900 placeholder:text-ink-400 outline-none"
         />
-        <div className="flex items-center justify-between px-3 py-2 bg-gray-50 border-t border-gray-100">
-          <p className="text-[10px] text-gray-400">Entrée pour envoyer · Maj+Entrée pour saut de ligne</p>
+        <div className="flex items-center justify-between border-t border-line-200 bg-surface-50 px-3 py-2">
+          <p className="text-[10px] text-ink-500">Entrée pour envoyer · Maj+Entrée pour saut de ligne</p>
           <button type="submit" disabled={!contenu.trim() || sending}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-40 transition-colors">
-            {sending ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send size={12} />}
+            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-green-600 px-3 text-xs font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-40">
+            {sending ? <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" /> : <Send className="h-3 w-3" />}
             Envoyer
           </button>
         </div>
