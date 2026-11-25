@@ -37,7 +37,7 @@ const fmtDate = d => d ? new Date(d).toLocaleDateString("fr-FR") : "—";
 function RoleCard({ badge, role, level, nom, color }) {
   const colors = {
     amber: { wrap: "bg-amber-50 border-amber-200", badge: "bg-amber-100 text-amber-800 border-amber-300" },
-    green: { wrap: "bg-[#E8F5EE] border-[#b5ddc8]", badge: "bg-[#d4edd9] text-[#065A2C] border-[#b5ddc8]" },
+    green: { wrap: "bg-[green-50] border-[#b5ddc8]", badge: "bg-[#d4edd9] text-[green-700] border-[#b5ddc8]" },
   };
   const c = colors[color] ?? colors.amber;
   if (!nom) return null;
@@ -45,8 +45,8 @@ function RoleCard({ badge, role, level, nom, color }) {
     <div className={`flex items-start gap-3 p-4 rounded-xl border ${c.wrap}`}>
       <div className={`flex-shrink-0 px-2 py-1 rounded border text-xs font-bold ${c.badge}`}>{badge}</div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-500">{role} — {level}</p>
-        <p className="text-sm font-semibold text-gray-800 mt-0.5">{nom}</p>
+        <p className="text-xs text-ink-500">{role} — {level}</p>
+        <p className="text-sm font-semibold text-ink-900 mt-0.5">{nom}</p>
       </div>
     </div>
   );
@@ -56,19 +56,19 @@ function RoleCard({ badge, role, level, nom, color }) {
 function BudgetFamille({ icon: Icon, label, depense, budget, color }) {
   const pct = budget > 0 ? Math.round((depense / budget) * 100) : 0;
   return (
-    <div className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0">
+    <div className="flex items-center gap-4 py-3 border-b border-line-100 last:border-0">
       <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center ${color}`}>
         <Icon size={13} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-sm text-gray-700">{label}</span>
-          <span className="text-xs font-semibold text-gray-500">{pct}%</span>
+          <span className="text-sm text-ink-700">{label}</span>
+          <span className="text-xs font-semibold text-ink-500">{pct}%</span>
         </div>
-        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-          <div className="h-full bg-[#087F3E] rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
+        <div className="h-1.5 bg-line-100 rounded-full overflow-hidden">
+          <div className="h-full bg-[green-600] rounded-full" style={{ width: `${Math.min(100, pct)}%` }} />
         </div>
-        <div className="flex justify-between text-xs text-gray-400 mt-1 gap-2">
+        <div className="flex justify-between text-xs text-ink-400 mt-1 gap-2">
           <span className="truncate">{fmt(depense)} engagé</span>
           <span className="whitespace-nowrap">{fmt(budget)}</span>
         </div>
@@ -107,54 +107,54 @@ function TabContrats({ chantierId }) {
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <SearchSelect value={statut} onChange={e => setStatut(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]">
+          className="border border-line-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]">
           {STATUT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
         </SearchSelect>
-        <span className="text-xs text-gray-400">{contrats.length} contrat(s)</span>
+        <span className="text-xs text-ink-400">{contrats.length} contrat(s)</span>
       </div>
 
-      <div className="border border-gray-200 rounded-xl overflow-x-auto">
+      <div className="border border-line-200 rounded-xl overflow-x-auto">
         <table className="w-full min-w-[700px] text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-surface-50 border-b border-line-200">
               <th className="w-8 px-3 py-3" />
               {["Code", "Sous-traitant", "Objet", "Montant HT", "Statut"].map(h => (
-                <th key={h} className={`px-3 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${h === "Montant HT" ? "text-right" : "text-left"}`}>
+                <th key={h} className={`px-3 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide ${h === "Montant HT" ? "text-right" : "text-left"}`}>
                   {h}
                 </th>
               ))}
               <th className="w-10 px-3 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line-100">
             {isLoading && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400 text-sm">Chargement…</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-ink-400 text-sm">Chargement…</td></tr>
             )}
             {!isLoading && contrats.length === 0 && (
-              <tr><td colSpan={7} className="px-4 py-8 text-center text-gray-400 text-sm">Aucun contrat pour ce chantier</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-ink-400 text-sm">Aucun contrat pour ce chantier</td></tr>
             )}
             {contrats.map(c => {
               const hasAvenant = c.avenants?.length > 0;
               const isOpen     = expanded[c.id];
               return (
                 <Fragment key={c.id}>
-                  <tr className="hover:bg-gray-50">
+                  <tr className="hover:bg-surface-50">
                     <td className="px-3 py-3 text-center">
                       {hasAvenant && (
-                        <button onClick={() => toggle(c.id)} className="text-gray-400 hover:text-gray-700">
+                        <button onClick={() => toggle(c.id)} className="text-ink-400 hover:text-ink-700">
                           {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                         </button>
                       )}
                     </td>
-                    <td className="px-3 py-3 font-mono text-xs text-[#087F3E] font-semibold whitespace-nowrap">{c.code}</td>
-                    <td className="px-3 py-3 text-sm text-gray-900">{c.soustraitant?.raison_sociale ?? "—"}</td>
-                    <td className="px-3 py-3"><span className="block max-w-[200px] truncate text-sm text-gray-600">{c.objet ?? "—"}</span></td>
+                    <td className="px-3 py-3 font-mono text-xs text-[green-600] font-semibold whitespace-nowrap">{c.code}</td>
+                    <td className="px-3 py-3 text-sm text-ink-900">{c.soustraitant?.raison_sociale ?? "—"}</td>
+                    <td className="px-3 py-3"><span className="block max-w-[200px] truncate text-sm text-ink-500">{c.objet ?? "—"}</span></td>
                     <td className="px-3 py-3 text-right">
-                      <MoneyDisplay amount={c.montant_actuel ?? c.montant_initial ?? 0} className="text-sm font-semibold text-gray-900" />
+                      <MoneyDisplay amount={c.montant_actuel ?? c.montant_initial ?? 0} className="text-sm font-semibold text-ink-900" />
                     </td>
                     <td className="px-3 py-3"><StatusBadge statut={c.statut} /></td>
                     <td className="px-3 py-3">
-                      <button onClick={() => navigate(`/contrats/${c.id}`)} className="text-gray-400 hover:text-[#087F3E]" title="Ouvrir">
+                      <button onClick={() => navigate(`/contrats/${c.id}`)} className="text-ink-400 hover:text-[green-600]" title="Ouvrir">
                         <ExternalLink size={14} />
                       </button>
                     </td>
@@ -163,13 +163,13 @@ function TabContrats({ chantierId }) {
                     <tr key={a.id} className="bg-violet-50/40 border-t border-violet-100">
                       <td className="px-3 py-2" />
                       <td className="px-3 py-2">
-                        <span className="text-gray-300 mr-1 text-xs">↳</span>
+                        <span className="text-ink-300 mr-1 text-xs">↳</span>
                         <span className="font-mono text-xs text-violet-600">{a.code}</span>
                       </td>
-                      <td className="px-3 py-2 text-xs text-gray-500 italic" colSpan={2}>{a.objet}</td>
+                      <td className="px-3 py-2 text-xs text-ink-500 italic" colSpan={2}>{a.objet}</td>
                       <td className="px-3 py-2 text-right">
                         <MoneyDisplay amount={a.montant} sign={a.montant >= 0 ? "+" : "-"} variant="small"
-                          className={a.montant >= 0 ? "text-[#087F3E]" : "text-red-600"} />
+                          className={a.montant >= 0 ? "text-[green-600]" : "text-red-600"} />
                       </td>
                       <td className="px-3 py-2"><StatusBadge statut={a.statut} /></td>
                       <td className="px-3 py-2" />
@@ -198,32 +198,32 @@ function TabDecomptes({ chantierId }) {
   };
 
   return (
-    <div className="border border-gray-200 rounded-xl overflow-x-auto">
+    <div className="border border-line-200 rounded-xl overflow-x-auto">
       <table className="w-full min-w-[600px] text-sm">
         <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
+          <tr className="bg-surface-50 border-b border-line-200">
             {["Code", "Sous-traitant", "Période", "Net HT", "Statut"].map(h => (
-              <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${h === "Net HT" ? "text-right" : "text-left"}`}>
+              <th key={h} className={`px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide ${h === "Net HT" ? "text-right" : "text-left"}`}>
                 {h}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-line-100">
           {isLoading && (
-            <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-sm">Chargement…</td></tr>
+            <tr><td colSpan={5} className="px-4 py-8 text-center text-ink-400 text-sm">Chargement…</td></tr>
           )}
           {!isLoading && decomptes.length === 0 && (
-            <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-sm">Aucun décompte pour ce chantier</td></tr>
+            <tr><td colSpan={5} className="px-4 py-8 text-center text-ink-400 text-sm">Aucun décompte pour ce chantier</td></tr>
           )}
           {decomptes.map(d => (
             <tr key={d.id} onClick={() => navigate(`/decomptes/${d.id}`)}
-              className="hover:bg-gray-50 cursor-pointer transition-colors">
-              <td className="px-4 py-3 font-mono text-xs text-[#087F3E] font-semibold">{d.code}</td>
-              <td className="px-4 py-3 text-sm text-gray-700">{d.contrat?.soustraitant?.raison_sociale ?? "—"}</td>
-              <td className="px-4 py-3 text-sm text-gray-500">{fmtPeriode(d)}</td>
+              className="hover:bg-surface-50 cursor-pointer transition-colors">
+              <td className="px-4 py-3 font-mono text-xs text-[green-600] font-semibold">{d.code}</td>
+              <td className="px-4 py-3 text-sm text-ink-700">{d.contrat?.soustraitant?.raison_sociale ?? "—"}</td>
+              <td className="px-4 py-3 text-sm text-ink-500">{fmtPeriode(d)}</td>
               <td className="px-4 py-3 text-right">
-                <MoneyDisplay amount={d.montant_ht ?? 0} variant="small" className="font-semibold text-gray-800" />
+                <MoneyDisplay amount={d.montant_ht ?? 0} variant="small" className="font-semibold text-ink-900" />
               </td>
               <td className="px-4 py-3"><StatusBadge statut={d.statut} /></td>
             </tr>
@@ -251,24 +251,24 @@ function TabBareme({ chantierId }) {
     finally { setBusyId(null); }
   }
 
-  if (isLoading) return <p className="text-sm text-gray-400 text-center py-8">Chargement…</p>;
+  if (isLoading) return <p className="text-sm text-ink-400 text-center py-8">Chargement…</p>;
 
   const modeleChantier = (data?.lignes ?? []).map(l => ({ code: l.code, designation: l.designation, unite: l.unite, prix: l.prix_effectif, prix_base: l.prix_base, source: l.source }));
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-gray-500 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+      <p className="text-xs text-ink-500 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
         Le chantier hérite du barème général. Un prix modifié ici s'applique à tous les contrats de ce chantier qui n'ont pas leur propre écart
         (les contrats déjà actifs gardent leurs prix figés). Un écart proposé par un autre profil que le DACC attend sa validation.
       </p>
       <div className="flex justify-end gap-2">
         <button onClick={() => telechargerModeleBareme(modeleChantier, "bareme_chantier", [["Prix de base", "prix_base"], ["Provenance", "source"]])}
           title="Fichier CodeArticle ; Unité ; Prix unitaire, pré-rempli avec les prix appliqués au chantier"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-700 font-medium border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">
+          className="inline-flex items-center gap-1.5 text-sm text-ink-700 font-medium border border-line-200 px-3 py-1.5 rounded-lg hover:bg-surface-50">
           <Download size={14} /> Exporter en Excel
         </button>
         <button onClick={() => setShowImport(true)}
-          className="inline-flex items-center gap-1.5 text-sm text-[#087F3E] font-medium border border-[#087F3E]/40 px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE]">
+          className="inline-flex items-center gap-1.5 text-sm text-[green-600] font-medium border border-[green-600]/40 px-3 py-1.5 rounded-lg hover:bg-[green-50]">
           <Upload size={14} /> Importer un fichier
         </button>
       </div>
@@ -340,42 +340,42 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
     { badge: "CT", label: "Conducteur de Travaux", user: ctUser, userList: ctUsers, accent: "amber",
       colors: { avatar: "bg-amber-100 text-amber-700", badge: "bg-amber-100 text-amber-700 border-amber-200", ring: "ring-amber-300", btn: "text-amber-600 hover:bg-amber-50 border-amber-200" } },
     { badge: "DT", label: "Directeur de Travaux",  user: dtUser, userList: dtUsers, accent: "green",
-      colors: { avatar: "bg-[#E8F5EE] text-[#087F3E]", badge: "bg-[#E8F5EE] text-[#065A2C] border-[#b5ddc8]", ring: "ring-[#087F3E]", btn: "text-[#087F3E] hover:bg-[#E8F5EE] border-[#b5ddc8]" } },
+      colors: { avatar: "bg-[green-50] text-[green-600]", badge: "bg-[green-50] text-[green-700] border-[#b5ddc8]", ring: "ring-[green-600]", btn: "text-[green-600] hover:bg-[green-50] border-[#b5ddc8]" } },
   ];
 
   const roleEditing = editing ? ROLES.find(r => r.badge === editing) : null;
   const close = () => { setEditing(null); setForm({ user_id: "", note: "" }); };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div className="bg-white border border-line-200 rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-line-100">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900">Responsables du chantier</h3>
-          <p className="text-xs text-gray-400 mt-0.5">DT et CT — valident les décomptes avant le circuit administratif</p>
+          <h3 className="text-sm font-semibold text-ink-900">Responsables du chantier</h3>
+          <p className="text-xs text-ink-400 mt-0.5">DT et CT — valident les décomptes avant le circuit administratif</p>
         </div>
         <button onClick={() => setShowHistory(h => !h)}
-          className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${showHistory ? "bg-gray-100 text-gray-700 border-gray-200" : "text-gray-400 border-transparent hover:text-gray-600"}`}>
+          className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${showHistory ? "bg-line-100 text-ink-700 border-line-200" : "text-ink-400 border-transparent hover:text-ink-500"}`}>
           <History size={13} /> Historique
         </button>
       </div>
 
       {/* Cards CT + DT */}
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-line-100">
         {ROLES.map(({ badge, label, user, colors }) => (
           <div key={badge} className="px-5 py-4">
             <div className="flex items-center gap-3">
               <div className={`w-9 h-9 flex-shrink-0 rounded-full flex items-center justify-center text-sm font-bold ring-2 ${colors.avatar} ${user ? colors.ring : "ring-gray-200"}`}>
-                {initials(user) ?? <span className="text-gray-300 text-base">?</span>}
+                {initials(user) ?? <span className="text-ink-300 text-base">?</span>}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${colors.badge}`}>{badge}</span>
-                  <span className="text-[10px] text-gray-400 truncate">{label}</span>
+                  <span className="text-[10px] text-ink-400 truncate">{label}</span>
                 </div>
                 {fmtUser(user)
-                  ? <p className="text-sm font-semibold text-gray-800 truncate">{fmtUser(user)}</p>
-                  : <p className="text-sm text-gray-400 italic">Non affecté</p>}
+                  ? <p className="text-sm font-semibold text-ink-900 truncate">{fmtUser(user)}</p>
+                  : <p className="text-sm text-ink-400 italic">Non affecté</p>}
               </div>
               {isDacc && (
                 <button onClick={() => { setEditing(badge); setForm({ user_id: "", note: "" }); }}
@@ -389,10 +389,10 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
       </div>
 
       {/* Validateur final attachement */}
-      <div className="border-t border-gray-100 px-5 py-4 flex flex-wrap items-start justify-between gap-3">
+      <div className="border-t border-line-100 px-5 py-4 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-gray-800">Validateur final — Attachements</p>
-          <p className="text-xs text-gray-400 mt-0.5">Qui soumet au DACC après l'Asst DACC : DT ou Asst DACC</p>
+          <p className="text-sm font-semibold text-ink-900">Validateur final — Attachements</p>
+          <p className="text-xs text-ink-400 mt-0.5">Qui soumet au DACC après l'Asst DACC : DT ou Asst DACC</p>
         </div>
         {isDacc ? (
           <select
@@ -400,13 +400,13 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
             onChange={e => http.patch(`/chantier/${chantierId}/validateur-final`, { validateur_final: e.target.value })
               .then(() => qc.invalidateQueries({ queryKey: ["chantier", String(chantierId)] }))
             }
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] bg-white"
+            className="border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600] bg-white"
           >
             <option value="asst_dacc">Assistant DACC</option>
             <option value="DT">DT</option>
           </select>
         ) : (
-          <span className="text-sm font-medium text-gray-700 px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-200">
+          <span className="text-sm font-medium text-ink-700 px-3 py-1.5 bg-surface-50 rounded-lg border border-line-200">
             {chantier.validateur_final === "DT" ? "DT" : "Assistant DACC"}
           </span>
         )}
@@ -418,17 +418,17 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={close} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
             {/* En-tête modal */}
-            <div className={`px-6 py-5 border-b border-gray-100 flex items-center gap-3`}>
+            <div className={`px-6 py-5 border-b border-line-100 flex items-center gap-3`}>
               <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${roleEditing.colors.avatar}`}>
                 {roleEditing.badge}
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-900">
+                <h3 className="text-sm font-semibold text-ink-900">
                   {fmtUser(roleEditing.user) ? `Changer le ${roleEditing.badge}` : `Affecter un ${roleEditing.badge}`}
                 </h3>
-                <p className="text-xs text-gray-400">{roleEditing.label}</p>
+                <p className="text-xs text-ink-400">{roleEditing.label}</p>
               </div>
-              <button onClick={close} className="ml-auto text-gray-400 hover:text-gray-600">
+              <button onClick={close} className="ml-auto text-ink-400 hover:text-ink-500">
                 <X size={16} />
               </button>
             </div>
@@ -437,21 +437,21 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
             <div className="px-6 py-5 space-y-4">
               {/* Actuel */}
               {fmtUser(roleEditing.user) && (
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="flex items-center gap-3 p-3 bg-surface-50 rounded-xl border border-line-200">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${roleEditing.colors.avatar}`}>
                     {initials(roleEditing.user)}
                   </div>
                   <div>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-wide">Actuel</p>
-                    <p className="text-sm font-semibold text-gray-700">{fmtUser(roleEditing.user)}</p>
+                    <p className="text-[10px] text-ink-400 uppercase tracking-wide">Actuel</p>
+                    <p className="text-sm font-semibold text-ink-700">{fmtUser(roleEditing.user)}</p>
                   </div>
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-600">Nouveau {roleEditing.badge}</label>
+                <label className="text-xs font-semibold text-ink-500">Nouveau {roleEditing.badge}</label>
                 <select value={form.user_id} onChange={e => setForm(f => ({ ...f, user_id: e.target.value }))}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 bg-white">
+                  className="w-full border border-line-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 bg-white">
                   <option value="">— Sélectionner un utilisateur —</option>
                   {roleEditing.userList.map(u => (
                     <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
@@ -460,21 +460,21 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-600">Motif <span className="font-normal text-gray-400">(optionnel)</span></label>
+                <label className="text-xs font-semibold text-ink-500">Motif <span className="font-normal text-ink-400">(optionnel)</span></label>
                 <input type="text" value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
                   placeholder="Ex : remplacement, mutation, fin de mission…"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30" />
+                  className="w-full border border-line-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30" />
               </div>
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-              <button onClick={close} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl">
+            <div className="px-6 py-4 border-t border-line-100 flex justify-end gap-2">
+              <button onClick={close} className="px-4 py-2 text-sm text-ink-500 hover:text-ink-700 border border-line-200 rounded-xl">
                 Annuler
               </button>
               <button onClick={() => affecterMut.mutate({ role: editing, user_id: parseInt(form.user_id), note: form.note || null })}
                 disabled={!form.user_id || affecterMut.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white text-sm font-medium rounded-xl hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[green-600] text-white text-sm font-medium rounded-xl hover:bg-[green-700] disabled:opacity-50 transition-colors">
                 {affecterMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <UserCheck size={13} />}
                 Confirmer l'affectation
               </button>
@@ -486,22 +486,22 @@ function SectionAffectationDTCT({ chantierId, chantier, isDacc }) {
 
       {/* Historique timeline */}
       {showHistory && (
-        <div className="border-t border-gray-100">
-          <div className="px-5 py-3 bg-gray-50 text-xs font-semibold text-gray-500 uppercase tracking-wide">Historique des affectations</div>
+        <div className="border-t border-line-100">
+          <div className="px-5 py-3 bg-surface-50 text-xs font-semibold text-ink-500 uppercase tracking-wide">Historique des affectations</div>
           {!history || history.length === 0 ? (
-            <p className="px-5 py-6 text-sm text-gray-400 text-center">Aucune affectation enregistrée.</p>
+            <p className="px-5 py-6 text-sm text-ink-400 text-center">Aucune affectation enregistrée.</p>
           ) : (
             <ul className="px-5 py-3 space-y-3">
               {history.map((h, i) => (
                 <li key={h.id} className="flex items-start gap-3">
                   <div className="flex flex-col items-center">
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${h.role === "DT" ? "bg-[#E8F5EE] text-[#065A2C]" : "bg-amber-100 text-amber-700"}`}>{h.role}</div>
-                    {i < history.length - 1 && <div className="w-px flex-1 bg-gray-200 mt-1 min-h-[16px]" />}
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${h.role === "DT" ? "bg-[green-50] text-[green-700]" : "bg-amber-100 text-amber-700"}`}>{h.role}</div>
+                    {i < history.length - 1 && <div className="w-px flex-1 bg-line-200 mt-1 min-h-[16px]" />}
                   </div>
                   <div className="flex-1 pb-3">
-                    <p className="text-sm font-medium text-gray-800">{h.user?.prenom} {h.user?.nom}</p>
-                    {h.note && <p className="text-xs text-gray-500 italic mt-0.5">« {h.note} »</p>}
-                    <p className="text-xs text-gray-400 mt-0.5">Par {h.assigned_by?.prenom} {h.assigned_by?.nom} · {fmtDate(h.created_at)}</p>
+                    <p className="text-sm font-medium text-ink-900">{h.user?.prenom} {h.user?.nom}</p>
+                    {h.note && <p className="text-xs text-ink-500 italic mt-0.5">« {h.note} »</p>}
+                    <p className="text-xs text-ink-400 mt-0.5">Par {h.assigned_by?.prenom} {h.assigned_by?.nom} · {fmtDate(h.created_at)}</p>
                   </div>
                 </li>
               ))}
@@ -567,16 +567,16 @@ function SectionPortefeuillesCT({ chantierId, chantier, isDacc }) {
   const availableContrats = contrats.filter(c => !assignedContratIds.has(String(c.id)));
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div className="bg-white border border-line-200 rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 gap-3">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-line-100 gap-3">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-gray-900">Portefeuilles CT</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Chaque CT est responsable des marchés (contrats) qui lui sont assignés</p>
+          <h3 className="text-sm font-semibold text-ink-900">Portefeuilles CT</h3>
+          <p className="text-xs text-ink-400 mt-0.5">Chaque CT est responsable des marchés (contrats) qui lui sont assignés</p>
         </div>
         {isDacc && (
           <button onClick={() => setShowModal(true)}
-            className="flex-shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-[#087F3E] text-[#087F3E] hover:bg-[#E8F5EE] transition-colors">
+            className="flex-shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-[green-600] text-[green-600] hover:bg-[green-50] transition-colors">
             <UserCheck size={13} /> Assigner un marché
           </button>
         )}
@@ -585,47 +585,47 @@ function SectionPortefeuillesCT({ chantierId, chantier, isDacc }) {
       {/* Liste groupée par CT */}
       <div className="p-5">
         {isLoading ? (
-          <p className="text-sm text-gray-400 text-center py-4">Chargement…</p>
+          <p className="text-sm text-ink-400 text-center py-4">Chargement…</p>
         ) : groups.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-6 border border-dashed border-gray-200 rounded-xl">Aucun portefeuille configuré.</p>
+          <p className="text-sm text-ink-400 text-center py-6 border border-dashed border-line-200 rounded-xl">Aucun portefeuille configuré.</p>
         ) : (
           <div className="space-y-3">
             {groups.map(g => (
-              <div key={g.ct?.id} className="border border-gray-100 rounded-xl overflow-hidden">
+              <div key={g.ct?.id} className="border border-line-100 rounded-xl overflow-hidden">
                 <div className="bg-amber-50 border-b border-amber-100 px-4 py-2.5 flex items-center gap-2">
                   <div className="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold">
                     {((g.ct?.prenom ?? "")[0] ?? "") + ((g.ct?.nom ?? "")[0] ?? "")}
                   </div>
-                  <span className="text-sm font-semibold text-gray-800">{fmtUser(g.ct)}</span>
+                  <span className="text-sm font-semibold text-ink-900">{fmtUser(g.ct)}</span>
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-100 text-amber-800 border-amber-300 ml-1">CT</span>
-                  <span className="text-xs text-gray-400 ml-auto">{g.portefeuille?.filter(p => p.actif !== false).length ?? 0} marché(s) actif(s)</span>
+                  <span className="text-xs text-ink-400 ml-auto">{g.portefeuille?.filter(p => p.actif !== false).length ?? 0} marché(s) actif(s)</span>
                 </div>
                 {!g.portefeuille?.length ? (
-                  <p className="px-4 py-3 text-xs text-gray-400 italic">Aucun marché assigné</p>
+                  <p className="px-4 py-3 text-xs text-ink-400 italic">Aucun marché assigné</p>
                 ) : (
-                  <ul className="divide-y divide-gray-50">
+                  <ul className="divide-y divide-line-100">
                     {g.portefeuille.map(p => (
-                      <li key={p.id} className={`px-4 py-2.5 flex items-center justify-between transition-colors ${p.actif === false ? "bg-gray-50/60 opacity-60" : "hover:bg-gray-50/60"}`}>
+                      <li key={p.id} className={`px-4 py-2.5 flex items-center justify-between transition-colors ${p.actif === false ? "bg-surface-50/60 opacity-60" : "hover:bg-surface-50/60"}`}>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-sm font-medium font-mono ${p.actif === false ? "text-gray-400 line-through" : "text-gray-700"}`}>{p.contrat?.code}</span>
-                            {p.contrat?.soustraitant && <span className="text-xs text-gray-400">{p.contrat.soustraitant.raison_sociale}</span>}
+                            <span className={`text-sm font-medium font-mono ${p.actif === false ? "text-ink-400 line-through" : "text-ink-700"}`}>{p.contrat?.code}</span>
+                            {p.contrat?.soustraitant && <span className="text-xs text-ink-400">{p.contrat.soustraitant.raison_sociale}</span>}
                             {p.actif === false && (
                               <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-600 border border-red-200">Retiré</span>
                             )}
                           </div>
                           {p.actif === false && p.removed_at && (
-                            <p className="text-[10px] text-gray-400 mt-0.5">
+                            <p className="text-[10px] text-ink-400 mt-0.5">
                               Retiré le {fmtDate2(p.removed_at)}{p.removed_by ? ` par ${p.removed_by.prenom} ${p.removed_by.nom}` : ""}
                             </p>
                           )}
                           {p.actif !== false && p.assigned_by && (
-                            <p className="text-[10px] text-gray-400 mt-0.5">Assigné le {fmtDate2(p.created_at)}{p.assigned_by ? ` par ${p.assigned_by.prenom} ${p.assigned_by.nom}` : ""}</p>
+                            <p className="text-[10px] text-ink-400 mt-0.5">Assigné le {fmtDate2(p.created_at)}{p.assigned_by ? ` par ${p.assigned_by.prenom} ${p.assigned_by.nom}` : ""}</p>
                           )}
                         </div>
                         {isDacc && p.actif !== false && (
                           <button onClick={() => setConfirmDel({ id: p.id, name: `${p.contrat?.code} — ${p.contrat?.soustraitant?.raison_sociale ?? ""}` })} disabled={delMut.isPending}
-                            className="text-gray-300 hover:text-red-500 transition-colors p-1 rounded flex-shrink-0">
+                            className="text-ink-300 hover:text-red-500 transition-colors p-1 rounded flex-shrink-0">
                             <X size={13} />
                           </button>
                         )}
@@ -644,43 +644,43 @@ function SectionPortefeuillesCT({ chantierId, chantier, isDacc }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeModal} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-100 flex items-center gap-3">
+            <div className="px-6 py-5 border-b border-line-100 flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-sm font-bold">CT</div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-900">Assigner un marché à un CT</h3>
-                <p className="text-xs text-gray-400">Portefeuille conducteur de travaux</p>
+                <h3 className="text-sm font-semibold text-ink-900">Assigner un marché à un CT</h3>
+                <p className="text-xs text-ink-400">Portefeuille conducteur de travaux</p>
               </div>
-              <button onClick={closeModal} className="ml-auto text-gray-400 hover:text-gray-600"><X size={16} /></button>
+              <button onClick={closeModal} className="ml-auto text-ink-400 hover:text-ink-500"><X size={16} /></button>
             </div>
 
             <div className="px-6 py-5 space-y-4">
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-600">Conducteur de Travaux (CT)</label>
+                <label className="text-xs font-semibold text-ink-500">Conducteur de Travaux (CT)</label>
                 <SearchSelect value={form.ct_user_id} onChange={e => setForm(f => ({ ...f, ct_user_id: e.target.value }))}
                   placeholder="— Sélectionner un CT —"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+                  className="w-full border border-line-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30">
                   <option value="">— Sélectionner un CT —</option>
                   {ctUsers.map(u => <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>)}
                 </SearchSelect>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-gray-600">Marché (contrat)</label>
+                <label className="text-xs font-semibold text-ink-500">Marché (contrat)</label>
                 <SearchSelect value={form.contrat_id} onChange={e => setForm(f => ({ ...f, contrat_id: e.target.value }))}
                   placeholder="— Sélectionner un contrat —"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+                  className="w-full border border-line-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30">
                   <option value="">— Sélectionner un contrat —</option>
                   {availableContrats.map(c => <option key={c.id} value={c.id}>{c.code} — {c.soustraitant?.raison_sociale ?? ""}</option>)}
                 </SearchSelect>
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
-              <button onClick={closeModal} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl">
+            <div className="px-6 py-4 border-t border-line-100 flex justify-end gap-2">
+              <button onClick={closeModal} className="px-4 py-2 text-sm text-ink-500 hover:text-ink-700 border border-line-200 rounded-xl">
                 Annuler
               </button>
               <button onClick={() => addMut.mutate({ ct_user_id: parseInt(form.ct_user_id), contrat_id: parseInt(form.contrat_id) })}
                 disabled={!form.ct_user_id || !form.contrat_id || addMut.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#087F3E] text-white text-sm font-medium rounded-xl hover:bg-[#065A2C] disabled:opacity-50 transition-colors">
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[green-600] text-white text-sm font-medium rounded-xl hover:bg-[green-700] disabled:opacity-50 transition-colors">
                 {addMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
                 Assigner
               </button>
@@ -695,14 +695,14 @@ function SectionPortefeuillesCT({ chantierId, chantier, isDacc }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setConfirmDel(null)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-            <div className="px-6 py-5 border-b border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-900">Confirmer la suppression</h3>
-              <p className="text-xs text-gray-500 mt-1">
+            <div className="px-6 py-5 border-b border-line-100">
+              <h3 className="text-sm font-semibold text-ink-900">Confirmer la suppression</h3>
+              <p className="text-xs text-ink-500 mt-1">
                 Retirer <strong>{confirmDel.name}</strong> du portefeuille ?
               </p>
             </div>
             <div className="px-6 py-4 flex justify-end gap-2">
-              <button onClick={() => setConfirmDel(null)} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-xl">
+              <button onClick={() => setConfirmDel(null)} className="px-4 py-2 text-sm text-ink-500 hover:text-ink-700 border border-line-200 rounded-xl">
                 Annuler
               </button>
               <button onClick={() => { delMut.mutate(confirmDel.id); setConfirmDel(null); }}
@@ -762,9 +762,9 @@ export default function ChantierFormPage() {
   }
   if (isError || !chantier) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-24 text-ink-400">
         <p className="text-lg font-semibold">Chantier introuvable</p>
-        <button onClick={() => navigate("/chantiers")} className="mt-4 text-sm text-[#087F3E] hover:underline">
+        <button onClick={() => navigate("/chantiers")} className="mt-4 text-sm text-[green-600] hover:underline">
           Retour à la liste
         </button>
       </div>
@@ -786,7 +786,7 @@ export default function ChantierFormPage() {
     { icon: Package,   label: "Matériaux & Fournitures",   depense: 0,         budget: chantier.budget_fournitures ?? 0,    color: "bg-orange-100 text-orange-600" },
     { icon: Truck,     label: "Transports",                depense: 0,         budget: 0,                                   color: "bg-teal-100 text-teal-600" },
     { icon: Layers,    label: "Services extérieurs",       depense: 0,         budget: chantier.budget_divers ?? 0,         color: "bg-violet-100 text-violet-600" },
-    { icon: Building2, label: "Sous-traitants",            depense: sttEngage, budget: chantier.budget_sous_traitance ?? 0, color: "bg-[#E8F5EE] text-[#087F3E]" },
+    { icon: Building2, label: "Sous-traitants",            depense: sttEngage, budget: chantier.budget_sous_traitance ?? 0, color: "bg-[green-50] text-[green-600]" },
   ];
   const totalDepense = familles.reduce((s, f) => s + f.depense, 0);
   const totalBudget  = familles.reduce((s, f) => s + f.budget, 0);
@@ -802,46 +802,46 @@ export default function ChantierFormPage() {
     <div className="space-y-5">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="bg-white border border-gray-200 rounded-2xl px-6 py-5">
+      <div className="bg-white border border-line-200 rounded-2xl px-6 py-5">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-xs text-gray-400 mb-3">
-          <button onClick={() => navigate("/chantiers")} className="hover:text-[#087F3E] flex items-center gap-1 transition-colors">
+        <div className="flex items-center gap-2 text-xs text-ink-400 mb-3">
+          <button onClick={() => navigate("/chantiers")} className="hover:text-[green-600] flex items-center gap-1 transition-colors">
             <ArrowLeft size={12} /> Chantiers
           </button>
           <ChevronRight size={12} />
-          <span className="text-gray-500">{chantier.code}</span>
+          <span className="text-ink-500">{chantier.code}</span>
         </div>
 
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-gray-900 leading-tight">{chantier.designation}</h1>
+              <h1 className="text-2xl font-bold text-ink-900 leading-tight">{chantier.designation}</h1>
               <StatusBadge statut={chantier.statut} />
               {chantier.code_x3 && (
-                <span className="text-xs font-mono bg-gray-100 text-gray-500 px-2 py-0.5 rounded-lg border border-gray-200">{chantier.code_x3}</span>
+                <span className="text-xs font-mono bg-line-100 text-ink-500 px-2 py-0.5 rounded-lg border border-line-200">{chantier.code_x3}</span>
               )}
             </div>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-1 mt-2">
               {chantier.localisation && (
-                <span className="flex items-center gap-1 text-xs text-gray-500">
-                  <MapPin size={11} className="text-gray-400" /> {chantier.localisation}
+                <span className="flex items-center gap-1 text-xs text-ink-500">
+                  <MapPin size={11} className="text-ink-400" /> {chantier.localisation}
                 </span>
               )}
               {chantier.date_debut && (
-                <span className="flex items-center gap-1 text-xs text-gray-500">
-                  <Calendar size={11} className="text-gray-400" /> Début : {fmtDate(chantier.date_debut)}
+                <span className="flex items-center gap-1 text-xs text-ink-500">
+                  <Calendar size={11} className="text-ink-400" /> Début : {fmtDate(chantier.date_debut)}
                 </span>
               )}
               {chantier.date_fin_prevue && (
-                <span className="flex items-center gap-1 text-xs text-gray-500">
-                  <Calendar size={11} className="text-gray-400" /> Fin prév. : {fmtDate(chantier.date_fin_prevue)}
+                <span className="flex items-center gap-1 text-xs text-ink-500">
+                  <Calendar size={11} className="text-ink-400" /> Fin prév. : {fmtDate(chantier.date_fin_prevue)}
                 </span>
               )}
               {dureeJours && (
-                <span className="text-xs text-gray-400">{dureeJours} jours</span>
+                <span className="text-xs text-ink-400">{dureeJours} jours</span>
               )}
               {chantier.synced_at && (
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-ink-400">
                   Sync X3 : {new Date(chantier.synced_at).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })}
                 </span>
               )}
@@ -851,7 +851,7 @@ export default function ChantierFormPage() {
           {peutSynchro && (
             <button onClick={handleSync} disabled={syncMut.isPending || !chantier.code_x3}
               title={chantier.code_x3 ? undefined : "Ce chantier n'a pas de code Sage X3"}
-              className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs text-[#087F3E] border border-[#087F3E] px-3 py-2 rounded-xl hover:bg-[#E8F5EE] transition-colors font-medium disabled:opacity-50 whitespace-nowrap">
+              className="flex-shrink-0 inline-flex items-center gap-1.5 text-xs text-[green-600] border border-[green-600] px-3 py-2 rounded-xl hover:bg-[green-50] transition-colors font-medium disabled:opacity-50 whitespace-nowrap">
               {syncMut.isPending ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
               {syncMut.isPending ? "Synchronisation…" : "Sync Sage X3"}
             </button>
@@ -862,19 +862,19 @@ export default function ChantierFormPage() {
       {/* ── KPIs ───────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { label: "Budget", value: budgetTotal, sub: null, color: "text-gray-800", icon: "💰" },
-          { label: "Contrats STT", value: sttEngage, sub: `${contrats.length} contrat${contrats.length > 1 ? "s" : ""}`, color: "text-[#087F3E]", icon: "📋" },
+          { label: "Budget", value: budgetTotal, sub: null, color: "text-ink-900", icon: "💰" },
+          { label: "Contrats STT", value: sttEngage, sub: `${contrats.length} contrat${contrats.length > 1 ? "s" : ""}`, color: "text-[green-600]", icon: "📋" },
           { label: "Réalisé", value: realise, sub: `${nbRealise} décompte${nbRealise > 1 ? "s" : ""} validé${nbRealise > 1 ? "s" : ""}`, color: "text-blue-600", icon: "✅" },
           { label: "En cours", value: decomptesEnCours.reduce((s,d) => s + parseFloat(d.montant_ht ?? 0), 0), sub: `${decomptesEnCours.length} décompte${decomptesEnCours.length > 1 ? "s" : ""}`, color: "text-amber-600", icon: "⏳" },
         ].map(({ label, value, sub, color, icon }) => (
-          <div key={label} className="bg-white border border-gray-200 rounded-xl px-4 py-3.5">
+          <div key={label} className="bg-white border border-line-200 rounded-xl px-4 py-3.5">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{label}</span>
+              <span className="text-[10px] font-semibold text-ink-400 uppercase tracking-wider">{label}</span>
               <span className="text-sm">{icon}</span>
             </div>
             <p className={`text-lg font-bold ${color} tabular-nums truncate`}>{fmtNum(Math.round(value))}</p>
-            <p className="text-[10px] text-gray-400">FCFA</p>
-            {sub && <p className="text-[10px] text-gray-500 mt-1.5 font-medium border-t border-gray-100 pt-1.5">{sub}</p>}
+            <p className="text-[10px] text-ink-400">FCFA</p>
+            {sub && <p className="text-[10px] text-ink-500 mt-1.5 font-medium border-t border-line-100 pt-1.5">{sub}</p>}
           </div>
         ))}
       </div>
@@ -883,8 +883,8 @@ export default function ChantierFormPage() {
       <div className="flex flex-col lg:flex-row gap-5 items-start">
 
         {/* Colonne gauche — Contrats / Décomptes */}
-        <div className="flex-[3] min-w-0 w-full bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="border-b border-gray-200 px-5 pt-2">
+        <div className="flex-[3] min-w-0 w-full bg-white rounded-2xl border border-line-200 overflow-hidden">
+          <div className="border-b border-line-200 px-5 pt-2">
             <Tabs items={tabs} activeTab={activeTab} onChange={setActiveTab} />
           </div>
           <div className="p-5">
@@ -896,9 +896,9 @@ export default function ChantierFormPage() {
         {/* Colonne droite — Équipe + Portefeuilles */}
         <div className="flex-[2] min-w-0 w-full lg:max-w-sm xl:max-w-md space-y-4">
           {/* Équipe */}
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-900">Équipe du chantier</h3>
+          <div className="bg-white rounded-2xl border border-line-200 overflow-hidden">
+            <div className="px-5 py-4 border-b border-line-100">
+              <h3 className="text-sm font-semibold text-ink-900">Équipe du chantier</h3>
             </div>
             <div className="p-5">
               <SectionAffectationDTCT chantierId={id} chantier={chantier} isDacc={isDacc} />
@@ -910,12 +910,12 @@ export default function ChantierFormPage() {
 
           {/* Budget par famille (si renseigné) */}
           {totalBudget > 0 && (
-            <div className="bg-white border border-gray-200 rounded-2xl p-5">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Budget par famille</h3>
+            <div className="bg-white border border-line-200 rounded-2xl p-5">
+              <h3 className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-4">Budget par famille</h3>
               {familles.filter(f => f.budget > 0 || f.depense > 0).map(f => (
                 <BudgetFamille key={f.label} {...f} />
               ))}
-              <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100 text-xs font-semibold text-gray-700">
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-line-100 text-xs font-semibold text-ink-700">
                 <span>Total</span>
                 <span>{fmt(totalDepense)} / {fmt(totalBudget)}</span>
               </div>

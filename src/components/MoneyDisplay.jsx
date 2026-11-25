@@ -6,11 +6,11 @@ export default function MoneyDisplay({ amount = 0, sign = null, variant = "norma
   const sizeClass =
     variant === "large" ? "text-xl font-bold" :
     variant === "small" ? "text-xs font-medium" :
-    variant === "muted" ? "text-sm text-gray-500" :
+    variant === "muted" ? "text-sm text-ink-500" :
     "text-sm font-semibold";
 
   const signColor =
-    sign === "+" ? "text-[#087F3E]" :
+    sign === "+" ? "text-[green-600]" :
     sign === "-" ? "text-red-600" :
     "";
 

@@ -7,7 +7,7 @@ export default function ModeToggle({ value, onChange, disabled = false }) {
   ];
 
   return (
-    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+    <div className="flex items-center gap-1 bg-line-100 rounded-lg p-1">
       {options.map(({ id, label, icon: Icon }) => {
         const active = value === id;
         return (
@@ -17,8 +17,8 @@ export default function ModeToggle({ value, onChange, disabled = false }) {
             disabled={disabled}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
               active
-                ? "bg-white text-[#087F3E] shadow-sm border border-gray-200"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white text-[green-600] shadow-sm border border-line-200"
+                : "text-ink-500 hover:text-ink-700"
             } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
           >
             <Icon size={14} />

@@ -129,12 +129,12 @@ function FilterPanel({ filterKeys, filters, onChange }) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl px-5 py-4">
+    <div className="bg-white border border-line-200 rounded-xl px-5 py-4">
       <div className="flex items-center gap-2 mb-3">
-        <SlidersHorizontal size={14} className="text-gray-400" />
-        <span className="text-xs font-semibold text-gray-600">Filtres</span>
+        <SlidersHorizontal size={14} className="text-ink-400" />
+        <span className="text-xs font-semibold text-ink-500">Filtres</span>
         {activeCount > 0 && (
-          <span className="text-xs bg-[#087F3E] text-white px-2 py-0.5 rounded-full font-semibold">{activeCount} actif{activeCount > 1 ? "s" : ""}</span>
+          <span className="text-xs bg-[green-600] text-white px-2 py-0.5 rounded-full font-semibold">{activeCount} actif{activeCount > 1 ? "s" : ""}</span>
         )}
         {activeCount > 0 && (
           <button
@@ -148,104 +148,104 @@ function FilterPanel({ filterKeys, filters, onChange }) {
       <div className="flex items-end gap-3 flex-wrap">
         {filterKeys.includes("chantier_id") && (
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Chantier</label>
+            <label className="block text-xs text-ink-500 mb-1">Chantier</label>
             <div className="relative">
               <SearchSelect
                 value={filters.chantier_id}
                 onChange={e => onChange({ chantier_id: e.target.value })}
-                className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-white min-w-[180px] focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                className="appearance-none pl-3 pr-8 py-2 text-sm border border-line-200 rounded-lg bg-white min-w-[180px] focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
               >
                 <option value="">Tous les chantiers</option>
                 {chantiers.map(c => <option key={c.id} value={c.id}>{c.designation}</option>)}
               </SearchSelect>
-              <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
             </div>
           </div>
         )}
 
         {filterKeys.includes("soustraitant_id") && (
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Sous-traitant</label>
+            <label className="block text-xs text-ink-500 mb-1">Sous-traitant</label>
             <div className="relative">
               <SearchSelect
                 value={filters.soustraitant_id}
                 onChange={e => onChange({ soustraitant_id: e.target.value })}
-                className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-white min-w-[180px] focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                className="appearance-none pl-3 pr-8 py-2 text-sm border border-line-200 rounded-lg bg-white min-w-[180px] focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
               >
                 <option value="">Tous les sous-traitants</option>
                 {stts.map(s => <option key={s.id} value={s.id}>{s.raison_sociale}</option>)}
               </SearchSelect>
-              <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
             </div>
           </div>
         )}
 
         {filterKeys.includes("annee") && (
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Année</label>
+            <label className="block text-xs text-ink-500 mb-1">Année</label>
             <input
               type="number"
               value={filters.annee}
               onChange={e => onChange({ annee: e.target.value })}
               min="2020" max="2099"
-              className="w-24 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+              className="w-24 px-3 py-2 text-sm border border-line-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
             />
           </div>
         )}
 
         {filterKeys.includes("date_debut") && (
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Du</label>
+            <label className="block text-xs text-ink-500 mb-1">Du</label>
             <input
               type="date"
               value={filters.date_debut}
               onChange={e => onChange({ date_debut: e.target.value })}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+              className="px-3 py-2 text-sm border border-line-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
             />
           </div>
         )}
 
         {filterKeys.includes("date_fin") && (
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Au</label>
+            <label className="block text-xs text-ink-500 mb-1">Au</label>
             <input
               type="date"
               value={filters.date_fin}
               onChange={e => onChange({ date_fin: e.target.value })}
-              className="px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+              className="px-3 py-2 text-sm border border-line-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
             />
           </div>
         )}
 
         {filterKeys.includes("mois_debut") && (
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Mois début</label>
+            <label className="block text-xs text-ink-500 mb-1">Mois début</label>
             <input type="month" value={filters.mois_debut} onChange={e => onChange({ mois_debut: e.target.value })}
-              className="pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+              className="pl-3 pr-3 py-2 text-sm border border-line-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]" />
           </div>
         )}
 
         {filterKeys.includes("mois_fin") && (
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Mois fin</label>
+            <label className="block text-xs text-ink-500 mb-1">Mois fin</label>
             <input type="month" value={filters.mois_fin} onChange={e => onChange({ mois_fin: e.target.value })}
-              className="pl-3 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+              className="pl-3 pr-3 py-2 text-sm border border-line-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]" />
           </div>
         )}
 
         {filterKeys.includes("statut_circuit") && (
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Étape de validation</label>
+            <label className="block text-xs text-ink-500 mb-1">Étape de validation</label>
             <div className="relative">
               <SearchSelect
                 value={filters.statut_circuit}
                 onChange={e => onChange({ statut_circuit: e.target.value })}
-                className="appearance-none pl-3 pr-8 py-2 text-sm border border-gray-200 rounded-lg bg-white min-w-[220px] focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                className="appearance-none pl-3 pr-8 py-2 text-sm border border-line-200 rounded-lg bg-white min-w-[220px] focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
               >
                 <option value="">Toutes les étapes</option>
                 {STATUT_CIRCUIT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </SearchSelect>
-              <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+              <ChevronDown size={13} className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-400 pointer-events-none" />
             </div>
           </div>
         )}
@@ -257,7 +257,7 @@ function FilterPanel({ filterKeys, filters, onChange }) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function LoadingState() {
   return (
-    <div className="flex items-center justify-center py-20 text-gray-400 gap-2">
+    <div className="flex items-center justify-center py-20 text-ink-400 gap-2">
       <Loader2 size={18} className="animate-spin" /> Chargement…
     </div>
   );
@@ -277,7 +277,7 @@ function RamNote() {
 function TableFoot({ cols, totals }) {
   return (
     <tfoot>
-      <tr className="bg-[#E8F5EE] border-t-2 border-[#087F3E]">
+      <tr className="bg-[green-50] border-t-2 border-[green-600]">
         {totals.map((cell, i) => (
           <td key={i} className="px-4 py-3 font-bold text-sm">
             {cell}
@@ -313,33 +313,33 @@ function ViewR1({ filters }) {
   return (
     <div className="space-y-4">
       <RamNote />
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-line-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-surface-50 border-b border-line-200">
               {["Chantier", "Budget STT", "STT engagé", "Reste", "% Engagé"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {!rows.length && <tr><td colSpan={5} className="text-center text-sm text-gray-400 py-12">Aucune donnée</td></tr>}
+          <tbody className="divide-y divide-line-100">
+            {!rows.length && <tr><td colSpan={5} className="text-center text-sm text-ink-400 py-12">Aucune donnée</td></tr>}
             {rows.map(r => (
-              <tr key={r.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-semibold text-gray-900">{r.nom}</td>
+              <tr key={r.id} className="hover:bg-surface-50">
+                <td className="px-4 py-3 font-semibold text-ink-900">{r.nom}</td>
                 <td className="px-4 py-3"><MoneyDisplay amount={r.budget} variant="small" /></td>
                 <td className="px-4 py-3"><MoneyDisplay amount={r.engage} variant="small" className="font-semibold" /></td>
                 <td className="px-4 py-3">
                   <MoneyDisplay amount={r.reste} variant="small"
-                    className={r.reste < 0 ? "text-red-600 font-semibold" : "text-[#087F3E] font-semibold"} />
+                    className={r.reste < 0 ? "text-red-600 font-semibold" : "text-[green-600] font-semibold"} />
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-24 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${r.pct > 100 ? "bg-red-500" : r.pct > 80 ? "bg-amber-500" : "bg-[#087F3E]"}`}
+                    <div className="w-24 h-1.5 bg-line-100 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${r.pct > 100 ? "bg-red-500" : r.pct > 80 ? "bg-amber-500" : "bg-[green-600]"}`}
                         style={{ width: `${Math.min(100, r.pct)}%` }} />
                     </div>
-                    <span className={`text-xs font-bold w-8 ${r.pct > 100 ? "text-red-600" : r.pct > 80 ? "text-amber-600" : "text-[#087F3E]"}`}>{r.pct}%</span>
+                    <span className={`text-xs font-bold w-8 ${r.pct > 100 ? "text-red-600" : r.pct > 80 ? "text-amber-600" : "text-[green-600]"}`}>{r.pct}%</span>
                   </div>
                 </td>
               </tr>
@@ -347,11 +347,11 @@ function ViewR1({ filters }) {
           </tbody>
           {rows.length > 0 && (
             <TableFoot totals={[
-              <span className="text-gray-900">TOTAL</span>,
+              <span className="text-ink-900">TOTAL</span>,
               <MoneyDisplay amount={totB} variant="small" />,
               <MoneyDisplay amount={totE} variant="small" />,
-              <MoneyDisplay amount={totB - totE} variant="small" className="text-[#087F3E]" />,
-              <span className="text-[#087F3E]">{totB > 0 ? `${Math.round(totE / totB * 100)}%` : "—"}</span>,
+              <MoneyDisplay amount={totB - totE} variant="small" className="text-[green-600]" />,
+              <span className="text-[green-600]">{totB > 0 ? `${Math.round(totE / totB * 100)}%` : "—"}</span>,
             ]} />
           )}
         </table>
@@ -379,28 +379,28 @@ function ViewContrats({ filters, statuts, label }) {
   return (
     <div className="space-y-4">
       <RamNote />
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-          <p className="text-xs font-semibold text-gray-600">{rows.length} contrat{rows.length !== 1 ? "s" : ""} — {label}</p>
+      <div className="bg-white rounded-xl border border-line-200 overflow-hidden">
+        <div className="px-4 py-3 bg-surface-50 border-b border-line-200 flex items-center justify-between">
+          <p className="text-xs font-semibold text-ink-500">{rows.length} contrat{rows.length !== 1 ? "s" : ""} — {label}</p>
         </div>
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-surface-50 border-b border-line-200">
               {["Contrat", "Chantier", "Sous-traitant", "Montant (FCFA)", "Statut"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {!rows.length && <tr><td colSpan={5} className="text-center text-sm text-gray-400 py-12">Aucun contrat</td></tr>}
+          <tbody className="divide-y divide-line-100">
+            {!rows.length && <tr><td colSpan={5} className="text-center text-sm text-ink-400 py-12">Aucun contrat</td></tr>}
             {rows.map(c => (
-              <tr key={c.id} className="hover:bg-gray-50">
+              <tr key={c.id} className="hover:bg-surface-50">
                 <td className="px-4 py-3">
-                  <p className="font-mono font-semibold text-[#087F3E]">{c.code}</p>
-                  <p className="text-xs text-gray-400 truncate max-w-[180px]">{c.objet}</p>
+                  <p className="font-mono font-semibold text-[green-600]">{c.code}</p>
+                  <p className="text-xs text-ink-400 truncate max-w-[180px]">{c.objet}</p>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-700">{c.chantier?.designation ?? "—"}</td>
-                <td className="px-4 py-3 text-sm text-gray-700">{c.soustraitant?.raison_sociale ?? "—"}</td>
+                <td className="px-4 py-3 text-sm text-ink-700">{c.chantier?.designation ?? "—"}</td>
+                <td className="px-4 py-3 text-sm text-ink-700">{c.soustraitant?.raison_sociale ?? "—"}</td>
                 <td className="px-4 py-3">
                   <MoneyDisplay amount={parseFloat(c.montant_actuel ?? c.montant_initial ?? 0)} variant="small" className="font-semibold" />
                 </td>
@@ -410,8 +410,8 @@ function ViewContrats({ filters, statuts, label }) {
           </tbody>
           {rows.length > 0 && (
             <TableFoot totals={[
-              <span className="text-gray-900" colSpan={3}>TOTAL</span>, "", "",
-              <MoneyDisplay amount={total} variant="small" className="text-[#087F3E]" />,
+              <span className="text-ink-900" colSpan={3}>TOTAL</span>, "", "",
+              <MoneyDisplay amount={total} variant="small" className="text-[green-600]" />,
               "",
             ]} />
           )}
@@ -454,32 +454,32 @@ function ViewCessions({ filters, groupBy }) {
   return (
     <div className="space-y-4">
       <RamNote />
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-xl border border-line-200 overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-surface-50 border-b border-line-200">
               {[groupBy === "stt" ? "Sous-traitant" : "Période", "Nb états", "Montant cédé (FCFA)", "Part"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
-            {!rows.length && <tr><td colSpan={4} className="text-center text-sm text-gray-400 py-12">Aucune cession trouvée</td></tr>}
+          <tbody className="divide-y divide-line-100">
+            {!rows.length && <tr><td colSpan={4} className="text-center text-sm text-ink-400 py-12">Aucune cession trouvée</td></tr>}
             {rows.map(r => (
-              <tr key={r.label} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-semibold text-gray-900">{r.label}</td>
-                <td className="px-4 py-3 text-center text-gray-600">{r.nb}</td>
+              <tr key={r.label} className="hover:bg-surface-50">
+                <td className="px-4 py-3 font-semibold text-ink-900">{r.label}</td>
+                <td className="px-4 py-3 text-center text-ink-500">{r.nb}</td>
                 <td className="px-4 py-3"><MoneyDisplay amount={r.montant} variant="small" className="font-semibold" /></td>
-                <td className="px-4 py-3 text-xs text-gray-500">{total > 0 ? `${Math.round(r.montant / total * 100)}%` : "—"}</td>
+                <td className="px-4 py-3 text-xs text-ink-500">{total > 0 ? `${Math.round(r.montant / total * 100)}%` : "—"}</td>
               </tr>
             ))}
           </tbody>
           {rows.length > 0 && (
             <TableFoot totals={[
-              <span className="text-gray-900">TOTAL</span>,
+              <span className="text-ink-900">TOTAL</span>,
               <span className="text-center block">{rows.reduce((s, r) => s + r.nb, 0)}</span>,
-              <MoneyDisplay amount={total} variant="small" className="text-[#087F3E]" />,
-              <span className="text-[#087F3E] font-bold">100%</span>,
+              <MoneyDisplay amount={total} variant="small" className="text-[green-600]" />,
+              <span className="text-[green-600] font-bold">100%</span>,
             ]} />
           )}
         </table>
@@ -513,32 +513,32 @@ function ViewR7({ filters }) {
   const total = rows.reduce((s, d) => s + parseFloat(d.montant_ht ?? 0), 0);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-        <p className="text-xs font-semibold text-gray-600">{rows.length} règlement{rows.length !== 1 ? "s" : ""} réalisé{rows.length !== 1 ? "s" : ""}</p>
-        <MoneyDisplay amount={total} variant="small" className="font-bold text-[#087F3E]" />
+    <div className="bg-white rounded-xl border border-line-200 overflow-hidden">
+      <div className="px-4 py-3 bg-surface-50 border-b border-line-200 flex items-center justify-between">
+        <p className="text-xs font-semibold text-ink-500">{rows.length} règlement{rows.length !== 1 ? "s" : ""} réalisé{rows.length !== 1 ? "s" : ""}</p>
+        <MoneyDisplay amount={total} variant="small" className="font-bold text-[green-600]" />
       </div>
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
+          <tr className="bg-surface-50 border-b border-line-200">
             {["Décompte", "Chantier", "Sous-traitant", "Montant HT", "Montant TTC", "Date paiement"].map(h => (
-              <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+              <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
-          {!rows.length && <tr><td colSpan={6} className="text-center text-sm text-gray-400 py-12">Aucun règlement réalisé</td></tr>}
+        <tbody className="divide-y divide-line-100">
+          {!rows.length && <tr><td colSpan={6} className="text-center text-sm text-ink-400 py-12">Aucun règlement réalisé</td></tr>}
           {rows.map(d => (
-            <tr key={d.id} className="hover:bg-gray-50">
+            <tr key={d.id} className="hover:bg-surface-50">
               <td className="px-4 py-3">
-                <p className="font-mono font-semibold text-gray-900">{d.code}</p>
-                <p className="text-xs text-gray-400">N°{d.numero}</p>
+                <p className="font-mono font-semibold text-ink-900">{d.code}</p>
+                <p className="text-xs text-ink-400">N°{d.numero}</p>
               </td>
-              <td className="px-4 py-3 text-sm text-gray-700">{d.contrat?.chantier?.designation    ?? "—"}</td>
-              <td className="px-4 py-3 text-sm text-gray-700">{d.contrat?.soustraitant?.raison_sociale ?? "—"}</td>
+              <td className="px-4 py-3 text-sm text-ink-700">{d.contrat?.chantier?.designation    ?? "—"}</td>
+              <td className="px-4 py-3 text-sm text-ink-700">{d.contrat?.soustraitant?.raison_sociale ?? "—"}</td>
               <td className="px-4 py-3"><MoneyDisplay amount={d.montant_ht  ?? 0} variant="small" /></td>
               <td className="px-4 py-3"><MoneyDisplay amount={d.montant_ttc ?? 0} variant="small" className="font-semibold" /></td>
-              <td className="px-4 py-3 text-xs text-gray-500">
+              <td className="px-4 py-3 text-xs text-ink-500">
                 {d.updated_at ? new Date(d.updated_at).toLocaleDateString("fr-FR") : "—"}
               </td>
             </tr>
@@ -546,8 +546,8 @@ function ViewR7({ filters }) {
         </tbody>
         {rows.length > 0 && (
           <TableFoot totals={[
-            <span className="text-gray-900" colSpan={3}>TOTAL</span>, "", "",
-            <MoneyDisplay amount={total} variant="small" className="text-[#087F3E]" />,
+            <span className="text-ink-900" colSpan={3}>TOTAL</span>, "", "",
+            <MoneyDisplay amount={total} variant="small" className="text-[green-600]" />,
             "", "",
           ]} />
         )}
@@ -583,7 +583,7 @@ function ViewR8({ filters }) {
   const total = rows.reduce((s, d) => s + parseFloat(d.montant_ht ?? 0), 0);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <div className="bg-white rounded-xl border border-line-200 overflow-hidden">
       <div className="px-4 py-3 bg-amber-50 border-b border-amber-100 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <AlertCircle size={14} className="text-amber-500" />
@@ -595,25 +595,25 @@ function ViewR8({ filters }) {
       </div>
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
+          <tr className="bg-surface-50 border-b border-line-200">
             {["Décompte", "Chantier", "Sous-traitant", "Montant HT", "Étape en cours", "Échéance"].map(h => (
-              <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+              <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
-          {!rows.length && <tr><td colSpan={6} className="text-center text-sm text-gray-400 py-12">Aucun règlement en instance</td></tr>}
+        <tbody className="divide-y divide-line-100">
+          {!rows.length && <tr><td colSpan={6} className="text-center text-sm text-ink-400 py-12">Aucun règlement en instance</td></tr>}
           {rows.map(d => {
             const echeance = d.date_echeance ? new Date(d.date_echeance) : null;
             const isLate   = echeance && echeance < new Date();
             return (
               <tr key={d.id} className="hover:bg-amber-50/30">
                 <td className="px-4 py-3">
-                  <p className="font-mono font-semibold text-gray-900">{d.code}</p>
-                  <p className="text-xs text-gray-400">N°{d.numero}</p>
+                  <p className="font-mono font-semibold text-ink-900">{d.code}</p>
+                  <p className="text-xs text-ink-400">N°{d.numero}</p>
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-700">{d.contrat?.chantier?.designation    ?? "—"}</td>
-                <td className="px-4 py-3 text-sm text-gray-700">{d.contrat?.soustraitant?.raison_sociale ?? "—"}</td>
+                <td className="px-4 py-3 text-sm text-ink-700">{d.contrat?.chantier?.designation    ?? "—"}</td>
+                <td className="px-4 py-3 text-sm text-ink-700">{d.contrat?.soustraitant?.raison_sociale ?? "—"}</td>
                 <td className="px-4 py-3"><MoneyDisplay amount={d.montant_ht ?? 0} variant="small" className="font-semibold" /></td>
                 <td className="px-4 py-3">
                   <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full whitespace-nowrap">
@@ -622,8 +622,8 @@ function ViewR8({ filters }) {
                 </td>
                 <td className="px-4 py-3">
                   {echeance
-                    ? <span className={`text-xs font-semibold ${isLate ? "text-red-600" : "text-gray-600"}`}>{isLate ? "⚠ " : ""}{echeance.toLocaleDateString("fr-FR")}</span>
-                    : <span className="text-gray-400 text-xs">—</span>
+                    ? <span className={`text-xs font-semibold ${isLate ? "text-red-600" : "text-ink-500"}`}>{isLate ? "⚠ " : ""}{echeance.toLocaleDateString("fr-FR")}</span>
+                    : <span className="text-ink-400 text-xs">—</span>
                   }
                 </td>
               </tr>
@@ -632,7 +632,7 @@ function ViewR8({ filters }) {
         </tbody>
         {rows.length > 0 && (
           <TableFoot totals={[
-            <span className="text-gray-900">TOTAL</span>, "", "",
+            <span className="text-ink-900">TOTAL</span>, "", "",
             <MoneyDisplay amount={total} variant="small" className="text-amber-600" />,
             "", "",
           ]} />
@@ -663,9 +663,9 @@ export default function RapportDetailPage() {
 
   if (!config) {
     return (
-      <div className="text-center py-20 text-gray-500">
+      <div className="text-center py-20 text-ink-500">
         Rapport introuvable.{" "}
-        <button onClick={() => navigate("/rapports")} className="text-[#087F3E] underline">Retour</button>
+        <button onClick={() => navigate("/rapports")} className="text-[green-600] underline">Retour</button>
       </div>
     );
   }
@@ -706,13 +706,13 @@ export default function RapportDetailPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate("/rapports")}
-              className="flex items-center gap-2 border border-gray-200 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-2 border border-line-200 text-ink-700 hover:bg-surface-50 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             >
               <ArrowLeft size={14} /> Retour
             </button>
             <button
               onClick={handleDownload}
-              className="flex items-center gap-2 bg-[#087F3E] text-white hover:bg-[#065A2C] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="flex items-center gap-2 bg-[green-600] text-white hover:bg-[green-700] px-4 py-2 rounded-lg text-sm font-medium transition-colors"
             >
               <Download size={14} /> {config.pdf ? "Télécharger PDF" : "Télécharger Excel"}
             </button>

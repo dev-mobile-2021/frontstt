@@ -22,10 +22,10 @@ const STATUTS = [
 ];
 
 
-function ProgressBar({ pct, color = "bg-[#087F3E]" }) {
+function ProgressBar({ pct, color = "bg-[green-600]" }) {
   const p = Math.min(100, Math.max(0, pct || 0));
   return (
-    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+    <div className="h-1.5 bg-line-100 rounded-full overflow-hidden">
       <div className={`h-full rounded-full ${color}`} style={{ width: `${p}%` }} />
     </div>
   );
@@ -40,12 +40,12 @@ function ChantierCard({ chantier, onClick }) {
 
   return (
     <div onClick={onClick}
-      className="bg-white border border-gray-200 rounded-xl p-5 hover:border-[#087F3E] hover:shadow-md cursor-pointer transition-all duration-200 group flex flex-col gap-3">
+      className="bg-white border border-line-200 rounded-xl p-5 hover:border-[green-600] hover:shadow-md cursor-pointer transition-all duration-200 group flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <span className="text-xs text-gray-400 font-mono">{chantier.code}</span>
-          <h3 className="text-sm font-bold text-gray-900 mt-0.5 group-hover:text-[#087F3E] transition-colors line-clamp-2">
+          <span className="text-xs text-ink-400 font-mono">{chantier.code}</span>
+          <h3 className="text-sm font-bold text-ink-900 mt-0.5 group-hover:text-[green-600] transition-colors line-clamp-2">
             {chantier.designation}
           </h3>
         </div>
@@ -54,7 +54,7 @@ function ChantierCard({ chantier, onClick }) {
 
       {/* Localisation */}
       {chantier.localisation && (
-        <div className="flex items-start gap-1.5 text-xs text-gray-500">
+        <div className="flex items-start gap-1.5 text-xs text-ink-500">
           <MapPin size={11} className="flex-shrink-0 mt-0.5" />
           <span className="line-clamp-2">{chantier.localisation}</span>
         </div>
@@ -62,30 +62,30 @@ function ChantierCard({ chantier, onClick }) {
 
       {/* Responsable */}
       {(chantier.chef_projet || chantier.conducteur_travaux) && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-          <User size={11} className="flex-shrink-0 text-gray-400" />
+        <div className="flex items-center gap-1.5 text-xs text-ink-500">
+          <User size={11} className="flex-shrink-0 text-ink-400" />
           <span className="font-medium">{chantier.chef_projet || chantier.conducteur_travaux}</span>
         </div>
       )}
 
       {/* STT engagé */}
-      <div className="space-y-1 pt-1 border-t border-gray-100">
+      <div className="space-y-1 pt-1 border-t border-line-100">
         <div className="flex justify-between text-xs">
-          <span className="text-gray-500">STT engagé</span>
-          <span className={`font-semibold ${sttPct > 90 ? "text-amber-600" : "text-[#087F3E]"}`}>{sttPct}%</span>
+          <span className="text-ink-500">STT engagé</span>
+          <span className={`font-semibold ${sttPct > 90 ? "text-amber-600" : "text-[green-600]"}`}>{sttPct}%</span>
         </div>
-        <ProgressBar pct={sttPct} color={sttPct > 90 ? "bg-amber-400" : "bg-[#087F3E]"} />
-        <div className="flex justify-between text-xs text-gray-400 gap-2">
+        <ProgressBar pct={sttPct} color={sttPct > 90 ? "bg-amber-400" : "bg-[green-600]"} />
+        <div className="flex justify-between text-xs text-ink-400 gap-2">
           <MoneyDisplay amount={sttEngage} variant="small" className="truncate min-w-0" />
           <MoneyDisplay amount={budgetTotal} variant="small" className="whitespace-nowrap" />
         </div>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between text-xs text-gray-400 pt-1 border-t border-gray-100">
+      <div className="flex items-center justify-between text-xs text-ink-400 pt-1 border-t border-line-100">
         <span>{nbContrats} contrat{nbContrats !== 1 ? "s" : ""} STT</span>
         {chantier.localisation && (
-          <span className="text-gray-400 truncate max-w-[120px] text-right">
+          <span className="text-ink-400 truncate max-w-[120px] text-right">
             {chantier.localisation.split(/[,—\-]/)[0].trim()}
           </span>
         )}
@@ -135,7 +135,7 @@ export default function ChantiersListPage() {
         subtitle={isLoading ? "Chargement…" : `${meta.total ?? 0} chantier${(meta.total ?? 0) !== 1 ? "s" : ""}`}
         action={
           <button onClick={openModal}
-            className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
+            className="inline-flex items-center gap-2 bg-[green-600] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[green-700] transition-colors">
             <Plus size={16} /> Ajouter depuis Sage X3
           </button>
         }
@@ -145,22 +145,22 @@ export default function ChantiersListPage() {
       <SyncBadge module="chantiers" label="Chantiers" invalidate={["chantiers", "chantier"]} canSync={peutSynchro} />
 
       {/* Filters */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-xl border border-line-200 p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[220px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
             <input placeholder="Nom, code, région, directeur ou conducteur de travaux…"
               value={search} onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+              className="w-full pl-9 pr-4 py-2 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]" />
           </div>
           <SearchSelect value={statut} onChange={e => { setStatut(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30">
+            className="border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30">
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </SearchSelect>
           {hasFilter && (
             <button onClick={() => { setSearch(""); setStatut(""); setPage(1); }}
-              className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
+              className="flex items-center gap-1 text-sm text-ink-500 hover:text-[green-600] transition-colors">
               <RotateCcw size={13} /> Réinitialiser
             </button>
           )}
@@ -172,12 +172,12 @@ export default function ChantiersListPage() {
           {[1, 2, 3, 4, 5, 6].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : isError ? (
-        <div className="text-center py-16 text-red-500 text-sm bg-white rounded-xl border border-gray-200">
+        <div className="text-center py-16 text-red-500 text-sm bg-white rounded-xl border border-line-200">
           Impossible de charger les chantiers.
         </div>
       ) : chantiers.length === 0 ? (
-        <div className="text-center py-16 text-gray-400 text-sm bg-white rounded-xl border border-gray-200">
-          <Building2 size={32} className="mx-auto mb-3 text-gray-300" />
+        <div className="text-center py-16 text-ink-400 text-sm bg-white rounded-xl border border-line-200">
+          <Building2 size={32} className="mx-auto mb-3 text-ink-300" />
           Aucun chantier ne correspond aux filtres.
         </div>
       ) : (

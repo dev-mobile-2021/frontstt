@@ -25,14 +25,14 @@ export default function ImportFileButton({ label = "Parcourir…", onImport, nAj
       <button
         onClick={handleImport}
         disabled={loading}
-        className="flex items-center gap-1.5 text-xs border border-[#087F3E] text-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] disabled:opacity-60 transition-colors"
+        className="flex items-center gap-1.5 text-xs border border-[green-600] text-[green-600] px-3 py-1.5 rounded-lg hover:bg-[green-50] disabled:opacity-60 transition-colors"
       >
         {loading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
         {loading ? "Import en cours…" : label}
       </button>
       <button
         onClick={() => addToast("Modèle téléchargé.", "success")}
-        className="flex items-center gap-1.5 text-xs border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+        className="flex items-center gap-1.5 text-xs border border-line-200 text-ink-500 px-3 py-1.5 rounded-lg hover:bg-surface-50 transition-colors"
       >
         <Download size={12} /> Télécharger le modèle
       </button>

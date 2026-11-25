@@ -44,14 +44,14 @@ export default function SyncBadge({ module, label, invalidate = [], buttonLabel 
   const loading = syncMut.isPending;
 
   return (
-    <div className="flex items-center gap-2 text-xs text-gray-400 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 flex-wrap">
-      <Link2 size={13} className="text-gray-400 flex-shrink-0" />
+    <div className="flex items-center gap-2 text-xs text-ink-400 bg-surface-50 border border-line-200 rounded-lg px-3 py-2 flex-wrap">
+      <Link2 size={13} className="text-ink-400 flex-shrink-0" />
       <span className="flex-1">
-        Référentiel synchronisé depuis <span className="font-semibold text-gray-600">Sage X3</span>
-        <span className="text-gray-300 mx-1.5">·</span>
+        Référentiel synchronisé depuis <span className="font-semibold text-ink-500">Sage X3</span>
+        <span className="text-ink-300 mx-1.5">·</span>
         {lastSync ? <>Dernière synchronisation : {lastSync}</> : "Jamais synchronisé"}
         {bilan && (
-          <span className="block mt-0.5 text-gray-500">
+          <span className="block mt-0.5 text-ink-500">
             Bilan : {bilan.recus ?? 0} reçu(s) · {bilan.crees ?? 0} créé(s) · {bilan.mis_a_jour ?? 0} mis à jour · {bilan.inchanges ?? 0} inchangé(s)
             {bilan.ignores ? ` · ${bilan.ignores} ignoré(s)` : ""}
             {bilan.liens != null ? ` · ${bilan.liens} lien(s) chantier` : ""}
@@ -65,7 +65,7 @@ export default function SyncBadge({ module, label, invalidate = [], buttonLabel 
         <button
           onClick={handleSync}
           disabled={loading}
-          className="ml-1 flex items-center gap-1.5 text-[#087F3E] font-medium border border-[#087F3E]/30 px-2.5 py-1 rounded-md hover:bg-[#E8F5EE] disabled:opacity-60 transition-colors"
+          className="ml-1 flex items-center gap-1.5 text-[green-600] font-medium border border-[green-600]/30 px-2.5 py-1 rounded-md hover:bg-[green-50] disabled:opacity-60 transition-colors"
         >
           {loading ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
           {loading ? "Synchronisation…" : buttonLabel}

@@ -32,33 +32,33 @@ export default function UserSwitcher() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(v => !v)}
-        className="flex items-center gap-2 rounded-lg px-3 py-1.5 bg-white border border-gray-200 hover:border-[#087F3E] hover:bg-[#F0FAF4] transition-colors text-sm"
+        className="flex items-center gap-2 rounded-lg px-3 py-1.5 bg-white border border-line-200 hover:border-[green-600] hover:bg-[#F0FAF4] transition-colors text-sm"
       >
-        <span className="w-7 h-7 rounded-full bg-[#087F3E] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+        <span className="w-7 h-7 rounded-full bg-[green-600] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
           {initiales}
         </span>
         <div className="text-left hidden sm:block">
-          <div className="text-gray-900 font-medium leading-tight text-xs">
+          <div className="text-ink-900 font-medium leading-tight text-xs">
             {currentUser?.nom ?? currentUser?.login ?? "Utilisateur"}
           </div>
-          <div className="text-[#087F3E] text-[10px] font-semibold">{role}</div>
+          <div className="text-[green-600] text-[10px] font-semibold">{role}</div>
         </div>
-        <ChevronDown size={14} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={14} className={`text-ink-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
+        <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-line-200 rounded-xl shadow-lg z-50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-line-100">
             <div className="flex items-center gap-2.5">
-              <span className="w-8 h-8 rounded-full bg-[#087F3E] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
+              <span className="w-8 h-8 rounded-full bg-[green-600] text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
                 {initiales}
               </span>
               <div>
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-sm font-semibold text-ink-900">
                   {currentUser?.nom ?? currentUser?.login}
                 </p>
-                <p className="text-xs text-gray-400">{currentUser?.email}</p>
-                <p className="text-[10px] text-[#087F3E] font-semibold mt-0.5">{role}</p>
+                <p className="text-xs text-ink-400">{currentUser?.email}</p>
+                <p className="text-[10px] text-[green-600] font-semibold mt-0.5">{role}</p>
               </div>
             </div>
           </div>

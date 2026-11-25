@@ -12,10 +12,10 @@ function Dot({ checked, disabled, onChange }) {
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
       title={checked ? "Autorisé — cliquer pour retirer" : "Non autorisé — cliquer pour activer"}
-      className={`w-5 h-5 rounded-full border-2 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#087F3E] focus-visible:ring-offset-1 flex items-center justify-center
+      className={`w-5 h-5 rounded-full border-2 transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-[green-600] focus-visible:ring-offset-1 flex items-center justify-center
         ${checked
-          ? "bg-[#087F3E] border-[#087F3E]"
-          : "bg-white border-gray-300 hover:border-gray-400"}
+          ? "bg-[green-600] border-[green-600]"
+          : "bg-white border-line-200 hover:border-ink-300"}
         ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
     >
       {checked && (
@@ -32,20 +32,20 @@ function PermRow({ perm, idx, allRoles, updateMut, toggleRole, hoveredRole, setH
   const roleMap = Object.fromEntries(perm.roles.map(r => [r.designation, r.actif]));
   const activeCount = perm.roles.filter(r => r.actif).length;
 
-  const bg = idx % 2 === 0 ? "bg-white" : "bg-gray-50/60";
+  const bg = idx % 2 === 0 ? "bg-white" : "bg-surface-50/60";
 
   return (
     <tr
-      className={`transition-colors ${hovered ? "bg-[#E8F5EE]/60" : bg}`}
+      className={`transition-colors ${hovered ? "bg-[green-50]/60" : bg}`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <td className={`sticky left-0 z-10 pl-4 pr-3 py-2.5 ${hovered ? "bg-[#E8F5EE]/60" : bg}`} style={{ minWidth: 260, maxWidth: 260 }}>
+      <td className={`sticky left-0 z-10 pl-4 pr-3 py-2.5 ${hovered ? "bg-[green-50]/60" : bg}`} style={{ minWidth: 260, maxWidth: 260 }}>
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-medium text-gray-800 leading-snug truncate" title={perm.description || perm.label}>
+          <span className="text-xs font-medium text-ink-900 leading-snug truncate" title={perm.description || perm.label}>
             {perm.label}
           </span>
-          <span className="shrink-0 text-[10px] text-gray-400 tabular-nums">{activeCount}</span>
+          <span className="shrink-0 text-[10px] text-ink-400 tabular-nums">{activeCount}</span>
         </div>
       </td>
       {allRoles.map(role => {
@@ -55,7 +55,7 @@ function PermRow({ perm, idx, allRoles, updateMut, toggleRole, hoveredRole, setH
         return (
           <td
             key={role}
-            className={`py-2.5 text-center transition-colors ${isColHovered ? "bg-[#E8F5EE]/40" : ""}`}
+            className={`py-2.5 text-center transition-colors ${isColHovered ? "bg-[green-50]/40" : ""}`}
             onMouseEnter={() => setHoveredRole(role)}
             onMouseLeave={() => setHoveredRole(null)}
           >
@@ -116,7 +116,7 @@ export default function PermissionsPage() {
     return (
       <div className="space-y-6">
         <PageHeader title="Permissions" subtitle="Gestion des droits d'accès par rôle" />
-        <div className="py-16 text-center text-sm text-gray-400">Chargement…</div>
+        <div className="py-16 text-center text-sm text-ink-400">Chargement…</div>
       </div>
     );
   }
@@ -137,13 +137,13 @@ export default function PermissionsPage() {
         </p>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-x-auto rounded-xl border border-line-200 bg-white shadow-sm">
         <table className="w-full border-collapse text-sm" style={{ tableLayout: "fixed" }}>
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
+            <tr className="border-b border-line-200 bg-surface-50">
               {/* Colonne libellé */}
-              <th className="sticky left-0 z-20 bg-gray-50 pl-4 pr-3 text-left align-bottom" style={{ width: 280, minWidth: 280, height: HEADER_H }}>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Élément</span>
+              <th className="sticky left-0 z-20 bg-surface-50 pl-4 pr-3 text-left align-bottom" style={{ width: 280, minWidth: 280, height: HEADER_H }}>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-ink-400">Élément</span>
               </th>
               {allRoles.map(role => (
                 <th
@@ -157,7 +157,7 @@ export default function PermissionsPage() {
                     <span
                       style={{ writingMode: "vertical-lr", transform: "rotate(180deg)", transformOrigin: "center" }}
                       className={`text-[11px] font-semibold whitespace-nowrap transition-colors ${
-                        hoveredRole === role ? "text-[#087F3E]" : role === "Admin" ? "text-gray-400" : "text-gray-600"
+                        hoveredRole === role ? "text-[green-600]" : role === "Admin" ? "text-ink-400" : "text-ink-500"
                       }`}
                     >
                       {role}
@@ -167,11 +167,11 @@ export default function PermissionsPage() {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line-100">
             {/* Section Actions */}
-            <tr className="bg-gray-100/80">
+            <tr className="bg-line-100/80">
               <td colSpan={allRoles.length + 1} className="px-4 py-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Actions</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-ink-500">Actions</span>
               </td>
             </tr>
             {actionPerms.map((perm, idx) => (
@@ -183,9 +183,9 @@ export default function PermissionsPage() {
             ))}
 
             {/* Section Menus */}
-            <tr className="bg-gray-100/80">
+            <tr className="bg-line-100/80">
               <td colSpan={allRoles.length + 1} className="px-4 py-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Visibilité des menus</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-ink-500">Visibilité des menus</span>
               </td>
             </tr>
             {menuPerms.map((perm, idx) => (
@@ -199,7 +199,7 @@ export default function PermissionsPage() {
         </table>
       </div>
 
-      <p className="text-right text-xs text-gray-400">
+      <p className="text-right text-xs text-ink-400">
         {permissions.length} élément{permissions.length !== 1 ? "s" : ""} configuré{permissions.length !== 1 ? "s" : ""}
       </p>
     </div>

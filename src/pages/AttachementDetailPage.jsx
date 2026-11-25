@@ -29,7 +29,7 @@ const STATUT_COLORS = {
   "Soumis au DT":          "bg-blue-100 text-blue-700 border-blue-200",
   "En rapprochement":      "bg-orange-100 text-orange-700 border-orange-200",
   "En cours":              "bg-yellow-100 text-yellow-700 border-yellow-200",
-  "Ouvert":                "bg-gray-100 text-gray-600 border-gray-200",
+  "Ouvert":                "bg-line-100 text-ink-500 border-line-200",
   "Rejeté":                "bg-red-100 text-red-700 border-red-200",
 };
 const ROLE_PILL = {
@@ -180,36 +180,36 @@ function FilDiscussion({ att, currentUser, updateAttachement }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-gray-100">
-        <MessageCircle size={16} className="text-gray-400" />
-        <h3 className="font-semibold text-gray-800 text-sm">Fil de suivi du dossier</h3>
-        <span className="ml-auto text-xs text-gray-400">{messages.length} message{messages.length > 1 ? "s" : ""}</span>
+    <div className="bg-white rounded-2xl border border-line-200 overflow-hidden">
+      <div className="flex items-center gap-2.5 px-5 py-4 border-b border-line-100">
+        <MessageCircle size={16} className="text-ink-400" />
+        <h3 className="font-semibold text-ink-900 text-sm">Fil de suivi du dossier</h3>
+        <span className="ml-auto text-xs text-ink-400">{messages.length} message{messages.length > 1 ? "s" : ""}</span>
       </div>
-      <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
+      <div className="divide-y divide-line-100 max-h-72 overflow-y-auto">
         {messages.length === 0 ? (
-          <p className="text-xs text-gray-400 text-center py-6">Aucun message</p>
+          <p className="text-xs text-ink-400 text-center py-6">Aucun message</p>
         ) : messages.map(m => (
-          <div key={m.id} className={`px-5 py-3 ${m.type === "action" ? "bg-gray-50/70" : "bg-white"}`}>
+          <div key={m.id} className={`px-5 py-3 ${m.type === "action" ? "bg-surface-50/70" : "bg-white"}`}>
             <div className="flex items-center gap-2 mb-1">
-              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${ROLE_PILL[m.roleId] ?? "bg-gray-100 text-gray-500"}`}>{m.roleId}</span>
-              <span className="text-xs font-medium text-gray-800">{m.auteur}</span>
-              <span className="text-[10px] text-gray-400 ml-auto">{fmtDate(m.date)}</span>
+              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${ROLE_PILL[m.roleId] ?? "bg-line-100 text-ink-500"}`}>{m.roleId}</span>
+              <span className="text-xs font-medium text-ink-900">{m.auteur}</span>
+              <span className="text-[10px] text-ink-400 ml-auto">{fmtDate(m.date)}</span>
             </div>
-            <p className={`text-xs leading-relaxed ${m.type === "action" ? "text-gray-500 italic" : "text-gray-700"}`}>{m.message}</p>
+            <p className={`text-xs leading-relaxed ${m.type === "action" ? "text-ink-500 italic" : "text-ink-700"}`}>{m.message}</p>
           </div>
         ))}
       </div>
-      <div className="px-5 py-4 border-t border-gray-100 flex gap-3">
+      <div className="px-5 py-4 border-t border-line-100 flex gap-3">
         <textarea
           value={msg}
           onChange={e => setMsg(e.target.value)}
           onKeyDown={e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleEnvoyer(); }}
           placeholder="Ajouter un commentaire… (Ctrl+Entrée pour envoyer)"
           rows={2}
-          className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-200"
+          className="flex-1 text-sm border border-line-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-blue-200"
         />
-        <button onClick={handleEnvoyer} disabled={!msg.trim()} className="flex items-center gap-1.5 px-4 py-2 bg-[#087F3E] text-white text-sm font-medium rounded-xl hover:bg-[#065A2C] transition-colors disabled:opacity-40 self-end">
+        <button onClick={handleEnvoyer} disabled={!msg.trim()} className="flex items-center gap-1.5 px-4 py-2 bg-[green-600] text-white text-sm font-medium rounded-xl hover:bg-[green-700] transition-colors disabled:opacity-40 self-end">
           <Send size={13} /> Envoyer
         </button>
       </div>
@@ -241,47 +241,47 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
       {groups.map(group => (
         <React.Fragment key={group.rubrique}>
           {/* Rubrique header */}
-          <tr className="bg-[#087F3E]/8 border-b border-[#087F3E]/20">
+          <tr className="bg-[green-600]/8 border-b border-[green-600]/20">
             <td className="px-3 py-1.5">
-              {group.rubriqueCode && <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{group.rubriqueCode}</span>}
+              {group.rubriqueCode && <span className="font-mono text-[10px] text-ink-400 bg-line-100 px-1.5 py-0.5 rounded">{group.rubriqueCode}</span>}
             </td>
             <td className="py-1.5 pr-2">
-              {group.rubriqueCodeX3 && <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{group.rubriqueCodeX3}</span>}
+              {group.rubriqueCodeX3 && <span className="font-mono text-[10px] font-semibold text-[green-600] bg-[green-600]/10 px-1.5 py-0.5 rounded">{group.rubriqueCodeX3}</span>}
             </td>
             <td colSpan={colCount - 2} className="py-1.5 pr-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-[#087F3E]">{group.rubrique}</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-[green-600]">{group.rubrique}</span>
             </td>
           </tr>
           {group.postes.map(posteGroup => (
             <React.Fragment key={posteGroup.poste}>
               {/* Poste sub-header */}
-              <tr className="bg-gray-50/80 border-b border-gray-100">
+              <tr className="bg-surface-50/80 border-b border-line-100">
                 <td className="pl-5 pr-2 py-1" />
                 <td className="pr-2 py-1">
                   {posteGroup.lignes[0]?.posteNumero && (
-                    <span className="font-mono text-[10px] text-gray-500 bg-gray-200 px-1.5 py-0.5 rounded">{posteGroup.lignes[0].posteNumero}</span>
+                    <span className="font-mono text-[10px] text-ink-500 bg-line-200 px-1.5 py-0.5 rounded">{posteGroup.lignes[0].posteNumero}</span>
                   )}
                 </td>
                 <td colSpan={colCount - 2} className="px-1 py-1">
-                  <span className="text-[11px] font-semibold text-gray-600 italic">{posteGroup.poste}</span>
+                  <span className="text-[11px] font-semibold text-ink-500 italic">{posteGroup.poste}</span>
                 </td>
               </tr>
               {posteGroup.lignes.map(l => (
-                <tr key={l.id} className="border-b border-gray-100 hover:bg-blue-50/20 transition-colors">
+                <tr key={l.id} className="border-b border-line-100 hover:bg-blue-50/20 transition-colors">
                   <td className="pl-6 pr-2 py-2.5">
-                    {l.refDQE && <span className="font-mono text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">{l.refDQE}</span>}
+                    {l.refDQE && <span className="font-mono text-[10px] text-ink-400 bg-line-100 px-1.5 py-0.5 rounded">{l.refDQE}</span>}
                   </td>
                   <td className="pr-3 py-2.5">
-                    {l.refDQEX3 && <span className="font-mono text-[10px] font-semibold text-[#087F3E] bg-[#087F3E]/10 px-1.5 py-0.5 rounded">{l.refDQEX3}</span>}
+                    {l.refDQEX3 && <span className="font-mono text-[10px] font-semibold text-[green-600] bg-[green-600]/10 px-1.5 py-0.5 rounded">{l.refDQEX3}</span>}
                   </td>
                   <td className="px-3 py-2.5">
-                    <span className="text-gray-800 text-sm">{l.designation}</span>
+                    <span className="text-ink-900 text-sm">{l.designation}</span>
                     {isDTMode && l.modifiedByDT && (
                       <span className="ml-2 text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-medium">Modifié DT</span>
                     )}
                   </td>
-                  <td className="px-2 py-2.5 text-center text-gray-500 text-xs">{l.unite}</td>
-                  <td className="px-2 py-2.5 text-right tabular-nums text-gray-400 text-xs">{l.quantitePrevueDQE}</td>
+                  <td className="px-2 py-2.5 text-center text-ink-500 text-xs">{l.unite}</td>
+                  <td className="px-2 py-2.5 text-right tabular-nums text-ink-400 text-xs">{l.quantitePrevueDQE}</td>
                   <td className="px-2 py-2.5 text-right">
                     {editable ? (
                       <input
@@ -294,11 +294,11 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
                             : "border-blue-200 bg-blue-50 text-blue-800 focus:ring-blue-300"}`}
                       />
                     ) : (
-                      <span className="tabular-nums font-medium text-gray-800 text-sm">{l.quantiteRealisee}</span>
+                      <span className="tabular-nums font-medium text-ink-900 text-sm">{l.quantiteRealisee}</span>
                     )}
                   </td>
-                  <td className="px-2 py-2.5 text-right tabular-nums text-gray-500 text-xs">{num(l.prixUnitaireHT)}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-gray-900 text-sm whitespace-nowrap">{num(l.montant)}</td>
+                  <td className="px-2 py-2.5 text-right tabular-nums text-ink-500 text-xs">{num(l.prixUnitaireHT)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-ink-900 text-sm whitespace-nowrap">{num(l.montant)}</td>
                   {editable && <td />}
                 </tr>
               ))}
@@ -315,17 +315,17 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
             {editable ? (
               <input type="text" value={l.designation} onChange={e => onLibreChange(l.id, "designation", e.target.value)} placeholder="Désignation" className="w-full px-2 py-1 rounded-lg border border-amber-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
             ) : (
-              <span className="text-gray-800 text-sm">{l.designation}</span>
+              <span className="text-ink-900 text-sm">{l.designation}</span>
             )}
           </td>
           <td className="px-2 py-2.5 text-center">
             {editable ? (
               <input type="text" value={l.unite} onChange={e => onLibreChange(l.id, "unite", e.target.value)} placeholder="U" className="w-12 text-center px-1 py-1 rounded-lg border border-amber-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-300" />
             ) : (
-              <span className="text-gray-500 text-xs">{l.unite}</span>
+              <span className="text-ink-500 text-xs">{l.unite}</span>
             )}
           </td>
-          <td className="px-2 py-2.5 text-right text-gray-400 text-xs">—</td>
+          <td className="px-2 py-2.5 text-right text-ink-400 text-xs">—</td>
           <td className="px-2 py-2.5 text-right">
             {editable ? (
               <input type="number" min={0} step={0.01} value={l.quantiteRealisee} onChange={e => onLibreChange(l.id, "quantiteRealisee", e.target.value)} className="w-20 text-right px-2 py-1.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 font-medium text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 tabular-nums" />
@@ -337,7 +337,7 @@ function TableauRows({ lignes, editable, isDTMode, onQteChange, onLibreChange, o
             {editable ? (
               <input type="number" min={0} value={l.prixUnitaireHT} onChange={e => onLibreChange(l.id, "prixUnitaireHT", e.target.value)} className="w-24 text-right px-2 py-1 rounded-lg border border-amber-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 tabular-nums" />
             ) : (
-              <span className="tabular-nums text-gray-600 text-xs">{num(l.prixUnitaireHT)}</span>
+              <span className="tabular-nums text-ink-500 text-xs">{num(l.prixUnitaireHT)}</span>
             )}
           </td>
           <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-amber-800 text-sm">{num(l.montant)}</td>
@@ -405,14 +405,14 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+    <div className="bg-white rounded-2xl border border-line-200 overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-line-100">
         <div>
-          <h3 className="font-semibold text-gray-800">Volet CSE — Constat terrain</h3>
-          <p className="text-xs text-gray-500 mt-0.5">{readOnly ? "Tableau en lecture seule" : "Saisir les quantités réalisées"}</p>
+          <h3 className="font-semibold text-ink-900">Volet CSE — Constat terrain</h3>
+          <p className="text-xs text-ink-500 mt-0.5">{readOnly ? "Tableau en lecture seule" : "Saisir les quantités réalisées"}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={() => exportCSE(lignes, att.reference)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50">
+          <button onClick={() => exportCSE(lignes, att.reference)} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-ink-700 border border-line-200 rounded-xl hover:bg-surface-50">
             <Download size={13} /> Exporter
           </button>
           {!readOnly && (
@@ -422,14 +422,14 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
                 importCSELignes(file, lignes, updated => { setLignes(updated); addToast("Quantités importées depuis Excel.", "success"); }, () => addToast("Erreur de lecture du fichier Excel.", "error"));
                 e.target.value = "";
               }} />
-              <button onClick={() => importRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50">
+              <button onClick={() => importRef.current?.click()} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-ink-700 border border-line-200 rounded-xl hover:bg-surface-50">
                 <Upload size={13} /> Importer
               </button>
-              <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50">
+              <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-ink-700 border border-line-200 rounded-xl hover:bg-surface-50">
                 {savedFlag ? <CheckCircle size={13} className="text-green-500" /> : <Save size={13} />}
                 {savedFlag ? "Enregistré" : "Enregistrer"}
               </button>
-              <button onClick={handleSoumettre} disabled={total === 0 || submitting} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] disabled:opacity-40">
+              <button onClick={handleSoumettre} disabled={total === 0 || submitting} className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium bg-[green-600] text-white rounded-xl hover:bg-[green-700] disabled:opacity-40">
                 {submitting ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle size={13} />}
                 {att.statut === "Rejeté" ? "Resoumettre" : "Approuver"}
               </button>
@@ -440,7 +440,7 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
+            <tr className="bg-surface-50 border-b border-line-200 text-[11px] font-semibold text-ink-500 uppercase tracking-wide">
               <th className="text-left px-3 py-3 w-16">Réf</th>
               <th className="text-left px-2 py-3 w-20">N° Item</th>
               <th className="text-left px-3 py-3">Désignation</th>
@@ -465,10 +465,10 @@ function VueCT({ att, updateAttachement, soumettreAttachement, currentUser, read
                 </td>
               </tr>
             )}
-            <tr className="border-t-2 border-gray-200 bg-gray-50">
-              <td colSpan={readOnly ? 7 : 8} className="px-3 py-3.5 text-right font-bold text-gray-700">Total valorisé</td>
+            <tr className="border-t-2 border-line-200 bg-surface-50">
+              <td colSpan={readOnly ? 7 : 8} className="px-3 py-3.5 text-right font-bold text-ink-700">Total valorisé</td>
               <td className="px-3 py-3.5 text-right whitespace-nowrap">
-                <span className="font-bold text-lg text-[#087F3E]"><AnimatedTotal value={total} /></span>
+                <span className="font-bold text-lg text-[green-600]"><AnimatedTotal value={total} /></span>
               </td>
               {!readOnly && <td />}
             </tr>
@@ -559,16 +559,16 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
     <div className="space-y-4">
       <div className="flex gap-4 items-start">
         {/* Panneau gauche — Tableau CSE */}
-        <div className="flex-[3] min-w-0 bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <div className="flex-[3] min-w-0 bg-white rounded-2xl border border-line-200 overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-line-100">
             <div>
-              <h3 className="font-semibold text-gray-800 text-sm">Volet CSE — Constat terrain</h3>
-              <p className="text-xs text-gray-500 mt-0.5">
+              <h3 className="font-semibold text-ink-900 text-sm">Volet CSE — Constat terrain</h3>
+              <p className="text-xs text-ink-500 mt-0.5">
                 {editable ? "Les modifications DT sont tracées" : "Lecture seule"}
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => exportCSE(lignes, att.reference)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+              <button onClick={() => exportCSE(lignes, att.reference)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-700 border border-line-200 rounded-lg hover:bg-surface-50">
                 <Download size={12} /> Exporter
               </button>
               {editable && (
@@ -578,10 +578,10 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
                     importCSELignes(file, lignes, updated => { setLignes(updated); addToast("Quantités importées depuis Excel.", "success"); }, () => addToast("Erreur de lecture du fichier Excel.", "error"));
                     e.target.value = "";
                   }} />
-                  <button onClick={() => importRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+                  <button onClick={() => importRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-700 border border-line-200 rounded-lg hover:bg-surface-50">
                     <Upload size={12} /> Importer
                   </button>
-                  <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+                  <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-700 border border-line-200 rounded-lg hover:bg-surface-50">
                     {savedFlag ? <CheckCircle size={12} className="text-green-500" /> : <Save size={12} />}
                     {savedFlag ? "Enregistré" : "Enregistrer"}
                   </button>
@@ -592,7 +592,7 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                <tr className="bg-surface-50 border-b border-line-200 text-[10px] font-semibold text-ink-500 uppercase tracking-wide">
                   <th className="text-left px-3 py-2.5 w-14">Réf</th>
                   <th className="text-left px-2 py-2.5 w-20">N° Item</th>
                   <th className="text-left px-2 py-2.5">Désignation</th>
@@ -617,10 +617,10 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
                     </td>
                   </tr>
                 )}
-                <tr className="border-t-2 border-gray-200 bg-gray-50">
-                  <td colSpan={editable ? 8 : 7} className="px-3 py-3 text-right font-bold text-gray-700 text-sm">Total CSE</td>
+                <tr className="border-t-2 border-line-200 bg-surface-50">
+                  <td colSpan={editable ? 8 : 7} className="px-3 py-3 text-right font-bold text-ink-700 text-sm">Total CSE</td>
                   <td className="px-3 py-3 text-right whitespace-nowrap">
-                    <span className="font-bold text-[#087F3E]"><AnimatedTotal value={total} /></span>
+                    <span className="font-bold text-[green-600]"><AnimatedTotal value={total} /></span>
                   </td>
                   {editable && <td />}
                 </tr>
@@ -630,31 +630,31 @@ function VueDT({ att, updateAttachement, soumettreAttachement, rejeterAttachemen
 
           {/* Actions DT */}
           {editable && (
-            <div className="border-t border-gray-100 px-4 py-4 space-y-3">
+            <div className="border-t border-line-100 px-4 py-4 space-y-3">
               {!showRejet ? (
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setShowRejet(true)} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-xl hover:bg-gray-50">
+                  <button onClick={() => setShowRejet(true)} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-ink-700 border border-line-200 rounded-xl hover:bg-surface-50">
                     <RotateCcw size={13} /> Renvoyer au CT
                   </button>
                   <button
                     onClick={handleSoumettreAuDacc}
-                    className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C]"
+                    className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium bg-[green-600] text-white rounded-xl hover:bg-[green-700]"
                   >
                     <Send size={13} /> Soumettre au DACC
                   </button>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-gray-700">Motif de renvoi au CT (obligatoire) :</p>
+                  <p className="text-xs font-medium text-ink-700">Motif de renvoi au CT (obligatoire) :</p>
                   <textarea
                     value={commentaireRejet}
                     onChange={e => setCommentaireRejet(e.target.value)}
                     rows={2}
                     placeholder="Expliquez les corrections attendues…"
-                    className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-orange-200"
+                    className="w-full text-sm border border-line-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-orange-200"
                   />
                   <div className="flex gap-2">
-                    <button onClick={() => setShowRejet(false)} className="px-3 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Annuler</button>
+                    <button onClick={() => setShowRejet(false)} className="px-3 py-2 text-xs text-ink-500 border border-line-200 rounded-lg hover:bg-surface-50">Annuler</button>
                     <button onClick={handleRenvoyer} disabled={!commentaireRejet.trim()} className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-40">
                       <RotateCcw size={12} /> Confirmer le renvoi au CT
                     </button>
@@ -754,14 +754,14 @@ function _VueAssistantDACC_UNUSED({ att, updateAttachement, soumettreAttachement
       </div>
 
       {/* Tableau CSE éditable */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+      <div className="bg-white rounded-2xl border border-line-200 overflow-hidden">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-line-100">
           <div>
-            <h3 className="font-semibold text-gray-800 text-sm">Volet CSE — Constat terrain</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Contrôle ligne par ligne — modifications tracées</p>
+            <h3 className="font-semibold text-ink-900 text-sm">Volet CSE — Constat terrain</h3>
+            <p className="text-xs text-ink-500 mt-0.5">Contrôle ligne par ligne — modifications tracées</p>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => exportCSE(lignes, att.reference)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+            <button onClick={() => exportCSE(lignes, att.reference)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-700 border border-line-200 rounded-lg hover:bg-surface-50">
               <Download size={12} /> Exporter
             </button>
             <input ref={importRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={e => {
@@ -769,10 +769,10 @@ function _VueAssistantDACC_UNUSED({ att, updateAttachement, soumettreAttachement
               importCSELignes(file, lignes, updated => { setLignes(updated); addToast("Quantités importées depuis Excel.", "success"); }, () => addToast("Erreur de lecture du fichier Excel.", "error"));
               e.target.value = "";
             }} />
-            <button onClick={() => importRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+            <button onClick={() => importRef.current?.click()} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-700 border border-line-200 rounded-lg hover:bg-surface-50">
               <Upload size={12} /> Importer
             </button>
-            <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+            <button onClick={handleEnregistrer} className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-ink-700 border border-line-200 rounded-lg hover:bg-surface-50">
               {savedFlag ? <CheckCircle size={12} className="text-green-500" /> : <Save size={12} />}
               {savedFlag ? "Enregistré" : "Enregistrer"}
             </button>
@@ -781,7 +781,7 @@ function _VueAssistantDACC_UNUSED({ att, updateAttachement, soumettreAttachement
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+              <tr className="bg-surface-50 border-b border-line-200 text-[10px] font-semibold text-ink-500 uppercase tracking-wide">
                 <th className="text-left px-3 py-2.5 w-16">Réf</th>
                 <th className="text-left px-2 py-2.5">Désignation</th>
                 <th className="text-center px-2 py-2.5 w-12">Unité</th>
@@ -796,10 +796,10 @@ function _VueAssistantDACC_UNUSED({ att, updateAttachement, soumettreAttachement
               <TableauRows lignes={lignes} editable={true} isDTMode={false} onQteChange={handleQteChange} onLibreChange={handleLibreChange} onDeleteLibre={handleDeleteLibre} />
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-gray-200 bg-gray-50">
-                <td colSpan={8} className="px-3 py-3 text-right font-bold text-gray-700 text-sm">Total CSE</td>
+              <tr className="border-t-2 border-line-200 bg-surface-50">
+                <td colSpan={8} className="px-3 py-3 text-right font-bold text-ink-700 text-sm">Total CSE</td>
                 <td className="px-3 py-3 text-right whitespace-nowrap">
-                  <span className="font-bold text-[#087F3E]"><AnimatedTotal value={total} /></span>
+                  <span className="font-bold text-[green-600]"><AnimatedTotal value={total} /></span>
                 </td>
                 <td />
               </tr>
@@ -808,10 +808,10 @@ function _VueAssistantDACC_UNUSED({ att, updateAttachement, soumettreAttachement
         </div>
 
         {/* Actions */}
-        <div className="border-t border-gray-100 px-4 py-4 space-y-3">
+        <div className="border-t border-line-100 px-4 py-4 space-y-3">
           {!showRejet ? (
             <div className="flex items-center gap-3 flex-wrap">
-              <button onClick={() => setShowRejet(true)} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">
+              <button onClick={() => setShowRejet(true)} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-ink-500 border border-line-200 rounded-xl hover:bg-surface-50">
                 <RotateCcw size={13} /> Renvoyer au CT
               </button>
               <button
@@ -824,23 +824,23 @@ function _VueAssistantDACC_UNUSED({ att, updateAttachement, soumettreAttachement
               <button
                 onClick={handleValiderDirect}
                 disabled={validatingDirect || total === 0}
-                className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-bold bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] disabled:opacity-40 shadow-sm">
+                className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-bold bg-[green-600] text-white rounded-xl hover:bg-[green-700] disabled:opacity-40 shadow-sm">
                 {validatingDirect ? <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle size={14} />}
                 Valider directement
               </button>
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-gray-700">Motif de renvoi au CT (obligatoire) :</p>
+              <p className="text-xs font-medium text-ink-700">Motif de renvoi au CT (obligatoire) :</p>
               <textarea
                 value={commentaireRejet}
                 onChange={e => setCommentaireRejet(e.target.value)}
                 rows={2}
                 placeholder="Expliquez les corrections attendues…"
-                className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-orange-200"
+                className="w-full text-sm border border-line-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-orange-200"
               />
               <div className="flex gap-2">
-                <button onClick={() => setShowRejet(false)} className="px-3 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Annuler</button>
+                <button onClick={() => setShowRejet(false)} className="px-3 py-2 text-xs text-ink-500 border border-line-200 rounded-lg hover:bg-surface-50">Annuler</button>
                 <button onClick={handleRenvoyer} disabled={!commentaireRejet.trim()} className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-orange-500 text-white rounded-lg hover:bg-orange-600 disabled:opacity-40">
                   <RotateCcw size={12} /> Confirmer le renvoi
                 </button>
@@ -905,14 +905,14 @@ function VueDacc({ att, updateAttachement, validerAttachement, rejeterAttachemen
 
       <div className="flex gap-4 items-start">
         {/* Panneau gauche — Tableau CSE read-only */}
-        <div className="flex-[3] min-w-0 bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-800 text-sm">Volet CSE — Constat terrain</h3>
+        <div className="flex-[3] min-w-0 bg-white rounded-2xl border border-line-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-line-100">
+            <h3 className="font-semibold text-ink-900 text-sm">Volet CSE — Constat terrain</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-200 text-[10px] font-semibold text-gray-500 uppercase tracking-wide">
+                <tr className="bg-surface-50 border-b border-line-200 text-[10px] font-semibold text-ink-500 uppercase tracking-wide">
                   <th className="text-left px-3 py-2.5 w-14">Réf</th>
                   <th className="text-left px-2 py-2.5 w-20">N° Item</th>
                   <th className="text-left px-2 py-2.5">Désignation</th>
@@ -927,9 +927,9 @@ function VueDacc({ att, updateAttachement, validerAttachement, rejeterAttachemen
                 <TableauRows lignes={lignes} editable={false} isDTMode={true} onQteChange={()=>{}} onLibreChange={()=>{}} onDeleteLibre={()=>{}} />
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-gray-200 bg-gray-50">
-                  <td colSpan={6} className="px-3 py-3.5 text-right font-bold text-gray-700 text-sm">Total final</td>
-                  <td className="px-3 py-3.5 text-right font-bold text-lg text-[#087F3E]">{num(total)} FCFA</td>
+                <tr className="border-t-2 border-line-200 bg-surface-50">
+                  <td colSpan={6} className="px-3 py-3.5 text-right font-bold text-ink-700 text-sm">Total final</td>
+                  <td className="px-3 py-3.5 text-right font-bold text-lg text-[green-600]">{num(total)} FCFA</td>
                 </tr>
               </tfoot>
             </table>
@@ -939,48 +939,48 @@ function VueDacc({ att, updateAttachement, validerAttachement, rejeterAttachemen
       </div>
 
       {/* Encart synthèse */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h3 className="font-semibold text-gray-800 text-sm">Synthèse du dossier</h3>
+      <div className="bg-white rounded-2xl border border-line-200 overflow-hidden">
+        <div className="px-5 py-4 border-b border-line-100">
+          <h3 className="font-semibold text-ink-900 text-sm">Synthèse du dossier</h3>
         </div>
         <div className="px-5 py-4 grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
-          <div className="flex justify-between border-b border-gray-100 pb-3">
-            <span className="text-gray-500">Saisi par CT</span>
-            <span className="font-medium text-gray-800">{nomCT} — {dateCT}</span>
+          <div className="flex justify-between border-b border-line-100 pb-3">
+            <span className="text-ink-500">Saisi par CT</span>
+            <span className="font-medium text-ink-900">{nomCT} — {dateCT}</span>
           </div>
-          <div className="flex justify-between border-b border-gray-100 pb-3">
-            <span className="text-gray-500">Révisé par DT</span>
-            <span className="font-medium text-gray-800">{nomDT || "—"} {dateDT !== "—" ? `— ${dateDT}` : ""}</span>
+          <div className="flex justify-between border-b border-line-100 pb-3">
+            <span className="text-ink-500">Révisé par DT</span>
+            <span className="font-medium text-ink-900">{nomDT || "—"} {dateDT !== "—" ? `— ${dateDT}` : ""}</span>
           </div>
-          <div className="flex justify-between border-b border-gray-100 pb-3">
-            <span className="text-gray-500">Lignes modifiées par DT</span>
-            <span className={`font-medium ${lignesModifiees > 0 ? "text-orange-700" : "text-gray-500"}`}>{lignesModifiees} ligne{lignesModifiees > 1 ? "s" : ""}</span>
+          <div className="flex justify-between border-b border-line-100 pb-3">
+            <span className="text-ink-500">Lignes modifiées par DT</span>
+            <span className={`font-medium ${lignesModifiees > 0 ? "text-orange-700" : "text-ink-500"}`}>{lignesModifiees} ligne{lignesModifiees > 1 ? "s" : ""}</span>
           </div>
           <div className="col-span-2 flex justify-between pt-1">
-            <span className="font-bold text-gray-900">TOTAL FINAL</span>
-            <span className="font-bold text-xl text-[#087F3E]">{num(total)} FCFA</span>
+            <span className="font-bold text-ink-900">TOTAL FINAL</span>
+            <span className="font-bold text-xl text-[green-600]">{num(total)} FCFA</span>
           </div>
         </div>
       </div>
 
       {/* Actions DACC */}
       {!isReadOnly && (
-        <div className="bg-white rounded-2xl border border-gray-200 px-5 py-5 space-y-4">
+        <div className="bg-white rounded-2xl border border-line-200 px-5 py-5 space-y-4">
           {!showRejet ? (
             <div className="flex items-center gap-3">
               <button onClick={() => setShowRejet(true)} className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-red-600 border border-red-200 rounded-xl hover:bg-red-50">
                 <X size={13} /> Rejeter le dossier
               </button>
-              <button onClick={handleValider} className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-bold bg-[#087F3E] text-white rounded-xl hover:bg-[#065A2C] shadow-sm">
+              <button onClick={handleValider} className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-bold bg-[green-600] text-white rounded-xl hover:bg-[green-700] shadow-sm">
                 <CheckCircle size={14} /> Valider le dossier
               </button>
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm font-medium text-gray-700">Motif du rejet (obligatoire) :</p>
+              <p className="text-sm font-medium text-ink-700">Motif du rejet (obligatoire) :</p>
               <textarea value={motifRejet} onChange={e => setMotifRejet(e.target.value)} rows={3} placeholder="Expliquer les corrections attendues…" className="w-full text-sm border border-red-200 rounded-xl px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-red-200" />
               <div className="flex gap-2">
-                <button onClick={() => setShowRejet(false)} className="px-3 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Annuler</button>
+                <button onClick={() => setShowRejet(false)} className="px-3 py-2 text-xs text-ink-500 border border-line-200 rounded-lg hover:bg-surface-50">Annuler</button>
                 <button onClick={handleRejeter} disabled={!motifRejet.trim()} className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-40">
                   <X size={12} /> Confirmer le rejet
                 </button>
@@ -1077,35 +1077,35 @@ function ZoneDocuments({ att, canEdit, updateAttachement }) {
   }
 
   function mimeIcon(mime) {
-    if (!mime) return <FileText size={14} className="text-gray-400" />;
+    if (!mime) return <FileText size={14} className="text-ink-400" />;
     if (mime.includes("pdf")) return <FileText size={14} className="text-red-500" />;
     if (mime.includes("sheet") || mime.includes("excel") || mime.includes("xls"))
       return <FileText size={14} className="text-green-600" />;
     if (mime.includes("word") || mime.includes("doc"))
       return <FileText size={14} className="text-blue-600" />;
     if (mime.includes("image")) return <Eye size={14} className="text-purple-500" />;
-    return <FileText size={14} className="text-gray-400" />;
+    return <FileText size={14} className="text-ink-400" />;
   }
 
   const isViewable = (mime) => mime && (mime.includes("pdf") || mime.includes("image"));
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-        <h3 className="font-semibold text-gray-800 text-sm">Documents du dossier</h3>
-        <span className="text-xs text-gray-400">{docs.length} fichier{docs.length > 1 ? "s" : ""}</span>
+    <div className="bg-white rounded-2xl border border-line-200 overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-line-100">
+        <h3 className="font-semibold text-ink-900 text-sm">Documents du dossier</h3>
+        <span className="text-xs text-ink-400">{docs.length} fichier{docs.length > 1 ? "s" : ""}</span>
       </div>
 
-      <div className="divide-y divide-gray-50">
+      <div className="divide-y divide-line-100">
         {docs.length === 0 && (
-          <p className="text-xs text-gray-400 text-center py-5">Aucun document joint</p>
+          <p className="text-xs text-ink-400 text-center py-5">Aucun document joint</p>
         )}
         {docs.map(doc => (
-          <div key={doc.id} className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50/60">
+          <div key={doc.id} className="flex items-center gap-3 px-5 py-3 hover:bg-surface-50/60">
             <div className="flex-shrink-0">{mimeIcon(doc.mime)}</div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 truncate">{doc.libelle || doc.nom}</p>
-              <p className="text-[10px] text-gray-400 mt-0.5">
+              <p className="text-sm font-medium text-ink-900 truncate">{doc.libelle || doc.nom}</p>
+              <p className="text-[10px] text-ink-400 mt-0.5">
                 {doc.nom}{doc.taille ? ` · ${doc.taille}` : ""}{doc.date ? ` · ${doc.date}` : ""}{doc.uploadBy ? ` · ${doc.uploadBy}` : ""}
               </p>
             </div>
@@ -1114,21 +1114,21 @@ function ZoneDocuments({ att, canEdit, updateAttachement }) {
                 <button
                   onClick={() => handleDownload(doc, true)}
                   title="Visualiser"
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                  className="p-1.5 rounded-lg text-ink-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
                   <Eye size={14} />
                 </button>
               )}
               <button
                 onClick={() => handleDownload(doc, false)}
                 title="Télécharger"
-                className="p-1.5 rounded-lg text-gray-400 hover:text-[#087F3E] hover:bg-green-50 transition-colors">
+                className="p-1.5 rounded-lg text-ink-400 hover:text-[green-600] hover:bg-green-50 transition-colors">
                 <Download size={14} />
               </button>
               {canEdit && (
                 <button
                   onClick={() => handleDelete(doc)}
                   title="Supprimer"
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+                  className="p-1.5 rounded-lg text-ink-400 hover:text-red-600 hover:bg-red-50 transition-colors">
                   <Trash2 size={14} />
                 </button>
               )}
@@ -1137,7 +1137,7 @@ function ZoneDocuments({ att, canEdit, updateAttachement }) {
         ))}
       </div>
 
-      <div className="px-5 py-4 border-t border-gray-100 space-y-3">
+      <div className="px-5 py-4 border-t border-line-100 space-y-3">
         <input
           ref={uploadRef}
           type="file"
@@ -1147,17 +1147,17 @@ function ZoneDocuments({ att, canEdit, updateAttachement }) {
         />
         {showForm ? (
           <div className="space-y-2">
-            <p className="text-xs font-medium text-gray-700">Fichier : <span className="font-normal text-gray-500">{pendingFile?.name}</span></p>
+            <p className="text-xs font-medium text-ink-700">Fichier : <span className="font-normal text-ink-500">{pendingFile?.name}</span></p>
             <input
               type="text"
               value={libelle}
               onChange={e => setLibelle(e.target.value)}
               placeholder="Libellé du document (ex: Devis STT, PV de réception…)"
-              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-green-300 outline-none"
+              className="w-full border border-line-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-green-300 outline-none"
             />
             <div className="flex gap-2">
-              <button onClick={() => { setShowForm(false); setPendingFile(null); setLibelle(""); }} className="px-3 py-2 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">Annuler</button>
-              <button onClick={handleUpload} disabled={uploading} className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-[#087F3E] text-white rounded-lg hover:bg-[#065A2C] disabled:opacity-40">
+              <button onClick={() => { setShowForm(false); setPendingFile(null); setLibelle(""); }} className="px-3 py-2 text-xs text-ink-500 border border-line-200 rounded-lg hover:bg-surface-50">Annuler</button>
+              <button onClick={handleUpload} disabled={uploading} className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium bg-[green-600] text-white rounded-lg hover:bg-[green-700] disabled:opacity-40">
                 {uploading ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> Upload…</> : <><Upload size={12} /> Joindre</>}
               </button>
             </div>
@@ -1165,7 +1165,7 @@ function ZoneDocuments({ att, canEdit, updateAttachement }) {
         ) : (
           <button
             onClick={() => uploadRef.current?.click()}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 text-xs font-medium hover:border-[#087F3E] hover:text-[#087F3E] hover:bg-[#087F3E]/5 transition-colors">
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-line-200 rounded-xl text-ink-500 text-xs font-medium hover:border-[green-600] hover:text-[green-600] hover:bg-[green-600]/5 transition-colors">
             <Upload size={13} /> Joindre un document (PDF, Word, Excel, image)
           </button>
         )}
@@ -1191,7 +1191,7 @@ export default function AttachementDetailPage() {
 
   if (!att) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-24 text-ink-400">
         <AlertCircle size={40} className="mb-3 opacity-40" />
         <p className="font-medium">Dossier introuvable</p>
         <button onClick={() => navigate("/attachements")} className="mt-4 text-sm text-blue-500 hover:underline">← Retour à la liste</button>
@@ -1220,14 +1220,14 @@ export default function AttachementDetailPage() {
     || (isCT && ["Soumis au DT","Soumis au DACC","Validé","Rejeté"].includes(att.statut))
     || (isDT && ["Validé","Soumis au DACC","Soumis à l'Asst DACC"].includes(att.statut))
     || roleCode === "Admin";
-  const statutColor = STATUT_COLORS[att.statut] || "bg-gray-100 text-gray-600 border-gray-200";
+  const statutColor = STATUT_COLORS[att.statut] || "bg-line-100 text-ink-500 border-line-200";
 
   if (!canView) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-24 text-ink-400">
         <AlertCircle size={40} className="mb-3 opacity-60 text-amber-400" />
-        <p className="font-medium text-gray-700">Accès non autorisé</p>
-        <p className="text-sm text-gray-400 mt-1">
+        <p className="font-medium text-ink-700">Accès non autorisé</p>
+        <p className="text-sm text-ink-400 mt-1">
           Ce dossier est en statut « {att.statut} » et n'est pas accessible avec votre rôle ({roleCode || "inconnu"}).
         </p>
         <button onClick={() => navigate("/attachements")} className="mt-4 text-sm text-blue-500 hover:underline">← Retour à la liste</button>
@@ -1239,35 +1239,35 @@ export default function AttachementDetailPage() {
     <div className="space-y-5">
       {/* En-tête */}
       <div className="flex items-start gap-3">
-        <button onClick={() => navigate("/attachements")} className="mt-0.5 p-2 rounded-xl hover:bg-gray-100 text-gray-400 flex-shrink-0"><ArrowLeft size={18} /></button>
+        <button onClick={() => navigate("/attachements")} className="mt-0.5 p-2 rounded-xl hover:bg-line-100 text-ink-400 flex-shrink-0"><ArrowLeft size={18} /></button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl font-bold text-gray-900">{att.code}</h1>
+            <h1 className="text-xl font-bold text-ink-900">{att.code}</h1>
             <span className={`text-xs font-semibold px-3 py-1 rounded-full border ${statutColor}`}>{att.statut}</span>
           </div>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <p className="text-sm text-ink-500 mt-0.5">
             Contrat {att.contratId} · Période {fmtPeriode(att.periodeDebut)}
-            {att.montantFinal != null && <span className="ml-2 font-semibold text-[#087F3E]">{num(att.montantFinal)} FCFA</span>}
+            {att.montantFinal != null && <span className="ml-2 font-semibold text-[green-600]">{num(att.montantFinal)} FCFA</span>}
           </p>
         </div>
       </div>
 
       {/* Cards montants */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
-          <p className="text-xs uppercase tracking-wide font-medium text-gray-400 mb-1">Montant partiel</p>
-          <p className="text-lg font-bold text-gray-900">{num(att.montantFinal ?? att.voletCSE?.totalValorise ?? 0)} FCFA</p>
-          <p className="text-xs text-gray-400 mt-0.5">Cet attachement</p>
+        <div className="bg-white border border-line-200 rounded-2xl px-5 py-4">
+          <p className="text-xs uppercase tracking-wide font-medium text-ink-400 mb-1">Montant partiel</p>
+          <p className="text-lg font-bold text-ink-900">{num(att.montantFinal ?? att.voletCSE?.totalValorise ?? 0)} FCFA</p>
+          <p className="text-xs text-ink-400 mt-0.5">Cet attachement</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
-          <p className="text-xs uppercase tracking-wide font-medium text-gray-400 mb-1">Montant cumulé</p>
-          <p className="text-lg font-bold text-[#087F3E]">{num(att.montantCumule ?? 0)} FCFA</p>
-          <p className="text-xs text-gray-400 mt-0.5">Attachements validés</p>
+        <div className="bg-white border border-line-200 rounded-2xl px-5 py-4">
+          <p className="text-xs uppercase tracking-wide font-medium text-ink-400 mb-1">Montant cumulé</p>
+          <p className="text-lg font-bold text-[green-600]">{num(att.montantCumule ?? 0)} FCFA</p>
+          <p className="text-xs text-ink-400 mt-0.5">Attachements validés</p>
         </div>
-        <div className="bg-white border border-gray-200 rounded-2xl px-5 py-4">
-          <p className="text-xs uppercase tracking-wide font-medium text-gray-400 mb-1">Montant occasionné</p>
-          <p className="text-lg font-bold text-gray-400">—</p>
-          <p className="text-xs text-gray-400 mt-0.5">À définir</p>
+        <div className="bg-white border border-line-200 rounded-2xl px-5 py-4">
+          <p className="text-xs uppercase tracking-wide font-medium text-ink-400 mb-1">Montant occasionné</p>
+          <p className="text-lg font-bold text-ink-400">—</p>
+          <p className="text-xs text-ink-400 mt-0.5">À définir</p>
         </div>
       </div>
 

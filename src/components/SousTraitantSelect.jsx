@@ -46,23 +46,23 @@ export default function SousTraitantSelect({
       </SearchSelect>
 
       {chantierId ? (
-        <p className="text-[11px] text-gray-400 mt-1">
+        <p className="text-[11px] text-ink-400 mt-1">
           {isLoading
             ? "Chargement…"
             : filtered
               ? <>
                   {list.length} sous-traitant{list.length > 1 ? "s" : ""} rattaché{list.length > 1 ? "s" : ""} à ce chantier dans Sage X3
                   {" · "}
-                  <button type="button" onClick={() => setShowAll(true)} className="text-[#087F3E] hover:underline">Afficher tous</button>
+                  <button type="button" onClick={() => setShowAll(true)} className="text-[green-600] hover:underline">Afficher tous</button>
                 </>
               : <>
                   Tous les sous-traitants affichés
                   {" · "}
-                  <button type="button" onClick={() => setShowAll(false)} className="text-[#087F3E] hover:underline">Seulement ceux du chantier</button>
+                  <button type="button" onClick={() => setShowAll(false)} className="text-[green-600] hover:underline">Seulement ceux du chantier</button>
                 </>}
         </p>
       ) : (
-        <p className="text-[11px] text-gray-400 mt-1">Choisissez d'abord le chantier pour filtrer les sous-traitants liés dans Sage X3.</p>
+        <p className="text-[11px] text-ink-400 mt-1">Choisissez d'abord le chantier pour filtrer les sous-traitants liés dans Sage X3.</p>
       )}
     </div>
   );

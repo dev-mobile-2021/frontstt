@@ -134,29 +134,29 @@ export default function AttachementNewPage() {
     <div className="space-y-5">
       {/* En-tête — même style que la fiche détail */}
       <div className="flex items-start gap-3">
-        <button onClick={() => navigate("/attachements")} className="mt-0.5 p-2 rounded-xl hover:bg-gray-100 text-gray-400 flex-shrink-0">
+        <button onClick={() => navigate("/attachements")} className="mt-0.5 p-2 rounded-xl hover:bg-line-100 text-ink-400 flex-shrink-0">
           <ArrowLeft size={18} />
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-xl font-bold text-gray-900">Nouvel attachement</h1>
-            <span className="text-xs font-semibold px-3 py-1 rounded-full border bg-gray-100 text-gray-600 border-gray-200">Brouillon</span>
+            <h1 className="text-xl font-bold text-ink-900">Nouvel attachement</h1>
+            <span className="text-xs font-semibold px-3 py-1 rounded-full border bg-line-100 text-ink-500 border-line-200">Brouillon</span>
           </div>
-          <p className="text-sm text-gray-400 mt-0.5">Renseignez les informations pour initier le dossier</p>
+          <p className="text-sm text-ink-400 mt-0.5">Renseignez les informations pour initier le dossier</p>
         </div>
       </div>
 
       {/* Formulaire de création */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-5">
+      <div className="bg-white rounded-2xl border border-line-200 p-6 space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Chantier */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">Chantier</label>
+            <label className="text-sm font-medium text-ink-700">Chantier</label>
             <SearchSelect
               value={chantierId}
               onChange={e => setChantierId(e.target.value)}
               placeholder="— Sélectionner un chantier —"
-              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-300 outline-none bg-white"
+              className="w-full border border-line-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-300 outline-none bg-white"
             >
               <option value="">— Sélectionner un chantier —</option>
               {chantiers.map(c => (
@@ -167,13 +167,13 @@ export default function AttachementNewPage() {
 
           {/* Contrat */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">Contrat</label>
+            <label className="text-sm font-medium text-ink-700">Contrat</label>
             <SearchSelect
               value={contratId}
               onChange={e => setContratId(e.target.value)}
               disabled={!chantierId}
               placeholder="— Sélectionner un contrat —"
-              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-300 outline-none bg-white"
+              className="w-full border border-line-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-300 outline-none bg-white"
             >
               <option value="">— Sélectionner un contrat —</option>
               {contrats.map(c => (
@@ -184,26 +184,26 @@ export default function AttachementNewPage() {
 
           {/* Période début */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">Début de période</label>
+            <label className="text-sm font-medium text-ink-700">Début de période</label>
             <input
               type="date"
               value={periodeDebut}
               onChange={e => { setPeriodeDebut(e.target.value); setPeriodeFin(""); }}
               disabled={!contratId}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-300 outline-none disabled:bg-gray-50 disabled:text-gray-400"
+              className="w-full border border-line-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-300 outline-none disabled:bg-surface-50 disabled:text-ink-400"
             />
           </div>
 
           {/* Période fin */}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">Fin de période</label>
+            <label className="text-sm font-medium text-ink-700">Fin de période</label>
             <input
               type="date"
               value={periodeFin}
               min={periodeDebut || undefined}
               onChange={e => setPeriodeFin(e.target.value)}
               disabled={!periodeDebut}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-300 outline-none disabled:bg-gray-50 disabled:text-gray-400"
+              className="w-full border border-line-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-green-300 outline-none disabled:bg-surface-50 disabled:text-ink-400"
             />
           </div>
         </div>
@@ -218,7 +218,7 @@ export default function AttachementNewPage() {
           <button
             onClick={handleCreer}
             disabled={!contratId || !periodeDebut || !periodeFin || loading}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] text-white text-sm font-semibold rounded-xl hover:bg-[#065A2C] disabled:opacity-40 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[green-600] text-white text-sm font-semibold rounded-xl hover:bg-[green-700] disabled:opacity-40 transition-colors"
           >
             {loading ? <><Loader2 size={14} className="animate-spin" /> Création…</> : "Créer le dossier"}
           </button>

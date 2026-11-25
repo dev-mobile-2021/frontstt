@@ -5,7 +5,7 @@ import { fmtNum } from "../utils/formatters";
 const fmt = (n) => (n == null ? "—" : fmtNum(Math.round(n)));
 
 const SOURCES = {
-  base:     { label: "Barème général", cls: "bg-gray-100 text-gray-600" },
+  base:     { label: "Barème général", cls: "bg-line-100 text-ink-500" },
   chantier: { label: "Chantier", cls: "bg-blue-50 text-blue-700" },
   contrat:  { label: "Contrat",  cls: "bg-violet-50 text-violet-700" },
 };
@@ -77,30 +77,30 @@ export default function BaremePrixTable({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[220px]">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher un article (code ou désignation)…"
-            className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+            className="w-full pl-8 pr-3 py-2 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]" />
         </div>
-        <label className="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+        <label className="inline-flex items-center gap-2 text-sm text-ink-500 cursor-pointer">
           <input type="checkbox" checked={onlyEcarts} onChange={(e) => setOnlyEcarts(e.target.checked)} />
           Écarts seulement
         </label>
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-ink-400">
           {rows.length} article{rows.length > 1 ? "s" : ""} · {ecarts} écart{ecarts > 1 ? "s" : ""}
           {attente > 0 && <span className="text-amber-600 font-medium"> · {attente} en attente de validation</span>}
         </span>
       </div>
 
-      <div className="border border-gray-200 rounded-xl overflow-x-auto">
+      <div className="border border-line-200 rounded-xl overflow-x-auto">
         <table className="w-full text-sm min-w-[780px]">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+            <tr className="bg-surface-50 border-b border-line-200 text-xs uppercase tracking-wide text-ink-500">
               {canValidate && (
                 <th className="px-3 py-3 w-8">
                   {lignesEnAttente.length > 0 && (
                     <input type="checkbox" checked={allSelected} onChange={toggleAll}
                       title="Tout sélectionner / désélectionner"
-                      className="accent-[#087F3E] cursor-pointer" />
+                      className="accent-[green-600] cursor-pointer" />
                   )}
                 </th>
               )}
@@ -112,9 +112,9 @@ export default function BaremePrixTable({
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line-100">
             {visibles.length === 0 && (
-              <tr><td colSpan={canValidate ? 8 : 7} className="px-4 py-10 text-center text-gray-400 text-sm">
+              <tr><td colSpan={canValidate ? 8 : 7} className="px-4 py-10 text-center text-ink-400 text-sm">
                 {rows.length === 0 ? "Aucun article dans le barème général. Le DACC doit d'abord l'alimenter (Paramétrage → Barème général)." : "Aucun article ne correspond."}
               </td></tr>
             )}
@@ -125,21 +125,21 @@ export default function BaremePrixTable({
               const busy = busyId === r.bareme_id;
               const isSelected = selected.includes(r.contrat_bareme_id);
               return (
-                <tr key={r.bareme_id} className={isSelected ? "bg-amber-50" : ecart ? "bg-amber-50/30" : "hover:bg-gray-50"}>
+                <tr key={r.bareme_id} className={isSelected ? "bg-amber-50" : ecart ? "bg-amber-50/30" : "hover:bg-surface-50"}>
                   {canValidate && (
                     <td className="px-3 py-3">
                       {enAttente && (
                         <input type="checkbox" checked={isSelected} onChange={() => toggleRow(r)}
-                          className="accent-[#087F3E] cursor-pointer" />
+                          className="accent-[green-600] cursor-pointer" />
                       )}
                     </td>
                   )}
                   <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900">{r.designation}</p>
-                    <p className="text-xs font-mono text-gray-400">{r.code}</p>
+                    <p className="font-medium text-ink-900">{r.designation}</p>
+                    <p className="text-xs font-mono text-ink-400">{r.code}</p>
                   </td>
-                  <td className="px-3 py-3 text-gray-600">{r.unite ?? "—"}</td>
-                  {level === "chantier" && <td className="px-3 py-3 text-right font-mono text-gray-600">{fmt(r.prix_base)}</td>}
+                  <td className="px-3 py-3 text-ink-500">{r.unite ?? "—"}</td>
+                  {level === "chantier" && <td className="px-3 py-3 text-right font-mono text-ink-500">{fmt(r.prix_base)}</td>}
                   <td className="px-3 py-3 text-right">
                     {isEditing ? (
                       <div className="flex flex-col items-end gap-1">
@@ -147,21 +147,21 @@ export default function BaremePrixTable({
                           <input type="number" min="0" step="any" value={value} autoFocus
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={(e) => { if (e.key === "Enter") commit(r); if (e.key === "Escape") setEditing(null); }}
-                            className="w-28 border border-gray-300 rounded-lg px-2 py-1 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none" />
-                          <span className="text-[10px] text-gray-400">↵</span>
+                            className="w-28 border border-line-200 rounded-lg px-2 py-1 text-sm text-right focus:ring-2 focus:ring-[green-600] outline-none" />
+                          <span className="text-[10px] text-ink-400">↵</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <label className="text-[10px] text-gray-400 whitespace-nowrap">Date d'effet</label>
+                          <label className="text-[10px] text-ink-400 whitespace-nowrap">Date d'effet</label>
                           <input type="date" value={dateEffet} onChange={(e) => setDateEffet(e.target.value)}
                             onKeyDown={(e) => { if (e.key === "Enter") commit(r); if (e.key === "Escape") setEditing(null); }}
-                            className="border border-gray-300 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                            className="border border-line-200 rounded-lg px-2 py-1 text-xs focus:ring-2 focus:ring-[green-600] outline-none" />
                         </div>
                         <button onClick={() => commit(r)}
-                          className="text-xs font-medium text-white bg-[#087F3E] px-3 py-1 rounded-lg hover:bg-[#065A2C]">Enregistrer</button>
+                          className="text-xs font-medium text-white bg-[green-600] px-3 py-1 rounded-lg hover:bg-[green-700]">Enregistrer</button>
                       </div>
                     ) : (
                       <>
-                        <span className={`font-mono font-semibold ${ecart ? "text-[#065A2C]" : "text-gray-800"}`}>{fmt(r.prix_effectif)}</span>
+                        <span className={`font-mono font-semibold ${ecart ? "text-[green-700]" : "text-ink-900"}`}>{fmt(r.prix_effectif)}</span>
                         {enAttente && r.prix_propose != null && (
                           <p className="text-xs text-amber-600 mt-0.5">Proposé : {fmt(r.prix_propose)}</p>
                         )}
@@ -174,23 +174,23 @@ export default function BaremePrixTable({
                     ) : ecart ? (
                       <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Écart validé</span>
                     ) : (
-                      <span className="text-xs text-gray-400">Hérité {heritage}</span>
+                      <span className="text-xs text-ink-400">Hérité {heritage}</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1.5">
-                      {busy && <Loader2 size={14} className="animate-spin text-gray-400" />}
+                      {busy && <Loader2 size={14} className="animate-spin text-ink-400" />}
                       {enAttente && canValidate && (
                         <button onClick={() => onValider(r)} disabled={busy}
-                          className="text-xs font-medium text-[#087F3E] border border-[#087F3E]/40 px-2 py-1 rounded-lg hover:bg-[#E8F5EE]">Valider</button>
+                          className="text-xs font-medium text-[green-600] border border-[green-600]/40 px-2 py-1 rounded-lg hover:bg-[green-50]">Valider</button>
                       )}
                       {!disabled && !isEditing && (
                         <button onClick={() => startEdit(r)} title="Modifier le prix" disabled={busy}
-                          className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-[#087F3E] hover:bg-gray-50"><Pencil size={13} /></button>
+                          className="p-1.5 rounded-lg border border-line-200 text-ink-500 hover:text-[green-600] hover:bg-surface-50"><Pencil size={13} /></button>
                       )}
                       {!disabled && ecart && !isEditing && (
                         <button onClick={() => onReset(r)} title={`Rétablir le prix hérité ${heritage}`} disabled={busy}
-                          className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-red-600 hover:bg-red-50"><RotateCcw size={13} /></button>
+                          className="p-1.5 rounded-lg border border-line-200 text-ink-500 hover:text-red-600 hover:bg-red-50"><RotateCcw size={13} /></button>
                       )}
                     </div>
                   </td>

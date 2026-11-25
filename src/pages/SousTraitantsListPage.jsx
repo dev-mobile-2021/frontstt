@@ -17,17 +17,17 @@ const fmtNum = n => new Intl.NumberFormat("fr-FR").format(Math.round(n ?? 0));
 
 /** Nombre cliquable : mène à la liste des contrats du sous-traitant (désactivé si 0). */
 function CountLink({ n, to }) {
-  if (!n) return <span className="text-gray-300">0</span>;
+  if (!n) return <span className="text-ink-300">0</span>;
   return (
     <Link to={to} onClick={e => e.stopPropagation()}
-      className="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-full bg-[#E8F5EE] text-[#065A2C] text-sm font-semibold hover:bg-[#d4edd9] transition-colors">
+      className="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-full bg-[green-50] text-[green-700] text-sm font-semibold hover:bg-[#d4edd9] transition-colors">
       {n}
     </Link>
   );
 }
 
 const Montant = ({ v, strong, color }) => (
-  <span className={`font-mono text-sm whitespace-nowrap ${strong ? "font-semibold" : ""} ${color ?? (v ? "text-gray-800" : "text-gray-300")}`}>{fmtNum(v)}</span>
+  <span className={`font-mono text-sm whitespace-nowrap ${strong ? "font-semibold" : ""} ${color ?? (v ? "text-ink-900" : "text-ink-300")}`}>{fmtNum(v)}</span>
 );
 
 const STATUTS = [
@@ -81,7 +81,7 @@ export default function SousTraitantsListPage() {
         action={
           <button
             onClick={openModal}
-            className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors"
+            className="inline-flex items-center gap-2 bg-[green-600] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[green-700] transition-colors"
           >
             <Plus size={16} /> Ajouter depuis Sage X3
           </button>
@@ -91,27 +91,27 @@ export default function SousTraitantsListPage() {
       {/* Synchronisation Sage X3 */}
       <SyncBadge module="soustraitants" label="Sous-traitants" invalidate={["soustraitants", "soustraitant"]} canSync={peutSynchro} />
 
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
+      <div className="bg-white rounded-xl border border-line-200 p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[220px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
             <input
               placeholder="Raison sociale, NINEA, ville…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+              className="w-full pl-9 pr-4 py-2 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
             />
           </div>
           <SearchSelect
             value={statut}
             onChange={e => { setStatut(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30"
+            className="border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30"
           >
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </SearchSelect>
           {hasFilter && (
-            <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
+            <button onClick={reset} className="flex items-center gap-1 text-sm text-ink-500 hover:text-[green-600] transition-colors">
               <RotateCcw size={13} /> Réinitialiser
             </button>
           )}
@@ -121,14 +121,14 @@ export default function SousTraitantsListPage() {
       {isLoading ? (
         <SkeletonTable rows={8} cols={10} />
       ) : isError ? (
-        <div className="text-center py-16 text-red-500 text-sm bg-white rounded-xl border border-gray-200">
+        <div className="text-center py-16 text-red-500 text-sm bg-white rounded-xl border border-line-200">
           Impossible de charger les sous-traitants.
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
+        <div className="bg-white rounded-xl border border-line-200 overflow-x-auto">
           <table className="w-full min-w-[1300px]">
             <thead className="sticky top-0 z-10">
-              <tr className="bg-gray-50 border-b border-gray-200">
+              <tr className="bg-surface-50 border-b border-line-200">
                 {[
                   ["Raison sociale", "left"], ["Statut", "left"],
                   ["Contrat", "center"], ["Contrat en cours", "center"],
@@ -136,24 +136,24 @@ export default function SousTraitantsListPage() {
                   ["Montant réalisé", "right"], ["Montant à réaliser", "right"],
                   ["Nets à payer", "right"], ["Payés", "right"], ["Restant à payer", "right"],
                 ].map(([h, align]) => (
-                  <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap text-${align}`}>{h}</th>
+                  <th key={h} className={`px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide whitespace-nowrap text-${align}`}>{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-line-100">
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="text-center py-14 text-gray-400 text-sm">
-                    <Users size={28} className="mx-auto mb-2 text-gray-300" />
+                  <td colSpan={10} className="text-center py-14 text-ink-400 text-sm">
+                    <Users size={28} className="mx-auto mb-2 text-ink-300" />
                     Aucun sous-traitant correspondant
                   </td>
                 </tr>
               ) : rows.map(stt => (
                 <tr key={stt.id} onClick={() => navigate(`/sous-traitants/${stt.id}`)}
-                  className="hover:bg-gray-50 even:bg-gray-50/40 group cursor-pointer transition-colors">
+                  className="hover:bg-surface-50 even:bg-surface-50/40 group cursor-pointer transition-colors">
                   <td className="px-4 py-3.5 max-w-[220px]">
-                    <p className="text-sm font-semibold text-gray-900 truncate">{stt.raison_sociale}</p>
-                    {stt.forme_juridique && <p className="text-xs text-gray-400">{stt.forme_juridique}</p>}
+                    <p className="text-sm font-semibold text-ink-900 truncate">{stt.raison_sociale}</p>
+                    {stt.forme_juridique && <p className="text-xs text-ink-400">{stt.forme_juridique}</p>}
                   </td>
                   <td className="px-4 py-3.5"><StatusBadge statut={stt.statut} /></td>
                   <td className="px-4 py-3.5 text-center"><CountLink n={stt.nb_contrats} to={`/contrats?soustraitant_id=${stt.id}&statut=actif,termine,cloture`} /></td>
@@ -162,7 +162,7 @@ export default function SousTraitantsListPage() {
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.montant_realise} /></td>
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.montant_a_realiser} color={stt.montant_a_realiser ? "text-blue-700" : undefined} /></td>
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.nets_a_payer} /></td>
-                  <td className="px-4 py-3.5 text-right"><Montant v={stt.payes} color={stt.payes ? "text-[#065A2C]" : undefined} /></td>
+                  <td className="px-4 py-3.5 text-right"><Montant v={stt.payes} color={stt.payes ? "text-[green-700]" : undefined} /></td>
                   <td className="px-4 py-3.5 text-right"><Montant v={stt.restant_a_payer} color={stt.restant_a_payer ? "text-amber-700" : undefined} /></td>
                 </tr>
               ))}

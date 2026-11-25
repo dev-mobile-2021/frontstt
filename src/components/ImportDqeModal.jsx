@@ -372,16 +372,16 @@ export default function ImportDqeModal({ contratId, onImported, onClose }) {
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
-            <FileSpreadsheet size={17} className="text-[#087F3E]" />
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line-100">
+          <h2 className="text-base font-bold text-ink-900 flex items-center gap-2">
+            <FileSpreadsheet size={17} className="text-[green-600]" />
             Importer un DQE
           </h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"><X size={18} /></button>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-line-100 text-ink-400"><X size={18} /></button>
         </div>
 
         <div className="p-6 space-y-4">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-ink-500">
             Le fichier doit suivre le modèle DQE : en-têtes <strong>N° Item</strong>, <strong>Désignation</strong>, <strong>U</strong>, <strong>PU</strong>, <strong>Qté Marché</strong>, <strong>Montant</strong> (colonnes C à H), code <strong>RA</strong> et désignation RA en colonnes A et B, postes numérotés <strong>100</strong>, <strong>200</strong>… et lignes <strong>100-1</strong>, <strong>100-2</strong>… Téléchargez le modèle pour voir un exemple.
           </p>
 
@@ -392,20 +392,20 @@ export default function ImportDqeModal({ contratId, onImported, onClose }) {
             <button
               onClick={() => inputRef.current?.click()}
               disabled={etat === "parsing" || etat === "importing"}
-              className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60"
+              className="inline-flex items-center gap-2 bg-[green-600] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[green-700] disabled:opacity-60"
             >
               {etat === "parsing" ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
               {fichier ? "Choisir un autre fichier" : "Choisir un fichier (CSV, Excel)"}
             </button>
             <button
               onClick={telechargerModele}
-              className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50"
+              className="inline-flex items-center gap-2 border border-line-200 text-ink-700 px-3 py-2 rounded-lg text-sm hover:bg-surface-50"
             >
               <Download size={14} /> Modèle
             </button>
           </div>
 
-          {fichier && <p className="text-xs text-gray-400">{fichier.name}</p>}
+          {fichier && <p className="text-xs text-ink-400">{fichier.name}</p>}
 
           {/* Erreur */}
           {erreur && (
@@ -425,17 +425,17 @@ export default function ImportDqeModal({ contratId, onImported, onClose }) {
           {/* Aperçu */}
           {parsed && !done && (
             <div className="space-y-3">
-              <div className="bg-gray-50 rounded-xl border border-gray-200 p-4 space-y-2">
-                <p className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Aperçu</p>
+              <div className="bg-surface-50 rounded-xl border border-line-200 p-4 space-y-2">
+                <p className="text-xs font-semibold text-ink-700 uppercase tracking-wide">Aperçu</p>
                 <div className="flex gap-6 text-sm">
-                  <div><span className="font-bold text-[#087F3E]">{parsed.stats.rubriques}</span> <span className="text-gray-500">rubrique{parsed.stats.rubriques > 1 ? "s" : ""}</span></div>
-                  <div><span className="font-bold text-[#087F3E]">{parsed.stats.postes}</span> <span className="text-gray-500">poste{parsed.stats.postes > 1 ? "s" : ""}</span></div>
-                  <div><span className="font-bold text-[#087F3E]">{parsed.stats.lignes}</span> <span className="text-gray-500">ligne{parsed.stats.lignes > 1 ? "s" : ""}</span></div>
+                  <div><span className="font-bold text-[green-600]">{parsed.stats.rubriques}</span> <span className="text-ink-500">rubrique{parsed.stats.rubriques > 1 ? "s" : ""}</span></div>
+                  <div><span className="font-bold text-[green-600]">{parsed.stats.postes}</span> <span className="text-ink-500">poste{parsed.stats.postes > 1 ? "s" : ""}</span></div>
+                  <div><span className="font-bold text-[green-600]">{parsed.stats.lignes}</span> <span className="text-ink-500">ligne{parsed.stats.lignes > 1 ? "s" : ""}</span></div>
                 </div>
                 {parsed.stats.orphelines > 0 && (
                   <p className="text-xs text-amber-600">{parsed.stats.orphelines} ligne(s) sans poste parent ignorée(s).</p>
                 )}
-                <ul className="text-xs text-gray-600 space-y-0.5 mt-1">
+                <ul className="text-xs text-ink-500 space-y-0.5 mt-1">
                   {parsed.rubriques.map((r, i) => (
                     <li key={i}><span className="font-medium">{r.code ? `[${r.code}] ` : ""}{r.designation}</span> — {r.postes.length} poste{r.postes.length > 1 ? "s" : ""}, {r.postes.reduce((s, p) => s + p.lignes.length, 0)} ligne{r.postes.reduce((s, p) => s + p.lignes.length, 0) > 1 ? "s" : ""}</li>
                   ))}
@@ -445,11 +445,11 @@ export default function ImportDqeModal({ contratId, onImported, onClose }) {
               {/* Option remplacer / ajouter */}
               <div className="flex gap-4 text-sm">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" checked={remplacer} onChange={() => setRemplacer(true)} className="accent-[#087F3E]" />
+                  <input type="radio" checked={remplacer} onChange={() => setRemplacer(true)} className="accent-[green-600]" />
                   <span>Remplacer le DQE existant</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" checked={!remplacer} onChange={() => setRemplacer(false)} className="accent-[#087F3E]" />
+                  <input type="radio" checked={!remplacer} onChange={() => setRemplacer(false)} className="accent-[green-600]" />
                   <span>Ajouter au DQE existant</span>
                 </label>
               </div>
@@ -458,15 +458,15 @@ export default function ImportDqeModal({ contratId, onImported, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-100">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-line-100">
+          <button onClick={onClose} className="px-4 py-2 text-sm text-ink-500 border border-line-200 rounded-lg hover:bg-surface-50">
             {done ? "Fermer" : "Annuler"}
           </button>
           {!done && (
             <button
               onClick={importer}
               disabled={!parsed || etat === "importing"}
-              className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50"
+              className="inline-flex items-center gap-2 bg-[green-600] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[green-700] disabled:opacity-50"
             >
               {etat === "importing" && <Loader2 size={14} className="animate-spin" />}
               Importer {parsed ? `(${parsed.stats.lignes} ligne${parsed.stats.lignes > 1 ? "s" : ""})` : ""}

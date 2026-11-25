@@ -20,9 +20,9 @@ export default function ArticleX3Select({ value, onSelect, classe = "", placehol
 
   if (value) {
     return (
-      <div className="flex items-center justify-between gap-2 border border-gray-300 rounded-lg px-3 py-2 text-sm bg-gray-50">
-        <span className="font-mono text-xs text-gray-700">{value}</span>
-        <button type="button" onClick={() => { onSelect(null); setSearch(""); }} className="text-gray-400 hover:text-red-500" title="Retirer l'article">
+      <div className="flex items-center justify-between gap-2 border border-line-200 rounded-lg px-3 py-2 text-sm bg-surface-50">
+        <span className="font-mono text-xs text-ink-700">{value}</span>
+        <button type="button" onClick={() => { onSelect(null); setSearch(""); }} className="text-ink-400 hover:text-red-500" title="Retirer l'article">
           <X size={14} />
         </button>
       </div>
@@ -31,28 +31,28 @@ export default function ArticleX3Select({ value, onSelect, classe = "", placehol
 
   return (
     <div className="relative">
-      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
       <input
         value={search}
         onChange={(e) => { setSearch(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder={placeholder}
-        className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+        className="w-full pl-9 pr-3 py-2 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
       />
       {open && debounced.length >= 2 && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
-          {isLoading && <p className="px-3 py-2 text-xs text-gray-400">Recherche…</p>}
-          {!isLoading && articles.length === 0 && <p className="px-3 py-2 text-xs text-gray-400">Aucun article. Synchronisez les articles X3.</p>}
+        <div className="absolute z-10 mt-1 w-full bg-white border border-line-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+          {isLoading && <p className="px-3 py-2 text-xs text-ink-400">Recherche…</p>}
+          {!isLoading && articles.length === 0 && <p className="px-3 py-2 text-xs text-ink-400">Aucun article. Synchronisez les articles X3.</p>}
           {articles.map((a) => (
             <button
               type="button"
               key={a.code_article}
               onClick={() => { onSelect(a); setOpen(false); setSearch(""); }}
-              className="w-full text-left px-3 py-2 hover:bg-[#E8F5EE] border-b border-gray-50 last:border-0"
+              className="w-full text-left px-3 py-2 hover:bg-green-50 border-b border-line-100 last:border-0"
             >
-              <span className="font-mono text-xs text-gray-500">{a.code_article}</span>
-              <span className="block text-sm text-gray-800">{a.designation}</span>
-              <span className="text-xs text-gray-400">{a.classe} · {a.unite}</span>
+              <span className="font-mono text-xs text-ink-500">{a.code_article}</span>
+              <span className="block text-sm text-ink-900">{a.designation}</span>
+              <span className="text-xs text-ink-400">{a.classe} · {a.unite}</span>
             </button>
           ))}
         </div>

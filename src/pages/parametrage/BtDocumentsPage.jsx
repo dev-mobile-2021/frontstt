@@ -72,15 +72,15 @@ export default function BtDocumentsPage() {
     <div className="space-y-6">
       <PageHeader title="BT Documents" subtitle="Bons de Transfert — upload et gestion des fichiers PDF" />
 
-      <div className="bg-white rounded-xl border border-gray-200 px-6 pb-8">
+      <div className="bg-white rounded-xl border border-line-200 px-6 pb-8">
         <div className="py-6 space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-gray-800">Bons de Transfert</h3>
-              <p className="text-xs text-gray-400 mt-0.5">Format attendu : <span className="font-mono bg-gray-100 px-1 rounded">CODE_CHANTIER_CODE_SOUSTRAITANT_YYYY-MM.pdf</span></p>
+              <h3 className="font-semibold text-ink-900">Bons de Transfert</h3>
+              <p className="text-xs text-ink-400 mt-0.5">Format attendu : <span className="font-mono bg-line-100 px-1 rounded">CODE_CHANTIER_CODE_SOUSTRAITANT_YYYY-MM.pdf</span></p>
             </div>
             <button onClick={() => inputRef.current?.click()} disabled={uploading}
-              className="inline-flex items-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+              className="inline-flex items-center gap-2 bg-[green-600] hover:bg-[green-700] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
               {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
               Uploader des BT
             </button>
@@ -93,37 +93,37 @@ export default function BtDocumentsPage() {
             onDragOver={e => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={e => { e.preventDefault(); setDragOver(false); handleUpload(e.dataTransfer.files); }}
-            className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${dragOver ? "border-[#087F3E] bg-green-50" : "border-gray-200 bg-gray-50"}`}>
-            <FolderOpen size={28} className={`mx-auto mb-2 ${dragOver ? "text-[#087F3E]" : "text-gray-300"}`} />
-            <p className="text-sm text-gray-400">Glissez-déposez vos fichiers PDF ici</p>
+            className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${dragOver ? "border-[green-600] bg-green-50" : "border-line-200 bg-surface-50"}`}>
+            <FolderOpen size={28} className={`mx-auto mb-2 ${dragOver ? "text-[green-600]" : "text-ink-300"}`} />
+            <p className="text-sm text-ink-400">Glissez-déposez vos fichiers PDF ici</p>
           </div>
 
-          {isLoading && <p className="text-sm text-gray-400 text-center py-4">Chargement…</p>}
+          {isLoading && <p className="text-sm text-ink-400 text-center py-4">Chargement…</p>}
 
           {!isLoading && (data ?? []).length === 0 && (
-            <p className="text-sm text-gray-400 text-center py-6">Aucun bon de transfert uploadé.</p>
+            <p className="text-sm text-ink-400 text-center py-6">Aucun bon de transfert uploadé.</p>
           )}
 
           {Object.entries(grouped).map(([key, docs]) => (
             <div key={key}>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{key}</p>
+              <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-2">{key}</p>
               <div className="space-y-2">
                 {docs.sort((a,b) => a.periode.localeCompare(b.periode)).map(doc => (
-                  <div key={doc.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 hover:border-gray-300 transition-colors">
+                  <div key={doc.id} className="flex items-center justify-between bg-white border border-line-200 rounded-lg px-4 py-3 hover:border-line-200 transition-colors">
                     <div className="flex items-center gap-3">
                       <FileText size={16} className="text-red-400 shrink-0" />
                       <div>
-                        <p className="text-sm font-medium text-gray-700">{doc.filename}</p>
-                        <p className="text-xs text-gray-400">{doc.periode}</p>
+                        <p className="text-sm font-medium text-ink-700">{doc.filename}</p>
+                        <p className="text-xs text-ink-400">{doc.periode}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <button onClick={() => handleDownload(doc)}
-                        className="p-1.5 text-gray-400 hover:text-[#087F3E] hover:bg-green-50 rounded-lg transition-colors">
+                        className="p-1.5 text-ink-400 hover:text-[green-600] hover:bg-green-50 rounded-lg transition-colors">
                         <Download size={14} />
                       </button>
                       <button onClick={() => deleteMut.mutate(doc.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        className="p-1.5 text-ink-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                         <Trash2 size={14} />
                       </button>
                     </div>

@@ -18,12 +18,12 @@ import SearchSelect from "../components/SearchSelect";
 
 const FORMES = ["SARL", "SA", "SUARL", "GIE", "Entreprise individuelle", "Autre"];
 
-const INPUT = "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]";
+const INPUT = "w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]";
 
 function Field({ label, required, error, children }) {
   return (
     <div className="space-y-1">
-      <label className="text-xs font-medium text-gray-600 block">
+      <label className="text-xs font-medium text-ink-500 block">
         {label}{required && <span className="text-red-500 ml-0.5">*</span>}
       </label>
       {children}
@@ -35,14 +35,14 @@ function Field({ label, required, error, children }) {
 function InfoRow({ icon: Icon, label, value, href, always }) {
   if (!value && !always) return null;
   return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-gray-100 last:border-0">
-      <Icon size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
+    <div className="flex items-start gap-3 py-2.5 border-b border-line-100 last:border-0">
+      <Icon size={14} className="text-ink-400 mt-0.5 flex-shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-400">{label}</p>
+        <p className="text-xs text-ink-400">{label}</p>
         {href ? (
-          <a href={href} className="text-sm text-[#087F3E] hover:underline mt-0.5 block truncate">{value}</a>
+          <a href={href} className="text-sm text-[green-600] hover:underline mt-0.5 block truncate">{value}</a>
         ) : (
-          <p className={`text-sm mt-0.5 ${value ? "text-gray-800 font-medium" : "text-gray-300"}`}>{value || "—"}</p>
+          <p className={`text-sm mt-0.5 ${value ? "text-ink-900 font-medium" : "text-ink-300"}`}>{value || "—"}</p>
         )}
       </div>
     </div>
@@ -52,7 +52,7 @@ function InfoRow({ icon: Icon, label, value, href, always }) {
 function Section({ title, children }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{title}</h3>
+      <h3 className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-3">{title}</h3>
       {children}
     </div>
   );
@@ -63,26 +63,26 @@ function TabContrats({ sttId }) {
   const { data, isLoading } = useContratsPaginated({ soustraitant_id: Number(sttId), count: 100 });
   const contrats = data?.data ?? [];
   return (
-    <div className="border border-gray-200 rounded-xl overflow-x-auto">
+    <div className="border border-line-200 rounded-xl overflow-x-auto">
       <table className="w-full text-sm min-w-[700px]">
         <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
+          <tr className="bg-surface-50 border-b border-line-200">
             {["Code", "Chantier", "Objet", "Montant HT", "Statut", ""].map(h => (
-              <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${h === "Montant HT" ? "text-right" : "text-left"}`}>{h}</th>
+              <th key={h} className={`px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide ${h === "Montant HT" ? "text-right" : "text-left"}`}>{h}</th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
-          {isLoading && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">Chargement…</td></tr>}
-          {!isLoading && contrats.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400 text-sm">Aucun contrat pour ce sous-traitant</td></tr>}
+        <tbody className="divide-y divide-line-100">
+          {isLoading && <tr><td colSpan={6} className="px-4 py-8 text-center text-ink-400 text-sm">Chargement…</td></tr>}
+          {!isLoading && contrats.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-ink-400 text-sm">Aucun contrat pour ce sous-traitant</td></tr>}
           {contrats.map(c => (
-            <tr key={c.id} onClick={() => navigate(`/contrats/${c.id}`)} className="hover:bg-gray-50 cursor-pointer">
-              <td className="px-4 py-3 font-mono text-xs text-[#087F3E] font-semibold">{c.code}</td>
-              <td className="px-4 py-3 text-sm text-gray-700">{c.chantier?.designation ?? "—"}</td>
-              <td className="px-4 py-3"><span className="block max-w-[180px] truncate text-sm text-gray-600">{c.objet ?? "—"}</span></td>
+            <tr key={c.id} onClick={() => navigate(`/contrats/${c.id}`)} className="hover:bg-surface-50 cursor-pointer">
+              <td className="px-4 py-3 font-mono text-xs text-[green-600] font-semibold">{c.code}</td>
+              <td className="px-4 py-3 text-sm text-ink-700">{c.chantier?.designation ?? "—"}</td>
+              <td className="px-4 py-3"><span className="block max-w-[180px] truncate text-sm text-ink-500">{c.objet ?? "—"}</span></td>
               <td className="px-4 py-3 text-right"><MoneyDisplay amount={c.montant_actuel ?? 0} variant="small" className="font-semibold" /></td>
               <td className="px-4 py-3"><StatusBadge statut={c.statut} /></td>
-              <td className="px-4 py-3"><ExternalLink size={14} className="text-gray-400 hover:text-[#087F3E]" /></td>
+              <td className="px-4 py-3"><ExternalLink size={14} className="text-ink-400 hover:text-[green-600]" /></td>
             </tr>
           ))}
         </tbody>
@@ -103,23 +103,23 @@ function TabDecomptes({ sttId }) {
     return new Date(ec.periode_debut).toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
   };
   return (
-    <div className="border border-gray-200 rounded-xl overflow-x-auto">
+    <div className="border border-line-200 rounded-xl overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
+          <tr className="bg-surface-50 border-b border-line-200">
             {["Code", "Contrat", "Période", "Net HT", "Statut"].map(h => (
-              <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${h === "Net HT" ? "text-right" : "text-left"}`}>{h}</th>
+              <th key={h} className={`px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide ${h === "Net HT" ? "text-right" : "text-left"}`}>{h}</th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
-          {isLoading && <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-sm">Chargement…</td></tr>}
-          {!isLoading && decomptes.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400 text-sm">Aucun décompte pour ce sous-traitant</td></tr>}
+        <tbody className="divide-y divide-line-100">
+          {isLoading && <tr><td colSpan={5} className="px-4 py-8 text-center text-ink-400 text-sm">Chargement…</td></tr>}
+          {!isLoading && decomptes.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-ink-400 text-sm">Aucun décompte pour ce sous-traitant</td></tr>}
           {decomptes.map(d => (
-            <tr key={d.id} onClick={() => navigate(`/decomptes/${d.id}`)} className="hover:bg-gray-50 cursor-pointer">
-              <td className="px-4 py-3 font-mono text-xs text-[#087F3E] font-semibold">{d.code}</td>
-              <td className="px-4 py-3 text-sm text-gray-700 font-mono">{d.contrat?.code ?? "—"}</td>
-              <td className="px-4 py-3 text-sm text-gray-500">{fmtPeriode(d)}</td>
+            <tr key={d.id} onClick={() => navigate(`/decomptes/${d.id}`)} className="hover:bg-surface-50 cursor-pointer">
+              <td className="px-4 py-3 font-mono text-xs text-[green-600] font-semibold">{d.code}</td>
+              <td className="px-4 py-3 text-sm text-ink-700 font-mono">{d.contrat?.code ?? "—"}</td>
+              <td className="px-4 py-3 text-sm text-ink-500">{fmtPeriode(d)}</td>
               <td className="px-4 py-3 text-right"><MoneyDisplay amount={d.montant_ht ?? 0} variant="small" className="font-semibold" /></td>
               <td className="px-4 py-3"><StatusBadge statut={d.statut} /></td>
             </tr>
@@ -245,9 +245,9 @@ export default function SousTraitantFormPage() {
 
   if (isError || !stt) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-24 text-ink-400">
         <p className="text-lg font-semibold">Sous-traitant introuvable</p>
-        <button onClick={() => navigate("/sous-traitants")} className="mt-4 text-sm text-[#087F3E] hover:underline">
+        <button onClick={() => navigate("/sous-traitants")} className="mt-4 text-sm text-[green-600] hover:underline">
           Retour à la liste
         </button>
       </div>
@@ -265,13 +265,13 @@ export default function SousTraitantFormPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-ink-500">
         <button onClick={() => navigate("/sous-traitants")}
-          className="hover:text-[#087F3E] flex items-center gap-1 transition-colors">
+          className="hover:text-[green-600] flex items-center gap-1 transition-colors">
           <ArrowLeft size={14} /> Sous-traitants
         </button>
         <ChevronRight size={14} />
-        <span className="text-gray-900 font-medium truncate max-w-[300px]">{stt.raison_sociale}</span>
+        <span className="text-ink-900 font-medium truncate max-w-[300px]">{stt.raison_sociale}</span>
       </div>
 
       <PageHeader
@@ -312,15 +312,15 @@ export default function SousTraitantFormPage() {
 
       {/* Code badge */}
       {stt.code && (
-        <div className="inline-flex items-center gap-2 text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-gray-500 font-mono">
+        <div className="inline-flex items-center gap-2 text-xs bg-surface-50 border border-line-200 rounded-lg px-3 py-1.5 text-ink-500 font-mono">
           <Hash size={12} /> {stt.code}
-          {stt.code_x3 && <><span className="text-gray-300">·</span> X3 : {stt.code_x3}</>}
+          {stt.code_x3 && <><span className="text-ink-300">·</span> X3 : {stt.code_x3}</>}
         </div>
       )}
 
       {/* Tabs + content */}
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200 px-5 pt-2">
+      <div className="bg-white rounded-xl border border-line-200 overflow-hidden">
+        <div className="border-b border-line-200 px-5 pt-2">
           <Tabs items={tabs} activeTab={activeTab} onChange={t => { setActiveTab(t); if (isEditing) setIsEditing(false); }} />
         </div>
 
@@ -344,8 +344,8 @@ export default function SousTraitantFormPage() {
                 <InfoRow icon={Mail}   label="Email"    value={stt.email}    href={stt.email ? `mailto:${stt.email}` : null} />
                 <InfoRow icon={Globe}  label="Site web" value={stt.site_web} href={stt.site_web} />
 
-                <div className="pt-3 mt-3 border-t border-gray-100 space-y-3">
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Données Sage X3</p>
+                <div className="pt-3 mt-3 border-t border-line-100 space-y-3">
+                  <p className="text-[10px] font-semibold text-ink-400 uppercase tracking-wide">Données Sage X3</p>
                   <InfoRow icon={Hash} label="Abrégé"       value={stt.abrege} always />
                   <InfoRow icon={Hash} label="Devise"       value={stt.devise} always />
                   <InfoRow icon={Hash} label="NINEA (X3)"   value={stt.ninea_x3} always />
@@ -354,8 +354,8 @@ export default function SousTraitantFormPage() {
 
               <Section title="Représentant / Contact principal">
                 {!stt.contact_nom && !stt.contact_telephone && !stt.contact_email ? (
-                  <p className="text-xs text-gray-400 italic">Aucun contact renseigné —
-                    <button onClick={() => setIsEditing(true)} className="ml-1 text-[#087F3E] hover:underline">Ajouter</button>
+                  <p className="text-xs text-ink-400 italic">Aucun contact renseigné —
+                    <button onClick={() => setIsEditing(true)} className="ml-1 text-[green-600] hover:underline">Ajouter</button>
                   </p>
                 ) : (
                   <>
@@ -374,13 +374,13 @@ export default function SousTraitantFormPage() {
 
               {/* Identité */}
               <div className="space-y-4">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Identité légale</p>
+                <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide">Identité légale</p>
                 <Field label="Raison sociale" required error={errors.raison_sociale}>
                   <input value={form.raison_sociale ?? ""} onChange={e => set("raison_sociale", e.target.value)}
                     readOnly={!!stt.code_x3} title={stt.code_x3 ? "Géré par Sage X3" : undefined}
-                    className={`${INPUT} ${errors.raison_sociale ? "border-red-400" : ""} ${stt.code_x3 ? "bg-gray-50 text-gray-500 cursor-not-allowed" : ""}`}
+                    className={`${INPUT} ${errors.raison_sociale ? "border-red-400" : ""} ${stt.code_x3 ? "bg-surface-50 text-ink-500 cursor-not-allowed" : ""}`}
                     placeholder="Nom de l'entreprise" />
-                  {stt.code_x3 && <p className="text-[11px] text-gray-400 mt-1">Géré par Sage X3 — non modifiable ici.</p>}
+                  {stt.code_x3 && <p className="text-[11px] text-ink-400 mt-1">Géré par Sage X3 — non modifiable ici.</p>}
                 </Field>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Forme juridique">
@@ -406,13 +406,13 @@ export default function SousTraitantFormPage() {
                 </div>
                 <Field label="Code X3">
                   <input value={form.code_x3 ?? ""} readOnly
-                    className={`${INPUT} bg-gray-50 text-gray-500 cursor-not-allowed`} placeholder="Code X3" />
+                    className={`${INPUT} bg-surface-50 text-ink-500 cursor-not-allowed`} placeholder="Code X3" />
                 </Field>
               </div>
 
               {/* Coordonnées */}
               <div className="space-y-4">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Coordonnées</p>
+                <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide">Coordonnées</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Field label="Ville">
                     <input value={form.ville ?? ""} onChange={e => set("ville", e.target.value)} className={INPUT} placeholder="Dakar…" />
@@ -438,7 +438,7 @@ export default function SousTraitantFormPage() {
 
               {/* Représentant */}
               <div className="space-y-4">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Représentant / Contact principal</p>
+                <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide">Représentant / Contact principal</p>
                 <Field label="Nom du représentant">
                   <input value={form.contact_nom ?? ""} onChange={e => set("contact_nom", e.target.value)}
                     className={INPUT} placeholder="Prénom Nom, titre…" />
@@ -456,13 +456,13 @@ export default function SousTraitantFormPage() {
               </div>
 
               {/* Actions */}
-              <div className="flex gap-3 pt-2 border-t border-gray-100">
+              <div className="flex gap-3 pt-2 border-t border-line-100">
                 <button type="button" onClick={() => setIsEditing(false)}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-line-200 text-sm text-ink-500 hover:bg-surface-50 transition-colors">
                   <X size={14} /> Annuler
                 </button>
                 <button onClick={handleSave} disabled={saveMut.isPending}
-                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[#087F3E] text-white text-sm font-medium hover:bg-[#065A2C] transition-colors disabled:opacity-60">
+                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-[green-600] text-white text-sm font-medium hover:bg-[green-700] transition-colors disabled:opacity-60">
                   {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   Enregistrer
                 </button>
@@ -484,19 +484,19 @@ export default function SousTraitantFormPage() {
                 <ShieldOff size={18} className="text-red-500" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900">Blacklister le sous-traitant</p>
-                <p className="text-xs text-gray-500">{stt.raison_sociale}</p>
+                <p className="font-semibold text-ink-900">Blacklister le sous-traitant</p>
+                <p className="text-xs text-ink-500">{stt.raison_sociale}</p>
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600">Motif <span className="text-red-500">*</span></label>
+              <label className="text-xs font-medium text-ink-500">Motif <span className="text-red-500">*</span></label>
               <textarea value={motifBl} onChange={e => setMotifBl(e.target.value)} rows={3}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 resize-none"
+                className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300 focus:border-red-400 resize-none"
                 placeholder="Raison du blacklistage…" />
             </div>
             <div className="flex gap-3 pt-1">
               <button onClick={() => { setConfirmBlacklist(false); setMotifBl(""); }}
-                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                className="flex-1 py-2 rounded-lg border border-line-200 text-sm text-ink-500 hover:bg-surface-50 transition-colors">
                 Annuler
               </button>
               <button onClick={handleBlacklist} disabled={!motifBl.trim() || statutMut.isPending}
@@ -518,14 +518,14 @@ export default function SousTraitantFormPage() {
                 <Trash2 size={18} className="text-red-500" />
               </div>
               <div>
-                <p className="font-semibold text-gray-900">Supprimer le sous-traitant</p>
-                <p className="text-xs text-gray-500">{stt.raison_sociale}</p>
+                <p className="font-semibold text-ink-900">Supprimer le sous-traitant</p>
+                <p className="text-xs text-ink-500">{stt.raison_sociale}</p>
               </div>
             </div>
-            <p className="text-sm text-gray-600">Cette action est irréversible. Le sous-traitant sera supprimé définitivement (soft-delete).</p>
+            <p className="text-sm text-ink-500">Cette action est irréversible. Le sous-traitant sera supprimé définitivement (soft-delete).</p>
             <div className="flex gap-3 pt-1">
               <button onClick={() => setConfirmDelete(false)}
-                className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                className="flex-1 py-2 rounded-lg border border-line-200 text-sm text-ink-500 hover:bg-surface-50 transition-colors">
                 Annuler
               </button>
               <button onClick={handleDelete} disabled={deleteMut.isPending}

@@ -5,7 +5,7 @@ import { getMontantActualise } from "../utils/contratMetrics";
 import { computeNetHT } from "../utils/decompteCalcul";
 import { getBCDuContrat, getSoldeDisponible } from "../utils/bcMetrics";
 
-function ProgressBar({ value, max, colorClass = "bg-[#087F3E]" }) {
+function ProgressBar({ value, max, colorClass = "bg-[green-600]" }) {
   const rawPct = max > 0 ? Math.round((value / max) * 100) : 0;
   const pct = Math.min(rawPct, 100);
   const overflow = rawPct > 100;
@@ -15,13 +15,13 @@ function ProgressBar({ value, max, colorClass = "bg-[#087F3E]" }) {
 
   return (
     <div className="mt-1">
-      <div className="flex justify-between text-xs text-gray-500 mb-1">
+      <div className="flex justify-between text-xs text-ink-500 mb-1">
         <span className={overflow ? "text-red-600 font-bold" : ""}>{rawPct}% réalisé</span>
-        <span className={overflow ? "text-red-600 font-bold" : danger ? "text-red-600 font-semibold" : warn ? "text-amber-600 font-semibold" : "text-gray-400"}>
+        <span className={overflow ? "text-red-600 font-bold" : danger ? "text-red-600 font-semibold" : warn ? "text-amber-600 font-semibold" : "text-ink-400"}>
           {overflow ? "⛔ Dépassement" : danger ? "⚠ Proche du solde" : warn ? "Surveiller" : ""}
         </span>
       </div>
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+      <div className="h-2 bg-line-100 rounded-full overflow-hidden">
         <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
       </div>
     </div>
@@ -35,15 +35,15 @@ function StackedBar({ paye, approuve, enValidation, max }) {
   const pctEnVal = Math.min(100 - pctPaye - pctApprouve, Math.round((enValidation / max) * 100));
   return (
     <div className="mt-2">
-      <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
-        {pctPaye > 0 && <div className="h-full bg-[#087F3E]" style={{ width: `${pctPaye}%` }} />}
+      <div className="h-2 bg-line-100 rounded-full overflow-hidden flex">
+        {pctPaye > 0 && <div className="h-full bg-[green-600]" style={{ width: `${pctPaye}%` }} />}
         {pctApprouve > 0 && <div className="h-full bg-blue-500" style={{ width: `${pctApprouve}%` }} />}
         {pctEnVal > 0 && <div className="h-full bg-amber-400" style={{ width: `${pctEnVal}%` }} />}
       </div>
       <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-        <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-[#087F3E] inline-block" />Payé</span>
-        <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />Approuvé</span>
-        <span className="flex items-center gap-1 text-[10px] text-gray-500"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />En validation</span>
+        <span className="flex items-center gap-1 text-[10px] text-ink-500"><span className="w-2 h-2 rounded-full bg-[green-600] inline-block" />Payé</span>
+        <span className="flex items-center gap-1 text-[10px] text-ink-500"><span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />Approuvé</span>
+        <span className="flex items-center gap-1 text-[10px] text-ink-500"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />En validation</span>
       </div>
     </div>
   );
@@ -51,8 +51,8 @@ function StackedBar({ paye, approuve, enValidation, max }) {
 
 function StatRow({ label, children }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-      <span className="text-xs text-gray-500">{label}</span>
+    <div className="flex items-center justify-between py-2 border-b border-line-100 last:border-0">
+      <span className="text-xs text-ink-500">{label}</span>
       <div className="text-right">{children}</div>
     </div>
   );
@@ -89,8 +89,8 @@ export default function SituationChantierWidget({ contrat, decomptes: allDecompt
   return (
     <div className="space-y-4">
       {/* ── Bloc Marché ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+      <div className="bg-white rounded-xl border border-line-200 p-4">
+        <h4 className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
           <Layers size={13} />
           Marché
         </h4>
@@ -107,14 +107,14 @@ export default function SituationChantierWidget({ contrat, decomptes: allDecompt
             </StatRow>
           ))}
           <StatRow label="Montant actualisé">
-            <MoneyDisplay amount={montantHT} variant="small" className="font-bold text-gray-900" />
+            <MoneyDisplay amount={montantHT} variant="small" className="font-bold text-ink-900" />
           </StatRow>
           {bc && (
             <StatRow label="Solde du bon de commande">
               <MoneyDisplay
                 amount={soldeBC}
                 variant="small"
-                className={`font-semibold ${hasProvisional && provisionalNetHT > soldeBC ? "text-red-600" : "text-gray-700"}`}
+                className={`font-semibold ${hasProvisional && provisionalNetHT > soldeBC ? "text-red-600" : "text-ink-700"}`}
               />
             </StatRow>
           )}
@@ -122,8 +122,8 @@ export default function SituationChantierWidget({ contrat, decomptes: allDecompt
       </div>
 
       {/* ── Situation financière ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+      <div className="bg-white rounded-xl border border-line-200 p-4">
+        <h4 className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
           <TrendingUp size={13} />
           Situation financière
           {hasProvisional && (
@@ -136,7 +136,7 @@ export default function SituationChantierWidget({ contrat, decomptes: allDecompt
 
         <div className="mb-3">
           <div className="flex items-end justify-between mb-0.5">
-            <span className="text-xs text-gray-500">Montant HT actualisé</span>
+            <span className="text-xs text-ink-500">Montant HT actualisé</span>
             <MoneyDisplay amount={montantHT} variant="small" />
           </div>
           <ProgressBar value={totalPaye + totalApprouve + (hasProvisional ? provisionalNetHT : 0)} max={montantHT} />
@@ -145,7 +145,7 @@ export default function SituationChantierWidget({ contrat, decomptes: allDecompt
 
         <div className="space-y-0">
           <StatRow label="Payé">
-            <MoneyDisplay amount={totalPaye} className="text-[#087F3E] text-xs font-bold" />
+            <MoneyDisplay amount={totalPaye} className="text-[green-600] text-xs font-bold" />
           </StatRow>
           <StatRow label="Approuvé (à payer)">
             <MoneyDisplay amount={totalApprouve} className="text-blue-600 text-xs font-semibold" />
@@ -161,7 +161,7 @@ export default function SituationChantierWidget({ contrat, decomptes: allDecompt
             </StatRow>
           )}
           <StatRow label={hasProvisional ? "Solde restant prévisionnel" : "Solde restant"}>
-            <MoneyDisplay amount={resteAPayer - (hasProvisional ? provisionalNetHT : 0)} className={`text-xs font-semibold ${hasProvisional ? "text-amber-700" : "text-gray-700"}`} />
+            <MoneyDisplay amount={resteAPayer - (hasProvisional ? provisionalNetHT : 0)} className={`text-xs font-semibold ${hasProvisional ? "text-amber-700" : "text-ink-700"}`} />
           </StatRow>
         </div>
         {hasProvisional && (
@@ -170,35 +170,35 @@ export default function SituationChantierWidget({ contrat, decomptes: allDecompt
       </div>
 
       {/* ── Retenues ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Retenues cumulées</h4>
+      <div className="bg-white rounded-xl border border-line-200 p-4">
+        <h4 className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-3">Retenues cumulées</h4>
         <div className="space-y-0">
           <StatRow label={`Retenue de garantie (${contrat.tauxRG}%)`}>
             <div className="text-right">
               <MoneyDisplay amount={totalRG} variant="small" />
-              {totalRG > 0 && <p className="text-[10px] text-gray-400 mt-0.5">{rgRate}% du marché actualisé</p>}
+              {totalRG > 0 && <p className="text-[10px] text-ink-400 mt-0.5">{rgRate}% du marché actualisé</p>}
             </div>
           </StatRow>
           <StatRow label={`Avance démarrage (${contrat.tauxAD}%)`}>
             <div className="text-right">
               <MoneyDisplay amount={totalAD} variant="small" />
-              {totalAD > 0 && <p className="text-[10px] text-gray-400 mt-0.5">{adRate}% du marché actualisé</p>}
+              {totalAD > 0 && <p className="text-[10px] text-ink-400 mt-0.5">{adRate}% du marché actualisé</p>}
             </div>
           </StatRow>
         </div>
       </div>
 
       {/* ── Décomptes ── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4">
-        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Décomptes</h4>
+      <div className="bg-white rounded-xl border border-line-200 p-4">
+        <h4 className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-3">Décomptes</h4>
         <div className="space-y-0">
           <StatRow label="Total">
-            <span className="text-sm font-bold text-gray-800">{decomptes.length}</span>
+            <span className="text-sm font-bold text-ink-900">{decomptes.length}</span>
           </StatRow>
           <StatRow label="Payés">
             <div className="flex items-center gap-1">
-              <CheckCircle2 size={12} className="text-[#087F3E]" />
-              <span className="text-xs font-semibold text-[#087F3E]">{decomptes.filter(d => d.statut === "Payé").length}</span>
+              <CheckCircle2 size={12} className="text-[green-600]" />
+              <span className="text-xs font-semibold text-[green-600]">{decomptes.filter(d => d.statut === "Payé").length}</span>
             </div>
           </StatRow>
           <StatRow label="En validation">
@@ -208,11 +208,11 @@ export default function SituationChantierWidget({ contrat, decomptes: allDecompt
                 <span className="text-xs font-semibold text-amber-600">{enValidation}</span>
               </div>
             ) : (
-              <span className="text-xs text-gray-400">—</span>
+              <span className="text-xs text-ink-400">—</span>
             )}
           </StatRow>
           <StatRow label="Brouillons">
-            <span className="text-xs text-gray-500">{decomptes.filter(d => d.statut === "Brouillon").length}</span>
+            <span className="text-xs text-ink-500">{decomptes.filter(d => d.statut === "Brouillon").length}</span>
           </StatRow>
         </div>
       </div>

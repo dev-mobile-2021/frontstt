@@ -54,9 +54,9 @@ export default function NoteDevisDetailPage() {
 
   if (isLoading) return <div className="space-y-4">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>;
   if (isError || !note) return (
-    <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+    <div className="flex flex-col items-center justify-center py-24 text-ink-400">
       <p className="text-lg font-semibold">Note de débit introuvable</p>
-      <button onClick={() => navigate("/notes-debit")} className="mt-4 text-sm text-[#087F3E] hover:underline">Retour</button>
+      <button onClick={() => navigate("/notes-debit")} className="mt-4 text-sm text-[green-600] hover:underline">Retour</button>
     </div>
   );
 
@@ -70,7 +70,7 @@ export default function NoteDevisDetailPage() {
 
   return (
     <div className="space-y-6">
-      <button onClick={() => navigate("/notes-debit")} className="flex items-center gap-1 text-[13px] text-gray-500 hover:text-gray-900 transition-colors">
+      <button onClick={() => navigate("/notes-debit")} className="flex items-center gap-1 text-[13px] text-ink-500 hover:text-ink-900 transition-colors">
         <ArrowLeft size={14} /> Retour aux notes de débit
       </button>
 
@@ -80,11 +80,11 @@ export default function NoteDevisDetailPage() {
         action={
           <div className="flex items-center gap-2">
             <button onClick={() => setConfirmDelete(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-500 hover:bg-red-50 hover:border-red-300 hover:text-red-500 transition-colors">
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm border border-line-200 rounded-lg text-ink-500 hover:bg-red-50 hover:border-red-300 hover:text-red-500 transition-colors">
               <Trash2 size={13} /> Supprimer
             </button>
             <button onClick={handlePdf}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[green-600] text-white rounded-lg text-sm font-medium hover:bg-[green-700] transition-colors">
               <FileDown size={14} /> Télécharger la note de débit
             </button>
           </div>
@@ -92,36 +92,36 @@ export default function NoteDevisDetailPage() {
       />
 
       {/* Infos */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
+      <div className="bg-white border border-line-200 rounded-xl p-5">
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div>
-            <p className="text-[11px] text-gray-400 uppercase tracking-wide mb-1">Période</p>
-            <p className="text-sm font-semibold text-gray-800">{fmtDate(note.periode_debut)} → {fmtDate(note.periode_fin)}</p>
+            <p className="text-[11px] text-ink-400 uppercase tracking-wide mb-1">Période</p>
+            <p className="text-sm font-semibold text-ink-900">{fmtDate(note.periode_debut)} → {fmtDate(note.periode_fin)}</p>
           </div>
           <div>
-            <p className="text-[11px] text-gray-400 uppercase tracking-wide mb-1">État de cession</p>
-            <Link to={`/etats-cession/${note.etat_cession_id}`} className="text-sm font-semibold text-[#087F3E] hover:underline">
+            <p className="text-[11px] text-ink-400 uppercase tracking-wide mb-1">État de cession</p>
+            <Link to={`/etats-cession/${note.etat_cession_id}`} className="text-sm font-semibold text-[green-600] hover:underline">
               {ec?.code ?? "—"}
             </Link>
           </div>
           <div>
-            <p className="text-[11px] text-gray-400 uppercase tracking-wide mb-1">Chantier</p>
-            <p className="text-sm text-gray-700">{chantier?.designation ?? "—"}</p>
+            <p className="text-[11px] text-ink-400 uppercase tracking-wide mb-1">Chantier</p>
+            <p className="text-sm text-ink-700">{chantier?.designation ?? "—"}</p>
           </div>
           <div>
-            <p className="text-[11px] text-gray-400 uppercase tracking-wide mb-1">Sous-traitant</p>
-            <p className="text-sm text-gray-700">{stt?.raison_sociale ?? "—"}</p>
+            <p className="text-[11px] text-ink-400 uppercase tracking-wide mb-1">Sous-traitant</p>
+            <p className="text-sm text-ink-700">{stt?.raison_sociale ?? "—"}</p>
           </div>
-          <div className="bg-[#E8F5EE] rounded-xl px-4 py-3">
-            <p className="text-[11px] text-[#087F3E]/70 uppercase tracking-wide mb-1">Montant HT</p>
-            <p className="text-xl font-bold text-[#087F3E] tabular-nums">{fmtNum(Math.round(note.montant_ht))} FCFA</p>
+          <div className="bg-[green-50] rounded-xl px-4 py-3">
+            <p className="text-[11px] text-[green-600]/70 uppercase tracking-wide mb-1">Montant HT</p>
+            <p className="text-xl font-bold text-[green-600] tabular-nums">{fmtNum(Math.round(note.montant_ht))} FCFA</p>
           </div>
         </div>
       </div>
 
       {/* Tableau des lignes */}
       <div className="space-y-1">
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Lignes</p>
+        <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Lignes</p>
         <Table>
           <TableHeader>
             <TableRow>
@@ -139,10 +139,10 @@ export default function NoteDevisDetailPage() {
               <TableEmpty colSpan={7} icon={FileText} message="Aucune ligne." />
             ) : lignes.map((l, i) => (
               <TableRow key={i}>
-                <TableCell><span className="text-[10px] font-semibold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{l.poste ?? "—"}</span></TableCell>
-                <TableCell><span className="font-mono text-xs text-gray-600">{l.code_article ?? "—"}</span></TableCell>
+                <TableCell><span className="text-[10px] font-semibold bg-line-100 text-ink-500 px-1.5 py-0.5 rounded">{l.poste ?? "—"}</span></TableCell>
+                <TableCell><span className="font-mono text-xs text-ink-500">{l.code_article ?? "—"}</span></TableCell>
                 <TableCell className="whitespace-normal max-w-[260px] text-xs">{l.designation}</TableCell>
-                <TableCell className="text-xs text-gray-500">{l.unite ?? "—"}</TableCell>
+                <TableCell className="text-xs text-ink-500">{l.unite ?? "—"}</TableCell>
                 <TableCell className="text-right tabular-nums text-xs">{fmtNum(l.quantite)}</TableCell>
                 <TableCell className="text-right tabular-nums text-xs">{fmtNum(l.prix_unitaire)} FCFA</TableCell>
                 <TableCell className="text-right tabular-nums text-xs font-semibold">{fmtNum(Math.round(l.montant))} FCFA</TableCell>
@@ -151,9 +151,9 @@ export default function NoteDevisDetailPage() {
           </TableBody>
         </Table>
         {lignes.length > 0 && (
-          <div className="flex justify-between items-center px-3 py-2.5 border-t border-gray-100">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total HT</span>
-            <span className="font-bold text-[#087F3E]">{fmtNum(Math.round(note.montant_ht))} FCFA</span>
+          <div className="flex justify-between items-center px-3 py-2.5 border-t border-line-100">
+            <span className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Total HT</span>
+            <span className="font-bold text-[green-600]">{fmtNum(Math.round(note.montant_ht))} FCFA</span>
           </div>
         )}
       </div>
@@ -162,10 +162,10 @@ export default function NoteDevisDetailPage() {
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 space-y-4">
-            <h3 className="text-base font-semibold text-gray-900">Supprimer {note.code} ?</h3>
-            <p className="text-sm text-gray-500">Cette action est irréversible.</p>
+            <h3 className="text-base font-semibold text-ink-900">Supprimer {note.code} ?</h3>
+            <p className="text-sm text-ink-500">Cette action est irréversible.</p>
             <div className="flex justify-end gap-3 pt-1">
-              <button onClick={() => setConfirmDelete(false)} className="px-4 py-2 text-sm text-gray-600">Annuler</button>
+              <button onClick={() => setConfirmDelete(false)} className="px-4 py-2 text-sm text-ink-500">Annuler</button>
               <button onClick={handleDelete} disabled={deleteMut.isPending}
                 className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white disabled:opacity-60">
                 {deleteMut.isPending && <Loader2 size={14} className="animate-spin" />} Supprimer

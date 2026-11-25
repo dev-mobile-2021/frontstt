@@ -2,7 +2,7 @@ import { CheckCircle, AlertCircle, Info, MessageSquare, XCircle } from "lucide-r
 
 const TYPE_STYLES = {
   commentaire: { bg: "bg-blue-50", border: "border-blue-100", icon: MessageSquare, iconColor: "text-blue-500" },
-  validation:  { bg: "bg-[#E8F5EE]", border: "border-[#c6e8d4]", icon: CheckCircle, iconColor: "text-[#087F3E]" },
+  validation:  { bg: "bg-[green-50]", border: "border-[#c6e8d4]", icon: CheckCircle, iconColor: "text-[green-600]" },
   rejet:       { bg: "bg-red-50", border: "border-red-100", icon: XCircle, iconColor: "text-red-500" },
   action:      { bg: "bg-amber-50", border: "border-amber-100", icon: Info, iconColor: "text-amber-500" },
 };
@@ -26,16 +26,16 @@ export default function ChatBubble({ message }) {
     <div className={`rounded-xl border p-4 ${style.bg} ${style.border}`}>
       <div className="flex items-start gap-3">
         {/* Avatar */}
-        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[#087F3E] text-white text-xs font-bold flex items-center justify-center">
+        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-[green-600] text-white text-xs font-bold flex items-center justify-center">
           {auteur?.initiales || initials(auteur?.nom || "??")}
         </div>
 
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <span className="text-sm font-semibold text-gray-900">{auteur?.nom}</span>
+            <span className="text-sm font-semibold text-ink-900">{auteur?.nom}</span>
             {auteur?.role && (
-              <span className="text-xs bg-white border border-gray-200 text-gray-600 px-1.5 py-0.5 rounded">
+              <span className="text-xs bg-white border border-line-200 text-ink-500 px-1.5 py-0.5 rounded">
                 {auteur.role}
               </span>
             )}
@@ -43,10 +43,10 @@ export default function ChatBubble({ message }) {
           </div>
 
           {/* Message */}
-          <p className="text-sm text-gray-800 leading-relaxed">{texte}</p>
+          <p className="text-sm text-ink-900 leading-relaxed">{texte}</p>
 
           {/* Date */}
-          <p className="text-xs text-gray-400 mt-1.5">{formatDate(date)}</p>
+          <p className="text-xs text-ink-400 mt-1.5">{formatDate(date)}</p>
         </div>
       </div>
     </div>

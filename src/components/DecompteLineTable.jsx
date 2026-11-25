@@ -15,19 +15,19 @@ const parse = (s) => parseInt((s || "").replace(/\D/g, "")) || 0;
 // ── Cell atoms ────────────────────────────────────────────────────
 function CellReadonly({ value, muted }) {
   return (
-    <span className={`tabular-nums ${muted ? "text-gray-400" : "text-gray-600"}`}>
+    <span className={`tabular-nums ${muted ? "text-ink-400" : "text-ink-500"}`}>
       {value ? num(value) : "—"}
     </span>
   );
 }
 function CellDerived({ value }) {
-  return <span className="italic text-gray-500 tabular-nums">{num(value)}</span>;
+  return <span className="italic text-ink-500 tabular-nums">{num(value)}</span>;
 }
 function CellAuto({ value }) {
   return (
     <div className="flex items-center justify-end gap-1.5">
       <span className="text-xs text-amber-500 select-none">⚡</span>
-      <span className="italic text-gray-500 tabular-nums">{num(value)}</span>
+      <span className="italic text-ink-500 tabular-nums">{num(value)}</span>
     </div>
   );
 }
@@ -49,7 +49,7 @@ function CellInput({ value, onChange, isTravauxA = false, warn = false }) {
         onChange={e => onChange(e.target.value)}
         className={`w-40 text-right rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 bg-[#EBF5FF] tabular-nums
           ${warn ? "border border-amber-400 text-amber-700 focus:ring-amber-300" : "border border-blue-300"}
-          ${isTravauxA ? "font-semibold text-[#087F3E]" : ""}`}
+          ${isTravauxA ? "font-semibold text-[green-600]" : ""}`}
       />
     </div>
   );
@@ -244,26 +244,26 @@ export default function DecompteLineTable({
   const isCumul = saisieMode === "cumulative";
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200">
+    <div className="overflow-x-auto rounded-xl border border-line-200">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
-            <th className="text-left px-4 py-3 font-semibold text-gray-700 w-16">Poste</th>
-            <th className="text-left px-4 py-3 font-semibold text-gray-700">Désignation</th>
-            <th className="text-right px-4 py-3 font-semibold text-gray-500 whitespace-nowrap text-xs">
+          <tr className="bg-surface-50 border-b border-line-200">
+            <th className="text-left px-4 py-3 font-semibold text-ink-700 w-16">Poste</th>
+            <th className="text-left px-4 py-3 font-semibold text-ink-700">Désignation</th>
+            <th className="text-right px-4 py-3 font-semibold text-ink-500 whitespace-nowrap text-xs">
               Cumul(M-1)
             </th>
-            <th className="text-right px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">
+            <th className="text-right px-4 py-3 font-semibold text-ink-700 whitespace-nowrap">
               Mois(M)
               {!isCumul && editable && <span className="ml-1 text-blue-400 text-xs font-normal">↑ saisie</span>}
             </th>
-            <th className="text-right px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">
+            <th className="text-right px-4 py-3 font-semibold text-ink-700 whitespace-nowrap">
               Cumul(M)
               {isCumul && editable && <span className="ml-1 text-blue-400 text-xs font-normal">↑ saisie</span>}
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody className="divide-y divide-line-100">
           {rows.map((row) => {
             const isInfoSigne  = row.signe === "info";
             const isAutoPaste  = AUTO_FROM_A.has(row.codePoste);
@@ -284,9 +284,9 @@ export default function DecompteLineTable({
                 : attachementInfo?.statut === "Aucun" ? "bg-[#F0FAF4]"
                 : attachementInfo ? "bg-blue-50/60"
                 : "bg-[#F0FAF4]")
-              : isAutoPaste ? "bg-gray-50/80"
+              : isAutoPaste ? "bg-surface-50/80"
               : isCession   ? "bg-green-50/40"
-              : "hover:bg-gray-50";
+              : "hover:bg-surface-50";
 
             // ── Special: poste C ─────────────────────────────────
             if (isC) {
@@ -310,10 +310,10 @@ export default function DecompteLineTable({
                         onClick={() => setCExpanded(v => !v)}
                         className="flex items-center gap-2 text-left hover:text-blue-600 transition-colors"
                       >
-                        {cExpanded ? <ChevronDown size={13} className="text-gray-400" /> : <ChevronRight size={13} className="text-gray-400" />}
+                        {cExpanded ? <ChevronDown size={13} className="text-ink-400" /> : <ChevronRight size={13} className="text-ink-400" />}
                         <span className="text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100 font-medium">info</span>
-                        <span className="text-gray-500 italic">{row.poste}</span>
-                        <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{tauxAD}%</span>
+                        <span className="text-ink-500 italic">{row.poste}</span>
+                        <span className="text-xs bg-line-100 text-ink-500 px-1.5 py-0.5 rounded">{tauxAD}%</span>
                       </button>
                     </td>
                     {/* Cumul M-1: remboursement cumulé M-1 */}
@@ -351,19 +351,19 @@ export default function DecompteLineTable({
                         { label: "Restant à rembourser",  v1: null,  vm: null,  vc: restant, kind: "auto" },
                       ].map((sub, i) => (
                         <tr key={i} className="bg-blue-50/10 border-blue-100">
-                          <td className="px-4 py-1 text-gray-300 text-xs text-right">└</td>
-                          <td className="px-4 py-1 text-xs text-gray-400 pl-6">{sub.label}</td>
-                          <td className="px-4 py-1 text-right text-xs text-gray-400 tabular-nums">{sub.v1 != null ? num(sub.v1) : "—"}</td>
+                          <td className="px-4 py-1 text-ink-300 text-xs text-right">└</td>
+                          <td className="px-4 py-1 text-xs text-ink-400 pl-6">{sub.label}</td>
+                          <td className="px-4 py-1 text-right text-xs text-ink-400 tabular-nums">{sub.v1 != null ? num(sub.v1) : "—"}</td>
                           <td className="px-4 py-1 text-right text-xs tabular-nums">
                             {sub.vm != null ? (
-                              <span className={sub.kind === "remb" ? "text-red-600 font-medium" : "text-gray-400"}>
+                              <span className={sub.kind === "remb" ? "text-red-600 font-medium" : "text-ink-400"}>
                                 {num(sub.vm)}
                               </span>
                             ) : "—"}
                           </td>
                           <td className="px-4 py-1 text-right text-xs tabular-nums">
                             {sub.vc != null ? (
-                              <span className={sub.kind === "auto" ? "text-amber-500" : sub.kind === "remb" ? "text-red-600 font-medium" : "text-gray-400"}>
+                              <span className={sub.kind === "auto" ? "text-amber-500" : sub.kind === "remb" ? "text-red-600 font-medium" : "text-ink-400"}>
                                 {sub.kind === "auto" && <span className="mr-1">⚡</span>}
                                 {num(sub.vc)}
                               </span>
@@ -386,10 +386,10 @@ export default function DecompteLineTable({
                   <td className="px-4 py-2.5">
                     <span className={`inline-flex items-center justify-center w-7 h-7 rounded-md text-xs font-bold ${
                       isInfoSigne  ? "bg-blue-50 text-blue-600 border border-blue-100" :
-                      isTravaux   ? "bg-[#087F3E] text-white" :
+                      isTravaux   ? "bg-[green-600] text-white" :
                       isCession   ? "bg-green-100 text-green-700 border border-green-200" :
                       isAutoPaste ? "bg-amber-50 text-amber-600 border border-amber-100" :
-                      "bg-gray-100 text-gray-600 border border-gray-200"
+                      "bg-line-100 text-ink-500 border border-line-200"
                     }`}>{row.codePoste}</span>
                   </td>
 
@@ -399,20 +399,20 @@ export default function DecompteLineTable({
                       {isInfoSigne ? (
                         <span className="text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100 font-medium">info</span>
                       ) : (
-                        <span className={`font-medium w-4 text-center text-xs ${row.signe === "+" ? "text-[#087F3E]" : row.signe === "-" ? "text-red-600" : "text-gray-400"}`}>
+                        <span className={`font-medium w-4 text-center text-xs ${row.signe === "+" ? "text-[green-600]" : row.signe === "-" ? "text-red-600" : "text-ink-400"}`}>
                           {row.signe === "+" ? "+" : row.signe === "-" ? "−" : ""}
                         </span>
                       )}
-                      <span className={isTravaux ? "font-semibold text-gray-900" : isInfoSigne ? "text-gray-500 italic" : "text-gray-700"}>
+                      <span className={isTravaux ? "font-semibold text-ink-900" : isInfoSigne ? "text-ink-500 italic" : "text-ink-700"}>
                         {row.poste}
                       </span>
-                      {isRG && <span className="text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">{tauxRG}%</span>}
+                      {isRG && <span className="text-xs bg-line-100 text-ink-500 px-1.5 py-0.5 rounded">{tauxRG}%</span>}
                       {isCession && <span className="text-xs bg-green-100 text-green-700 border border-green-200 px-1.5 py-0.5 rounded font-medium">état de cession</span>}
                       {row.enAttente && <span className="text-xs bg-amber-50 text-amber-600 border border-amber-100 px-1.5 py-0.5 rounded font-medium">En attente</span>}
                       {(isAPassif || (isTravaux && attachementInfo?.statut === "Aucun")) && <AttachementBadge info={attachementInfo} />}
                     </div>
                     {isAPassif && attachementInfo?.statut !== "Validé" && (attachementInfo?.montantFinal || 0) > 0 && (
-                      <p className="text-xs text-gray-400 italic mt-0.5">Montant provisoire — en attente de validation du dossier</p>
+                      <p className="text-xs text-ink-400 italic mt-0.5">Montant provisoire — en attente de validation du dossier</p>
                     )}
                   </td>
 
@@ -438,14 +438,14 @@ export default function DecompteLineTable({
                     ) : isCumul ? (
                       <CellDerived value={row.mensuel} />
                     ) : (
-                      <span className="tabular-nums text-gray-600">{num(row.mensuel)}</span>
+                      <span className="tabular-nums text-ink-500">{num(row.mensuel)}</span>
                     )}
                   </td>
 
                   {/* Cumul(M) */}
                   <td className="px-4 py-2.5 text-right">
                     {isAPassif ? (
-                      <span className="tabular-nums text-gray-700 font-medium">{num(row.cumulM)}</span>
+                      <span className="tabular-nums text-ink-700 font-medium">{num(row.cumulM)}</span>
                     ) : isCumul && editable && isSaisie ? (
                       <CellInput
                         value={row.cumulM}
@@ -460,7 +460,7 @@ export default function DecompteLineTable({
                     ) : !isCumul ? (
                       <CellDerived value={row.cumulM} />
                     ) : (
-                      <span className="tabular-nums text-gray-700 font-medium">{num(row.cumulM)}</span>
+                      <span className="tabular-nums text-ink-700 font-medium">{num(row.cumulM)}</span>
                     )}
                   </td>
                 </tr>
@@ -470,11 +470,11 @@ export default function DecompteLineTable({
                   const ri = remboursementInfo[row.codePoste];
                   const overrun = (ri.cumulAnterieur + row.mensuel) > (ri.totalCede + (ri.cumulCedeAnterieur || 0));
                   return (
-                    <tr className="bg-gray-50/60">
-                      <td colSpan={5} className="px-4 py-2 text-xs text-gray-500">
+                    <tr className="bg-surface-50/60">
+                      <td colSpan={5} className="px-4 py-2 text-xs text-ink-500">
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                          <span>Montant cédé sur la période : <strong className="text-gray-700">{num(ri.totalCede)} FCFA</strong></span>
-                          <span>Déjà remboursé (décomptes antérieurs) : <strong className="text-gray-700">{num(ri.cumulAnterieur)} FCFA</strong></span>
+                          <span>Montant cédé sur la période : <strong className="text-ink-700">{num(ri.totalCede)} FCFA</strong></span>
+                          <span>Déjà remboursé (décomptes antérieurs) : <strong className="text-ink-700">{num(ri.cumulAnterieur)} FCFA</strong></span>
                           {overrun && (
                             <span className="flex items-center gap-1 text-amber-700 font-medium">
                               <AlertTriangle size={12} /> Le cumul dépasse le total cédé — vérifiez la saisie.
@@ -492,17 +492,17 @@ export default function DecompteLineTable({
 
         {/* ── Totaux ── */}
         <tfoot>
-          <tr className="border-t-2 border-[#065A2C] bg-[#0A9A4C]">
+          <tr className="border-t-2 border-[green-700] bg-[#0A9A4C]">
             <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-white/90">NET À RÉGLER (HT)</td>
             <td colSpan={2} className="px-4 py-3 text-right">
               <span className="text-xl font-bold text-white tabular-nums">{num(net)} FCFA</span>
             </td>
           </tr>
-          <tr className="bg-[#087F3E]">
+          <tr className="bg-[green-600]">
             <td colSpan={3} className="px-4 py-2 text-sm text-white/70 font-medium">TVA ({tauxTVA}%)</td>
             <td colSpan={2} className="px-4 py-2 text-right text-white/80 tabular-nums font-semibold">{num(tva)} FCFA</td>
           </tr>
-          <tr className="bg-[#065A2C]">
+          <tr className="bg-[green-700]">
             <td colSpan={3} className="px-4 py-3.5 text-base font-bold text-white tracking-wide">NET TTC À PAYER</td>
             <td colSpan={2} className="px-4 py-3.5 text-right">
               <span className="text-2xl font-bold text-white tabular-nums">{num(ttc)} FCFA</span>

@@ -80,34 +80,34 @@ function PortalSearchSelect({ value, onChange, options, placeholder, labelKey = 
   return (
     <>
       <button ref={btnRef} type="button" onClick={handleOpen}
-        className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
-        <span className={selected ? "text-gray-800 truncate" : "text-gray-400"}>
+        className="w-full flex items-center justify-between border border-line-200 rounded-lg px-3 py-2 text-sm bg-white hover:border-[green-600] focus:outline-none focus:ring-2 focus:ring-[green-600] transition-colors">
+        <span className={selected ? "text-ink-900 truncate" : "text-ink-400"}>
           {selected ? selected[labelKey] : placeholder}
         </span>
-        <ChevronDown size={14} className={`ml-2 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={14} className={`ml-2 shrink-0 text-ink-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && rect && createPortal(
         <div id="portal-search-select"
           style={{ position: "fixed", top: rect.bottom + 4, left: rect.left, width: rect.width, zIndex: 9999 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
-          <div className="p-2 border-b border-gray-100">
-            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
-              <Search size={13} className="text-gray-400 shrink-0" />
+          className="bg-white border border-line-200 rounded-xl shadow-xl overflow-hidden">
+          <div className="p-2 border-b border-line-100">
+            <div className="flex items-center gap-2 bg-surface-50 rounded-lg px-3 py-1.5">
+              <Search size={13} className="text-ink-400 shrink-0" />
               <input autoFocus type="text" placeholder="Rechercher..." value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400" />
-              {search && <button onClick={() => setSearch("")}><X size={12} className="text-gray-400 hover:text-gray-600" /></button>}
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-ink-400" />
+              {search && <button onClick={() => setSearch("")}><X size={12} className="text-ink-400 hover:text-ink-500" /></button>}
             </div>
           </div>
           <ul className="max-h-52 overflow-y-auto py-1">
             <li onClick={() => pick("")}
-              className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] ${!value ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-500"}`}>
+              className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[green-600] ${!value ? "bg-green-50 text-[green-600] font-medium" : "text-ink-500"}`}>
               {placeholder}
             </li>
-            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-gray-400 text-center">Aucun résultat</li>}
+            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-ink-400 text-center">Aucun résultat</li>}
             {filtered.map(o => (
               <li key={o[valueKey]} onClick={() => pick(String(o[valueKey]))}
-                className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] transition-colors ${String(value) === String(o[valueKey]) ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
+                className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[green-600] transition-colors ${String(value) === String(o[valueKey]) ? "bg-green-50 text-[green-600] font-medium" : "text-ink-700"}`}>
                 {o[labelKey]}
               </li>
             ))}
@@ -291,49 +291,49 @@ export default function ConsultationEtatsCessionPage() {
   if (!checkingPerm && !peutConsulter) {
     return (
       <div className="flex flex-col items-center justify-center py-32 text-center">
-        <p className="text-gray-500 text-sm">Vous n'avez pas accès à cette page.</p>
+        <p className="text-ink-500 text-sm">Vous n'avez pas accès à cette page.</p>
       </div>
     );
   }
 
   const hasActiveFilters = Object.values(applied).some(v => !!v);
-  const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none";
+  const inputCls = "w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[green-600] outline-none";
 
   function SortIcon({ col }) {
-    if (sortCol !== col) return <ChevronDown size={12} className="text-gray-300" />;
-    return sortDir === "asc" ? <ChevronUp size={12} className="text-[#087F3E]" /> : <ChevronDown size={12} className="text-[#087F3E]" />;
+    if (sortCol !== col) return <ChevronDown size={12} className="text-ink-300" />;
+    return sortDir === "asc" ? <ChevronUp size={12} className="text-[green-600]" /> : <ChevronDown size={12} className="text-[green-600]" />;
   }
 
   return (
     <div className="space-y-4">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <button onClick={() => navigate("/etats-cession")} className="hover:text-[#087F3E] flex items-center gap-1">
+      <div className="flex items-center gap-2 text-sm text-ink-500">
+        <button onClick={() => navigate("/etats-cession")} className="hover:text-[green-600] flex items-center gap-1">
           <ArrowLeft size={14} /> États de cession
         </button>
         <ChevronRight size={14} />
-        <span className="text-gray-900 font-medium">Consultation articles</span>
+        <span className="text-ink-900 font-medium">Consultation articles</span>
       </div>
 
       {/* Entête + Filtres intégrés */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-line-200 rounded-2xl overflow-hidden">
         {/* Titre + actions */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line-100">
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Consultation Articles</h1>
-            <p className="text-xs text-gray-400 mt-0.5">Récap matériaux — lignes de cession</p>
+            <h1 className="text-lg font-bold text-ink-900">Consultation Articles</h1>
+            <p className="text-xs text-ink-400 mt-0.5">Récap matériaux — lignes de cession</p>
           </div>
           <div className="flex gap-2">
             <button onClick={handlePdfRecap} disabled={pdfLoading || lignes.length === 0}
-              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 disabled:opacity-40">
+              className="inline-flex items-center gap-1.5 border border-line-200 text-ink-500 px-3 py-1.5 rounded-lg text-xs hover:bg-surface-50 disabled:opacity-40">
               <FileDown size={13} /> PDF Récap / Période
             </button>
             <button onClick={handlePdfRecapArticles} disabled={pdfLoading || lignes.length === 0}
-              className="inline-flex items-center gap-1.5 border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 disabled:opacity-40">
+              className="inline-flex items-center gap-1.5 border border-line-200 text-ink-500 px-3 py-1.5 rounded-lg text-xs hover:bg-surface-50 disabled:opacity-40">
               <FileDown size={13} /> PDF Cumul
             </button>
             <button onClick={handleExcel} disabled={lignes.length === 0}
-              className="inline-flex items-center gap-1.5 bg-[#087F3E] text-white px-3 py-1.5 rounded-lg text-xs hover:bg-[#065A2C] disabled:opacity-40">
+              className="inline-flex items-center gap-1.5 bg-[green-600] text-white px-3 py-1.5 rounded-lg text-xs hover:bg-[green-700] disabled:opacity-40">
               <FileSpreadsheet size={13} /> Excel Récap / Période
             </button>
             <button onClick={handleExcelCumul} disabled={lignes.length === 0}
@@ -348,7 +348,7 @@ export default function ConsultationEtatsCessionPage() {
           {/* Ligne 1 : Chantier + STT + Statut + Poste */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="md:col-span-1 space-y-1">
-              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Chantier</label>
+              <label className="text-[10px] text-ink-400 font-semibold uppercase tracking-wide">Chantier</label>
               <PortalSearchSelect
                 value={filters.chantier_id}
                 onChange={v => set("chantier_id", v)}
@@ -358,7 +358,7 @@ export default function ConsultationEtatsCessionPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Sous-traitant</label>
+              <label className="text-[10px] text-ink-400 font-semibold uppercase tracking-wide">Sous-traitant</label>
               <PortalSearchSelect
                 value={filters.soustraitant_id}
                 onChange={v => set("soustraitant_id", v)}
@@ -368,13 +368,13 @@ export default function ConsultationEtatsCessionPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Statut EC</label>
+              <label className="text-[10px] text-ink-400 font-semibold uppercase tracking-wide">Statut EC</label>
               <select value={filters.statut_ec} onChange={e => set("statut_ec", e.target.value)} className={inputCls}>
                 {STATUT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Poste</label>
+              <label className="text-[10px] text-ink-400 font-semibold uppercase tracking-wide">Poste</label>
               <select value={filters.poste} onChange={e => set("poste", e.target.value)} className={inputCls}>
                 {POSTE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
@@ -384,26 +384,26 @@ export default function ConsultationEtatsCessionPage() {
           {/* Ligne 2 : Période + Code article + Réf BS + Réf BR + Appliquer */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3 items-end">
             <div className="space-y-1">
-              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Période début</label>
+              <label className="text-[10px] text-ink-400 font-semibold uppercase tracking-wide">Période début</label>
               <input type="date" value={filters.date_debut} onChange={e => set("date_debut", e.target.value)} className={inputCls} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Période fin</label>
+              <label className="text-[10px] text-ink-400 font-semibold uppercase tracking-wide">Période fin</label>
               <input type="date" value={filters.date_fin} min={filters.date_debut || undefined} onChange={e => set("date_fin", e.target.value)} className={inputCls} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] text-gray-400 font-semibold uppercase tracking-wide">Code article</label>
+              <label className="text-[10px] text-ink-400 font-semibold uppercase tracking-wide">Code article</label>
               <input value={filters.code_article} onChange={e => set("code_article", e.target.value)}
                 placeholder="ex. FBNOR6" className={inputCls} />
             </div>
             <div className="flex gap-2">
               {hasActiveFilters && (
-                <button onClick={handleReset} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 border border-gray-200 px-2.5 py-2 rounded-lg">
+                <button onClick={handleReset} className="flex items-center gap-1 text-xs text-ink-400 hover:text-red-500 border border-line-200 px-2.5 py-2 rounded-lg">
                   <X size={12} /> Reset
                 </button>
               )}
               <button onClick={handleApply}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                className="flex-1 inline-flex items-center justify-center gap-1.5 bg-[green-600] hover:bg-[green-700] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                 <Search size={13} /> Appliquer
               </button>
             </div>
@@ -414,13 +414,13 @@ export default function ConsultationEtatsCessionPage() {
             <div className="flex flex-wrap gap-1.5 pt-1">
               {applied.chantier_id && <span className="text-[10px] bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">{chantiers.find(c => String(c.id) === applied.chantier_id)?.designation ?? applied.chantier_id}</span>}
               {applied.soustraitant_id && <span className="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full">{soustraitants.find(s => String(s.id) === applied.soustraitant_id)?.raison_sociale ?? applied.soustraitant_id}</span>}
-              {applied.statut_ec && <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">{applied.statut_ec}</span>}
+              {applied.statut_ec && <span className="text-[10px] bg-line-100 text-ink-500 border border-line-200 px-2 py-0.5 rounded-full">{applied.statut_ec}</span>}
               {applied.poste && <span className="text-[10px] bg-orange-50 text-orange-700 border border-orange-200 px-2 py-0.5 rounded-full">{applied.poste}</span>}
-              {applied.date_debut && <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">Du {applied.date_debut}</span>}
-              {applied.date_fin && <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">Au {applied.date_fin}</span>}
+              {applied.date_debut && <span className="text-[10px] bg-line-100 text-ink-500 border border-line-200 px-2 py-0.5 rounded-full">Du {applied.date_debut}</span>}
+              {applied.date_fin && <span className="text-[10px] bg-line-100 text-ink-500 border border-line-200 px-2 py-0.5 rounded-full">Au {applied.date_fin}</span>}
               {applied.code_article && <span className="text-[10px] bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full">{applied.code_article}</span>}
-              {applied.ref_bs && <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">BS: {applied.ref_bs}</span>}
-              {applied.ref_br && <span className="text-[10px] bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">BR: {applied.ref_br}</span>}
+              {applied.ref_bs && <span className="text-[10px] bg-line-100 text-ink-500 border border-line-200 px-2 py-0.5 rounded-full">BS: {applied.ref_bs}</span>}
+              {applied.ref_br && <span className="text-[10px] bg-line-100 text-ink-500 border border-line-200 px-2 py-0.5 rounded-full">BR: {applied.ref_br}</span>}
             </div>
           )}
         </div>
@@ -429,7 +429,7 @@ export default function ConsultationEtatsCessionPage() {
       {/* KPIs */}
       {lignes.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <div className="md:col-span-1 bg-[#087F3E] text-white rounded-2xl p-4 flex flex-col justify-between">
+          <div className="md:col-span-1 bg-[green-600] text-white rounded-2xl p-4 flex flex-col justify-between">
             <div className="flex items-center gap-2 text-green-100 text-xs font-medium uppercase tracking-wide">
               <TrendingUp size={13} /> Total
             </div>
@@ -445,8 +445,8 @@ export default function ConsultationEtatsCessionPage() {
                 <div className={`flex items-center gap-1.5 text-xs font-semibold ${p.color} mb-2`}>
                   <Icon size={12} /> {p.label}
                 </div>
-                <p className="text-sm font-bold text-gray-800">{fmtNum(p.total)}</p>
-                <p className="text-xs text-gray-400">{p.count} ligne{p.count !== 1 ? "s" : ""} · FCFA</p>
+                <p className="text-sm font-bold text-ink-900">{fmtNum(p.total)}</p>
+                <p className="text-xs text-ink-400">{p.count} ligne{p.count !== 1 ? "s" : ""} · FCFA</p>
               </div>
             );
           })}
@@ -454,18 +454,18 @@ export default function ConsultationEtatsCessionPage() {
       )}
 
       {/* Tableau plat paginé */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-line-200 rounded-2xl overflow-hidden">
         {isLoading ? (
-          <div className="py-16 text-center text-sm text-gray-400">Chargement…</div>
+          <div className="py-16 text-center text-sm text-ink-400">Chargement…</div>
         ) : lignes.length === 0 ? (
-          <div className="py-16 text-center text-sm text-gray-400">
+          <div className="py-16 text-center text-sm text-ink-400">
             Aucun article trouvé. Appliquez des filtres pour afficher les données.
           </div>
         ) : (
           <>
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-[#065A2C]">
+                <tr className="bg-[green-700]">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-white">Chantier</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-white">Sous-traitant</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-white">Poste</th>
@@ -483,9 +483,9 @@ export default function ConsultationEtatsCessionPage() {
               </thead>
               <tbody>
                 {lignes.map((l, i) => (
-                  <tr key={l.id ?? i} className={`border-b border-gray-100 hover:bg-[#E8F5EE] transition-colors ${i % 2 === 0 ? "bg-white" : "bg-gray-50/40"}`}>
-                    <td className="px-4 py-2.5 text-xs text-gray-700">{l.chantier?.code_x3 || l.chantier?.designation || "—"}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-700">{l.soustraitant?.raison_sociale || "—"}</td>
+                  <tr key={l.id ?? i} className={`border-b border-line-100 hover:bg-[green-50] transition-colors ${i % 2 === 0 ? "bg-white" : "bg-surface-50/40"}`}>
+                    <td className="px-4 py-2.5 text-xs text-ink-700">{l.chantier?.code_x3 || l.chantier?.designation || "—"}</td>
+                    <td className="px-4 py-2.5 text-xs text-ink-700">{l.soustraitant?.raison_sociale || "—"}</td>
                     <td className="px-4 py-2.5 text-xs">
                       {l.poste ? (
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
@@ -496,18 +496,18 @@ export default function ConsultationEtatsCessionPage() {
                         }`}>{l.poste}</span>
                       ) : "—"}
                     </td>
-                    <td className="px-4 py-2.5 font-mono text-xs text-gray-800">{l.code_article || "—"}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-700">{l.designation || "—"}</td>
-                    <td className="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap">{fmtDate(l.date_sortie)}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-ink-900">{l.code_article || "—"}</td>
+                    <td className="px-4 py-2.5 text-xs text-ink-700">{l.designation || "—"}</td>
+                    <td className="px-4 py-2.5 text-xs text-ink-500 whitespace-nowrap">{fmtDate(l.date_sortie)}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-blue-600 whitespace-nowrap">{l.ref_bs || "—"}</td>
                     <td className="px-4 py-2.5 font-mono text-xs text-green-600 whitespace-nowrap">{l.ref_br || "—"}</td>
-                    <td className="px-4 py-2.5 text-center text-xs text-gray-600 uppercase">{l.unite || "—"}</td>
-                    <td className="px-4 py-2.5 text-right text-xs text-gray-800">{l.quantite != null ? fmtNum(l.quantite, 2) : "—"}</td>
-                    <td className="px-4 py-2.5 text-right text-xs text-gray-800">{l.prix_unitaire != null ? fmtNum(l.prix_unitaire, 0) : "—"}</td>
-                    <td className="px-4 py-2.5 text-right text-xs font-semibold text-gray-900">{l.montant != null ? fmtNum(l.montant, 0) : "—"}</td>
+                    <td className="px-4 py-2.5 text-center text-xs text-ink-500 uppercase">{l.unite || "—"}</td>
+                    <td className="px-4 py-2.5 text-right text-xs text-ink-900">{l.quantite != null ? fmtNum(l.quantite, 2) : "—"}</td>
+                    <td className="px-4 py-2.5 text-right text-xs text-ink-900">{l.prix_unitaire != null ? fmtNum(l.prix_unitaire, 0) : "—"}</td>
+                    <td className="px-4 py-2.5 text-right text-xs font-semibold text-ink-900">{l.montant != null ? fmtNum(l.montant, 0) : "—"}</td>
                     <td className="px-2 py-2">
                       <Link to={`/etats-cession/${l.etat_cession_id}`}
-                        className="text-gray-300 hover:text-[#087F3E] transition-colors inline-flex">
+                        className="text-ink-300 hover:text-[green-600] transition-colors inline-flex">
                         <Eye size={12} />
                       </Link>
                     </td>
@@ -517,15 +517,15 @@ export default function ConsultationEtatsCessionPage() {
             </table>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between px-5 py-3 border-t border-gray-100">
-              <span className="text-xs text-gray-500">Page {page} / {totalPages} · {totalRows} ligne{totalRows > 1 ? "s" : ""}</span>
+            <div className="flex items-center justify-between px-5 py-3 border-t border-line-100">
+              <span className="text-xs text-ink-500">Page {page} / {totalPages} · {totalRows} ligne{totalRows > 1 ? "s" : ""}</span>
               <div className="flex gap-2">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40">
+                  className="p-1.5 rounded border border-line-200 text-ink-500 hover:bg-surface-50 disabled:opacity-40">
                   <ChevronLeft size={14} />
                 </button>
                 <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40">
+                  className="p-1.5 rounded border border-line-200 text-ink-500 hover:bg-surface-50 disabled:opacity-40">
                   <ChevronRight size={14} />
                 </button>
               </div>

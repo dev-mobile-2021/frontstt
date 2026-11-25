@@ -185,10 +185,10 @@ export default function SearchSelect({
         onKeyDown={onTriggerKey}
         className={`${triggerCls} w-full flex items-center justify-between gap-2 text-left bg-white disabled:opacity-60 disabled:cursor-not-allowed`}
       >
-        <span className={`truncate ${isEmpty && !display ? "text-gray-400" : ""}`}>
+        <span className={`truncate ${isEmpty && !display ? "text-ink-400" : ""}`}>
           {display ?? placeholder}
         </span>
-        <ChevronDown size={14} className={`flex-shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={14} className={`flex-shrink-0 text-ink-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && pos && createPortal(
@@ -196,10 +196,10 @@ export default function SearchSelect({
           ref={panelRef}
           role="listbox"
           style={{ position: "fixed", left: pos.left, top: pos.top, bottom: pos.bottom, width: pos.width, zIndex: 10000 }}
-          className="bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden"
+          className="bg-white border border-line-200 rounded-lg shadow-xl overflow-hidden"
         >
-          <div className="relative border-b border-gray-100">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative border-b border-line-100">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
             <input
               ref={inputRef}
               value={query}
@@ -210,13 +210,13 @@ export default function SearchSelect({
             />
             {query && (
               <button type="button" onClick={() => { setQuery(""); inputRef.current?.focus(); }}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-400 hover:text-ink-500">
                 <X size={13} />
               </button>
             )}
           </div>
           <ul className="max-h-60 overflow-y-auto py-1">
-            {visible.length === 0 && <li className="px-3 py-2 text-xs text-gray-400">Aucun résultat</li>}
+            {visible.length === 0 && <li className="px-3 py-2 text-xs text-ink-400">Aucun résultat</li>}
             {visible.map((o, i) => {
               const isSel = selected.includes(o.value) && (multiple ? o.value !== "" : true);
               return (
@@ -227,21 +227,21 @@ export default function SearchSelect({
                   onMouseEnter={() => setActive(i)}
                   onClick={() => choose(o)}
                   className={`flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer ${
-                    o.disabled ? "text-gray-300 cursor-not-allowed" : i === active ? "bg-[#E8F5EE]" : ""
-                  } ${isSel ? "font-medium text-[#065A2C]" : "text-gray-700"}`}
+                    o.disabled ? "text-ink-300 cursor-not-allowed" : i === active ? "bg-[green-50]" : ""
+                  } ${isSel ? "font-medium text-[green-700]" : "text-ink-700"}`}
                 >
                   {multiple && (
-                    <span className={`w-4 h-4 flex-shrink-0 rounded border flex items-center justify-center ${isSel ? "bg-[#087F3E] border-[#087F3E]" : "border-gray-300"}`}>
+                    <span className={`w-4 h-4 flex-shrink-0 rounded border flex items-center justify-center ${isSel ? "bg-[green-600] border-[green-600]" : "border-line-200"}`}>
                       {isSel && <Check size={11} className="text-white" />}
                     </span>
                   )}
                   <span className="flex-1 truncate">{o.label || "—"}</span>
-                  {!multiple && isSel && <Check size={14} className="flex-shrink-0 text-[#087F3E]" />}
+                  {!multiple && isSel && <Check size={14} className="flex-shrink-0 text-[green-600]" />}
                 </li>
               );
             })}
             {filtered.length > MAX_RENDER && (
-              <li className="px-3 py-1.5 text-[11px] text-gray-400 border-t border-gray-100">
+              <li className="px-3 py-1.5 text-[11px] text-ink-400 border-t border-line-100">
                 {filtered.length - MAX_RENDER} autres résultats — affinez la recherche
               </li>
             )}

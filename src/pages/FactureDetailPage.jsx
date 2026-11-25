@@ -16,7 +16,7 @@ const TYPE_INFO = {
 };
 
 function TypeBadge({ type }) {
-  const t = TYPE_INFO[type] ?? { label: type, cls: "bg-gray-100 text-gray-600" };
+  const t = TYPE_INFO[type] ?? { label: type, cls: "bg-line-100 text-ink-500" };
   return (
     <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ${t.cls}`}>
       {t.label}
@@ -27,11 +27,11 @@ function TypeBadge({ type }) {
 function InfoBlock({ icon: Icon, title, children }) {
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+      <div className="flex items-center gap-1.5 text-xs font-semibold text-ink-400 uppercase tracking-wide">
         {Icon && <Icon size={12} />}
         {title}
       </div>
-      <div className="text-sm text-gray-800 leading-relaxed">{children}</div>
+      <div className="text-sm text-ink-900 leading-relaxed">{children}</div>
     </div>
   );
 }
@@ -65,9 +65,9 @@ export default function FactureDetailPage() {
   if (isLoading) return <div className="space-y-4">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>;
   if (isError || !facture) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 text-gray-400">
+      <div className="flex flex-col items-center justify-center py-24 text-ink-400">
         <p className="text-lg font-semibold">Facture introuvable</p>
-        <button onClick={() => navigate("/factures")} className="mt-4 text-sm text-[#087F3E] hover:underline">
+        <button onClick={() => navigate("/factures")} className="mt-4 text-sm text-[green-600] hover:underline">
           Retour à la liste
         </button>
       </div>
@@ -111,20 +111,20 @@ export default function FactureDetailPage() {
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
-        <button onClick={() => navigate("/factures")} className="hover:text-[#087F3E] flex items-center gap-1 transition-colors">
+      <div className="flex items-center gap-2 text-sm text-ink-500">
+        <button onClick={() => navigate("/factures")} className="hover:text-[green-600] flex items-center gap-1 transition-colors">
           <ArrowLeft size={14} /> Factures
         </button>
         <ChevronRight size={14} />
-        <span className="text-gray-900 font-medium">{f.code}</span>
+        <span className="text-ink-900 font-medium">{f.code}</span>
       </div>
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs text-gray-400 mb-1">Émise par la Compagnie Sahélienne d'Entreprises</p>
-          <h1 className="text-2xl font-bold text-gray-900">{f.code}</h1>
-          <p className="text-base text-gray-500 mt-0.5">{typeInfo.label}</p>
+          <p className="text-xs text-ink-400 mb-1">Émise par la Compagnie Sahélienne d'Entreprises</p>
+          <h1 className="text-2xl font-bold text-ink-900">{f.code}</h1>
+          <p className="text-base text-ink-500 mt-0.5">{typeInfo.label}</p>
         </div>
         <div className="flex items-center gap-2 mt-1">
           <TypeBadge type={f.type} />
@@ -133,11 +133,11 @@ export default function FactureDetailPage() {
       </div>
 
       {/* Info blocks */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6 grid grid-cols-2 sm:grid-cols-4 gap-6">
+      <div className="bg-white border border-line-200 rounded-xl p-6 grid grid-cols-2 sm:grid-cols-4 gap-6">
         {f.soustraitant && (
           <InfoBlock icon={Building2} title="Sous-traitant">
             <p className="font-semibold">{f.soustraitant.raison_sociale}</p>
-            {f.soustraitant.ninea && <p className="text-xs text-gray-400 mt-0.5">NINEA {f.soustraitant.ninea}</p>}
+            {f.soustraitant.ninea && <p className="text-xs text-ink-400 mt-0.5">NINEA {f.soustraitant.ninea}</p>}
           </InfoBlock>
         )}
         {f.chantier && (
@@ -147,44 +147,44 @@ export default function FactureDetailPage() {
         )}
         {f.contrat && (
           <InfoBlock icon={FileText} title="Contrat">
-            <Link to={`/contrats/${f.contrat_id}`} className="font-mono font-semibold text-[#087F3E] hover:underline">
+            <Link to={`/contrats/${f.contrat_id}`} className="font-mono font-semibold text-[green-600] hover:underline">
               {f.contrat.code}
             </Link>
             {f.contrat.montant_actuel != null && (
-              <p className="text-xs text-gray-400 mt-0.5">Marché actualisé : {fmt(f.contrat.montant_actuel)}</p>
+              <p className="text-xs text-ink-400 mt-0.5">Marché actualisé : {fmt(f.contrat.montant_actuel)}</p>
             )}
           </InfoBlock>
         )}
         <InfoBlock title="Décompte concerné">
           {f.decompte ? (
             <>
-              <Link to={`/decomptes/${f.decompte_id}`} className="font-mono font-semibold text-[#087F3E] hover:underline">
+              <Link to={`/decomptes/${f.decompte_id}`} className="font-mono font-semibold text-[green-600] hover:underline">
                 {f.decompte.code}
               </Link>
-              {periode && <p className="text-xs text-gray-400 mt-0.5">{periode}</p>}
+              {periode && <p className="text-xs text-ink-400 mt-0.5">{periode}</p>}
             </>
           ) : (
-            <span className="text-gray-400">— (facture d'avance)</span>
+            <span className="text-ink-400">— (facture d'avance)</span>
           )}
         </InfoBlock>
       </div>
 
       {/* Document lignes + totaux */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-white border border-line-200 rounded-xl overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide w-12">Réf.</th>
-              <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Désignation</th>
-              <th className="text-right px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Montant</th>
+            <tr className="bg-surface-50 border-b border-line-200">
+              <th className="text-left px-6 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide w-12">Réf.</th>
+              <th className="text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">Désignation</th>
+              <th className="text-right px-6 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">Montant</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line-100">
             {lignes.map(l => (
-              <tr key={l.code} className="hover:bg-gray-50/50">
-                <td className="px-6 py-4 font-mono text-sm font-bold text-gray-500">{l.code}</td>
-                <td className="px-4 py-4 text-sm text-gray-700">{l.libelle}</td>
-                <td className="px-6 py-4 text-right font-mono text-sm font-semibold text-gray-800">
+              <tr key={l.code} className="hover:bg-surface-50/50">
+                <td className="px-6 py-4 font-mono text-sm font-bold text-ink-500">{l.code}</td>
+                <td className="px-4 py-4 text-sm text-ink-700">{l.libelle}</td>
+                <td className="px-6 py-4 text-right font-mono text-sm font-semibold text-ink-900">
                   {fmt(l.montant)}
                 </td>
               </tr>
@@ -193,29 +193,29 @@ export default function FactureDetailPage() {
         </table>
 
         {/* Financial summary */}
-        <div className="border-t border-gray-200 bg-gray-50 px-6 py-4 space-y-2">
+        <div className="border-t border-line-200 bg-surface-50 px-6 py-4 space-y-2">
           <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500">Net à régler HTVA</span>
-            <span className="font-semibold text-gray-700 font-mono">{fmt(f.montant_ht)}</span>
+            <span className="text-ink-500">Net à régler HTVA</span>
+            <span className="font-semibold text-ink-700 font-mono">{fmt(f.montant_ht)}</span>
           </div>
           <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500">TVA ({f.taux_tva ?? 18}%)</span>
-            <span className="text-gray-500 font-mono">{fmt(f.montant_tva)}</span>
+            <span className="text-ink-500">TVA ({f.taux_tva ?? 18}%)</span>
+            <span className="text-ink-500 font-mono">{fmt(f.montant_tva)}</span>
           </div>
-          <div className="flex justify-between items-center pt-2 border-t border-gray-300">
-            <span className="text-base font-bold text-gray-900">Net à régler TTC</span>
-            <span className="text-lg font-bold text-gray-900 font-mono">{fmt(f.montant_ttc)}</span>
+          <div className="flex justify-between items-center pt-2 border-t border-line-200">
+            <span className="text-base font-bold text-ink-900">Net à régler TTC</span>
+            <span className="text-lg font-bold text-ink-900 font-mono">{fmt(f.montant_ttc)}</span>
           </div>
         </div>
 
         {/* Payment / Annulation info */}
         {f.statut === "payee" && (
-          <div className="border-t border-[#b5ddc8] bg-[#E8F5EE] px-6 py-4 flex items-start gap-3">
-            <CheckCircle2 size={16} className="text-[#087F3E] mt-0.5 flex-shrink-0" />
-            <div className="text-sm text-[#065A2C]">
+          <div className="border-t border-[#b5ddc8] bg-[green-50] px-6 py-4 flex items-start gap-3">
+            <CheckCircle2 size={16} className="text-[green-600] mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-[green-700]">
               <p>Facture payée le <strong>{fmtDate(f.date_paiement)}</strong></p>
               {f.reference_paiement && (
-                <p className="text-xs mt-0.5 font-mono text-[#087F3E]">référence {f.reference_paiement}</p>
+                <p className="text-xs mt-0.5 font-mono text-[green-600]">référence {f.reference_paiement}</p>
               )}
             </div>
           </div>
@@ -231,18 +231,18 @@ export default function FactureDetailPage() {
 
       {/* Scans uploadés */}
       {f.scans?.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+        <div className="bg-white border border-line-200 rounded-xl p-5">
+          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
             <Paperclip size={12} /> Scans facture ({f.scans.length})
           </p>
           <div className="space-y-2">
             {f.scans.map(scan => (
-              <div key={scan.id} className="flex items-center justify-between gap-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+              <div key={scan.id} className="flex items-center justify-between gap-3 p-3 bg-surface-50 rounded-lg border border-line-100">
                 <div className="flex items-center gap-2 min-w-0">
-                  <FileDown size={14} className="text-gray-400 flex-shrink-0" />
+                  <FileDown size={14} className="text-ink-400 flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="text-sm text-gray-800 font-medium truncate">{scan.nom_original}</p>
-                    {scan.note && <p className="text-xs text-gray-400 truncate">{scan.note}</p>}
+                    <p className="text-sm text-ink-900 font-medium truncate">{scan.nom_original}</p>
+                    {scan.note && <p className="text-xs text-ink-400 truncate">{scan.note}</p>}
                   </div>
                 </div>
                 <button
@@ -256,7 +256,7 @@ export default function FactureDetailPage() {
                       window.URL.revokeObjectURL(url); document.body.removeChild(a);
                     } catch { addToast("Erreur téléchargement", "error"); }
                   }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 text-gray-600 rounded-lg text-xs font-medium hover:bg-white transition-colors flex-shrink-0"
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-line-200 text-ink-500 rounded-lg text-xs font-medium hover:bg-white transition-colors flex-shrink-0"
                 >
                   <FileDown size={12} /> Télécharger
                 </button>
@@ -268,16 +268,16 @@ export default function FactureDetailPage() {
 
       {/* Observations */}
       {f.observations && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Observations</p>
-          <p className="text-sm text-gray-700 leading-relaxed">{f.observations}</p>
+        <div className="bg-white border border-line-200 rounded-xl p-5">
+          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-2">Observations</p>
+          <p className="text-sm text-ink-700 leading-relaxed">{f.observations}</p>
         </div>
       )}
 
       {/* Actions */}
       {(f.statut === "brouillon" || f.statut === "emise") && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Actions</p>
+        <div className="bg-white border border-line-200 rounded-xl p-5 space-y-4">
+          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Actions</p>
 
           {f.statut === "brouillon" && (
             <button
@@ -290,7 +290,7 @@ export default function FactureDetailPage() {
                 }
               }}
               disabled={statutMut.isPending}
-              className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 inline-flex items-center gap-2"
+              className="px-4 py-2 bg-[green-600] hover:bg-[green-700] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 inline-flex items-center gap-2"
             >
               {statutMut.isPending && <Loader2 size={14} className="animate-spin" />}
               Émettre la facture
@@ -300,7 +300,7 @@ export default function FactureDetailPage() {
           {f.statut === "emise" && !showPayDialog && !showAnnulDialog && (
             <div className="flex flex-wrap gap-3">
               <button onClick={() => setShowPayDialog(true)}
-                className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium transition-colors">
+                className="px-4 py-2 bg-[green-600] hover:bg-[green-700] text-white rounded-lg text-sm font-medium transition-colors">
                 Marquer payée
               </button>
               <button onClick={() => setShowAnnulDialog(true)}
@@ -313,31 +313,31 @@ export default function FactureDetailPage() {
           {showPayDialog && (
             <div className="flex flex-wrap gap-2 items-end">
               <div className="min-w-[180px]">
-                <label className="text-xs font-medium text-gray-600 block mb-1">Date de paiement *</label>
+                <label className="text-xs font-medium text-ink-500 block mb-1">Date de paiement *</label>
                 <input type="date" value={datePaiement} onChange={e => setDatePaiement(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
+                  className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[green-600] focus:border-[green-600] outline-none" />
               </div>
               <div className="flex-1 min-w-[200px]">
-                <label className="text-xs font-medium text-gray-600 block mb-1">Référence de paiement *</label>
+                <label className="text-xs font-medium text-ink-500 block mb-1">Référence de paiement *</label>
                 <input autoFocus placeholder="Ex : VIR-2025-0042" value={refPaiement} onChange={e => setRefPaiement(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none" />
+                  className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[green-600] focus:border-[green-600] outline-none" />
               </div>
               <button onClick={handlePayer} disabled={!refPaiement.trim() || !datePaiement || statutMut.isPending}
-                className="px-4 py-2 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2">
+                className="px-4 py-2 bg-[green-600] hover:bg-[green-700] text-white rounded-lg text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2">
                 {statutMut.isPending && <Loader2 size={14} className="animate-spin" />}
                 Confirmer
               </button>
               <button onClick={() => { setShowPayDialog(false); setRefPaiement(""); }}
-                className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm">Annuler</button>
+                className="px-3 py-2 text-ink-500 hover:text-ink-700 text-sm">Annuler</button>
             </div>
           )}
 
           {showAnnulDialog && (
             <div className="flex flex-wrap gap-2 items-end">
               <div className="flex-1 min-w-[240px]">
-                <label className="text-xs font-medium text-gray-600 block mb-1">Motif d'annulation (optionnel)</label>
+                <label className="text-xs font-medium text-ink-500 block mb-1">Motif d'annulation (optionnel)</label>
                 <input autoFocus placeholder="Motif…" value={motifAnnul} onChange={e => setMotifAnnul(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none" />
+                  className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-400 focus:border-red-400 outline-none" />
               </div>
               <button onClick={handleAnnuler} disabled={statutMut.isPending}
                 className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium disabled:opacity-50 inline-flex items-center gap-2">
@@ -345,7 +345,7 @@ export default function FactureDetailPage() {
                 Confirmer l'annulation
               </button>
               <button onClick={() => { setShowAnnulDialog(false); setMotifAnnul(""); }}
-                className="px-3 py-2 text-gray-500 hover:text-gray-700 text-sm">Retour</button>
+                className="px-3 py-2 text-ink-500 hover:text-ink-700 text-sm">Retour</button>
             </div>
           )}
         </div>

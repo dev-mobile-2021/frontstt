@@ -9,7 +9,7 @@ const STATUTS = {
   cree:       { label: "Nouveau",   cls: "bg-green-100 text-green-700" },
   mis_a_jour: { label: "Modifié",   cls: "bg-blue-100 text-blue-700" },
   retabli:    { label: "Rétabli",   cls: "bg-violet-100 text-violet-700" },
-  inchange:   { label: "Inchangé",  cls: "bg-gray-100 text-gray-600" },
+  inchange:   { label: "Inchangé",  cls: "bg-line-100 text-ink-500" },
   erreur:     { label: "Erreur",    cls: "bg-red-100 text-red-700" },
 };
 
@@ -133,35 +133,35 @@ export default function ImportBaremeDialog({ titre, description, avecDate = fals
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-bold text-gray-900 flex items-center gap-2"><FileSpreadsheet size={17} className="text-[#087F3E]" />{titre}</h2>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400"><X size={18} /></button>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-line-100">
+          <h2 className="text-base font-bold text-ink-900 flex items-center gap-2"><FileSpreadsheet size={17} className="text-[green-600]" />{titre}</h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-line-100 text-ink-400"><X size={18} /></button>
         </div>
 
         <div className="p-6 space-y-4 overflow-y-auto">
-          <p className="text-xs text-gray-500">{description}</p>
+          <p className="text-xs text-ink-500">{description}</p>
 
           <div className="flex flex-wrap items-center gap-3">
             <input ref={inputRef} type="file" accept=".csv,.xlsx,.xls" className="hidden"
               onChange={(e) => { choisir(e.target.files[0]); e.target.value = ""; }} />
             <button onClick={() => inputRef.current?.click()} disabled={etat === "analyse" || etat === "applique"}
-              className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
+              className="inline-flex items-center gap-2 bg-[green-600] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[green-700] disabled:opacity-60">
               {etat === "analyse" ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
               {fichier ? "Choisir un autre fichier" : "Choisir un fichier (CSV, Excel)"}
             </button>
             <button onClick={() => telechargerModeleBareme(lignesModele, nomModele)}
-              className="inline-flex items-center gap-2 border border-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm hover:bg-gray-50">
+              className="inline-flex items-center gap-2 border border-line-200 text-ink-700 px-3 py-2 rounded-lg text-sm hover:bg-surface-50">
               <Download size={14} /> Modèle
             </button>
             {avecDate && (
-              <label className="inline-flex items-center gap-2 text-sm text-gray-600 ml-auto">
+              <label className="inline-flex items-center gap-2 text-sm text-ink-500 ml-auto">
                 Date d'effet
                 <input type="date" value={dateEffet} onChange={(e) => reanalyser(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#087F3E]/30" />
+                  className="border border-line-200 rounded-lg px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[green-600]/30" />
               </label>
             )}
           </div>
-          {fichier && <p className="text-xs text-gray-400">{fichier.name} — {lignes.length} ligne{lignes.length > 1 ? "s" : ""}</p>}
+          {fichier && <p className="text-xs text-ink-400">{fichier.name} — {lignes.length} ligne{lignes.length > 1 ? "s" : ""}</p>}
 
           {erreur && (
             <div className="flex gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-700">
@@ -194,22 +194,22 @@ export default function ImportBaremeDialog({ titre, description, avecDate = fals
                   ["tous", `Toutes (${r.total})`],
                 ].map(([k, label]) => (
                   <button key={k} onClick={() => { setFiltre(k); setAffiche(PAGE); }}
-                    className={`px-2.5 py-1 rounded-full border font-medium ${filtre === k ? "bg-[#087F3E] text-white border-[#087F3E]" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}>
+                    className={`px-2.5 py-1 rounded-full border font-medium ${filtre === k ? "bg-[green-600] text-white border-[green-600]" : "bg-white text-ink-500 border-line-200 hover:bg-surface-50"}`}>
                     {label}
                   </button>
                 ))}
-                <span className="mx-1 text-gray-300">|</span>
+                <span className="mx-1 text-ink-300">|</span>
                 {Object.entries(STATUTS).map(([k, s]) => r[k] > 0 && k !== "inchange" && (
                   <span key={k} className={`px-2 py-1 rounded-full font-medium ${s.cls}`}>{s.label} : {r[k]}</span>
                 ))}
-                <button onClick={exporterRapport} className="ml-auto inline-flex items-center gap-1 text-gray-600 border border-gray-200 px-2.5 py-1 rounded-lg hover:bg-gray-50">
+                <button onClick={exporterRapport} className="ml-auto inline-flex items-center gap-1 text-ink-500 border border-line-200 px-2.5 py-1 rounded-lg hover:bg-surface-50">
                   <Download size={12} /> Rapport Excel
                 </button>
               </div>
-              <div className="border border-gray-200 rounded-xl overflow-auto max-h-80">
+              <div className="border border-line-200 rounded-xl overflow-auto max-h-80">
                 <table className="w-full text-xs">
-                  <thead className="bg-gray-50 sticky top-0">
-                    <tr className="text-gray-500 uppercase tracking-wide">
+                  <thead className="bg-surface-50 sticky top-0">
+                    <tr className="text-ink-500 uppercase tracking-wide">
                       <th className="text-left px-3 py-2">Ligne</th>
                       <th className="text-left px-3 py-2">Article</th>
                       <th className="text-right px-3 py-2">Prix</th>
@@ -217,19 +217,19 @@ export default function ImportBaremeDialog({ titre, description, avecDate = fals
                       <th className="text-left px-3 py-2">Détail</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-line-100">
                     {visibles.length === 0 && (
-                      <tr><td colSpan={5} className="px-3 py-6 text-center text-gray-400">Aucune ligne dans ce filtre.</td></tr>
+                      <tr><td colSpan={5} className="px-3 py-6 text-center text-ink-400">Aucune ligne dans ce filtre.</td></tr>
                     )}
                     {visibles.slice(0, affiche).map((l, i) => {
                       const s = STATUTS[l.statut] ?? STATUTS.erreur;
                       return (
                         <tr key={i} className={l.statut === "erreur" ? "bg-red-50/40" : ""}>
-                          <td className="px-3 py-2 text-gray-400">{l.ligne}</td>
-                          <td className="px-3 py-2"><span className="font-mono">{l.code_article || "—"}</span>{l.designation && <span className="block text-gray-400 truncate max-w-[220px]">{l.designation}</span>}</td>
-                          <td className="px-3 py-2 text-right font-mono">{l.prix != null ? new Intl.NumberFormat("fr-FR").format(l.prix) : "—"}{l.ancien != null && l.statut !== "inchange" && <span className="block text-gray-400">avant {new Intl.NumberFormat("fr-FR").format(l.ancien)}</span>}</td>
+                          <td className="px-3 py-2 text-ink-400">{l.ligne}</td>
+                          <td className="px-3 py-2"><span className="font-mono">{l.code_article || "—"}</span>{l.designation && <span className="block text-ink-400 truncate max-w-[220px]">{l.designation}</span>}</td>
+                          <td className="px-3 py-2 text-right font-mono">{l.prix != null ? new Intl.NumberFormat("fr-FR").format(l.prix) : "—"}{l.ancien != null && l.statut !== "inchange" && <span className="block text-ink-400">avant {new Intl.NumberFormat("fr-FR").format(l.ancien)}</span>}</td>
                           <td className="px-3 py-2"><span className={`px-2 py-0.5 rounded-full font-medium ${s.cls}`}>{s.label}</span></td>
-                          <td className="px-3 py-2 text-gray-600">
+                          <td className="px-3 py-2 text-ink-500">
                             {l.message}
                             {l.statut === "erreur" && l.suggestions?.length > 0 && etat !== "termine" && (
                               <div className="mt-1.5">
@@ -237,7 +237,7 @@ export default function ImportBaremeDialog({ titre, description, avecDate = fals
                                   value=""
                                   onChange={(e) => choisirArticle(l.ligne, e.target.value)}
                                   placeholder="Choisir l'article…"
-                                  className="w-72 border border-gray-300 rounded-lg px-2 py-1 text-xs bg-white">
+                                  className="w-72 border border-line-200 rounded-lg px-2 py-1 text-xs bg-white">
                                   <option value="">Choisir l'article parmi les propositions…</option>
                                   {l.suggestions.map((s) => (
                                     <option key={s.code_article} value={s.code_article}>
@@ -255,7 +255,7 @@ export default function ImportBaremeDialog({ titre, description, avecDate = fals
                 </table>
               </div>
               {visibles.length > affiche && (
-                <button onClick={() => setAffiche((n) => n + PAGE)} className="w-full text-xs text-[#087F3E] font-medium py-2 border border-dashed border-gray-300 rounded-lg hover:bg-gray-50">
+                <button onClick={() => setAffiche((n) => n + PAGE)} className="w-full text-xs text-[green-600] font-medium py-2 border border-dashed border-line-200 rounded-lg hover:bg-surface-50">
                   Afficher {Math.min(PAGE, visibles.length - affiche)} lignes de plus ({visibles.length - affiche} restantes)
                 </button>
               )}
@@ -263,13 +263,13 @@ export default function ImportBaremeDialog({ titre, description, avecDate = fals
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-gray-100">
-          <p className="text-xs text-gray-400">Les lignes en erreur sont ignorées ; les autres sont importées.</p>
+        <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-line-100">
+          <p className="text-xs text-ink-400">Les lignes en erreur sont ignorées ; les autres sont importées.</p>
           <div className="flex gap-3">
-            <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">{etat === "termine" ? "Fermer" : "Annuler"}</button>
+            <button onClick={onClose} className="px-4 py-2 text-sm text-ink-500 border border-line-200 rounded-lg hover:bg-surface-50">{etat === "termine" ? "Fermer" : "Annuler"}</button>
             {etat !== "termine" && (
               <button onClick={appliquer} disabled={!rapport || aImporter === 0 || etat === "applique"}
-                className="inline-flex items-center gap-2 bg-[#087F3E] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-50">
+                className="inline-flex items-center gap-2 bg-[green-600] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[green-700] disabled:opacity-50">
                 {etat === "applique" && <Loader2 size={14} className="animate-spin" />}
                 Importer {aImporter > 0 ? `${aImporter} ligne${aImporter > 1 ? "s" : ""}` : ""}
               </button>

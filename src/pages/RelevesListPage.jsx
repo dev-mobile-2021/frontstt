@@ -44,48 +44,48 @@ export default function RelevesListPage() {
         subtitle="Documents contradictoires remis aux sous-traitants avant facturation"
       />
 
-      <div className="bg-white border border-gray-200 rounded-xl p-4">
+      <div className="bg-white border border-line-200 rounded-xl p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[220px]">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
             <input
               placeholder="Code relevé…"
               value={search}
               onChange={e => { setSearch(e.target.value); setPage(1); }}
-              className="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+              className="w-full pl-9 pr-4 py-2 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
             />
           </div>
           <SearchSelect
             value={statut}
             onChange={e => { setStatut(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30"
+            className="border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30"
           >
             <option value="">Tous les statuts</option>
             {STATUTS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
           </SearchSelect>
           {hasFilter && (
-            <button onClick={reset} className="flex items-center gap-1 text-sm text-gray-500 hover:text-[#087F3E] transition-colors">
+            <button onClick={reset} className="flex items-center gap-1 text-sm text-ink-500 hover:text-[green-600] transition-colors">
               <RotateCcw size={13} /> Réinitialiser
             </button>
           )}
         </div>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-xl overflow-x-auto">
+      <div className="bg-white border border-line-200 rounded-xl overflow-x-auto">
         <table className="w-full min-w-[800px] text-sm">
           <thead className="sticky top-0 z-10">
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-surface-50 border-b border-line-200">
               {["Code", "Contrat", "Sous-traitant", "Décompte", "Date génération", "Statut"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line-100">
             {isLoading ? (
-              <tr><td colSpan={6} className="py-16 text-center text-sm text-gray-400">Chargement…</td></tr>
+              <tr><td colSpan={6} className="py-16 text-center text-sm text-ink-400">Chargement…</td></tr>
             ) : rows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-16 text-center text-sm text-gray-400">
+                <td colSpan={6} className="py-16 text-center text-sm text-ink-400">
                   <ReceiptText className="w-8 h-8 mx-auto mb-2 opacity-30" />
                   Aucun relevé ne correspond aux filtres.
                 </td>
@@ -94,13 +94,13 @@ export default function RelevesListPage() {
               <tr
                 key={r.id}
                 onClick={() => navigate(`/releves/${r.id}`)}
-                className="hover:bg-gray-50 even:bg-gray-50/40 group cursor-pointer transition-colors"
+                className="hover:bg-surface-50 even:bg-surface-50/40 group cursor-pointer transition-colors"
               >
-                <td className="px-4 py-3 font-mono font-semibold text-gray-900">{r.code}</td>
-                <td className="px-4 py-3 text-gray-700">{r.contrat?.code || "—"}</td>
-                <td className="px-4 py-3 text-gray-700">{r.contrat?.soustraitant?.raison_sociale || "—"}</td>
-                <td className="px-4 py-3 font-mono text-xs text-gray-500">{r.decompte?.code || "—"}</td>
-                <td className="px-4 py-3 text-gray-500">{formatDate(r.date_generation)}</td>
+                <td className="px-4 py-3 font-mono font-semibold text-ink-900">{r.code}</td>
+                <td className="px-4 py-3 text-ink-700">{r.contrat?.code || "—"}</td>
+                <td className="px-4 py-3 text-ink-700">{r.contrat?.soustraitant?.raison_sociale || "—"}</td>
+                <td className="px-4 py-3 font-mono text-xs text-ink-500">{r.decompte?.code || "—"}</td>
+                <td className="px-4 py-3 text-ink-500">{formatDate(r.date_generation)}</td>
                 <td className="px-4 py-3"><StatusBadge statut={r.statut} /></td>
               </tr>
             ))}
@@ -108,21 +108,21 @@ export default function RelevesListPage() {
         </table>
 
         {meta.last_page > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 text-sm text-gray-600">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-line-200 text-sm text-ink-500">
             <span>{meta.total} relevé{meta.total !== 1 ? "s" : ""}</span>
             <div className="flex gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => setPage(p => p - 1)}
-                className="px-3 py-1 border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+                className="px-3 py-1 border border-line-200 rounded-lg disabled:opacity-40 hover:bg-surface-50"
               >
                 ← Précédent
               </button>
-              <span className="px-3 py-1 text-gray-500">Page {meta.current_page} / {meta.last_page}</span>
+              <span className="px-3 py-1 text-ink-500">Page {meta.current_page} / {meta.last_page}</span>
               <button
                 disabled={page >= meta.last_page}
                 onClick={() => setPage(p => p + 1)}
-                className="px-3 py-1 border border-gray-200 rounded-lg disabled:opacity-40 hover:bg-gray-50"
+                className="px-3 py-1 border border-line-200 rounded-lg disabled:opacity-40 hover:bg-surface-50"
               >
                 Suivant →
               </button>

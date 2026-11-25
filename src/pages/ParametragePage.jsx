@@ -26,7 +26,7 @@ import SearchSelect from "../components/SearchSelect";
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 function Spinner() {
-  return <Loader2 size={16} className="animate-spin text-[#087F3E]" />;
+  return <Loader2 size={16} className="animate-spin text-[green-600]" />;
 }
 
 function ConfirmDelete({ onConfirm, onCancel, loading }) {
@@ -40,7 +40,7 @@ function ConfirmDelete({ onConfirm, onCancel, loading }) {
       >
         {loading ? <Loader2 size={12} className="animate-spin" /> : "Oui"}
       </button>
-      <button onClick={onCancel} className="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">
+      <button onClick={onCancel} className="text-xs border border-line-200 px-2 py-1 rounded hover:bg-surface-50">
         Non
       </button>
     </div>
@@ -158,11 +158,11 @@ function TabCircuit() {
     <div className="space-y-5 pt-4">
       {/* Module selector */}
       <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Module :</label>
+        <label className="text-sm font-medium text-ink-700 whitespace-nowrap">Module :</label>
         <select
           value={selectedModule ?? ""}
           onChange={e => { setSelectedModule(e.target.value); setShowForm(false); setEditId(null); }}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+          className="border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
         >
           {APP_MODULES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
         </select>
@@ -176,65 +176,65 @@ function TabCircuit() {
       </div>
 
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{sortedEtapes.length} étape(s) configurée(s)</p>
+        <p className="text-sm text-ink-500">{sortedEtapes.length} étape(s) configurée(s)</p>
         <button
           onClick={openNew}
-          className="flex items-center gap-1.5 text-xs text-[#087F3E] font-medium border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors"
+          className="flex items-center gap-1.5 text-xs text-[green-600] font-medium border border-[green-600] px-3 py-1.5 rounded-lg hover:bg-[green-50] transition-colors"
         >
           <Plus size={12} /> Ajouter une étape
         </button>
       </div>
 
-      <div className="border border-gray-200 rounded-xl overflow-hidden">
+      <div className="border border-line-200 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-surface-50 border-b border-line-200">
               {["Ordre", "Libellé", "Profil code", "Statut avant", "Statut après", "Rôle lié", "Actif", "Actions"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line-100">
             {isLoading && (
               <tr><td colSpan={9} className="px-4 py-6 text-center"><Spinner /></td></tr>
             )}
             {!isLoading && sortedEtapes.length === 0 && (
-              <tr><td colSpan={8} className="px-4 py-6 text-center text-gray-400 text-sm">Aucune étape configurée</td></tr>
+              <tr><td colSpan={8} className="px-4 py-6 text-center text-ink-400 text-sm">Aucune étape configurée</td></tr>
             )}
             {sortedEtapes.map((etape, index) => (
-              <tr key={etape.id} className="hover:bg-gray-50">
+              <tr key={etape.id} className="hover:bg-surface-50">
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1">
-                    <span className="w-6 h-6 rounded-full bg-[#087F3E] text-white text-xs flex items-center justify-center font-bold">
+                    <span className="w-6 h-6 rounded-full bg-[green-600] text-white text-xs flex items-center justify-center font-bold">
                       {etape.ordre}
                     </span>
                     <div className="flex flex-col">
                       <button
                         onClick={() => handleMove(index, "up")}
                         disabled={index === 0 || reorderMut.isPending}
-                        className="text-gray-400 hover:text-gray-700 disabled:opacity-20"
+                        className="text-ink-400 hover:text-ink-700 disabled:opacity-20"
                       >
                         <ChevronUp size={14} />
                       </button>
                       <button
                         onClick={() => handleMove(index, "down")}
                         disabled={index === sortedEtapes.length - 1 || reorderMut.isPending}
-                        className="text-gray-400 hover:text-gray-700 disabled:opacity-20"
+                        className="text-ink-400 hover:text-ink-700 disabled:opacity-20"
                       >
                         <ChevronDown size={14} />
                       </button>
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 font-medium text-gray-900">{etape.libelle}</td>
-                <td className="px-4 py-3 font-mono text-xs text-gray-600">{etape.profil_code}</td>
-                <td className="px-4 py-3 text-xs text-gray-500 font-mono">{etape.statut_avant}</td>
-                <td className="px-4 py-3 text-xs text-gray-500 font-mono">{etape.statut_apres}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">{etape.role?.designation ?? "—"}</td>
+                <td className="px-4 py-3 font-medium text-ink-900">{etape.libelle}</td>
+                <td className="px-4 py-3 font-mono text-xs text-ink-500">{etape.profil_code}</td>
+                <td className="px-4 py-3 text-xs text-ink-500 font-mono">{etape.statut_avant}</td>
+                <td className="px-4 py-3 text-xs text-ink-500 font-mono">{etape.statut_apres}</td>
+                <td className="px-4 py-3 text-sm text-ink-500">{etape.role?.designation ?? "—"}</td>
                 <td className="px-4 py-3">
                   {etape.actif
-                    ? <span className="flex items-center gap-1 text-xs bg-[#E8F5EE] text-[#065A2C] px-2 py-0.5 rounded-full font-medium w-fit"><CheckCircle size={10} /> Actif</span>
-                    : <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-medium">Inactif</span>
+                    ? <span className="flex items-center gap-1 text-xs bg-[green-50] text-[green-700] px-2 py-0.5 rounded-full font-medium w-fit"><CheckCircle size={10} /> Actif</span>
+                    : <span className="text-xs bg-line-100 text-ink-400 px-2 py-0.5 rounded-full font-medium">Inactif</span>
                   }
                 </td>
                 <td className="px-4 py-3">
@@ -246,10 +246,10 @@ function TabCircuit() {
                     />
                   ) : (
                     <div className="flex items-center gap-2">
-                      <button onClick={() => openEdit(etape)} className="text-gray-400 hover:text-[#087F3E]">
+                      <button onClick={() => openEdit(etape)} className="text-ink-400 hover:text-[green-600]">
                         <Edit2 size={14} />
                       </button>
-                      <button onClick={() => setConfirmDeleteId(etape.id)} className="text-gray-400 hover:text-red-500">
+                      <button onClick={() => setConfirmDeleteId(etape.id)} className="text-ink-400 hover:text-red-500">
                         <Trash2 size={14} />
                       </button>
                     </div>
@@ -265,9 +265,9 @@ function TabCircuit() {
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-              <h2 className="text-base font-bold text-gray-900">{editId ? "Modifier l'étape" : "Nouvelle étape"}</h2>
-              <button onClick={cancelForm} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-line-100 sticky top-0 bg-white rounded-t-2xl">
+              <h2 className="text-base font-bold text-ink-900">{editId ? "Modifier l'étape" : "Nouvelle étape"}</h2>
+              <button onClick={cancelForm} className="text-ink-400 hover:text-ink-500"><X size={18} /></button>
             </div>
             <div className="p-6 space-y-4">
               <span className="inline-block text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-full font-medium">
@@ -275,55 +275,55 @@ function TabCircuit() {
               </span>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">Libellé</label>
+                  <label className="text-xs font-medium text-ink-500 block mb-1">Libellé</label>
                   <input
                     value={form.libelle}
                     onChange={e => setForm(f => ({ ...f, libelle: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
                     placeholder="Ex. Validation CT"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">Profil code</label>
+                  <label className="text-xs font-medium text-ink-500 block mb-1">Profil code</label>
                   <input
                     value={form.profil_code}
                     onChange={e => setForm(f => ({ ...f, profil_code: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
                     placeholder="Ex. ct"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">Statut avant</label>
+                  <label className="text-xs font-medium text-ink-500 block mb-1">Statut avant</label>
                   <input
                     list={`statuts-${selectedModule}-avant`}
                     value={form.statut_avant}
                     onChange={e => setForm(f => ({ ...f, statut_avant: e.target.value }))}
                     placeholder="Ex. brouillon"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
                   />
                   <datalist id={`statuts-${selectedModule}-avant`}>
                     {statutsDisponibles.map(s => <option key={s} value={s} />)}
                   </datalist>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">Statut après</label>
+                  <label className="text-xs font-medium text-ink-500 block mb-1">Statut après</label>
                   <input
                     list={`statuts-${selectedModule}-apres`}
                     value={form.statut_apres}
                     onChange={e => setForm(f => ({ ...f, statut_apres: e.target.value }))}
                     placeholder="Ex. soumis"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
                   />
                   <datalist id={`statuts-${selectedModule}-apres`}>
                     {statutsDisponibles.map(s => <option key={s} value={s} />)}
                   </datalist>
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">Rôle lié</label>
+                  <label className="text-xs font-medium text-ink-500 block mb-1">Rôle lié</label>
                   <SearchSelect
                     value={form.role_id}
                     onChange={e => setForm(f => ({ ...f, role_id: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
                   >
                     <option value="">— Aucun —</option>
                     {roles.map(r => (
@@ -337,23 +337,23 @@ function TabCircuit() {
                     id="circuit-actif"
                     checked={form.actif}
                     onChange={e => setForm(f => ({ ...f, actif: e.target.checked }))}
-                    className="w-4 h-4 accent-[#087F3E]"
+                    className="w-4 h-4 accent-[green-600]"
                   />
-                  <label htmlFor="circuit-actif" className="text-sm text-gray-700">Actif</label>
+                  <label htmlFor="circuit-actif" className="text-sm text-ink-700">Actif</label>
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={handleSave}
                   disabled={saveMut.isPending || !form.libelle || !form.profil_code}
-                  className="flex-1 flex items-center justify-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-[green-600] hover:bg-[green-700] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
                 >
                   {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   Enregistrer
                 </button>
                 <button
                   onClick={cancelForm}
-                  className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50"
+                  className="flex items-center gap-1.5 border border-line-200 text-ink-700 px-4 py-2 rounded-lg text-sm hover:bg-surface-50"
                 >
                   Annuler
                 </button>
@@ -419,7 +419,7 @@ function TabParametres() {
         <button
           onClick={handleSaveAll}
           disabled={updateMut.isPending}
-          className="flex items-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+          className="flex items-center gap-1.5 bg-[green-600] hover:bg-[green-700] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
         >
           {updateMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           Enregistrer tout
@@ -427,17 +427,17 @@ function TabParametres() {
       </div>
 
       {Object.entries(groupes).map(([groupe, params]) => (
-        <div key={groupe} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="bg-gray-50 border-b border-gray-200 px-5 py-3">
-            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">{groupe}</h3>
+        <div key={groupe} className="bg-white border border-line-200 rounded-xl overflow-hidden">
+          <div className="bg-surface-50 border-b border-line-200 px-5 py-3">
+            <h3 className="text-xs font-bold text-ink-500 uppercase tracking-widest">{groupe}</h3>
           </div>
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-line-100">
             {params.map(p => (
               <div key={p.cle} className="px-5 py-4 flex items-start gap-4">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-800">{p.label || p.cle}</p>
-                  {p.description && <p className="text-xs text-gray-400 mt-0.5">{p.description}</p>}
-                  <p className="text-xs text-gray-300 font-mono mt-1">{p.cle}</p>
+                  <p className="text-sm font-medium text-ink-900">{p.label || p.cle}</p>
+                  {p.description && <p className="text-xs text-ink-400 mt-0.5">{p.description}</p>}
+                  <p className="text-xs text-ink-300 font-mono mt-1">{p.cle}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {p.type === "boolean" ? (
@@ -445,20 +445,20 @@ function TabParametres() {
                       type="checkbox"
                       checked={edited[p.cle] === "1" || edited[p.cle] === true || edited[p.cle] === "true"}
                       onChange={e => setEdited(prev => ({ ...prev, [p.cle]: e.target.checked ? "1" : "0" }))}
-                      className="w-4 h-4 accent-[#087F3E]"
+                      className="w-4 h-4 accent-[green-600]"
                     />
                   ) : (
                     <input
                       type={p.type === "decimal" || p.type === "integer" ? "number" : "text"}
                       value={edited[p.cle] ?? ""}
                       onChange={e => setEdited(prev => ({ ...prev, [p.cle]: e.target.value }))}
-                      className="w-40 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                      className="w-40 border border-line-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
                     />
                   )}
                   <button
                     onClick={() => handleSave(p)}
                     disabled={updateMut.isPending}
-                    className="flex items-center gap-1 border border-[#087F3E] text-[#087F3E] px-2.5 py-1.5 rounded-lg text-xs hover:bg-[#E8F5EE] disabled:opacity-50"
+                    className="flex items-center gap-1 border border-[green-600] text-[green-600] px-2.5 py-1.5 rounded-lg text-xs hover:bg-[green-50] disabled:opacity-50"
                   >
                     <Save size={12} /> Sauvegarder
                   </button>
@@ -470,7 +470,7 @@ function TabParametres() {
       ))}
 
       {parametres.length === 0 && (
-        <p className="text-center text-gray-400 py-12 text-sm">Aucun paramètre configuré</p>
+        <p className="text-center text-ink-400 py-12 text-sm">Aucun paramètre configuré</p>
       )}
     </div>
   );
@@ -538,37 +538,37 @@ function TabUtilisateurs() {
   return (
     <div className="space-y-5 pt-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{users.length} utilisateur(s)</p>
-        <button onClick={openNew} className="flex items-center gap-1.5 text-xs text-[#087F3E] font-medium border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors">
+        <p className="text-sm text-ink-500">{users.length} utilisateur(s)</p>
+        <button onClick={openNew} className="flex items-center gap-1.5 text-xs text-[green-600] font-medium border border-[green-600] px-3 py-1.5 rounded-lg hover:bg-[green-50] transition-colors">
           <Plus size={12} /> Nouvel utilisateur
         </button>
       </div>
 
-      <div className="border border-gray-200 rounded-xl overflow-hidden">
+      <div className="border border-line-200 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-surface-50 border-b border-line-200">
               {["Login", "Nom", "Email", "Rôle", "Statut", "Actions"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line-100">
             {isLoading && (
               <tr><td colSpan={6} className="px-4 py-6 text-center"><Spinner /></td></tr>
             )}
             {!isLoading && users.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-6 text-center text-gray-400 text-sm">Aucun utilisateur</td></tr>
+              <tr><td colSpan={6} className="px-4 py-6 text-center text-ink-400 text-sm">Aucun utilisateur</td></tr>
             )}
             {users.map(u => (
-              <tr key={u.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-mono text-xs text-gray-600">{u.login}</td>
-                <td className="px-4 py-3 font-medium text-gray-900">{[u.prenom, u.nom].filter(Boolean).join(" ") || "—"}</td>
-                <td className="px-4 py-3 text-xs text-gray-400">{u.email}</td>
-                <td className="px-4 py-3 text-sm text-gray-600">{u.role?.designation ?? "—"}</td>
+              <tr key={u.id} className="hover:bg-surface-50">
+                <td className="px-4 py-3 font-mono text-xs text-ink-500">{u.login}</td>
+                <td className="px-4 py-3 font-medium text-ink-900">{[u.prenom, u.nom].filter(Boolean).join(" ") || "—"}</td>
+                <td className="px-4 py-3 text-xs text-ink-400">{u.email}</td>
+                <td className="px-4 py-3 text-sm text-ink-500">{u.role?.designation ?? "—"}</td>
                 <td className="px-4 py-3">
                   {u.etat == 1
-                    ? <span className="text-xs bg-[#E8F5EE] text-[#065A2C] px-2 py-0.5 rounded-full font-medium">Actif</span>
+                    ? <span className="text-xs bg-[green-50] text-[green-700] px-2 py-0.5 rounded-full font-medium">Actif</span>
                     : <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-medium">Inactif</span>
                   }
                 </td>
@@ -581,8 +581,8 @@ function TabUtilisateurs() {
                     />
                   ) : (
                     <div className="flex items-center gap-2">
-                      <button onClick={() => openEdit(u)} className="text-gray-400 hover:text-[#087F3E]"><Edit2 size={14} /></button>
-                      <button onClick={() => setConfirmDeleteId(u.id)} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
+                      <button onClick={() => openEdit(u)} className="text-ink-400 hover:text-[green-600]"><Edit2 size={14} /></button>
+                      <button onClick={() => setConfirmDeleteId(u.id)} className="text-ink-400 hover:text-red-500"><Trash2 size={14} /></button>
                     </div>
                   )}
                 </td>
@@ -596,9 +596,9 @@ function TabUtilisateurs() {
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-              <h2 className="text-base font-bold text-gray-900">{editUser ? "Modifier l'utilisateur" : "Nouvel utilisateur"}</h2>
-              <button onClick={cancelForm} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-line-100 sticky top-0 bg-white rounded-t-2xl">
+              <h2 className="text-base font-bold text-ink-900">{editUser ? "Modifier l'utilisateur" : "Nouvel utilisateur"}</h2>
+              <button onClick={cancelForm} className="text-ink-400 hover:text-ink-500"><X size={18} /></button>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -610,21 +610,21 @@ function TabUtilisateurs() {
                   { key: "password", label: editUser ? "Nouveau mot de passe (laisser vide)" : "Mot de passe *", type: "password" },
                 ].map(({ key, label, type = "text" }) => (
                   <div key={key}>
-                    <label className="text-xs font-medium text-gray-500 block mb-1">{label}</label>
+                    <label className="text-xs font-medium text-ink-500 block mb-1">{label}</label>
                     <input
                       type={type}
                       value={form[key]}
                       onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                      className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
                     />
                   </div>
                 ))}
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">Rôle</label>
+                  <label className="text-xs font-medium text-ink-500 block mb-1">Rôle</label>
                   <SearchSelect
                     value={form.role_id}
                     onChange={e => setForm(f => ({ ...f, role_id: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
                   >
                     <option value="">— Choisir un rôle —</option>
                     {roles.map(r => <option key={r.id} value={r.id}>{r.designation}</option>)}
@@ -635,12 +635,12 @@ function TabUtilisateurs() {
                 <button
                   onClick={handleSave}
                   disabled={saveMut.isPending || !form.login || !form.nom}
-                  className="flex-1 flex items-center justify-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-[green-600] hover:bg-[green-700] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
                 >
                   {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   Enregistrer
                 </button>
-                <button onClick={cancelForm} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+                <button onClick={cancelForm} className="flex items-center gap-1.5 border border-line-200 text-ink-700 px-4 py-2 rounded-lg text-sm hover:bg-surface-50">
                   Annuler
                 </button>
               </div>
@@ -695,32 +695,32 @@ function TabRoles() {
   return (
     <div className="space-y-5 pt-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{roles.length} rôle(s)</p>
-        <button onClick={openNew} className="flex items-center gap-1.5 text-xs text-[#087F3E] font-medium border border-[#087F3E] px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE] transition-colors">
+        <p className="text-sm text-ink-500">{roles.length} rôle(s)</p>
+        <button onClick={openNew} className="flex items-center gap-1.5 text-xs text-[green-600] font-medium border border-[green-600] px-3 py-1.5 rounded-lg hover:bg-[green-50] transition-colors">
           <Plus size={12} /> Nouveau rôle
         </button>
       </div>
 
-      <div className="border border-gray-200 rounded-xl overflow-hidden">
+      <div className="border border-line-200 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-surface-50 border-b border-line-200">
               {["Désignation", "Description", "Actions"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line-100">
             {isLoading && (
               <tr><td colSpan={3} className="px-4 py-6 text-center"><Spinner /></td></tr>
             )}
             {!isLoading && roles.length === 0 && (
-              <tr><td colSpan={3} className="px-4 py-6 text-center text-gray-400 text-sm">Aucun rôle configuré</td></tr>
+              <tr><td colSpan={3} className="px-4 py-6 text-center text-ink-400 text-sm">Aucun rôle configuré</td></tr>
             )}
             {roles.map(r => (
-              <tr key={r.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-900">{r.designation}</td>
-                <td className="px-4 py-3 text-sm text-gray-500">{r.description ?? "—"}</td>
+              <tr key={r.id} className="hover:bg-surface-50">
+                <td className="px-4 py-3 font-medium text-ink-900">{r.designation}</td>
+                <td className="px-4 py-3 text-sm text-ink-500">{r.description ?? "—"}</td>
                 <td className="px-4 py-3">
                   {confirmDeleteId === r.id ? (
                     <ConfirmDelete
@@ -730,8 +730,8 @@ function TabRoles() {
                     />
                   ) : (
                     <div className="flex items-center gap-2">
-                      <button onClick={() => openEdit(r)} className="text-gray-400 hover:text-[#087F3E]"><Edit2 size={14} /></button>
-                      <button onClick={() => setConfirmDeleteId(r.id)} className="text-gray-400 hover:text-red-500"><Trash2 size={14} /></button>
+                      <button onClick={() => openEdit(r)} className="text-ink-400 hover:text-[green-600]"><Edit2 size={14} /></button>
+                      <button onClick={() => setConfirmDeleteId(r.id)} className="text-ink-400 hover:text-red-500"><Trash2 size={14} /></button>
                     </div>
                   )}
                 </td>
@@ -745,27 +745,27 @@ function TabRoles() {
       {showForm && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white rounded-t-2xl">
-              <h2 className="text-base font-bold text-gray-900">{editRole ? "Modifier le rôle" : "Nouveau rôle"}</h2>
-              <button onClick={cancelForm} className="text-gray-400 hover:text-gray-600"><X size={18} /></button>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-line-100 sticky top-0 bg-white rounded-t-2xl">
+              <h2 className="text-base font-bold text-ink-900">{editRole ? "Modifier le rôle" : "Nouveau rôle"}</h2>
+              <button onClick={cancelForm} className="text-ink-400 hover:text-ink-500"><X size={18} /></button>
             </div>
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">Désignation *</label>
+                  <label className="text-xs font-medium text-ink-500 block mb-1">Désignation *</label>
                   <input
                     value={form.designation}
                     onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
                     placeholder="Ex. Directeur Général"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-500 block mb-1">Description</label>
+                  <label className="text-xs font-medium text-ink-500 block mb-1">Description</label>
                   <input
                     value={form.description}
                     onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+                    className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
                     placeholder="Description du rôle"
                   />
                 </div>
@@ -774,12 +774,12 @@ function TabRoles() {
                 <button
                   onClick={handleSave}
                   disabled={saveMut.isPending || !form.designation}
-                  className="flex-1 flex items-center justify-center gap-1.5 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-[green-600] hover:bg-[green-700] text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
                 >
                   {saveMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   Enregistrer
                 </button>
-                <button onClick={cancelForm} className="flex items-center gap-1.5 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-50">
+                <button onClick={cancelForm} className="flex items-center gap-1.5 border border-line-200 text-ink-700 px-4 py-2 rounded-lg text-sm hover:bg-surface-50">
                   Annuler
                 </button>
               </div>
@@ -798,7 +798,7 @@ const fmtPrix = n => n == null ? "—" : new Intl.NumberFormat("fr-FR").format(M
 
 function HistoriqueBareme({ id }) {
   const { data, isLoading } = useHistoriqueBaremeGeneral(id);
-  if (isLoading) return <p className="text-xs text-gray-400 py-3">Chargement…</p>;
+  if (isLoading) return <p className="text-xs text-ink-400 py-3">Chargement…</p>;
   const prix = data?.prix ?? [];
   const journal = data?.journal ?? [];
   const ACTIONS = { prix_base: "Prix de base", ecart: "Écart", validation: "Validation", retablissement: "Rétablissement", photo: "Photo à l'activation" };
@@ -806,28 +806,28 @@ function HistoriqueBareme({ id }) {
   return (
     <div className="grid md:grid-cols-2 gap-6 py-3 text-xs">
       <div>
-        <p className="font-semibold text-gray-500 uppercase tracking-wide mb-2">Prix de base datés</p>
-        {prix.length === 0 ? <p className="text-gray-400">Aucun prix enregistré.</p> : (
+        <p className="font-semibold text-ink-500 uppercase tracking-wide mb-2">Prix de base datés</p>
+        {prix.length === 0 ? <p className="text-ink-400">Aucun prix enregistré.</p> : (
           <table className="w-full"><tbody>
             {prix.map(p => (
-              <tr key={p.id} className="border-b border-gray-100">
-                <td className="py-1 text-gray-500">{new Date(p.date_effet).toLocaleDateString("fr-FR")}</td>
-                <td className="py-1 text-right font-mono font-semibold text-gray-800">{fmtPrix(p.prix)} FCFA</td>
+              <tr key={p.id} className="border-b border-line-100">
+                <td className="py-1 text-ink-500">{new Date(p.date_effet).toLocaleDateString("fr-FR")}</td>
+                <td className="py-1 text-right font-mono font-semibold text-ink-900">{fmtPrix(p.prix)} FCFA</td>
               </tr>
             ))}
           </tbody></table>
         )}
       </div>
       <div>
-        <p className="font-semibold text-gray-500 uppercase tracking-wide mb-2">Journal des modifications</p>
-        {journal.length === 0 ? <p className="text-gray-400">Aucune modification.</p> : (
+        <p className="font-semibold text-ink-500 uppercase tracking-wide mb-2">Journal des modifications</p>
+        {journal.length === 0 ? <p className="text-ink-400">Aucune modification.</p> : (
           <ul className="space-y-1 max-h-40 overflow-y-auto">
             {journal.map((j, i) => (
-              <li key={i} className="text-gray-600">
-                <span className="text-gray-400">{new Date(j.created_at).toLocaleDateString("fr-FR")}</span>{" "}
+              <li key={i} className="text-ink-500">
+                <span className="text-ink-400">{new Date(j.created_at).toLocaleDateString("fr-FR")}</span>{" "}
                 <span className="font-medium">{NIVEAUX[j.niveau] ?? j.niveau}</span> · {ACTIONS[j.action] ?? j.action}
                 {j.nouveau_prix != null && <> → <span className="font-mono">{fmtPrix(j.nouveau_prix)}</span></>}
-                {j.nom && <span className="text-gray-400"> — {j.prenom} {j.nom}</span>}
+                {j.nom && <span className="text-ink-400"> — {j.prenom} {j.nom}</span>}
               </li>
             ))}
           </ul>
@@ -903,11 +903,11 @@ function TabBaremeGeneral() {
       )}
 
       {peutModifier && (
-        <div className="border border-dashed border-gray-300 rounded-xl p-4 space-y-3">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ajouter un article Sage X3</p>
+        <div className="border border-dashed border-line-200 rounded-xl p-4 space-y-3">
+          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Ajouter un article Sage X3</p>
           <div className="grid md:grid-cols-[1fr_110px_140px_160px_auto] gap-3 items-end">
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Article (classes MTX, BAS, PRP)</label>
+              <label className="text-xs text-ink-500 block mb-1">Article (classes MTX, BAS, PRP)</label>
               <ArticleX3Select
                 value={nouveau.code_article}
                 classe="MTX,BAS,PRP"
@@ -915,23 +915,23 @@ function TabBaremeGeneral() {
               />
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Unité</label>
+              <label className="text-xs text-ink-500 block mb-1">Unité</label>
               <input list="unites-bareme" value={nouveau.unite} onChange={e => setNouveau(n => ({ ...n, unite: e.target.value.toUpperCase() }))}
                 placeholder="Unité X3"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+                className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm uppercase focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600] outline-none" />
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Prix de base (FCFA)</label>
+              <label className="text-xs text-ink-500 block mb-1">Prix de base (FCFA)</label>
               <input type="number" min="0" step="any" value={nouveau.prix} onChange={e => setNouveau(n => ({ ...n, prix: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-right focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+                className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm text-right focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600] outline-none" />
             </div>
             <div>
-              <label className="text-xs text-gray-500 block mb-1">Date d'effet (option)</label>
+              <label className="text-xs text-ink-500 block mb-1">Date d'effet (option)</label>
               <input type="date" value={nouveau.date_effet} onChange={e => setNouveau(n => ({ ...n, date_effet: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] outline-none" />
+                className="w-full border border-line-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600] outline-none" />
             </div>
             <button onClick={handleAdd} disabled={addMut.isPending}
-              className="inline-flex items-center gap-1.5 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
+              className="inline-flex items-center gap-1.5 bg-[green-600] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[green-700] disabled:opacity-60">
               {addMut.isPending ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Ajouter
             </button>
           </div>
@@ -940,20 +940,20 @@ function TabBaremeGeneral() {
 
       <div className="flex items-center gap-3">
         <div className="relative w-72">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-400" />
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Rechercher…"
-            className="w-full pl-8 pr-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]" />
+            className="w-full pl-8 pr-3 py-1.5 border border-line-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]" />
         </div>
-        <span className="text-xs text-gray-400">{lignes.length} article{lignes.length > 1 ? "s" : ""}</span>
+        <span className="text-xs text-ink-400">{lignes.length} article{lignes.length > 1 ? "s" : ""}</span>
         <div className="ml-auto flex items-center gap-2">
           <button onClick={() => telechargerModeleBareme(modeleGeneral, "bareme_general")}
             title="Fichier CodeArticle ; Unité ; Prix unitaire, pré-rempli avec les prix actuels"
-            className="inline-flex items-center gap-1.5 text-sm text-gray-700 font-medium border border-gray-300 px-3 py-1.5 rounded-lg hover:bg-gray-50">
+            className="inline-flex items-center gap-1.5 text-sm text-ink-700 font-medium border border-line-200 px-3 py-1.5 rounded-lg hover:bg-surface-50">
             <Download size={14} /> Exporter en Excel
           </button>
           {peutModifier && (
             <button onClick={() => setShowImport(true)}
-              className="inline-flex items-center gap-1.5 text-sm text-[#087F3E] font-medium border border-[#087F3E]/40 px-3 py-1.5 rounded-lg hover:bg-[#E8F5EE]">
+              className="inline-flex items-center gap-1.5 text-sm text-[green-600] font-medium border border-[green-600]/40 px-3 py-1.5 rounded-lg hover:bg-[green-50]">
               <Upload size={14} /> Importer un fichier
             </button>
           )}
@@ -981,10 +981,10 @@ function TabBaremeGeneral() {
         {["T", "KG", "L", "M3", "M2", "ML", "M", "SAC", "U", "PC", "BARRE", "H", "JOUR", "MOIS"].map(u => <option key={u} value={u} />)}
       </datalist>
 
-      <div className="border border-gray-200 rounded-xl overflow-x-auto">
+      <div className="border border-line-200 rounded-xl overflow-x-auto">
         <table className="w-full text-sm min-w-[720px]">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+            <tr className="bg-surface-50 border-b border-line-200 text-xs uppercase tracking-wide text-ink-500">
               <th className="text-left px-4 py-3">Article</th>
               <th className="text-left px-3 py-3">Type</th>
               <th className="text-left px-3 py-3">Unité</th>
@@ -993,25 +993,25 @@ function TabBaremeGeneral() {
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line-100">
             {isLoading && <tr><td colSpan={6} className="px-4 py-6 text-center"><Spinner /></td></tr>}
             {!isLoading && visibles.length === 0 && (
-              <tr><td colSpan={6} className="px-4 py-10 text-center text-gray-400 text-sm">
+              <tr><td colSpan={6} className="px-4 py-10 text-center text-ink-400 text-sm">
                 {lignes.length === 0 ? "Barème général vide : ajoutez les articles Sage X3 avec leur prix de base." : "Aucun article ne correspond."}
               </td></tr>
             )}
             {visibles.map(l => (
               <Fragment key={l.id}>
-                <tr className="hover:bg-gray-50">
+                <tr className="hover:bg-surface-50">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-gray-900">{l.designation}</p>
-                    <p className="text-xs font-mono text-gray-400">{l.code}</p>
+                    <p className="font-medium text-ink-900">{l.designation}</p>
+                    <p className="text-xs font-mono text-ink-400">{l.code}</p>
                   </td>
                   <td className="px-3 py-3"><span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium uppercase">{l.type}</span></td>
-                  <td className="px-3 py-3 text-gray-600">
+                  <td className="px-3 py-3 text-ink-500">
                     {editing === l.id ? (
                       <input list="unites-bareme" value={edit.unite} onChange={e => setEdit(v => ({ ...v, unite: e.target.value.toUpperCase() }))}
-                        className="w-20 border border-gray-300 rounded-lg px-2 py-1 text-sm uppercase focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                        className="w-20 border border-line-200 rounded-lg px-2 py-1 text-sm uppercase focus:ring-2 focus:ring-[green-600] outline-none" />
                     ) : (
                       <>
                         {l.unite}
@@ -1025,18 +1025,18 @@ function TabBaremeGeneral() {
                   <td className="px-3 py-3 text-right">
                     {editing === l.id ? (
                       <input type="number" min="0" step="any" value={edit.prix} autoFocus onChange={e => setEdit(v => ({ ...v, prix: e.target.value }))}
-                        className="w-28 border border-gray-300 rounded-lg px-2 py-1 text-sm text-right focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                        className="w-28 border border-line-200 rounded-lg px-2 py-1 text-sm text-right focus:ring-2 focus:ring-[green-600] outline-none" />
                     ) : (
-                      <span className="font-mono font-semibold text-gray-900">{fmtPrix(l.prix)}</span>
+                      <span className="font-mono font-semibold text-ink-900">{fmtPrix(l.prix)}</span>
                     )}
                   </td>
-                  <td className="px-3 py-3 text-xs text-gray-500">
+                  <td className="px-3 py-3 text-xs text-ink-500">
                     {editing === l.id ? (
                       <div className="flex gap-1.5">
                         <input type="date" value={edit.date_effet} onChange={e => setEdit(v => ({ ...v, date_effet: e.target.value }))}
-                          className="border border-gray-300 rounded-lg px-2 py-1 text-xs outline-none" />
+                          className="border border-line-200 rounded-lg px-2 py-1 text-xs outline-none" />
                         <input value={edit.motif} placeholder="Motif" onChange={e => setEdit(v => ({ ...v, motif: e.target.value }))}
-                          className="border border-gray-300 rounded-lg px-2 py-1 text-xs outline-none w-32" />
+                          className="border border-line-200 rounded-lg px-2 py-1 text-xs outline-none w-32" />
                       </div>
                     ) : l.prix_a_venir != null ? (
                       <span className="text-amber-700">{fmtPrix(l.prix_a_venir)} le {new Date(l.date_a_venir).toLocaleDateString("fr-FR")}</span>
@@ -1046,24 +1046,24 @@ function TabBaremeGeneral() {
                     <div className="flex items-center justify-end gap-1.5">
                       {editing === l.id ? (
                         <>
-                          <button onClick={() => handleSavePrix(l)} disabled={prixMut.isPending} className="p-1.5 rounded bg-[#087F3E] text-white hover:bg-[#065A2C]"><Save size={13} /></button>
-                          <button onClick={() => setEditing(null)} className="p-1.5 rounded border border-gray-200 text-gray-500 hover:bg-gray-50"><X size={13} /></button>
+                          <button onClick={() => handleSavePrix(l)} disabled={prixMut.isPending} className="p-1.5 rounded bg-[green-600] text-white hover:bg-[green-700]"><Save size={13} /></button>
+                          <button onClick={() => setEditing(null)} className="p-1.5 rounded border border-line-200 text-ink-500 hover:bg-surface-50"><X size={13} /></button>
                         </>
                       ) : (
                         <>
                           <button onClick={() => setOuvert(ouvert === l.id ? null : l.id)} title="Historique"
-                            className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">
+                            className="p-1.5 rounded-lg border border-line-200 text-ink-500 hover:bg-surface-50">
                             {ouvert === l.id ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                           </button>
                           {peutModifier && (
                             <>
                               <button onClick={() => { setEditing(l.id); setEdit({ prix: String(l.prix ?? ""), unite: l.unite ?? "", date_effet: "", motif: "" }); }} title="Modifier le prix"
-                                className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-[#087F3E] hover:bg-gray-50"><Edit2 size={13} /></button>
+                                className="p-1.5 rounded-lg border border-line-200 text-ink-500 hover:text-[green-600] hover:bg-surface-50"><Edit2 size={13} /></button>
                               {confirmRetrait === l.id ? (
                                 <ConfirmDelete onConfirm={() => handleRetrait(l.id)} onCancel={() => setConfirmRetrait(null)} loading={removeMut.isPending} />
                               ) : (
                                 <button onClick={() => setConfirmRetrait(l.id)} title="Retirer du barème"
-                                  className="p-1.5 rounded-lg border border-gray-200 text-gray-500 hover:text-red-600 hover:bg-red-50"><Trash2 size={13} /></button>
+                                  className="p-1.5 rounded-lg border border-line-200 text-ink-500 hover:text-red-600 hover:bg-red-50"><Trash2 size={13} /></button>
                               )}
                             </>
                           )}
@@ -1073,7 +1073,7 @@ function TabBaremeGeneral() {
                   </td>
                 </tr>
                 {ouvert === l.id && (
-                  <tr className="bg-gray-50/60"><td colSpan={6} className="px-4"><HistoriqueBareme id={l.id} /></td></tr>
+                  <tr className="bg-surface-50/60"><td colSpan={6} className="px-4"><HistoriqueBareme id={l.id} /></td></tr>
                 )}
               </Fragment>
             ))}
@@ -1109,41 +1109,41 @@ function TabArticlesX3() {
           placeholder="Code ou désignation…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E] w-64"
+          className="border border-line-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600] w-64"
         />
         <SearchSelect
           value={classe}
           onChange={e => setClasse(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#087F3E]/30 focus:border-[#087F3E]"
+          className="border border-line-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[green-600]/30 focus:border-[green-600]"
         >
           <option value="">Toutes les classes</option>
           {CLASSES_X3.map(c => <option key={c} value={c}>{c}</option>)}
         </SearchSelect>
-        <span className="text-xs text-gray-400 ml-auto">
+        <span className="text-xs text-ink-400 ml-auto">
           {isLoading ? "Chargement…" : `${articles.length} article${articles.length > 1 ? "s" : ""} affiché${articles.length > 1 ? "s" : ""} (200 max — affinez la recherche)`}
         </span>
       </div>
 
-      <div className="border border-gray-200 rounded-xl overflow-hidden">
+      <div className="border border-line-200 rounded-xl overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-surface-50 border-b border-line-200">
               {["Code article", "Désignation", "Classe", "Unité"].map(h => (
-                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
+                <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-ink-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-line-100">
             {isLoading && <tr><td colSpan={4} className="px-4 py-6 text-center"><Spinner /></td></tr>}
             {!isLoading && articles.length === 0 && (
-              <tr><td colSpan={4} className="px-4 py-6 text-center text-gray-400 text-sm">Aucun article. Lancez une synchronisation depuis Sage X3.</td></tr>
+              <tr><td colSpan={4} className="px-4 py-6 text-center text-ink-400 text-sm">Aucun article. Lancez une synchronisation depuis Sage X3.</td></tr>
             )}
             {articles.map(a => (
-              <tr key={a.code_article} className="hover:bg-gray-50">
-                <td className="px-4 py-2.5 font-mono text-xs text-gray-600">{a.code_article}</td>
-                <td className="px-4 py-2.5 text-gray-900">{a.designation}</td>
-                <td className="px-4 py-2.5 text-xs text-gray-500">{a.classe ?? "—"}</td>
-                <td className="px-4 py-2.5 text-gray-500">{a.unite ?? "—"}</td>
+              <tr key={a.code_article} className="hover:bg-surface-50">
+                <td className="px-4 py-2.5 font-mono text-xs text-ink-500">{a.code_article}</td>
+                <td className="px-4 py-2.5 text-ink-900">{a.designation}</td>
+                <td className="px-4 py-2.5 text-xs text-ink-500">{a.classe ?? "—"}</td>
+                <td className="px-4 py-2.5 text-ink-500">{a.unite ?? "—"}</td>
               </tr>
             ))}
           </tbody>
@@ -1173,31 +1173,31 @@ function ChantierSearchSelect({ value, onChange, chantiers, placeholder = "Tous 
   return (
     <div ref={ref} className="relative w-72">
       <button type="button" onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white hover:border-[#087F3E] focus:outline-none focus:ring-2 focus:ring-[#087F3E] transition-colors">
-        <span className={selected ? "text-gray-800 truncate" : "text-gray-400"}>
+        className="w-full flex items-center justify-between border border-line-200 rounded-lg px-3 py-2 text-sm bg-white hover:border-[green-600] focus:outline-none focus:ring-2 focus:ring-[green-600] transition-colors">
+        <span className={selected ? "text-ink-900 truncate" : "text-ink-400"}>
           {selected ? `${selected.code_x3 ?? selected.code} — ${selected.designation}` : `— ${placeholder} —`}
         </span>
-        <ChevronDown size={14} className={`ml-2 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown size={14} className={`ml-2 shrink-0 text-ink-400 transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute z-[999] mt-1 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
-          <div className="p-2 border-b border-gray-100">
-            <div className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5">
-              <Search size={13} className="text-gray-400 shrink-0" />
+        <div className="absolute z-[999] mt-1 left-0 right-0 bg-white border border-line-200 rounded-xl shadow-xl overflow-hidden">
+          <div className="p-2 border-b border-line-100">
+            <div className="flex items-center gap-2 bg-surface-50 rounded-lg px-3 py-1.5">
+              <Search size={13} className="text-ink-400 shrink-0" />
               <input autoFocus type="text" placeholder="Rechercher..." value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="flex-1 bg-transparent text-sm outline-none placeholder-gray-400" />
-              {search && <button onClick={() => setSearch("")}><X size={12} className="text-gray-400 hover:text-gray-600" /></button>}
+                className="flex-1 bg-transparent text-sm outline-none placeholder:text-ink-400" />
+              {search && <button onClick={() => setSearch("")}><X size={12} className="text-ink-400 hover:text-ink-500" /></button>}
             </div>
           </div>
           <ul className="max-h-52 overflow-y-auto py-1">
-            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-gray-400 text-center">Aucun résultat</li>}
+            {filtered.length === 0 && <li className="px-3 py-3 text-sm text-ink-400 text-center">Aucun résultat</li>}
             {filtered.map(c => {
               const code = c.code_x3 ?? c.code;
               return (
                 <li key={c.id} onClick={() => { onChange(code); setOpen(false); setSearch(""); }}
-                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[#087F3E] transition-colors ${value === code ? "bg-green-50 text-[#087F3E] font-medium" : "text-gray-700"}`}>
-                  <span className="font-mono text-xs text-gray-400 mr-2">{code}</span>{c.designation}
+                  className={`px-3 py-2 text-sm cursor-pointer hover:bg-green-50 hover:text-[green-600] transition-colors ${value === code ? "bg-green-50 text-[green-600] font-medium" : "text-ink-700"}`}>
+                  <span className="font-mono text-xs text-ink-400 mr-2">{code}</span>{c.designation}
                 </li>
               );
             })}
@@ -1271,13 +1271,13 @@ function TabMtxUpload() {
     <div className="py-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h3 className="font-semibold text-gray-800">Fichiers MTX (Bons de Sortie)</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Uploadez les fichiers Excel ND pour alimenter le "Charger X3" dans les états de cession.</p>
+          <h3 className="font-semibold text-ink-900">Fichiers MTX (Bons de Sortie)</h3>
+          <p className="text-xs text-ink-400 mt-0.5">Uploadez les fichiers Excel ND pour alimenter le "Charger X3" dans les états de cession.</p>
         </div>
         <div className="flex items-center gap-2">
           <ChantierSearchSelect value={chantierCode} onChange={setChantierCode} chantiers={chantiers} placeholder="Sélectionner un chantier" />
           <button onClick={() => inputRef.current?.click()} disabled={uploading || !chantierCode}
-            className="inline-flex items-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
+            className="inline-flex items-center gap-2 bg-[green-600] hover:bg-[green-700] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-40">
             {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
             Uploader
           </button>
@@ -1291,33 +1291,33 @@ function TabMtxUpload() {
         onDragOver={e => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={e => { e.preventDefault(); setDragOver(false); handleUpload(e.dataTransfer.files); }}
-        className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${dragOver && chantierCode ? "border-[#087F3E] bg-green-50" : "border-gray-200 bg-gray-50"}`}>
-        <FolderOpen size={28} className={`mx-auto mb-2 ${dragOver && chantierCode ? "text-[#087F3E]" : "text-gray-300"}`} />
-        <p className="text-sm text-gray-400">{chantierCode ? "Glissez-déposez le fichier Excel ici" : "Sélectionnez d'abord un chantier"}</p>
+        className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${dragOver && chantierCode ? "border-[green-600] bg-green-50" : "border-line-200 bg-surface-50"}`}>
+        <FolderOpen size={28} className={`mx-auto mb-2 ${dragOver && chantierCode ? "text-[green-600]" : "text-ink-300"}`} />
+        <p className="text-sm text-ink-400">{chantierCode ? "Glissez-déposez le fichier Excel ici" : "Sélectionnez d'abord un chantier"}</p>
       </div>
 
-      {isLoading && <p className="text-sm text-gray-400 text-center py-4">Chargement…</p>}
+      {isLoading && <p className="text-sm text-ink-400 text-center py-4">Chargement…</p>}
 
       {!isLoading && periodes.length === 0 && (
-        <p className="text-sm text-gray-400 text-center py-6">Aucun fichier MTX importé.</p>
+        <p className="text-sm text-ink-400 text-center py-6">Aucun fichier MTX importé.</p>
       )}
 
       {Object.entries(grouped).map(([code, items]) => (
         <div key={code}>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{code}</p>
+          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-2">{code}</p>
           <div className="space-y-2">
             {items.map(p => (
               <div key={`${p.chantier_code_x3}-${p.annee}-${p.mois}`}
-                className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 hover:border-gray-300 transition-colors">
+                className="flex items-center justify-between bg-white border border-line-200 rounded-lg px-4 py-3 hover:border-line-200 transition-colors">
                 <div className="flex items-center gap-3">
                   <FileText size={16} className="text-green-500 shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-gray-700">{p.chantier_designation} — {MOIS_FR[p.mois]} {p.annee}</p>
-                    <p className="text-xs text-gray-400">{p.nb_lignes} lignes · {p.chantier_code_x3}</p>
+                    <p className="text-sm font-medium text-ink-700">{p.chantier_designation} — {MOIS_FR[p.mois]} {p.annee}</p>
+                    <p className="text-xs text-ink-400">{p.nb_lignes} lignes · {p.chantier_code_x3}</p>
                   </div>
                 </div>
                 <button onClick={() => handleDelete(p.chantier_code_x3, p.annee, p.mois)}
-                  className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                  className="p-1.5 text-ink-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                   <Trash2 size={14} />
                 </button>
               </div>
@@ -1396,11 +1396,11 @@ function TabBtDocuments() {
     <div className="py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="font-semibold text-gray-800">Bons de Transfert</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Format attendu : <span className="font-mono bg-gray-100 px-1 rounded">CODE_CHANTIER_CODE_SOUSTRAITANT_YYYY-MM.pdf</span></p>
+          <h3 className="font-semibold text-ink-900">Bons de Transfert</h3>
+          <p className="text-xs text-ink-400 mt-0.5">Format attendu : <span className="font-mono bg-line-100 px-1 rounded">CODE_CHANTIER_CODE_SOUSTRAITANT_YYYY-MM.pdf</span></p>
         </div>
         <button onClick={() => inputRef.current?.click()} disabled={uploading}
-          className="inline-flex items-center gap-2 bg-[#087F3E] hover:bg-[#065A2C] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
+          className="inline-flex items-center gap-2 bg-[green-600] hover:bg-[green-700] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
           {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
           Uploader des BT
         </button>
@@ -1413,37 +1413,37 @@ function TabBtDocuments() {
         onDragOver={e => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
         onDrop={e => { e.preventDefault(); setDragOver(false); handleUpload(e.dataTransfer.files); }}
-        className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${dragOver ? "border-[#087F3E] bg-green-50" : "border-gray-200 bg-gray-50"}`}>
-        <FolderOpen size={28} className={`mx-auto mb-2 ${dragOver ? "text-[#087F3E]" : "text-gray-300"}`} />
-        <p className="text-sm text-gray-400">Glissez-déposez vos fichiers PDF ici</p>
+        className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${dragOver ? "border-[green-600] bg-green-50" : "border-line-200 bg-surface-50"}`}>
+        <FolderOpen size={28} className={`mx-auto mb-2 ${dragOver ? "text-[green-600]" : "text-ink-300"}`} />
+        <p className="text-sm text-ink-400">Glissez-déposez vos fichiers PDF ici</p>
       </div>
 
-      {isLoading && <p className="text-sm text-gray-400 text-center py-4">Chargement…</p>}
+      {isLoading && <p className="text-sm text-ink-400 text-center py-4">Chargement…</p>}
 
       {!isLoading && (data ?? []).length === 0 && (
-        <p className="text-sm text-gray-400 text-center py-6">Aucun bon de transfert uploadé.</p>
+        <p className="text-sm text-ink-400 text-center py-6">Aucun bon de transfert uploadé.</p>
       )}
 
       {Object.entries(grouped).map(([key, docs]) => (
         <div key={key}>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{key}</p>
+          <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide mb-2">{key}</p>
           <div className="space-y-2">
             {docs.sort((a,b) => a.periode.localeCompare(b.periode)).map(doc => (
-              <div key={doc.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 hover:border-gray-300 transition-colors">
+              <div key={doc.id} className="flex items-center justify-between bg-white border border-line-200 rounded-lg px-4 py-3 hover:border-line-200 transition-colors">
                 <div className="flex items-center gap-3">
                   <FileText size={16} className="text-red-400 shrink-0" />
                   <div>
-                    <p className="text-sm font-medium text-gray-700">{doc.filename}</p>
-                    <p className="text-xs text-gray-400">{doc.periode}</p>
+                    <p className="text-sm font-medium text-ink-700">{doc.filename}</p>
+                    <p className="text-xs text-ink-400">{doc.periode}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => handleDownload(doc)}
-                    className="p-1.5 text-gray-400 hover:text-[#087F3E] hover:bg-green-50 rounded-lg transition-colors">
+                    className="p-1.5 text-ink-400 hover:text-[green-600] hover:bg-green-50 rounded-lg transition-colors">
                     <Download size={14} />
                   </button>
                   <button onClick={() => deleteMut.mutate(doc.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                    className="p-1.5 text-ink-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -1477,19 +1477,19 @@ function TabPermissions() {
     }
   }
 
-  if (isLoading) return <div className="py-10 text-center text-sm text-gray-400">Chargement…</div>;
+  if (isLoading) return <div className="py-10 text-center text-sm text-ink-400">Chargement…</div>;
 
   return (
     <div className="space-y-6 pt-6">
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-ink-500">
         Définissez quels rôles peuvent effectuer chaque action. Par défaut : <strong>Assistant DEX</strong> et <strong>Assistant DACC</strong>.
         L'Admin a toujours accès.
       </p>
       {permissions.map(perm => (
-        <div key={perm.cle} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <div className="px-5 py-3 bg-gray-50 border-b border-gray-100">
-            <p className="text-sm font-semibold text-gray-800">{perm.label}</p>
-            {perm.description && <p className="text-xs text-gray-400 mt-0.5">{perm.description}</p>}
+        <div key={perm.cle} className="bg-white border border-line-200 rounded-xl overflow-hidden">
+          <div className="px-5 py-3 bg-surface-50 border-b border-line-100">
+            <p className="text-sm font-semibold text-ink-900">{perm.label}</p>
+            {perm.description && <p className="text-xs text-ink-400 mt-0.5">{perm.description}</p>}
           </div>
           <div className="px-5 py-4 flex flex-wrap gap-3">
             {perm.roles.map(role => (
@@ -1499,11 +1499,11 @@ function TabPermissions() {
                   checked={role.actif}
                   disabled={role.designation === "Admin" || updateMut.isPending}
                   onChange={e => toggleRole(perm.cle, role.designation, e.target.checked)}
-                  className="w-4 h-4 accent-[#087F3E] cursor-pointer"
+                  className="w-4 h-4 accent-[green-600] cursor-pointer"
                 />
-                <span className={`text-sm ${role.actif ? "text-gray-800 font-medium" : "text-gray-400"}`}>
+                <span className={`text-sm ${role.actif ? "text-ink-900 font-medium" : "text-ink-400"}`}>
                   {role.designation}
-                  {role.designation === "Admin" && <span className="ml-1 text-[11px] text-gray-400">(toujours)</span>}
+                  {role.designation === "Admin" && <span className="ml-1 text-[11px] text-ink-400">(toujours)</span>}
                 </span>
               </label>
             ))}
@@ -1534,8 +1534,8 @@ export default function ParametragePage() {
     <div className="space-y-6">
       <PageHeader title="Paramétrage" subtitle="Configuration globale de la plateforme" />
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="border-b border-gray-200 px-5 pt-2">
+      <div className="bg-white rounded-xl border border-line-200 overflow-hidden">
+        <div className="border-b border-line-200 px-5 pt-2">
           <Tabs items={TAB_ITEMS} activeTab={activeTab} onChange={setActiveTab} />
         </div>
         <div className="px-6 pb-8">

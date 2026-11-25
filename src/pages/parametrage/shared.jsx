@@ -1,7 +1,7 @@
 import { Loader2 } from "lucide-react";
 
 export function Spinner() {
-  return <Loader2 size={16} className="animate-spin text-[#087F3E]" />;
+  return <Loader2 size={16} className="animate-spin text-[green-600]" />;
 }
 
 export function ConfirmDelete({ onConfirm, onCancel, loading }) {
@@ -15,7 +15,7 @@ export function ConfirmDelete({ onConfirm, onCancel, loading }) {
       >
         {loading ? <Loader2 size={12} className="animate-spin" /> : "Oui"}
       </button>
-      <button onClick={onCancel} className="text-xs border border-gray-300 px-2 py-1 rounded hover:bg-gray-50">
+      <button onClick={onCancel} className="text-xs border border-line-200 px-2 py-1 rounded hover:bg-surface-50">
         Non
       </button>
     </div>

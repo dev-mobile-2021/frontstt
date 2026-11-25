@@ -21,8 +21,8 @@ export default function ArchiveContratDialog({ contrat, onConfirm, onCancel, pen
             <Archive size={18} className="text-slate-500" />
           </div>
           <div>
-            <p className="font-semibold text-gray-900">Archiver le contrat</p>
-            <p className="text-xs text-gray-500 font-mono">{contrat.code} · actuellement « {ancien} »</p>
+            <p className="font-semibold text-ink-900">Archiver le contrat</p>
+            <p className="text-xs text-ink-500 font-mono">{contrat.code} · actuellement « {ancien} »</p>
           </div>
         </div>
 
@@ -33,21 +33,21 @@ export default function ArchiveContratDialog({ contrat, onConfirm, onCancel, pen
           </p>
         </div>
 
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ce qui va changer</p>
-        <ul className="space-y-2.5 text-sm text-gray-700">
+        <p className="text-xs font-semibold text-ink-500 uppercase tracking-wide">Ce qui va changer</p>
+        <ul className="space-y-2.5 text-sm text-ink-700">
           <li className="flex gap-2.5">
-            <Eye size={15} className="text-gray-400 flex-shrink-0 mt-0.5" />
+            <Eye size={15} className="text-ink-400 flex-shrink-0 mt-0.5" />
             <span>
               Il disparaît des listes filtrées sur « {ancien} ». Il reste visible dans « Tous les statuts »
               et avec le filtre <strong>« Archivé »</strong>.
             </span>
           </li>
           <li className="flex gap-2.5">
-            <Lock size={15} className="text-gray-400 flex-shrink-0 mt-0.5" />
+            <Lock size={15} className="text-ink-400 flex-shrink-0 mt-0.5" />
             <span>Statut figé : plus aucune transition (suspension, résiliation, clôture…) ni création de décompte.</span>
           </li>
           <li className="flex gap-2.5">
-            <Calculator size={15} className="text-gray-400 flex-shrink-0 mt-0.5" />
+            <Calculator size={15} className="text-ink-400 flex-shrink-0 mt-0.5" />
             <span>
               {comptes
                 ? <>Il <strong>sort des totaux</strong> : « STT engagé » du chantier, colonnes du tableau des sous-traitants, rapports.</>
@@ -55,7 +55,7 @@ export default function ArchiveContratDialog({ contrat, onConfirm, onCancel, pen
             </span>
           </li>
           <li className="flex gap-2.5">
-            <Link2 size={15} className="text-gray-400 flex-shrink-0 mt-0.5" />
+            <Link2 size={15} className="text-ink-400 flex-shrink-0 mt-0.5" />
             <span>
               {contrat.nbBc > 0
                 ? <><strong>{contrat.nbBc} BC Sage X3</strong> restent liés à ce contrat et ne pourront pas être rattachés à un autre. </>
@@ -67,7 +67,7 @@ export default function ArchiveContratDialog({ contrat, onConfirm, onCancel, pen
 
         <div className="flex gap-3 pt-1">
           <button onClick={onCancel}
-            className="flex-1 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+            className="flex-1 py-2 rounded-lg border border-line-200 text-sm text-ink-500 hover:bg-surface-50 transition-colors">
             Annuler
           </button>
           <button onClick={onConfirm} disabled={pending}
