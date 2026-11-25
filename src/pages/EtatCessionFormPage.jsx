@@ -814,42 +814,45 @@ function CreationForm({ contrats, form, set, saving, onSubmit, onCancel, inputCl
     ? `${fmtDate(form.periode_debut)} → ${fmtDate(form.periode_fin)}`
     : null;
 
+  const LABEL_CLS = "mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-ink-500";
+  const TEXTAREA_CLS = "w-full resize-none rounded-md border border-line-200 bg-white px-2.5 py-2 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100";
+
   return (
     <form onSubmit={onSubmit} className="max-w-xl space-y-5">
-      <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
-        <h2 className="text-base font-bold text-gray-900">Nouvel état de cession</h2>
+      <div className="space-y-5 rounded-xl border border-line-200 bg-white p-6 shadow-xs">
+        <h2 className="text-base font-semibold text-ink-900">Nouvel état de cession</h2>
 
         {/* Contrat */}
         <div>
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1.5">Contrat *</label>
+          <label className={LABEL_CLS}>Contrat *</label>
           <ContratSelect value={form.contrat_id} onChange={v => set("contrat_id", v)} contrats={contrats} />
         </div>
 
         {/* Mois */}
         <div>
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1.5">Mois *</label>
+          <label className={LABEL_CLS}>Mois *</label>
           <MoisSelect value={selectedMois} onChange={handleMoisChange} options={moisOptions} />
           {periodeLabel && (
-            <p className="text-xs text-[#087F3E] mt-1.5 font-medium">{periodeLabel}</p>
+            <p className="mt-1.5 text-xs font-medium text-green-700">{periodeLabel}</p>
           )}
         </div>
 
         {/* Observations */}
         <div>
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide block mb-1.5">Observations</label>
+          <label className={LABEL_CLS}>Observations</label>
           <textarea value={form.observations} onChange={e => set("observations", e.target.value)}
-            rows={3} placeholder="Notes optionnelles…" className={`${inputCls} resize-none`} />
+            rows={3} placeholder="Notes optionnelles…" className={TEXTAREA_CLS} />
         </div>
       </div>
 
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-end gap-2">
         <button type="button" onClick={onCancel}
-          className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+          className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-4 text-[13px] font-medium text-ink-900 transition-colors hover:bg-surface-50 hover:border-ink-300">
           Annuler
         </button>
         <button type="submit" disabled={saving}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#087F3E] hover:bg-[#065A2C] text-white rounded-lg text-sm font-medium disabled:opacity-60">
-          {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60">
+          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
           Créer l'état de cession
         </button>
       </div>
@@ -974,9 +977,9 @@ export default function EtatCessionFormPage() {
 
   if (!isNew && isLoading) return <div className="space-y-4">{[1,2,3].map(i => <SkeletonCard key={i} />)}</div>;
   if (!isNew && (isError || !etat)) return (
-    <div className="flex flex-col items-center justify-center py-24 text-gray-400">
-      <p className="text-lg font-semibold">État de cession introuvable</p>
-      <button onClick={() => navigate("/etats-cession")} className="mt-4 text-sm text-[#087F3E] hover:underline">Retour</button>
+    <div className="flex flex-col items-center justify-center py-24">
+      <p className="text-base font-semibold text-ink-700">État de cession introuvable</p>
+      <button onClick={() => navigate("/etats-cession")} className="mt-4 text-[13px] font-medium text-green-600 hover:text-green-700">Retour</button>
     </div>
   );
 
@@ -996,32 +999,32 @@ export default function EtatCessionFormPage() {
     periode_fin:      etat.periode_fin?.slice(0, 10)   ?? null,
   } : null;
 
-  const inputCls = "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#087F3E] focus:border-[#087F3E] outline-none";
+  const inputCls = "h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Back */}
-      <button onClick={() => navigate("/etats-cession")} className="flex items-center gap-1 text-[13px] text-gray-500 hover:text-gray-900 transition-colors">
-        <ArrowLeft size={14} /> Retour aux états de cession
+      <button onClick={() => navigate("/etats-cession")} className="flex items-center gap-1 text-[13px] text-ink-500 transition-colors hover:text-ink-900">
+        <ArrowLeft className="h-3.5 w-3.5" /> Retour aux états de cession
       </button>
 
       <PageHeader
         title={isNew ? "Nouvel état de cession" : etat.code}
-        subtitle={isNew ? "Renseignez le contrat et la période" :
+        description={isNew ? "Renseignez le contrat et la période" :
           [etat.contrat?.code, etat.contrat?.chantier?.designation, etat.contrat?.soustraitant?.raison_sociale].filter(Boolean).join(" · ")}
-        action={!isNew && (
-          <div className="flex items-center flex-wrap gap-2">
+        actions={!isNew && (
+          <>
             <button onClick={() => setPendingStatut("brouillon_delete")}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-gray-300 text-gray-500 rounded-lg hover:bg-red-50 hover:border-red-300 hover:text-red-500 transition-all">
-              <Trash2 size={13} /> Supprimer
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-600">
+              <Trash2 className="h-3.5 w-3.5" /> Supprimer
             </button>
             <button onClick={handlePdf}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-red-400 text-red-600 rounded-lg hover:bg-red-50 transition-all">
-              <FileDown size={13} /> PDF
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 transition-colors hover:bg-surface-50 hover:border-ink-300">
+              <FileDown className="h-3.5 w-3.5" /> PDF
             </button>
             <button onClick={handleExcel}
-              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold border border-emerald-500 text-emerald-700 rounded-lg hover:bg-emerald-50 transition-all">
-              <Sheet size={13} /> Excel
+              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 transition-colors hover:bg-surface-50 hover:border-ink-300">
+              <Sheet className="h-3.5 w-3.5" /> Excel
             </button>
             <StatusBadge statut={etat.statut} />
 
@@ -1029,17 +1032,17 @@ export default function EtatCessionFormPage() {
             {etat.statut === "brouillon" && peutCreer && (
               lignesSansPrix.length > 0 ? (
                 <span title={`${lignesSansPrix.length} ligne(s) sans prix — validez les prix dans le barème du contrat`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium cursor-not-allowed border border-amber-300">
+                  className="inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-md border border-amber-300 bg-amber-100 px-4 text-[13px] font-medium text-amber-700">
                   ⚠ {lignesSansPrix.length} ligne{lignesSansPrix.length > 1 ? "s" : ""} sans prix
                 </span>
               ) : baremeEnAttente > 0 ? (
                 <span title={`${baremeEnAttente} prix en attente de validation dans le barème — le DACC ou DEX doit valider avant soumission`}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg text-sm font-medium cursor-not-allowed border border-amber-300">
+                  className="inline-flex h-9 cursor-not-allowed items-center gap-1.5 rounded-md border border-amber-300 bg-amber-100 px-4 text-[13px] font-medium text-amber-700">
                   ⚠ {baremeEnAttente} prix barème en attente
                 </span>
               ) : (
                 <button onClick={() => setPendingStatut("soumis")}
-                  className="px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
+                  className="inline-flex h-9 items-center rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800">
                   Soumettre
                 </button>
               )
@@ -1049,15 +1052,15 @@ export default function EtatCessionFormPage() {
             {etat.statut === "soumis" && peutValider && (
               <>
                 <button onClick={() => setPendingStatut("valide")}
-                  className="px-4 py-2 bg-[#087F3E] text-white rounded-lg text-sm font-medium hover:bg-[#065A2C] transition-colors">
+                  className="inline-flex h-9 items-center rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800">
                   Valider / Arrêter
                 </button>
                 <button onClick={() => setPendingStatut("retourner")}
-                  className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
+                  className="inline-flex h-9 items-center rounded-md bg-amber-500 px-4 text-[13px] font-medium text-white transition-colors hover:bg-amber-600">
                   Retourner au CT
                 </button>
                 <button onClick={() => setPendingStatut("rejete")}
-                  className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors">
+                  className="inline-flex h-9 items-center rounded-md bg-red-500 px-4 text-[13px] font-medium text-white transition-colors hover:bg-red-600">
                   Rejeter
                 </button>
               </>
@@ -1066,69 +1069,69 @@ export default function EtatCessionFormPage() {
             {/* rejete : remettre en brouillon pour correction */}
             {etat.statut === "rejete" && (
               <button onClick={() => setPendingStatut("brouillon")}
-                className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
+                className="inline-flex h-9 items-center rounded-md bg-amber-500 px-4 text-[13px] font-medium text-white transition-colors hover:bg-amber-600">
                 Corriger (remettre en brouillon)
               </button>
             )}
-          </div>
+          </>
         )}
       />
 
       {/* Infos globales */}
       {!isNew && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="rounded-xl border border-line-200 bg-white p-5 shadow-xs">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Période</p>
-              <p className="text-sm font-semibold text-gray-800 truncate">
+              <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-500">Période</p>
+              <p className="truncate text-[13px] font-semibold text-ink-900">
                 {fmtDate(etat.periode_debut)} → {fmtDate(etat.periode_fin)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Contrat</p>
-              <Link to={`/contrats/${etat.contrat_id}`} className="text-sm font-semibold text-[#087F3E] hover:underline">
+              <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-500">Contrat</p>
+              <Link to={`/contrats/${etat.contrat_id}`} className="text-[13px] font-semibold text-green-600 hover:text-green-700">
                 {etat.contrat?.code ?? "—"}
               </Link>
             </div>
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Sous-traitant</p>
-              <p className="text-sm text-gray-700">{etat.contrat?.soustraitant?.raison_sociale ?? "—"}</p>
+              <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-500">Sous-traitant</p>
+              <p className="text-[13px] text-ink-700">{etat.contrat?.soustraitant?.raison_sociale ?? "—"}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Total consolidé</p>
-              <p className="text-base md:text-xl font-bold text-gray-900 tabular-nums">{fmtNum(etat.montant_total ?? totalEC)} FCFA</p>
+              <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-500">Total consolidé</p>
+              <p className="text-base font-bold tabular-nums text-ink-900 md:text-xl">{fmtNum(etat.montant_total ?? totalEC)} FCFA</p>
             </div>
           </div>
           {/* Bandeaux d'état */}
           {etat.statut === "soumis" && (
-            <div className="mt-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-              <Loader2 size={16} className="flex-shrink-0 mt-0.5" />
+            <div className="mt-4 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+              <Loader2 className="mt-0.5 h-4 w-4 shrink-0" />
               <span>En attente de validation DCG — les lignes ne peuvent plus être modifiées.</span>
             </div>
           )}
           {etat.statut === "rejete" && etat.motif_rejet && (
-            <div className="mt-4 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-              <XCircle size={16} className="flex-shrink-0 mt-0.5" />
+            <div className="mt-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">
+              <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
                 <p className="font-semibold">Rejeté</p>
                 <p className="mt-0.5">{etat.motif_rejet}</p>
-                <p className="mt-1 text-xs text-red-500">Cliquez sur « Corriger » dans la barre d'actions pour remettre en brouillon et modifier les lignes.</p>
+                <p className="mt-1 text-xs text-red-600">Cliquez sur « Corriger » dans la barre d'actions pour remettre en brouillon et modifier les lignes.</p>
               </div>
             </div>
           )}
           {etat.statut === "rejete" && !etat.motif_rejet && (
-            <div className="mt-4 flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-              <XCircle size={16} /> Rejeté — cliquez sur « Corriger » pour remettre en brouillon.
+            <div className="mt-4 flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-[13px] text-red-700">
+              <XCircle className="h-4 w-4" /> Rejeté — cliquez sur « Corriger » pour remettre en brouillon.
             </div>
           )}
           {etat.statut === "valide" && (
-            <div className="mt-4 flex items-center gap-2 bg-[#E8F5EE] border border-[#087F3E]/30 rounded-lg px-4 py-3 text-sm text-[#087F3E]">
-              <CheckCircle2 size={16} /> Arrêté et validé — consommable par les décomptes. Les lignes sont verrouillées.
+            <div className="mt-4 flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-[13px] text-green-700">
+              <CheckCircle2 className="h-4 w-4" /> Arrêté et validé — consommable par les décomptes. Les lignes sont verrouillées.
             </div>
           )}
           {etat.statut === "brouillon" && etat.motif_rejet && (
-            <div className="mt-4 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800">
-              <XCircle size={16} className="flex-shrink-0 mt-0.5" />
+            <div className="mt-4 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+              <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
                 <p className="font-semibold">Retourné par le DT — corrections demandées</p>
                 <p className="mt-0.5">{etat.motif_rejet}</p>
@@ -1186,23 +1189,23 @@ export default function EtatCessionFormPage() {
 
           {/* Résumé total */}
           {lignes.length > 0 && (
-            <div className="bg-white border border-gray-200 rounded-xl p-5">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="rounded-xl border border-line-200 bg-white p-5 shadow-xs">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {POSTES_VISIBLES.map(poste => {
                   const montant = lignes.filter(l => l.poste === poste).reduce((s, l) => s + parseFloat(l.montant ?? 0), 0);
                   const cfg = POSTE_CONFIG[poste];
                   const c   = cfg.color;
                   return (
-                    <div key={poste} className={`${c.bg} border ${c.border} rounded-xl p-4`}>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">{poste}</p>
-                      <p className="text-lg font-bold text-gray-900">{fmtNum(montant)} FCFA</p>
+                    <div key={poste} className={`rounded-xl border p-4 ${c.bg} ${c.border}`}>
+                      <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-ink-500">{poste}</p>
+                      <p className="text-lg font-bold tabular-nums text-ink-900">{fmtNum(montant)} FCFA</p>
                     </div>
                   );
                 })}
               </div>
-              <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                <span className="text-sm font-semibold text-gray-700">Total consolidé</span>
-                <span className="text-xl font-bold text-[#087F3E]">{fmtNum(totalEC)} FCFA</span>
+              <div className="mt-4 flex items-center justify-between border-t border-line-100 pt-4">
+                <span className="text-[13px] font-semibold text-ink-900">Total consolidé</span>
+                <span className="text-xl font-bold tabular-nums text-green-700">{fmtNum(totalEC)} FCFA</span>
               </div>
             </div>
           )}
@@ -1211,17 +1214,17 @@ export default function EtatCessionFormPage() {
 
       {/* Modal confirmation statut */}
       {pendingStatut && pendingStatut !== "brouillon_delete" && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPendingStatut(null)}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 space-y-4" onClick={e => e.stopPropagation()}>
-            <div>
-              <h3 className="text-base font-semibold text-gray-900">
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4" onClick={() => setPendingStatut(null)}>
+          <div className="dialog-content w-full max-w-sm rounded-lg border border-line-200 bg-white shadow-popover" onClick={e => e.stopPropagation()}>
+            <div className="border-b border-line-200 px-5 py-4">
+              <h3 className="text-sm font-semibold text-ink-900">
                 {pendingStatut === "soumis"    ? "Soumettre l'état de cession ?"          :
                  pendingStatut === "valide"    ? "Valider et arrêter l'état de cession ?" :
                  pendingStatut === "brouillon" ? "Remettre en brouillon ?"                :
                  pendingStatut === "retourner" ? "Retourner au chargé de travaux ?"       :
                  "Rejeter l'état de cession ?"}
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="mt-1 text-xs text-ink-500">
                 {pendingStatut === "soumis"    ? "L'état passera en contrôle DCG. Les lignes seront verrouillées." :
                  pendingStatut === "valide"    ? "L'état sera arrêté et consommable par les décomptes. Action irréversible." :
                  pendingStatut === "brouillon" ? "Les lignes seront de nouveau modifiables pour correction." :
@@ -1232,35 +1235,37 @@ export default function EtatCessionFormPage() {
 
             {/* Motif de rejet ou retour */}
             {(pendingStatut === "rejete" || pendingStatut === "retourner") && (
-              <div>
-                <label className="text-xs font-medium text-gray-600 block mb-1">
+              <div className="px-5 py-4">
+                <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-ink-500">
                   {pendingStatut === "retourner" ? "Motif du retour" : "Motif du rejet"} <span className="text-red-500">*</span>
                 </label>
                 <textarea
                   value={motifRejet ?? ""}
                   onChange={e => setMotifRejet(e.target.value)}
                   rows={3}
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300 focus:border-amber-400 resize-none"
+                  className="w-full resize-none rounded-md border border-line-200 bg-white px-2.5 py-2 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-100"
                   placeholder={pendingStatut === "retourner" ? "Corrections demandées…" : "Raison du rejet…"}
                 />
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-1">
+            <div className="flex items-center justify-end gap-2 border-t border-line-200 px-5 py-3">
               <button onClick={() => { setPendingStatut(null); setMotifRejet(""); }}
-                className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
+                className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300">
+                Annuler
+              </button>
               <button
                 onClick={() => handleStatut(
                   pendingStatut === "retourner" ? "brouillon" : pendingStatut,
                   (pendingStatut === "rejete" || pendingStatut === "retourner") ? motifRejet : undefined
                 )}
                 disabled={statutMut.isPending || ((pendingStatut === "rejete" || pendingStatut === "retourner") && !motifRejet?.trim())}
-                className={`inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium disabled:opacity-60 text-white
+                className={`inline-flex h-9 items-center gap-1.5 rounded-md px-4 text-[13px] font-medium text-white transition-colors disabled:opacity-60
                   ${pendingStatut === "rejete"    ? "bg-red-500 hover:bg-red-600"       :
                     pendingStatut === "retourner" ? "bg-amber-500 hover:bg-amber-600"   :
                     pendingStatut === "brouillon" ? "bg-amber-500 hover:bg-amber-600"   :
-                    "bg-[#087F3E] hover:bg-[#065A2C]"}`}>
-                {statutMut.isPending && <Loader2 size={14} className="animate-spin" />} Confirmer
+                    "bg-green-600 hover:bg-green-700 active:bg-green-800"}`}>
+                {statutMut.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Confirmer
               </button>
             </div>
           </div>
@@ -1269,15 +1274,25 @@ export default function EtatCessionFormPage() {
 
       {/* Modal suppression */}
       {pendingStatut === "brouillon_delete" && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setPendingStatut(null)}>
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-base font-semibold text-gray-900 mb-2">Supprimer l'état de cession ?</h3>
-            <p className="text-sm text-gray-500 mb-5">Toutes les lignes seront supprimées. Action irréversible.</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setPendingStatut(null)} className="px-4 py-2 text-sm text-gray-600">Annuler</button>
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4" onClick={() => setPendingStatut(null)}>
+          <div className="dialog-content w-full max-w-sm rounded-lg border border-line-200 bg-white shadow-popover" onClick={e => e.stopPropagation()}>
+            <div className="border-b border-line-200 px-5 py-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+                <Trash2 className="h-4 w-4 text-ink-500" strokeWidth={1.75} />
+                Supprimer l'état de cession ?
+              </h3>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-[13px] text-ink-700">Toutes les lignes seront supprimées. Action irréversible.</p>
+            </div>
+            <div className="flex items-center justify-end gap-2 border-t border-line-200 px-5 py-3">
+              <button onClick={() => setPendingStatut(null)}
+                className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300">
+                Annuler
+              </button>
               <button onClick={handleDelete} disabled={deleteMut.isPending}
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white disabled:opacity-60">
-                {deleteMut.isPending ? <Loader2 size={14} className="animate-spin" /> : null} Supprimer
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 transition-colors hover:bg-ink-900 hover:text-white disabled:opacity-60">
+                {deleteMut.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />} Supprimer
               </button>
             </div>
           </div>
