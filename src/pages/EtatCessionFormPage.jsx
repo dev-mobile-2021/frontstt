@@ -482,55 +482,54 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
     : 0;
 
   return (
-    <div className={`border rounded-xl overflow-hidden ${c.border}`}>
+    <div className={`overflow-hidden rounded-xl border shadow-xs ${c.border}`}>
       {/* Header */}
-      <div className={`flex flex-wrap items-center justify-between px-5 py-3.5 gap-2 ${c.bg} border-b ${c.border}`}>
+      <div className={`flex flex-wrap items-center justify-between gap-2 border-b px-5 py-3.5 ${c.bg} ${c.border}`}>
         <div className="flex items-center gap-2.5">
-          <span className={`w-2 h-2 rounded-full ${c.dot}`} />
-          <span className="text-sm font-semibold text-gray-900">{cfg.label}</span>
-          {cfg.gmao && <span className="text-[10px] px-2 py-0.5 bg-violet-200 text-violet-700 rounded-full font-medium">GMAO</span>}
-          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.badge}`}>
+          <span className={`h-2 w-2 rounded-full ${c.dot}`} />
+          <span className="text-[13px] font-semibold text-ink-900">{cfg.label}</span>
+          {cfg.gmao && <span className="rounded-full border border-ink-900/15 bg-white px-2 py-0.5 text-[10px] font-medium text-ink-700">GMAO</span>}
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${c.badge}`}>
             {lignes.length} ligne{lignes.length !== 1 ? "s" : ""}
           </span>
           {statutBloc && (() => {
             const s = STATUT_BLOC_LABEL[statutBloc] ?? STATUT_BLOC_LABEL.vide;
-            return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${s.color}`}>{s.label}</span>;
+            return <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.color}`}>{s.label}</span>;
           })()}
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold text-gray-800">{fmtNum(total)} FCFA</span>
+          <span className="text-[13px] font-bold tabular-nums text-ink-900">{fmtNum(total)} FCFA</span>
           {/* Boutons validation bloc */}
           {statutBloc === "alimente" && onStatutBloc && (
             <button onClick={() => onStatutBloc(poste.toLowerCase(), "qte_visees")}
-              className="inline-flex items-center gap-1 text-xs font-medium bg-amber-500 text-white px-2.5 py-1 rounded-lg hover:bg-amber-600">
-              <CheckCircle2 size={11} /> Viser quantités
+              className="inline-flex h-7 items-center gap-1 rounded-md bg-amber-500 px-2.5 text-xs font-medium text-white hover:bg-amber-600">
+              <CheckCircle2 className="h-3 w-3" /> Viser quantités
             </button>
           )}
           {statutBloc === "qte_visees" && onStatutBloc && (
             <>
               <button onClick={() => onStatutBloc(poste.toLowerCase(), "prix_valides")}
-                className="inline-flex items-center gap-1 text-xs font-medium bg-green-600 text-white px-2.5 py-1 rounded-lg hover:bg-green-700">
-                <CheckCircle2 size={11} /> Valider les prix
+                className="inline-flex h-7 items-center gap-1 rounded-md bg-green-600 px-2.5 text-xs font-medium text-white hover:bg-green-700">
+                <CheckCircle2 className="h-3 w-3" /> Valider les prix
               </button>
               <button onClick={() => onStatutBloc(poste.toLowerCase(), "alimente")}
-                className="inline-flex items-center gap-1 text-xs font-medium bg-red-500 text-white px-2.5 py-1 rounded-lg hover:bg-red-600">
-                <XCircle size={11} /> Rejeter
+                className="inline-flex h-7 items-center gap-1 rounded-md bg-red-500 px-2.5 text-xs font-medium text-white hover:bg-red-600">
+                <XCircle className="h-3 w-3" /> Rejeter
               </button>
             </>
           )}
-          {/* prix_valides = état final du bloc — aucun bouton de régression */}
           {/* Charger X3 pour MTX et GASOIL */}
           {canEdit && (poste === "MTX" || poste === "GASOIL") && x3Config?.chantier_code && (
             <button onClick={handleX3Import} disabled={x3Loading}
-              className="inline-flex items-center gap-1 text-xs font-medium bg-blue-600 text-white px-2.5 py-1 rounded-lg hover:bg-blue-700 disabled:opacity-60">
-              {x3Loading ? <Loader2 size={11} className="animate-spin" /> : <FileText size={11} />}
+              className="inline-flex h-7 items-center gap-1 rounded-md bg-green-600 px-2.5 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-60">
+              {x3Loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
               Charger X3
             </button>
           )}
           {canEdit && poste === "MTL" && x3Config?.chantier_code && (
             <button onClick={handleGmaoImport} disabled={gmaoLoading}
-              className="inline-flex items-center gap-1 text-xs font-medium bg-violet-600 text-white px-2.5 py-1 rounded-lg hover:bg-violet-700 disabled:opacity-60">
-              {gmaoLoading ? <Loader2 size={11} className="animate-spin" /> : <FileText size={11} />}
+              className="inline-flex h-7 items-center gap-1 rounded-md bg-ink-700 px-2.5 text-xs font-medium text-white transition-colors hover:bg-ink-900 disabled:opacity-60">
+              {gmaoLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileText className="h-3 w-3" />}
               Charger GMAO
             </button>
           )}
@@ -545,16 +544,16 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
 
       {/* Traceabilité */}
       {(viseQtePar || visePrixPar) && (
-        <div className="px-5 py-2 border-b border-gray-100 bg-gray-50/60 text-xs text-gray-500 flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 border-b border-line-100 bg-surface-50 px-5 py-2 text-xs text-ink-500">
           {viseQtePar && (
             <span>
-              Quantités visées par <strong className="text-gray-700">{viseQtePar}</strong>
+              Quantités visées par <strong className="text-ink-900">{viseQtePar}</strong>
               {viseQteLe && <> le {new Date(viseQteLe).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}</>}
             </span>
           )}
           {visePrixPar && (
             <span>
-              · Montants visés par <strong className="text-gray-700">{visePrixPar}</strong>
+              · Montants visés par <strong className="text-ink-900">{visePrixPar}</strong>
               {visePrixLe && <> le {new Date(visePrixLe).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}</>}
             </span>
           )}
@@ -566,14 +565,14 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
 
       {/* GMAO notice */}
       {cfg.gmao && lignes.length === 0 && canEdit && (
-        <div className="px-5 py-6 text-center text-sm text-violet-400 bg-violet-50/40">
-          Cliquez sur <strong>Charger GMAO</strong> pour importer les heures engins de cette période.
+        <div className="bg-surface-50 px-5 py-6 text-center text-[13px] text-ink-500">
+          Cliquez sur <strong className="text-ink-900">Charger GMAO</strong> pour importer les heures engins de cette période.
         </div>
       )}
 
       {/* Tableau lignes */}
       {(!cfg.gmao || lignes.length > 0) && lignes.length === 0 && !showForm ? (
-        <div className="px-5 py-6 text-center text-sm text-gray-400">
+        <div className="px-5 py-6 text-center text-[13px] text-ink-400">
           Aucune ligne. {canEdit && "Cliquez sur « Ajouter » pour commencer."}
         </div>
       ) : lignes.length > 0 && (
@@ -598,34 +597,34 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                 <TableRow key={l.id}>
                   <TableCell>
                     {l.code_article
-                      ? <span className="font-mono text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{l.code_article}</span>
-                      : <span className="text-gray-300">—</span>}
+                      ? <span className="rounded bg-line-100 px-1.5 py-0.5 font-mono text-xs text-ink-700">{l.code_article}</span>
+                      : <span className="text-ink-300">—</span>}
                   </TableCell>
-                  <TableCell className="text-gray-800 whitespace-normal max-w-[280px]">{l.designation}</TableCell>
-                  {poste === "MTX" && <TableCell className="text-xs text-gray-500">{l.date_sortie ? new Date(l.date_sortie).toLocaleDateString("fr-FR", {day:"2-digit",month:"short",year:"numeric"}) : "—"}</TableCell>}
-                  {poste === "MTX" && <TableCell><span className="font-mono text-xs text-blue-600">{l.ref_bs ?? "—"}</span></TableCell>}
+                  <TableCell className="max-w-[280px] whitespace-normal text-ink-900">{l.designation}</TableCell>
+                  {poste === "MTX" && <TableCell className="text-xs text-ink-500">{l.date_sortie ? new Date(l.date_sortie).toLocaleDateString("fr-FR", {day:"2-digit",month:"short",year:"numeric"}) : "—"}</TableCell>}
+                  {poste === "MTX" && <TableCell><span className="font-mono text-xs text-green-700">{l.ref_bs ?? "—"}</span></TableCell>}
                   {poste === "MTX" && <TableCell><span className="font-mono text-xs text-green-600">{l.ref_br ?? "—"}</span></TableCell>}
-                  <TableCell className="text-xs text-gray-500 uppercase">{l.unite || "—"}</TableCell>
-                  <TableCell className="text-right text-gray-700">{fmtNum(l.quantite)}</TableCell>
-                  <TableCell className="text-right text-xs whitespace-nowrap">
-                    <span className={`tabular-nums ${!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0 ? "text-amber-600 font-semibold" : "text-gray-600"}`}>
+                  <TableCell className="text-xs uppercase text-ink-500">{l.unite || "—"}</TableCell>
+                  <TableCell className="text-right tabular-nums text-ink-900">{fmtNum(l.quantite)}</TableCell>
+                  <TableCell className="whitespace-nowrap text-right text-xs">
+                    <span className={`tabular-nums ${!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0 ? "font-semibold text-amber-700" : "text-ink-700"}`}>
                       {!l.prix_unitaire || parseFloat(l.prix_unitaire) <= 0
                         ? <span title="Prix manquant">⚠ 0 FCFA</span>
                         : <>{fmtNum(l.prix_unitaire)} FCFA</>}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right font-semibold text-gray-800 whitespace-nowrap">{fmtNum(l.montant)} FCFA</TableCell>
+                  <TableCell className="whitespace-nowrap text-right font-semibold tabular-nums text-ink-900">{fmtNum(l.montant)} FCFA</TableCell>
                   {canEdit && (
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         {l.code_article && (
                           <button onClick={() => handleReloadPrix(l)} disabled={reloadingId === l.id} title="Recharger le prix depuis le barème contrat"
-                            className="text-gray-300 hover:text-blue-500 transition-colors disabled:opacity-40">
-                            {reloadingId === l.id ? <Loader2 size={13} className="animate-spin" /> : <RotateCcw size={13} />}
+                            className="text-ink-400 transition-colors hover:text-green-600 disabled:opacity-40">
+                            {reloadingId === l.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
                           </button>
                         )}
-                        <button onClick={() => setConfirmDel(l.id)} className="text-gray-300 hover:text-red-500 transition-colors">
-                          <Trash2 size={13} />
+                        <button onClick={() => setConfirmDel(l.id)} className="text-ink-400 transition-colors hover:text-red-600">
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </TableCell>
@@ -635,22 +634,22 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
             </TableBody>
           </Table>
           {/* Total footer */}
-          <div className="flex justify-between items-center px-3 py-2.5 mt-1 border-t border-gray-100">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Total {cfg.label}</span>
-            <span className="font-bold text-gray-900">{fmtNum(total)} FCFA</span>
+          <div className="mt-1 flex items-center justify-between border-t border-line-100 px-3 py-2.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-ink-500">Total {cfg.label}</span>
+            <span className="font-bold tabular-nums text-ink-900">{fmtNum(total)} FCFA</span>
           </div>
         </div>
       )}
 
       {/* Formulaire ajout (barème ou libre) */}
       {showForm && canEdit && useBareme && (
-        <div className={`border-t ${c.border} ${c.bg} px-5 py-4`}>
+        <div className={`border-t px-5 py-4 ${c.border} ${c.bg}`}>
           <form onSubmit={handleAdd}>
             <div className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-xs text-gray-500 font-medium">Article du barème *</label>
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">Article du barème *</label>
                 <SearchSelect value={form.bareme_cb_id} onChange={e => handleSelectArticle(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" autoFocus>
+                  className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" autoFocus>
                   <option value="">— Sélectionner un article —</option>
                   {articlesBareme.map(cb => (
                     <option key={cb.id} value={cb.id}>
@@ -660,26 +659,26 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
                 </SearchSelect>
               </div>
               {form.bareme_cb_id && (
-                <div className="grid gap-3 items-end grid-cols-[120px_auto]">
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-500 font-medium">Quantité *</label>
+                <div className="grid grid-cols-[120px_auto] items-end gap-3">
+                  <div className="space-y-1.5">
+                    <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">Quantité *</label>
                     <input type="number" value={form.quantite}
                       onChange={e => setForm(f => ({ ...f, quantite: e.target.value }))}
                       required min="0" step="any" placeholder="0" autoFocus
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                      className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] tabular-nums text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                   </div>
                   <div className="flex items-end gap-2 pb-0.5">
                     <button type="submit" disabled={saveMut.isPending}
-                      className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60">
-                      {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} OK
+                      className="inline-flex h-9 items-center gap-1.5 rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60">
+                      {saveMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} OK
                     </button>
-                    <button type="button" onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600"><X size={16} /></button>
+                    <button type="button" onClick={() => setShowForm(false)} className="rounded-md p-2 text-ink-400 hover:text-ink-900"><X className="h-4 w-4" /></button>
                   </div>
                 </div>
               )}
               {!form.bareme_cb_id && (
                 <div className="flex justify-end">
-                  <button type="button" onClick={() => setShowForm(false)} className="text-xs text-gray-400 hover:text-gray-600">Annuler</button>
+                  <button type="button" onClick={() => setShowForm(false)} className="text-xs text-ink-500 hover:text-ink-900">Annuler</button>
                 </div>
               )}
             </div>
@@ -688,49 +687,49 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
       )}
 
       {showForm && canEdit && !useBareme && (
-        <div className={`border-t ${c.border} ${c.bg} px-5 py-4`}>
+        <div className={`border-t px-5 py-4 ${c.border} ${c.bg}`}>
           <form onSubmit={handleAdd}>
-              <div className="grid gap-3 items-end grid-cols-1 sm:grid-cols-[1fr_70px_90px_110px_auto]">
-                <div className="space-y-1">
-                  <label className="text-xs text-gray-500 font-medium">Désignation *</label>
+              <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[1fr_70px_90px_110px_auto]">
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">Désignation *</label>
                   <input type="text" value={form.designation}
                     onChange={e => setForm(f => ({ ...f, designation: e.target.value }))}
                     autoFocus required placeholder="Description…"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                    className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-gray-500 font-medium">Unité</label>
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">Unité</label>
                   <input type="text" value={form.unite}
                     onChange={e => setForm(f => ({ ...f, unite: e.target.value }))}
                     placeholder="T, L…"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                    className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-gray-500 font-medium">Quantité *</label>
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">Quantité *</label>
                   <input type="number" value={form.quantite}
                     onChange={e => setForm(f => ({ ...f, quantite: e.target.value }))}
                     required min="0" step="any" placeholder="0"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#087F3E] outline-none" />
+                    className="h-9 w-full rounded-md border border-line-200 bg-white px-2.5 text-[13px] tabular-nums text-ink-900 placeholder:text-ink-400 focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100" />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-gray-500 font-medium">Prix unit. {cfg.prixEditable && <span className="text-orange-500">*</span>}</label>
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-medium uppercase tracking-wide text-ink-500">Prix unit. {cfg.prixEditable && <span className="text-amber-600">*</span>}</label>
                   <input type="number" value={form.prix_unitaire}
                     onChange={e => setForm(f => ({ ...f, prix_unitaire: e.target.value }))}
                     required={cfg.prixEditable} min="0" step="any" placeholder="0"
                     disabled={!cfg.prixEditable}
-                    className={`w-full border rounded-lg px-3 py-2 text-sm outline-none ${cfg.prixEditable ? "border-orange-300 focus:ring-2 focus:ring-orange-400" : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"}`} />
+                    className={`h-9 w-full rounded-md border px-2.5 text-[13px] tabular-nums outline-none ${cfg.prixEditable ? "border-amber-300 bg-white text-ink-900 placeholder:text-ink-400 focus:border-amber-500 focus:ring-2 focus:ring-amber-100" : "cursor-not-allowed border-line-200 bg-line-100 text-ink-500"}`} />
                 </div>
                 <div className="flex items-end gap-2 pb-0.5">
                   <button type="submit" disabled={saveMut.isPending}
-                    className="inline-flex items-center gap-1 bg-[#087F3E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#065A2C] disabled:opacity-60 whitespace-nowrap">
-                    {saveMut.isPending ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} OK
+                    className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-md bg-green-600 px-4 text-[13px] font-medium text-white transition-colors hover:bg-green-700 active:bg-green-800 disabled:opacity-60">
+                    {saveMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} OK
                   </button>
-                  <button type="button" onClick={() => setShowForm(false)} className="p-2 text-gray-400 hover:text-gray-600"><X size={16} /></button>
+                  <button type="button" onClick={() => setShowForm(false)} className="rounded-md p-2 text-ink-400 hover:text-ink-900"><X className="h-4 w-4" /></button>
                 </div>
               </div>
 
             {montantPreview > 0 && (
-              <p className="text-xs text-[#087F3E] font-medium mt-2">
+              <p className="mt-2 text-xs font-medium tabular-nums text-green-700">
                 Montant : {fmtNum(montantPreview)} FCFA
               </p>
             )}
@@ -740,25 +739,23 @@ function PosteSection({ poste, lignes, canEdit, etatId, contratBaremes, x3Config
 
       {/* Modal confirmation suppression */}
       {confirmDel && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-red-50 rounded-xl">
-                <Trash2 size={18} className="text-red-500" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 text-sm">Supprimer la ligne ?</p>
-                <p className="text-xs text-gray-400 mt-0.5">Cette action est irréversible.</p>
-              </div>
+        <div className="dialog-overlay fixed inset-0 z-50 flex items-center justify-center bg-ink-900/40 p-4">
+          <div className="dialog-content w-full max-w-sm rounded-lg border border-line-200 bg-white shadow-popover">
+            <div className="border-b border-line-200 px-5 py-4">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-ink-900">
+                <Trash2 className="h-4 w-4 text-ink-500" strokeWidth={1.75} />
+                Supprimer la ligne ?
+              </h3>
+              <p className="mt-1 text-xs text-ink-500">Cette action est irréversible.</p>
             </div>
-            <div className="flex gap-2 justify-end">
+            <div className="flex items-center justify-end gap-2 border-t border-line-200 px-5 py-3">
               <button onClick={() => setConfirmDel(null)}
-                className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">
+                className="inline-flex h-9 items-center rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 hover:bg-surface-50 hover:border-ink-300">
                 Annuler
               </button>
               <button onClick={() => handleDelete(confirmDel)} disabled={deleteMut.isPending}
-                className="px-4 py-2 text-sm font-medium bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-60 inline-flex items-center gap-1.5">
-                {deleteMut.isPending && <Loader2 size={13} className="animate-spin" />}
+                className="inline-flex h-9 items-center gap-1.5 rounded-md border border-line-200 bg-white px-3 text-[13px] font-medium text-ink-900 transition-colors hover:bg-ink-900 hover:text-white disabled:opacity-60">
+                {deleteMut.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                 Supprimer
               </button>
             </div>
